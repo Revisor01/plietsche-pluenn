@@ -1,0 +1,7 @@
+
+> plietsche-pluenn-backend@1.0.0 start
+> node server.js
+
+✅ Database initialized
+🚀 Plietsche Plünn Backend läuft auf Port 3001
+📍 Health Check: http://localhost:3001/api/health
