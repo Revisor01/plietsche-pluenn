@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, real, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, integer, real, boolean, primaryKey } from 'drizzle-orm/pg-core';
 
 export const stores = pgTable('stores', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -95,3 +95,37 @@ export const storeSettings = pgTable('store_settings', {
   maxItemsPerCheckin: integer('max_items_per_checkin').notNull().default(10),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
+
+export const achievements = pgTable('achievements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  storeId: uuid('store_id').notNull().references(() => stores.id),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  iconName: text('icon_name').notNull().default('trophy'),
+  triggerType: text('trigger_type', {
+    enum: ['items_brought', 'items_taken', 'visits', 'streak_weeks', 'season_items_brought', 'season_items_taken', 'milestone'],
+  }).notNull(),
+  triggerValue: integer('trigger_value').notNull(),
+  tier: text('tier', { enum: ['bronze', 'silber', 'gold', 'custom'] }).notNull().default('custom'),
+  season: text('season', { enum: ['fruehling', 'sommer', 'herbst', 'winter'] }),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const userAchievements = pgTable('user_achievements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  achievementId: uuid('achievement_id').notNull().references(() => achievements.id),
+  progress: integer('progress').notNull().default(0),
+  completed: boolean('completed').notNull().default(false),
+  completedAt: timestamp('completed_at'),
+});
+
+export const weeklyVisits = pgTable('weekly_visits', {
+  userId: uuid('user_id').notNull().references(() => users.id),
+  storeId: uuid('store_id').notNull().references(() => stores.id),
+  weekStart: text('week_start').notNull(),
+  visitCount: integer('visit_count').notNull().default(0),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.storeId, t.weekStart] }),
+}));
