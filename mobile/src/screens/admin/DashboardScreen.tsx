@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { fetchDashboardStats, DashboardStats } from '../../api/dashboard.api';
+import { colors, fonts, spacing, borderRadius } from '../../theme';
 
 type Period = 'today' | 'week' | 'month' | 'year';
 
@@ -118,7 +119,7 @@ export default function DashboardScreen() {
       {/* Loading */}
       {isLoading && (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
 
@@ -166,37 +167,38 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { padding: 16 },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.md },
   title: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 16,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   segmentRow: {
     flexDirection: 'row',
-    backgroundColor: '#E5E7EB',
-    borderRadius: 10,
+    backgroundColor: colors.border,
+    borderRadius: borderRadius.md,
     padding: 3,
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   segmentButton: {
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: borderRadius.sm,
   },
   segmentButtonActive: {
-    backgroundColor: '#2563EB',
+    backgroundColor: colors.primary,
   },
   segmentText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
   },
   segmentTextActive: {
-    color: '#FFFFFF',
+    color: colors.white,
+    fontFamily: fonts.semiBold,
   },
   centered: {
     alignItems: 'center',
@@ -204,19 +206,20 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 15,
-    color: '#EF4444',
+    fontFamily: fonts.regular,
+    color: colors.error,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   retryButton: {
-    backgroundColor: '#2563EB',
-    borderRadius: 8,
-    paddingHorizontal: 20,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
   },
   retryText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: fonts.semiBold,
     fontSize: 14,
   },
   grid: {
@@ -226,7 +229,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '47%',
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -236,13 +239,13 @@ const styles = StyleSheet.create({
   },
   cardValue: {
     fontSize: 40,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
     marginBottom: 4,
   },
   cardLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
   },
 });

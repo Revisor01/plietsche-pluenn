@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { colors, fonts, spacing } from '../../theme';
 
 export default function PrivacyScreen() {
   return (
@@ -47,25 +48,26 @@ export default function PrivacyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { padding: 16, paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: colors.surface },
+  content: { padding: spacing.md, paddingBottom: 40 },
   mainTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 20,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    marginTop: 20,
-    marginBottom: 8,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   bodyText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     lineHeight: 22,
-    color: '#374151',
-    marginBottom: 8,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
 });
