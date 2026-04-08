@@ -64,6 +64,17 @@ export const pointTransactions = pgTable('point_transactions', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+export const campaigns = pgTable('campaigns', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  storeId: uuid('store_id').notNull().references(() => stores.id),
+  title: text('title').notNull(),
+  description: text('description'),
+  multiplier: real('multiplier').notNull().default(1.0),
+  startsAt: timestamp('starts_at').notNull(),
+  endsAt: timestamp('ends_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export const storeSettings = pgTable('store_settings', {
   id: uuid('id').primaryKey().defaultRandom(),
   storeId: uuid('store_id').notNull().unique().references(() => stores.id),
