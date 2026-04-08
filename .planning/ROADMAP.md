@@ -78,9 +78,9 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Admin-Dashboard API + Screen (aggregierte Statistiken, kein Personen-Tracking)
-- [ ] 04-02: UX-Polish, DSGVO-Review (GPS-Datenschutz), Error-Handling, Launch-Readiness
+- [ ] 04-01-PLAN.md — Dashboard-Backend-Modul: GET /api/dashboard/stats mit 4 Metriken, Zeitraum-Filter, nur admin/volunteer
+- [ ] 04-02-PLAN.md — DashboardScreen (2er-Grid Stat-Cards, Datepicker), PrivacyScreen (DSGVO/GPS), Navigation-Integration
 
 ---
 *Roadmap created: 2026-04-08*
-*Last updated: 2026-04-08 after Phase 3 planning*
+*Last updated: 2026-04-08 after Phase 4 planning*
