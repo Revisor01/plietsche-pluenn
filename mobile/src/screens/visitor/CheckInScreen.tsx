@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import LinearGradient from 'react-native-linear-gradient';
 import { submitCheckin } from '../../api/checkin.api';
 import { usePointsStore } from '../../store/pointsStore';
+import { colors, fonts, spacing, borderRadius } from '../../theme';
 
 type Step = 'gps' | 'scan' | 'stepper' | 'success' | 'error';
 
@@ -80,6 +82,21 @@ export default function CheckInScreen() {
     setIsScanning(true);
   };
 
+  // Gradient-Button Hilfsfunktion
+  const GradientButton = ({ label, onPress }: { label: string; onPress: () => void }) => (
+    <TouchableOpacity style={styles.button} onPress={onPress}>
+      <LinearGradient
+        colors={[...colors.gradientColors]}
+        locations={[...colors.gradientLocations]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.buttonGradient}
+      >
+        <Text style={styles.buttonText}>{label}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
   // Schritt 1: GPS
   if (step === 'gps') {
     return (
@@ -88,9 +105,7 @@ export default function CheckInScreen() {
         <Text style={styles.subtitle}>
           Für den Check-In wird dein Standort einmalig geprüft — nicht gespeichert.
         </Text>
-        <TouchableOpacity style={styles.btn} onPress={requestGps}>
-          <Text style={styles.btnText}>Standort freigeben & Scannen</Text>
-        </TouchableOpacity>
+        <GradientButton label="Standort freigeben & Scannen" onPress={requestGps} />
       </View>
     );
   }
@@ -138,9 +153,7 @@ export default function CheckInScreen() {
             <Text style={styles.stepBtnText}>+</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.btn} onPress={handleSubmit}>
-          <Text style={styles.btnText}>Einchecken</Text>
-        </TouchableOpacity>
+        <GradientButton label="Einchecken" onPress={handleSubmit} />
       </View>
     );
   }
@@ -153,9 +166,7 @@ export default function CheckInScreen() {
         <Text style={styles.title}>Eingecheckt!</Text>
         <Text style={styles.points}>+{result.points + result.itemPoints} PlietschPunkte</Text>
         <Text style={styles.subtitle}>Gesamt: {result.totalPoints} Punkte</Text>
-        <TouchableOpacity style={styles.btn} onPress={handleReset}>
-          <Text style={styles.btnText}>Fertig</Text>
-        </TouchableOpacity>
+        <GradientButton label="Fertig" onPress={handleReset} />
       </View>
     );
   }
@@ -164,9 +175,7 @@ export default function CheckInScreen() {
   return (
     <View style={styles.center}>
       <Text style={styles.errorText}>{error}</Text>
-      <TouchableOpacity style={styles.btn} onPress={handleReset}>
-        <Text style={styles.btnText}>Nochmal versuchen</Text>
-      </TouchableOpacity>
+      <GradientButton label="Nochmal versuchen" onPress={handleReset} />
     </View>
   );
 }
@@ -177,41 +186,95 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#F9FAFB',
+    padding: spacing.lg,
+    backgroundColor: colors.background,
   },
-  title: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
-  btn: {
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 32,
+  title: {
+    fontSize: 24,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  button: {
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    marginTop: spacing.md,
+  },
+  buttonGradient: {
+    paddingHorizontal: spacing.xl,
     paddingVertical: 14,
-    borderRadius: 10,
-    marginTop: 16,
+    alignItems: 'center',
   },
-  btnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  stepper: { flexDirection: 'row', alignItems: 'center', marginVertical: 24 },
+  buttonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.lg,
+  },
   stepBtn: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E5E7EB',
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stepBtnText: { fontSize: 24, color: '#111827', fontWeight: '600' },
-  stepCount: { fontSize: 48, fontWeight: '700', color: '#111827', marginHorizontal: 32 },
+  stepBtnText: {
+    fontSize: 24,
+    fontFamily: fonts.bold,
+    color: colors.text,
+  },
+  stepCount: {
+    fontSize: 48,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    marginHorizontal: spacing.xl,
+  },
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scanFrame: {
     width: 240,
     height: 240,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    borderRadius: 12,
+    borderColor: colors.white,
+    borderRadius: borderRadius.md,
     backgroundColor: 'transparent',
   },
-  hint: { color: '#FFFFFF', marginTop: 16, fontSize: 14, textAlign: 'center', paddingHorizontal: 32 },
-  successIcon: { fontSize: 64, color: '#10B981', marginBottom: 8 },
-  points: { fontSize: 32, fontWeight: '800', color: '#2563EB', marginVertical: 8 },
-  errorText: { fontSize: 16, color: '#EF4444', textAlign: 'center', marginBottom: 16 },
+  hint: {
+    color: colors.white,
+    marginTop: spacing.md,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  successIcon: {
+    fontSize: 64,
+    color: colors.success,
+    marginBottom: spacing.sm,
+  },
+  points: {
+    fontSize: 32,
+    fontFamily: fonts.bold,
+    color: colors.primary,
+    marginVertical: spacing.sm,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: fonts.regular,
+    color: colors.error,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
 });
