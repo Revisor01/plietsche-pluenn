@@ -27,8 +27,8 @@ v1.2 "Achievements, Icons & Push" -- Echtes Achievement-System mit kategorie-bas
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01: react-native-vector-icons installieren, Tab-Bar Icons umstellen, Navigation-Icons
-- [ ] 08-02: Alle Screens nach Emojis durchsuchen und durch Font Awesome Icons ersetzen
+- [ ] 08-01-PLAN.md — react-native-vector-icons installieren, iOS pod install, alle Tab-Bar Icons (VisitorTabs, AdminTabs, VolunteerTabs) mit FontAwesome5
+- [ ] 08-02-PLAN.md — Alle Screen-Emojis ersetzen (HomeScreen, CheckInScreen), Badge-System von emoji auf iconName migrieren (Backend + Mobile)
 
 ### Phase 9: Achievement-System
 **Goal**: Vollstaendiges Badge-System mit Kategorien (Bringer, Holer, Besucher, Saison, Streaks, Meilensteine), Fortschrittsanzeige, Admin-Verwaltung, und In-App Toast bei neuem Badge.
@@ -44,9 +44,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01: Achievement-Schema + Backend-Engine (Trigger-Auswertung, Streak-Berechnung, Badge-Vergabe)
-- [ ] 09-02: Badge-Uebersichtsseite + Homescreen-Integration + Toast bei neuem Badge
-- [ ] 09-03: Admin Badge-Verwaltung (CRUD, Default-Badges, Saison-Config)
+- [ ] 09-01-PLAN.md — Achievement-Schema + Backend-Engine (Trigger-Auswertung, Streak-Berechnung, Badge-Vergabe)
+- [ ] 09-02-PLAN.md — Badge-Uebersichtsseite + Homescreen-Integration + Toast bei neuem Badge
+- [ ] 09-03-PLAN.md — Admin Badge-Verwaltung (CRUD, Default-Badges, Saison-Config)
 
 ### Phase 10: Push-Benachrichtigungen
 **Goal**: Push-Notifications ueber FCM/APNs -- automatisch bei Kampagnen und Streak-Gefahr, manuell durch Admin, deaktivierbar durch Besucher.
@@ -62,9 +62,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 10-01: Push-Infrastruktur (FCM Setup, APNs, Backend-Service, Device-Token-Verwaltung)
-- [ ] 10-02: Automatische Push-Trigger (Kampagne, Streak-Erinnerung, Schaufenster)
-- [ ] 10-03: Admin Push-Screen + Besucher Push-Einstellungen
+- [ ] 10-01-PLAN.md — Push-Infrastruktur (FCM Setup, APNs, Backend-Service, Device-Token-Verwaltung)
+- [ ] 10-02-PLAN.md — Automatische Push-Trigger (Kampagne, Streak-Erinnerung, Schaufenster)
+- [ ] 10-03-PLAN.md — Admin Push-Screen + Besucher Push-Einstellungen
 
 ---
 *Roadmap created: 2026-04-09*
