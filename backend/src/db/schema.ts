@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, real } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, integer, real, boolean } from 'drizzle-orm/pg-core';
 
 export const stores = pgTable('stores', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -43,6 +43,7 @@ export const items = pgTable('items', {
   qrToken: uuid('qr_token').unique(),
   createdAt: timestamp('created_at').defaultNow(),
   createdBy: uuid('created_by').references(() => users.id),
+  isShowcase: boolean('is_showcase').notNull().default(false),
 });
 
 export const checkins = pgTable('checkins', {

@@ -47,3 +47,34 @@ export async function findItemById(id: string, storeId: string) {
     .limit(1);
   return result[0] ?? null;
 }
+
+export async function getShowcaseItems(storeId: string) {
+  return db
+    .select({
+      id: items.id,
+      title: items.title,
+      category: items.category,
+      size: items.size,
+      color: items.color,
+      createdAt: items.createdAt,
+    })
+    .from(items)
+    .where(
+      and(
+        eq(items.storeId, storeId),
+        eq(items.isShowcase, true),
+        eq(items.status, 'active'),
+      ),
+    )
+    .orderBy(desc(items.createdAt))
+    .limit(6);
+}
+
+export async function setShowcase(id: string, storeId: string, isShowcase: boolean) {
+  const result = await db
+    .update(items)
+    .set({ isShowcase })
+    .where(and(eq(items.id, id), eq(items.storeId, storeId)))
+    .returning({ id: items.id, isShowcase: items.isShowcase });
+  return result[0] ?? null;
+}

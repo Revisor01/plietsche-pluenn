@@ -22,6 +22,31 @@ const ListItemsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+const ShowcaseSchema = z.object({ isShowcase: z.boolean() });
+
+// GET /api/items/showcase — Visitor-zugänglich (nur authenticateToken, kein requireRole)
+// MUSS vor /:id registriert sein, sonst matcht "showcase" als :id-Parameter
+router.get('/showcase', authenticateToken, async (req: Request, res: Response) => {
+  const result = await itemsService.getShowcaseItems(req.user!.storeId);
+  res.json(result);
+});
+
+// PATCH /api/items/:id/showcase — nur Volunteer/Admin
+router.patch(
+  '/:id/showcase',
+  authenticateToken,
+  requireRole('volunteer', 'admin'),
+  async (req: Request, res: Response) => {
+    const { isShowcase } = ShowcaseSchema.parse(req.body);
+    const item = await itemsService.setShowcase(String(req.params.id), req.user!.storeId, isShowcase);
+    if (!item) {
+      res.status(404).json({ error: 'Item nicht gefunden' });
+      return;
+    }
+    res.json(item);
+  },
+);
+
 // Express 5: async Fehler propagieren automatisch — kein try/catch nötig
 router.post(
   '/',

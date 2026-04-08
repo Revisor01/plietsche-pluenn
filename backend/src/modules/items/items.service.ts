@@ -19,6 +19,14 @@ export async function listItems(storeId: string, filters: ItemFilters) {
   };
 }
 
+export async function getShowcaseItems(storeId: string) {
+  return itemsRepo.getShowcaseItems(storeId);
+}
+
+export async function setShowcase(id: string, storeId: string, isShowcase: boolean) {
+  return itemsRepo.setShowcase(id, storeId, isShowcase);
+}
+
 export async function getItemQrPng(itemId: string, storeId: string): Promise<Buffer> {
   const item = await itemsRepo.findItemById(itemId, storeId);
   if (!item) {
