@@ -40,3 +40,40 @@ export async function createBadgeLevel(body: {
 export async function deleteBadgeLevel(id: string): Promise<void> {
   await apiClient.delete(`/api/badges/levels/${id}`);
 }
+
+// Achievement System (Plan 09-02)
+
+export type TriggerType =
+  | 'items_brought'
+  | 'items_taken'
+  | 'visits'
+  | 'streak_weeks'
+  | 'season_items_brought'
+  | 'season_items_taken'
+  | 'milestone';
+
+export type Tier = 'bronze' | 'silber' | 'gold' | 'custom';
+export type Season = 'fruehling' | 'sommer' | 'herbst' | 'winter';
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  iconName: string;
+  triggerType: TriggerType;
+  triggerValue: number;
+  tier: Tier;
+  season: Season | null;
+  sortOrder: number;
+}
+
+export interface AchievementWithProgress extends Achievement {
+  progress: number;
+  completed: boolean;
+  completedAt: string | null;
+}
+
+export async function fetchMyAchievements(): Promise<AchievementWithProgress[]> {
+  const { data } = await apiClient.get<AchievementWithProgress[]>('/api/badges/achievements');
+  return data;
+}
