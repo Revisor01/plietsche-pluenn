@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { usePointsStore } from '../../store/pointsStore';
 import { useAuthStore } from '../../store/authStore';
+import { colors, fonts, spacing, borderRadius } from '../../theme';
 
 export default function HomeScreen() {
   const { balance, isLoading, loadBalance } = usePointsStore();
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
     loadBalance();
@@ -13,14 +16,18 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Prominente Punktestand-Anzeige — Locked Decision PUNKT-01 */}
-      <View style={styles.pointsCard}>
+      <LinearGradient
+        colors={[...colors.gradientColors]}
+        locations={[...colors.gradientLocations]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.pointsCard}
+      >
         <Text style={styles.pointsLabel}>PlietschPunkte</Text>
         <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
         <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
-      </View>
+      </LinearGradient>
 
-      {/* Begrüßung */}
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeTitle}>
           Willkommen{user?.username ? `, ${user.username}` : ''}!
@@ -29,20 +36,23 @@ export default function HomeScreen() {
           Scanne den QR-Code an Kleidungsstücken oder checke ein, um PlietschPunkte zu sammeln.
         </Text>
       </View>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Text style={styles.logoutText}>Abmelden</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { padding: 16 },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.md },
   pointsCard: {
-    backgroundColor: '#2563EB',
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#2563EB',
+    marginBottom: spacing.lg,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -50,14 +60,50 @@ const styles = StyleSheet.create({
   },
   pointsLabel: {
     fontSize: 14,
-    color: '#BFDBFE',
-    fontWeight: '600',
+    color: 'rgba(255,255,255,0.8)',
+    fontFamily: fonts.semiBold,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  pointsValue: { fontSize: 72, fontWeight: '800', color: '#FFFFFF', marginVertical: 4 },
-  pointsSubtitle: { fontSize: 13, color: '#93C5FD' },
-  welcomeSection: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16 },
-  welcomeTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  welcomeText: { fontSize: 14, color: '#6B7280', lineHeight: 20 },
+  pointsValue: {
+    fontSize: 72,
+    fontFamily: fonts.bold,
+    color: colors.white,
+    marginVertical: spacing.xs,
+  },
+  pointsSubtitle: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  welcomeSection: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  welcomeTitle: {
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  welcomeText: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  logoutButton: {
+    marginTop: spacing.lg,
+    padding: 14,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: colors.error,
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+  },
 });
