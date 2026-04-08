@@ -48,7 +48,7 @@ Plans:
 - [ ] 02-03-PLAN.md — Store-Info API + Screen (Öffnungszeiten, Adresse, Beschreibung)
 
 ### Phase 3: Visitor Experience
-**Goal**: Besucher scannen QR-Codes an Kleidung und an der Tür, sammeln PlietschPunkte, geben an wie viele nicht-digitale Teile sie mitgenommen haben.
+**Goal**: Besucher scannen QR-Codes an Kleidungsstücken und an der Ladentür, sammeln PlietschPunkte, geben an wie viele nicht-digitale Teile sie mitgenommen haben. Punktestand prominent auf dem Homescreen.
 **Depends on**: Phase 2
 **Requirements**: SCAN-01, SCAN-02, SCAN-03, CHKIN-01, CHKIN-02, CHKIN-03, CHKIN-04, PUNKT-01, PUNKT-02, PUNKT-03
 **Success Criteria** (what must be TRUE):
@@ -61,9 +61,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: QR-Scan mit react-native-vision-camera, Item-Checkout API (Status → taken, Punkte vergeben, kein User-Link)
-- [ ] 03-02: Check-In-Flow: Tür-QR (HMAC-signiert/rotierend) + GPS-Radius-Prüfung + "Wie viele Teile?"-Stepper
-- [ ] 03-03: PlietschPunkte-System: Punkte-Engine, Homescreen-Anzeige, konfigurierbare Werte pro Store
+- [ ] 03-01-PLAN.md — scan-Backend-Modul (POST /api/scan, point_transactions, created_by-Migration) + ScanScreen mit react-native-vision-camera + Toast-Feedback
+- [ ] 03-02-PLAN.md — checkin-Backend-Modul (HMAC-Door-QR, Haversine-GPS, Rate-Limit) + GET /api/checkin/door-qr Admin-Endpoint + CheckInScreen (GPS→Scan→Stepper)
+- [ ] 03-03-PLAN.md — store_settings-Tabelle + points-Modul (Balance/History API) + HomeScreen Punktestand + PointsHistoryScreen
 
 ### Phase 4: Dashboard & Polish
 **Goal**: Admin-Dashboard mit aggregierten Statistiken, UX-Feinschliff, DSGVO-konform, launch-bereit.
@@ -83,4 +83,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-04-08*
-*Last updated: 2026-04-08 after Phase 2 planning*
+*Last updated: 2026-04-08 after Phase 3 planning*
