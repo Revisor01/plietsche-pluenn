@@ -5,6 +5,7 @@ import { usePointsStore } from '../../store/pointsStore';
 import { useAuthStore } from '../../store/authStore';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
 import { fetchShowcaseItems, type ShowcaseItem } from '../../api/items.api';
+import { fetchMyBadge, type BadgeProgressResponse } from '../../api/badges.api';
 
 export default function HomeScreen() {
   const { balance, isLoading, loadBalance } = usePointsStore();
@@ -12,6 +13,7 @@ export default function HomeScreen() {
   const logout = useAuthStore((s) => s.logout);
   const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
   const [showcaseLoading, setShowcaseLoading] = useState(false);
+  const [badge, setBadge] = useState<BadgeProgressResponse | null>(null);
 
   useEffect(() => {
     loadBalance();
@@ -20,6 +22,9 @@ export default function HomeScreen() {
       .then(setShowcase)
       .catch(() => {})
       .finally(() => setShowcaseLoading(false));
+    fetchMyBadge()
+      .then(setBadge)
+      .catch(() => {}); // Stiller Fehler
   }, [loadBalance]);
 
   return (
@@ -34,6 +39,26 @@ export default function HomeScreen() {
         <Text style={styles.pointsLabel}>PlietschPunkte</Text>
         <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
         <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
+        {badge?.currentLevel && (
+          <>
+            <Text style={styles.badgeLabel}>
+              {badge.currentLevel.emoji} {badge.currentLevel.name}
+            </Text>
+            {badge.nextLevel && (
+              <View style={styles.progressContainer}>
+                <View style={[styles.progressBar, { width: `${badge.progressPercent}%` as any }]} />
+              </View>
+            )}
+            {badge.pointsToNext != null && (
+              <Text style={styles.pointsToNextLabel}>
+                Noch {badge.pointsToNext} Punkte bis {badge.nextLevel?.emoji} {badge.nextLevel?.name}
+              </Text>
+            )}
+            {!badge.nextLevel && (
+              <Text style={styles.pointsToNextLabel}>Maximales Level erreicht 🎉</Text>
+            )}
+          </>
+        )}
       </LinearGradient>
 
       {showcase.length > 0 && (
@@ -100,6 +125,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.regular,
     color: 'rgba(255,255,255,0.7)',
+  },
+  badgeLabel: {
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    color: colors.white,
+    marginTop: spacing.sm,
+  },
+  progressContainer: {
+    width: '100%',
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: borderRadius.full,
+    marginTop: spacing.xs,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.full,
+  },
+  pointsToNextLabel: {
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: spacing.xs,
   },
   welcomeSection: {
     backgroundColor: colors.surface,

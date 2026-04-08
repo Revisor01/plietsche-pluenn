@@ -15,6 +15,7 @@ import HomeScreen from '../screens/visitor/HomeScreen';
 import DashboardScreen from '../screens/admin/DashboardScreen';
 import CampaignListScreen from '../screens/admin/CampaignListScreen';
 import CampaignCreateScreen from '../screens/admin/CampaignCreateScreen';
+import BadgeLevelsScreen from '../screens/admin/BadgeLevelsScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
 import { colors, fonts } from '../theme';
@@ -71,6 +72,11 @@ function VolunteerTabs() {
         name="Kampagnen"
         component={CampaignListScreen}
         options={{ title: 'Kampagnen' }}
+      />
+      <Tab.Screen
+        name="Badges"
+        component={BadgeLevelsScreen}
+        options={{ title: 'Badges' }}
       />
     </Tab.Navigator>
   );
@@ -149,6 +155,11 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
         name="CampaignCreate"
         component={CampaignCreateScreen}
         options={{ headerShown: true, title: 'Neue Kampagne' }}
+      />
+      <Stack.Screen
+        name="BadgeLevels"
+        component={BadgeLevelsScreen}
+        options={{ headerShown: true, title: 'Badge-Stufen' }}
       />
     </Stack.Navigator>
   );
