@@ -25,4 +25,5 @@ export interface ItemFilters {
   search?: string;
   page?: number;
   limit?: number;
+  isShowcase?: boolean;
 }
