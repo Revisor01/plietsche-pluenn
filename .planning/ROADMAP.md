@@ -66,6 +66,16 @@ Plans:
 - [ ] 10-02-PLAN.md — Automatische Push-Trigger (Kampagne, Streak-Erinnerung, Schaufenster)
 - [ ] 10-03-PLAN.md — Admin Push-Screen + Besucher Push-Einstellungen
 
+### Phase 11: iOS 26 Liquid Glass Design
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 11 to break down)
+
 ---
 *Roadmap created: 2026-04-09*
 *Last updated: 2026-04-09 after v1.2 milestone definition*
