@@ -6,7 +6,7 @@ Migration des bestehenden MVP zu einem produktionsreifen Stack (React Native bar
 
 ## Phases
 
-- [ ] **Phase 1: Foundation** - Backend + Mobile Neubau mit PostgreSQL, Express 5, React Native bare
+- [x] **Phase 1: Foundation** - Backend + Mobile Neubau mit PostgreSQL, Express 5, React Native bare
 - [ ] **Phase 2: Volunteer Core** - Item-Management, QR-Code-Generierung, Store-Info
 - [ ] **Phase 3: Visitor Experience** - QR-Scan, Check-In, PlietschPunkte
 - [ ] **Phase 4: Dashboard & Polish** - Admin-Statistiken, UX-Feinschliff, Launch-Readiness
@@ -26,9 +26,9 @@ Migration des bestehenden MVP zu einem produktionsreifen Stack (React Native bar
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: React Native bare Projekt-Setup mit New Architecture, Navigation, Build-Konfiguration
-- [ ] 01-02: Express 5 Backend mit Drizzle ORM, PostgreSQL-Schema, store_id in allen Tabellen
-- [ ] 01-03: JWT-Authentifizierung mit Rollen-System (admin, volunteer, visitor), Login/Register-Screens
+- [x] 01-01-PLAN.md — React Native bare Projekt-Setup mit New Architecture, Navigation, Build-Konfiguration
+- [x] 01-02-PLAN.md — Express 5 Backend mit Drizzle ORM, PostgreSQL-Schema, store_id in allen Tabellen
+- [x] 01-03-PLAN.md — JWT-Authentifizierung mit Rollen-System (admin, volunteer, visitor), Login/Register-Screens
 
 ### Phase 2: Volunteer Core
 **Goal**: Ehrenamtliche können Kleidungsstücke anlegen, QR-Codes werden automatisch generiert, Items sind filter- und suchbar, Store-Infoseite ist eingerichtet.
@@ -43,9 +43,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Item-CRUD API + Datenbank-Operationen, QR-Code-Generierung (UUID-Token, PNG via qrcode npm)
-- [ ] 02-02: Volunteer-Screens: Item anlegen (mit Schnelleingabe), Item-Liste mit Filter/Suche
-- [ ] 02-03: Store-Info API + Screen (Öffnungszeiten, Adresse, Beschreibung)
+- [ ] 02-01-PLAN.md — Schema-Migration + items Backend-Modul (CRUD + QR-Generierung via qrcode npm)
+- [ ] 02-02-PLAN.md — Volunteer-Screens: Item anlegen (Schnelleingabe, Farbpicker), Item-Liste mit Filter/Suche, Bottom-Tabs
+- [ ] 02-03-PLAN.md — Store-Info API + Screen (Öffnungszeiten, Adresse, Beschreibung)
 
 ### Phase 3: Visitor Experience
 **Goal**: Besucher scannen QR-Codes an Kleidung und an der Tür, sammeln PlietschPunkte, geben an wie viele nicht-digitale Teile sie mitgenommen haben.
@@ -83,4 +83,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-04-08*
-*Last updated: 2026-04-08 after initialization*
+*Last updated: 2026-04-08 after Phase 2 planning*
