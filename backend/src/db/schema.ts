@@ -7,6 +7,8 @@ export const stores = pgTable('stores', {
   lat: real('lat'),
   lng: real('lng'),
   checkinRadiusMeters: integer('checkin_radius_meters').notNull().default(200),
+  description: text('description'),
+  openingHours: text('opening_hours'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -33,7 +35,7 @@ export const items = pgTable('items', {
   title: text('title').notNull(),
   category: text('category').notNull(),
   size: text('size'),
-  condition: text('condition', { enum: ['neu', 'gut', 'okay'] }),
+  condition: text('condition'),
   color: text('color'),
   status: text('status', { enum: ['active', 'taken'] })
     .notNull()
