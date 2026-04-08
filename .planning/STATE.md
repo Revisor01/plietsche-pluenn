@@ -6,10 +6,10 @@ status: in_progress
 last_updated: "2026-04-08T10:00:00.000Z"
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 50
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State: Plietsche Plünn
@@ -19,16 +19,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Besucher haben Anreiz regelmäßig zu kommen, Ehrenamtliche sehen was passiert — ohne Personen-Tracking.
-**Current focus:** Phase 2 complete — ready for Phase 3
+**Current focus:** Phase 3 complete — ready for Phase 4
 
 ## Current Phase
 
-**Phase 2: Volunteer Core** ✅ COMPLETE
+**Phase 3: Visitor Experience** ✅ COMPLETE
 
 - Status: Complete
-- Goal: Item-Management, QR-Code-Generierung, Store-Info
+- Goal: QR-Scan, Check-In, PlietschPunkte
 - Plans: 3/3 complete
-- APIs: POST/GET /api/items, GET /api/items/:id/qr, GET/PATCH /api/stores/info
+- APIs: POST /api/scan, POST /api/checkin, GET /api/checkin/door-qr, GET /api/points/balance, GET /api/points/history, PATCH /api/points/settings
 
 ## Milestone Progress
 
@@ -36,10 +36,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 |-------|------|--------|-------|
 | 1 | Foundation | ✅ Complete | 3/3 |
 | 2 | Volunteer Core | ✅ Complete | 3/3 |
-| 3 | Visitor Experience | ○ Pending | 0/3 |
+| 3 | Visitor Experience | ✅ Complete | 3/3 |
 | 4 | Dashboard & Polish | ○ Pending | 0/2 |
 
-Progress: █████░░░░░ 50%
+Progress: ███████░░░ 75%
 
 ## Key Decisions Log
 
