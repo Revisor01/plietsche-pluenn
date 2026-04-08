@@ -45,9 +45,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: Kampagnen Backend (CRUD, Multiplikator-Logik in Punkte-Engine) + Admin-Screens
-- [ ] 06-02: Schaufenster Backend (Showcase-Flag) + Visitor-Homescreen Showcase-Sektion
-- [ ] 06-03: Badges/Achievements Backend (Level-Definitionen, Fortschritt) + Homescreen Badge-Anzeige
+- [ ] 06-01-PLAN.md — Kampagnen Backend (CRUD, Multiplikator in Punkte-Engine) + Admin-Screens (CampaignList, CampaignCreate)
+- [ ] 06-02-PLAN.md — Schaufenster Backend (showcase-Flag auf Items) + Visitor-Homescreen Showcase-Sektion
+- [ ] 06-03-PLAN.md — Badges Backend (badge_levels, Fortschritt-Berechnung) + Homescreen Badge-Anzeige + Admin BadgeLevels-Screen
 
 ### Phase 7: Onboarding & Rollen
 **Goal**: Neue Besucher verstehen sofort das Konzept, und Admin/Volunteer haben klar getrennte Berechtigungen.
@@ -67,4 +67,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-04-08*
-*Last updated: 2026-04-08 after Phase 5 plans created*
+*Last updated: 2026-04-08 after Phase 6 plans created*
