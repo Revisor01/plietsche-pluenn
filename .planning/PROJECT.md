@@ -2,32 +2,47 @@
 
 ## What This Is
 
-Eine App für verwaltete Kleidertausch-Läden. Ehrenamtliche pflegen den Bestand und versehen ausgewählte Teile mit auto-generierten QR-Codes. Besucher kommen vor Ort, stöbern, scannen QR-Codes zum Ausbuchen und sammeln PlietschPunkte. Nicht alle Teile sind digital erfasst — Besucher können auch pauschal ihren Besuch loggen und mitgenommene Teile zählen, verifiziert durch Standort-Check (GPS + QR-Code an der Tür).
+Eine App für den Kleidertausch-Laden "Plietsche Plünn" in der Kirchengemeinde. Ehrenamtliche pflegen den Bestand und versehen ausgewählte Teile mit auto-generierten QR-Codes. Besucher kommen vor Ort, stöbern, scannen QR-Codes zum Ausbuchen und sammeln PlietschPunkte. Nicht alle Teile sind digital erfasst — Besucher können auch pauschal ihren Besuch loggen und mitgenommene Teile zählen, verifiziert durch Standort-Check (GPS + QR-Code an der Tür).
 
 ## Core Value
 
 Besucher haben einen Anreiz, regelmäßig in den Tausch-Laden zu kommen, und Ehrenamtliche sehen, was passiert — ohne dass einzelne Personen überwacht werden.
 
+## Current Milestone: v1.1 Engagement & Polish
+
+**Goal:** App attraktiv und einladend machen — Kampagnen, Schaufenster, Badges, Onboarding, durchgängiges UI-Styling mit Gradient-Theme und Work Sans.
+
+**Target features:**
+- Kampagnen/Aktionen (zeitlich begrenzte Punkt-Multiplikatoren)
+- Schaufenster (ausgewählte Items auf Visitor-Homescreen)
+- Onboarding-Flow für neue Besucher
+- Rollen-Hierarchie (Admin vs. Volunteer feiner trennen)
+- UI-Styling durchziehen (Gradient-Theme, Work Sans, alle Screens)
+- Badges/Achievement-Levels für PlietschPunkte
+
 ## Requirements
 
 ### Validated
 
-- ✓ Basis-Backend mit User-Authentifizierung (JWT) — existing
-- ✓ Item-Modell mit Status-Tracking (active/taken) — existing
-- ✓ Grundlegende API-Struktur (Express REST) — existing
+- ✓ JWT-Authentifizierung mit Rollen (admin, volunteer, visitor) — v1.0 Phase 1
+- ✓ Item-CRUD mit QR-Code-Generierung (UUID-Token, PNG) — v1.0 Phase 2
+- ✓ Item-Liste mit Filter/Suche — v1.0 Phase 2
+- ✓ Store-Info (Admin-editierbar, öffentlich lesbar) — v1.0 Phase 2
+- ✓ QR-Scan → Item ausbuchen + PlietschPunkte — v1.0 Phase 3
+- ✓ Check-In (Tür-QR HMAC + GPS 150m) + Teile-Stepper — v1.0 Phase 3
+- ✓ PlietschPunkte-System (konfigurierbar, Historie) — v1.0 Phase 3
+- ✓ Admin-Dashboard mit Datepicker-Statistiken — v1.0 Phase 4
+- ✓ DSGVO-Datenschutzerkärung In-App — v1.0 Phase 4
+- ✓ React Native bare + Express 5 + PostgreSQL — v1.0 Phase 1
 
 ### Active
 
-- [ ] Ehrenamtlichen-Rolle: Kleidungsstücke anlegen mit automatischer QR-Code-Generierung
-- [ ] Besucher-Rolle: QR-Code am Kleidungsstück scannen → Teil als mitgenommen markieren, Punkte sammeln
-- [ ] Vor-Ort-Check-In: QR-Code an der Tür + GPS-Verifizierung → "Ich war da und habe X Teile mitgenommen"
-- [ ] PlietschPunkte-System: Punkte für Ausbuchen und Check-Ins, Anreize schaffen
-- [ ] Aktionen/Kampagnen: "Winterkleidung gesucht — doppelte Punkte", zeitlich begrenzte Sonderaktionen
-- [ ] Schaufenster: Ausgewählte Kleidungsstücke in der App präsentieren, Lust machen vorbeizukommen
-- [ ] Multi-Tenant: Andere Tauschläden können die App für ihren eigenen Laden nutzen
-- [ ] Migration auf React Native bare (ohne Expo) mit New Architecture
-- [ ] Migration auf PostgreSQL statt SQLite
-- [ ] Admin-Dashboard für Ehrenamtliche (Bestand, Aktionen, Statistiken)
+- [ ] Kampagnen/Aktionen mit Punkt-Multiplikatoren
+- [ ] Schaufenster (Showcase-Items auf Visitor-Homescreen)
+- [ ] Onboarding-Flow für neue Besucher
+- [ ] Rollen-Hierarchie (Admin vs. Volunteer)
+- [ ] UI-Styling (Gradient-Theme, Work Sans, alle Screens)
+- [ ] Badges/Achievement-Levels
 
 ### Out of Scope
 
@@ -35,34 +50,40 @@ Besucher haben einen Anreiz, regelmäßig in den Tausch-Laden zu kommen, und Ehr
 - Tracking wer-was-mitnimmt — Bewusste Entscheidung für Privatsphäre, kein Personen-Tracking
 - Nutzer stellen selbst Kleidung ein — Nur Verwaltung/Ehrenamtliche pflegen den Bestand
 - Online-Shop / Versand — Rein lokales Vor-Ort-Konzept
+- Multi-Tenant — Nur für unseren Store, nicht für andere Läden
 - Expo — Zu unübersichtlich, nicht nativ genug
 
 ## Context
 
-- Existierender Tausch-Laden in Kirchengemeinde/Nachbarschaft, Ehrenamtliche sortieren und kuratieren Kleidung
+- Kleidertausch-Laden "Plietsche Plünn" in Kirchengemeinde/Nachbarschaft
 - Zielgruppe: Nachbarschaft, Kirchengemeinde, Geflüchtete — niedrigschwellig und inklusiv
-- Aktuell max. 10 Teile pro Besuch mitnehmen (Laden-Regel)
+- Aktuell max. 10 Teile pro Besuch mitnehmen (Laden-Regel, admin-konfigurierbar)
 - Nicht alle Kleidungsstücke werden digital erfasst — App ergänzt den Laden, ersetzt ihn nicht
-- Bestehendes MVP mit Express-Backend und React Native/Expo-Frontend vorhanden, wird migriert
-- Server-Infrastruktur auf server.godsapp.de (Hetzner) mit Docker/Traefik verfügbar
+- v1.0 komplett deployed auf plietsche-plünn.de (server.godsapp.de)
+- Backend: Portainer Stack #261, PostgreSQL + Express 5
+- iOS-Build funktioniert auf Device
 
 ## Constraints
 
-- **Tech Stack**: React Native bare (New Architecture) + Express/Node.js + PostgreSQL — bewusste Entscheidung gegen Expo
+- **Tech Stack**: React Native bare (New Architecture) + Express/Node.js + PostgreSQL
 - **Plattformen**: iOS + Android Pflicht, Web optional für später
-- **Zielgruppe**: Muss extrem einfach bedienbar sein — nicht-technische Ehrenamtliche und diverse Besucher
+- **Zielgruppe**: Muss extrem einfach bedienbar sein
 - **Privatsphäre**: Kein personenbezogenes Tracking wer was mitnimmt
+- **Deployment**: Alles auf server.godsapp.de, kein lokales Docker
+- **Design**: Work Sans Schriftart, Gradient #27b092 → #79c4b0 (51%) → #80b4e2
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| React Native bare statt Expo | Expo zu unübersichtlich und einschränkend, mehr Kontrolle über natives Verhalten gewünscht | — Pending |
-| React Native statt Flutter | Bestehendes React-Know-how nutzen, kein neues Framework/Sprache lernen | — Pending |
-| PostgreSQL statt SQLite | SQLite nicht produktionstauglich für Multi-User-App | — Pending |
-| Kein Reservierungssystem | Alles passiert vor Ort, App soll Laden ergänzen nicht ersetzen | — Pending |
-| GPS + Tür-QR für Vor-Ort-Nachweis | Ermöglicht Punkte auch ohne digitale Erfassung aller Kleidungsstücke | — Pending |
-| Multi-Tenant-Architektur | Andere Tauschläden sollen die App auch nutzen können | — Pending |
+| React Native bare statt Expo | Expo zu unübersichtlich, mehr Kontrolle gewünscht | ✓ Good |
+| React Native statt Flutter | Bestehendes React-Know-how nutzen | ✓ Good |
+| PostgreSQL statt SQLite | SQLite nicht produktionstauglich für Multi-User-App | ✓ Good |
+| Kein Reservierungssystem | Alles passiert vor Ort, App ergänzt Laden | ✓ Good |
+| GPS + Tür-QR für Vor-Ort-Nachweis | Punkte auch ohne digitale Erfassung aller Teile | ✓ Good |
+| Kein Multi-Tenant | Nur für unseren Store, kein Bedarf für andere | ✓ Good |
+| Work Sans + Gradient Theme | Eigene visuelle Identität, P²-Branding | — Pending |
+| Server-Deployment statt lokal | Docker nicht auf Mac, alles auf server.godsapp.de | ✓ Good |
 
 ## Evolution
 
@@ -82,4 +103,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-07 after initialization*
+*Last updated: 2026-04-08 after v1.0 completion, v1.1 milestone start*
