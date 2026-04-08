@@ -1,5 +1,6 @@
 import * as scanRepo from './scan.repository';
 import { getStoreSettings } from '../points/points.repository';
+import { getActiveCampaign } from '../campaigns/campaigns.repository';
 
 export async function scanItemQr(qrToken: string, userId: string, storeId: string) {
   const item = await scanRepo.findItemByQrToken(qrToken, storeId);
@@ -14,10 +15,18 @@ export async function scanItemQr(qrToken: string, userId: string, storeId: strin
   }
 
   const settings = await getStoreSettings(storeId);
-  const pointsPerScan = settings.pointsPerScan;
+  const campaign = await getActiveCampaign(storeId);
+  const multiplier = campaign?.multiplier ?? 1;
+  const basePoints = settings.pointsPerScan;
+  const pointsAwarded = Math.round(basePoints * multiplier);
 
   await scanRepo.markItemTaken(item.id);
-  const totalPoints = await scanRepo.awardPoints(userId, storeId, pointsPerScan, 'item_scan');
+  const totalPoints = await scanRepo.awardPoints(userId, storeId, pointsAwarded, 'item_scan');
 
-  return { points: pointsPerScan, title: item.title, totalPoints };
+  return {
+    points: pointsAwarded,
+    title: item.title,
+    totalPoints,
+    campaign: campaign ? { title: campaign.title, multiplier } : null,
+  };
 }

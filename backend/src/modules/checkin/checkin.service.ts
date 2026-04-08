@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import * as checkinRepo from './checkin.repository';
 import { awardPoints } from '../scan/scan.repository';
 import { getStoreSettings } from '../points/points.repository';
+import { getActiveCampaign } from '../campaigns/campaigns.repository';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -78,9 +79,17 @@ export async function processCheckin(
   await checkinRepo.insertCheckin({ userId, storeId, itemCount });
 
   const settings = await getStoreSettings(storeId);
+  const campaign = await getActiveCampaign(storeId);
+  const multiplier = campaign?.multiplier ?? 1;
   const basePoints = settings.pointsPerCheckin;
   const itemPoints = Math.min(itemCount, settings.maxItemsPerCheckin) * settings.pointsPerItem;
-  const totalPoints = await awardPoints(userId, storeId, basePoints + itemPoints, 'checkin');
+  const pointsAwarded = Math.round((basePoints + itemPoints) * multiplier);
+  const totalPoints = await awardPoints(userId, storeId, pointsAwarded, 'checkin');
 
-  return { points: basePoints, itemPoints, totalPoints };
+  return {
+    points: Math.round(basePoints * multiplier),
+    itemPoints: Math.round(itemPoints * multiplier),
+    totalPoints,
+    campaign: campaign ? { title: campaign.title, multiplier } : null,
+  };
 }
