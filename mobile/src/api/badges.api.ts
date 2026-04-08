@@ -77,3 +77,39 @@ export async function fetchMyAchievements(): Promise<AchievementWithProgress[]> 
   const { data } = await apiClient.get<AchievementWithProgress[]>('/api/badges/achievements');
   return data;
 }
+
+// Admin: alle Achievements des Stores
+export async function fetchAllAchievements(): Promise<Achievement[]> {
+  const { data } = await apiClient.get<Achievement[]>('/api/badges/achievements/all');
+  return data;
+}
+
+export interface CreateAchievementInput {
+  name: string;
+  description: string;
+  iconName: string;
+  triggerType: TriggerType;
+  triggerValue: number;
+  tier: Tier;
+  season: Season | null;
+  sortOrder: number;
+}
+
+export async function createAchievement(body: CreateAchievementInput): Promise<Achievement> {
+  const { data } = await apiClient.post<Achievement>('/api/badges/achievements', body);
+  return data;
+}
+
+export async function updateAchievement(id: string, body: Partial<CreateAchievementInput>): Promise<Achievement> {
+  const { data } = await apiClient.patch<Achievement>(`/api/badges/achievements/${id}`, body);
+  return data;
+}
+
+export async function deleteAchievement(id: string): Promise<void> {
+  await apiClient.delete(`/api/badges/achievements/${id}`);
+}
+
+export async function seedAchievements(): Promise<{ seeded: number; achievements: Achievement[] }> {
+  const { data } = await apiClient.post<{ seeded: number; achievements: Achievement[] }>('/api/badges/achievements/seed');
+  return data;
+}
