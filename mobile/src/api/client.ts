@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const BASE_URL = (process.env.API_BASE_URL as string | undefined) ?? 'http://localhost:3000';
 
@@ -10,5 +11,11 @@ export const apiClient = axios.create({
   },
 });
 
-// Token-Injection: in Plan 03 wird ein Interceptor hinzugefügt
-// apiClient.interceptors.request.use(...)
+// Token-Interceptor: fügt Bearer-Token aus authStore zu jedem Request hinzu
+apiClient.interceptors.request.use((reqConfig) => {
+  const token = useAuthStore.getState().token;
+  if (token) {
+    reqConfig.headers.Authorization = `Bearer ${token}`;
+  }
+  return reqConfig;
+});

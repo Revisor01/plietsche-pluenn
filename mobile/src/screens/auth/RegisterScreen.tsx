@@ -7,28 +7,36 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { apiClient } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 
+// Fester storeId für Phase 1 (Single-Tenant) — wird in Phase 2+ konfigurierbar.
+// Nach dem ersten `npm run db:seed` im Backend die Store-UUID aus der DB-Ausgabe
+// hier eintragen oder als STORE_ID Env-Variable setzen.
+const PHASE1_STORE_ID = process.env.STORE_ID ?? '00000000-0000-0000-0000-000000000000';
+
 type Props = {
   navigation: StackNavigationProp<any>;
 };
 
-export default function LoginScreen({ navigation }: Props): React.JSX.Element {
+export default function RegisterScreen({ navigation }: Props): React.JSX.Element {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const login = useAuthStore((s) => s.login);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Fehler', 'Bitte E-Mail und Passwort eingeben');
+  const handleRegister = async () => {
+    if (!username || !email || !password) {
+      Alert.alert('Fehler', 'Bitte alle Felder ausfüllen');
       return;
     }
     setLoading(true);
     try {
-      const { data } = await apiClient.post('/api/auth/login', { email, password });
+      const { data } = await apiClient.post('/api/auth/register', {
+        username, email, password,
+        storeId: PHASE1_STORE_ID,
+      });
       login(data.token, data.user);
-      // AppNavigator wechselt automatisch zu HomeScreen
     } catch (err: any) {
-      const message = err?.response?.data?.error ?? 'Login fehlgeschlagen';
+      const message = err?.response?.data?.error ?? 'Registrierung fehlgeschlagen';
       Alert.alert('Fehler', message);
     } finally {
       setLoading(false);
@@ -37,7 +45,15 @@ export default function LoginScreen({ navigation }: Props): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Plietsche Plünn</Text>
+      <Text style={styles.title}>Registrieren</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Benutzername (min. 3 Zeichen)"
+        value={username}
+        onChangeText={setUsername}
+        autoCapitalize="none"
+        autoComplete="username"
+      />
       <TextInput
         style={styles.input}
         placeholder="E-Mail"
@@ -49,25 +65,25 @@ export default function LoginScreen({ navigation }: Props): React.JSX.Element {
       />
       <TextInput
         style={styles.input}
-        placeholder="Passwort"
+        placeholder="Passwort (min. 8 Zeichen)"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        autoComplete="current-password"
+        autoComplete="new-password"
       />
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleLogin}
+        onPress={handleRegister}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Anmelden</Text>
+          <Text style={styles.buttonText}>Konto erstellen</Text>
         )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.linkText}>Noch kein Konto? Registrieren</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Text style={styles.linkText}>Zurück zum Login</Text>
       </TouchableOpacity>
     </View>
   );
