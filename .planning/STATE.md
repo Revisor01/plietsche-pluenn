@@ -1,3 +1,17 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: in_progress
+last_updated: "2026-04-08T08:40:00.000Z"
+progress:
+  total_phases: 4
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 25
+---
+
 # Project State: Plietsche Plünn
 
 ## Project Reference
@@ -5,24 +19,27 @@
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Besucher haben Anreiz regelmäßig zu kommen, Ehrenamtliche sehen was passiert — ohne Personen-Tracking.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 1 complete — ready for Phase 2
 
 ## Current Phase
 
-**Phase 1: Foundation**
-- Status: Not started
+**Phase 1: Foundation** ✅ COMPLETE
+
+- Status: Complete
 - Goal: React Native bare + Express 5 + PostgreSQL + JWT Auth mit Rollen
+- Plans: 3/3 complete
+- Deployed: https://plietsche-pluenn.godsapp.de/api/health
 
 ## Milestone Progress
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
-| 1 | Foundation | ○ Pending | 0/3 |
+| 1 | Foundation | ✅ Complete | 3/3 |
 | 2 | Volunteer Core | ○ Pending | 0/3 |
 | 3 | Visitor Experience | ○ Pending | 0/3 |
 | 4 | Dashboard & Polish | ○ Pending | 0/2 |
 
-Progress: ░░░░░░░░░░ 0%
+Progress: ██░░░░░░░░ 25%
 
 ## Key Decisions Log
 
@@ -33,6 +50,16 @@ Progress: ░░░░░░░░░░ 0%
 | PostgreSQL statt SQLite | Init | 2026-04-07 |
 | Express 5 + Drizzle ORM | Research | 2026-04-08 |
 | Multi-Tenant via store_id + RLS (v2) | Research | 2026-04-08 |
+| Server-Deployment statt lokal | Phase 1 | 2026-04-08 |
+| Portainer für Stack-Management | Phase 1 | 2026-04-08 |
+
+## Deployment
+
+- **Backend:** https://plietsche-pluenn.godsapp.de
+- **Stack:** Portainer Stack #261 (plietsche-pluenn)
+- **Repo:** https://github.com/Revisor01/plietsche-pluenn (private)
+- **Server-Pfad:** /opt/stacks/plietsche-pluenn/
+- **Store UUID:** 6a0fb86e-d795-4fd3-87fa-a21143f830b3
 
 ---
-*Last updated: 2026-04-08 after project initialization*
+*Last updated: 2026-04-08 after Phase 1 completion + server deployment*
