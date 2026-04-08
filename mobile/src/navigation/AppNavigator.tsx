@@ -13,6 +13,8 @@ import CheckInScreen from '../screens/visitor/CheckInScreen';
 import PointsHistoryScreen from '../screens/visitor/PointsHistoryScreen';
 import HomeScreen from '../screens/visitor/HomeScreen';
 import DashboardScreen from '../screens/admin/DashboardScreen';
+import CampaignListScreen from '../screens/admin/CampaignListScreen';
+import CampaignCreateScreen from '../screens/admin/CampaignCreateScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
 import { colors, fonts } from '../theme';
@@ -64,6 +66,11 @@ function VolunteerTabs() {
         name="StoreInfo"
         component={StoreInfoScreen}
         options={{ title: 'Store-Info' }}
+      />
+      <Tab.Screen
+        name="Kampagnen"
+        component={CampaignListScreen}
+        options={{ title: 'Kampagnen' }}
       />
     </Tab.Navigator>
   );
@@ -137,6 +144,11 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
         name="Privacy"
         component={PrivacyScreen}
         options={{ headerShown: true, title: 'Datenschutz' }}
+      />
+      <Stack.Screen
+        name="CampaignCreate"
+        component={CampaignCreateScreen}
+        options={{ headerShown: true, title: 'Neue Kampagne' }}
       />
     </Stack.Navigator>
   );
