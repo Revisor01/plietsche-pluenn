@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import Geolocation from 'react-native-geolocation-service';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 import { submitCheckin } from '../../api/checkin.api';
+import { usePointsStore } from '../../store/pointsStore';
 
 type Step = 'gps' | 'scan' | 'stepper' | 'success' | 'error';
 
 export default function CheckInScreen() {
+  const loadBalance = usePointsStore((s) => s.loadBalance);
   const [step, setStep] = useState<Step>('gps');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [doorToken, setDoorToken] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export default function CheckInScreen() {
       const res = await submitCheckin(doorToken, coords.lat, coords.lng, itemCount);
       setResult(res);
       setStep('success');
+      loadBalance();
     } catch (err: any) {
       setError(err?.response?.data?.error ?? 'Check-In fehlgeschlagen');
       setStep('error');
