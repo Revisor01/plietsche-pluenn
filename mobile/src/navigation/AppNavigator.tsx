@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Toast from 'react-native-toast-message';
+import Icon from 'react-native-vector-icons/FontAwesome5';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
@@ -53,37 +54,72 @@ function AdminTabs() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ title: 'Dashboard' }}
+        options={{
+          title: 'Dashboard',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="chart-bar" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Items"
         component={ItemListScreen}
-        options={{ title: 'Kleidung' }}
+        options={{
+          title: 'Kleidung',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="tshirt" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Neu"
         component={ItemCreateScreen}
-        options={{ title: 'Neu anlegen' }}
+        options={{
+          title: 'Neu anlegen',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="plus-circle" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="StoreInfo"
         component={StoreInfoScreen}
-        options={{ title: 'Store-Info' }}
+        options={{
+          title: 'Store-Info',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="store" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Kampagnen"
         component={CampaignListScreen}
-        options={{ title: 'Kampagnen' }}
+        options={{
+          title: 'Kampagnen',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="bullhorn" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Badges"
         component={BadgeLevelsScreen}
-        options={{ title: 'Badges' }}
+        options={{
+          title: 'Badges',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="medal" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Volunteers"
         component={VolunteerManagementScreen}
-        options={{ title: 'Team' }}
+        options={{
+          title: 'Team',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="users" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );
@@ -95,12 +131,22 @@ function VolunteerTabs() {
       <Tab.Screen
         name="Items"
         component={ItemListScreen}
-        options={{ title: 'Kleidung' }}
+        options={{
+          title: 'Kleidung',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="tshirt" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Neu"
         component={ItemCreateScreen}
-        options={{ title: 'Neu anlegen' }}
+        options={{
+          title: 'Neu anlegen',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="plus-circle" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );
@@ -134,22 +180,43 @@ function VisitorTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Home' }}
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="home" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Scan"
         component={ScanScreen}
-        options={{ title: 'Scannen', headerShown: false }}
+        options={{
+          title: 'Scannen',
+          headerShown: false,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="qrcode" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="CheckIn"
         component={CheckInScreen}
-        options={{ title: 'Check-In' }}
+        options={{
+          title: 'Check-In',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="check-circle" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name="Punkte"
         component={PointsHistoryScreen}
-        options={{ title: 'Punkte' }}
+        options={{
+          title: 'Punkte',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="coins" solid={focused} size={size} color={color} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );
