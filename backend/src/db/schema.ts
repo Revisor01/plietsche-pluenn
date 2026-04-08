@@ -45,6 +45,15 @@ export const items = pgTable('items', {
   createdBy: uuid('created_by').references(() => users.id),
 });
 
+export const checkins = pgTable('checkins', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  storeId: uuid('store_id').notNull().references(() => stores.id),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  itemCount: integer('item_count').notNull().default(0),
+  // KEINE lat/lng — GPS nur validiert, nie persistiert (per CHKIN-01, Locked Decision)
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export const pointTransactions = pgTable('point_transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   storeId: uuid('store_id').notNull().references(() => stores.id),

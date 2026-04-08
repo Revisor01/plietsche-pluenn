@@ -25,6 +25,9 @@ export async function updateStore(storeId: string, data: UpdateStoreBody) {
       ...(data.address !== undefined && { address: data.address }),
       ...(data.description !== undefined && { description: data.description }),
       ...(data.openingHours !== undefined && { openingHours: data.openingHours }),
+      ...(data.lat !== undefined && { lat: data.lat }),
+      ...(data.lng !== undefined && { lng: data.lng }),
+      ...(data.checkinRadiusMeters !== undefined && { checkinRadiusMeters: data.checkinRadiusMeters }),
     })
     .where(eq(stores.id, storeId))
     .returning();

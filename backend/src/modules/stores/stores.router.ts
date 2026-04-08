@@ -10,6 +10,9 @@ const UpdateStoreSchema = z.object({
   address: z.string().min(1).max(500).optional(),
   description: z.string().max(2000).optional(),
   openingHours: z.string().max(500).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  checkinRadiusMeters: z.number().int().min(10).max(2000).optional(),
 });
 
 // Public: kein Auth nötig

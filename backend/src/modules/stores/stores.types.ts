@@ -12,4 +12,7 @@ export interface UpdateStoreBody {
   address?: string;
   description?: string;
   openingHours?: string;
+  lat?: number;
+  lng?: number;
+  checkinRadiusMeters?: number;
 }
