@@ -17,7 +17,7 @@ import HomeScreen from '../screens/visitor/HomeScreen';
 import DashboardScreen from '../screens/admin/DashboardScreen';
 import CampaignListScreen from '../screens/admin/CampaignListScreen';
 import CampaignCreateScreen from '../screens/admin/CampaignCreateScreen';
-import BadgeLevelsScreen from '../screens/admin/BadgeLevelsScreen';
+import AchievementAdminScreen from '../screens/admin/AchievementAdminScreen';
 import BadgeOverviewScreen from '../screens/visitor/BadgeOverviewScreen';
 import VolunteerManagementScreen from '../screens/admin/VolunteerManagementScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
@@ -104,11 +104,11 @@ function AdminTabs() {
       />
       <Tab.Screen
         name="Badges"
-        component={BadgeLevelsScreen}
+        component={AchievementAdminScreen}
         options={{
           title: 'Badges',
           tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="medal" solid={focused} size={size} color={color} />
+            <Icon name="trophy" solid={focused} size={size} color={color} />
           ),
         }}
       />
@@ -251,9 +251,9 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
         options={{ headerShown: true, title: 'Neue Kampagne' }}
       />
       <Stack.Screen
-        name="BadgeLevels"
-        component={BadgeLevelsScreen}
-        options={{ headerShown: true, title: 'Badge-Stufen' }}
+        name="AchievementAdmin"
+        component={AchievementAdminScreen}
+        options={{ headerShown: true, title: 'Badge-Verwaltung' }}
       />
       <Stack.Screen
         name="BadgeOverview"
