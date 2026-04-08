@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Toast from 'react-native-toast-message';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import ItemListScreen from '../screens/items/ItemListScreen';
 import ItemCreateScreen from '../screens/items/ItemCreateScreen';
 import StoreInfoScreen from '../screens/store/StoreInfoScreen';
@@ -168,18 +169,31 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
 export function AppNavigator(): React.JSX.Element {
   const token = useAuthStore((s) => s.token);
   const role = useAuthStore((s) => s.user?.role);
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
+  const loadOnboardingState = useAuthStore((s) => s.loadOnboardingState);
+  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+
+  useEffect(() => {
+    loadOnboardingState();
+  }, []);
 
   return (
     <>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {token ? (
-            <Stack.Screen
-              name="App"
-              options={{ headerShown: false }}
-            >
-              {() => <AuthenticatedStack role={role} />}
-            </Stack.Screen>
+            (!onboardingCompleted && role === 'visitor') ? (
+              <Stack.Screen name="Onboarding">
+                {() => <OnboardingScreen onComplete={completeOnboarding} />}
+              </Stack.Screen>
+            ) : (
+              <Stack.Screen
+                name="App"
+                options={{ headerShown: false }}
+              >
+                {() => <AuthenticatedStack role={role} />}
+              </Stack.Screen>
+            )
           ) : (
             <>
               <Stack.Screen name="Login" component={LoginScreen} />
