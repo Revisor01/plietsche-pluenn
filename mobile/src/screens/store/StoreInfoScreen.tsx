@@ -3,8 +3,10 @@ import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { getStoreInfo, type StoreInfo } from '../../api/store.api';
+import { colors, fonts, spacing, borderRadius } from '../../theme';
 
 export default function StoreInfoScreen() {
   const navigation = useNavigation();
@@ -52,9 +54,15 @@ export default function StoreInfoScreen() {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchStore(true)} />}
     >
-      <View style={styles.header}>
+      <LinearGradient
+        colors={[...colors.gradientColors]}
+        locations={[...colors.gradientLocations]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <Text style={styles.storeName}>{store?.name ?? 'Laden'}</Text>
-      </View>
+      </LinearGradient>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Adresse</Text>
@@ -85,25 +93,35 @@ export default function StoreInfoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  errorText: { color: '#EF4444', fontSize: 16, textAlign: 'center', padding: 24 },
-  header: {
-    backgroundColor: '#2563EB', padding: 24, alignItems: 'center',
-  },
-  storeName: { fontSize: 24, fontWeight: '700', color: '#FFFFFF' },
+  errorText: { fontFamily: fonts.regular, color: colors.error, fontSize: 16, textAlign: 'center', padding: spacing.lg },
+  header: { padding: spacing.lg, alignItems: 'center' },
+  storeName: { fontSize: 24, fontFamily: fonts.bold, color: colors.white },
   section: {
-    backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 12,
-    borderRadius: 8, padding: 16, borderWidth: 1, borderColor: '#E5E7EB',
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderRadius: borderRadius.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  sectionTitle: { fontSize: 13, fontWeight: '600', color: '#6B7280', marginBottom: 6, textTransform: 'uppercase' },
-  sectionContent: { fontSize: 16, color: '#111827', lineHeight: 24 },
+  sectionTitle: {
+    fontSize: 13,
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+  },
+  sectionContent: { fontSize: 16, fontFamily: fonts.regular, color: colors.text, lineHeight: 24 },
   privacyLink: {
     fontSize: 13,
-    color: '#6B7280',
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
     textDecorationLine: 'underline',
-    marginTop: 24,
+    marginTop: spacing.lg,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
 });
