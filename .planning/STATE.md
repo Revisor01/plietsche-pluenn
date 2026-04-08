@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-last_updated: "2026-04-08T10:00:00.000Z"
+status: complete
+last_updated: "2026-04-08T12:00:00.000Z"
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 75
+  completed_phases: 4
+  total_plans: 11
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State: Plietsche Plünn
@@ -19,16 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Besucher haben Anreiz regelmäßig zu kommen, Ehrenamtliche sehen was passiert — ohne Personen-Tracking.
-**Current focus:** Phase 3 complete — ready for Phase 4
+**Current focus:** v1.0 Milestone COMPLETE
 
 ## Current Phase
 
-**Phase 3: Visitor Experience** ✅ COMPLETE
-
-- Status: Complete
-- Goal: QR-Scan, Check-In, PlietschPunkte
-- Plans: 3/3 complete
-- APIs: POST /api/scan, POST /api/checkin, GET /api/checkin/door-qr, GET /api/points/balance, GET /api/points/history, PATCH /api/points/settings
+**All Phases Complete** ✅
 
 ## Milestone Progress
 
@@ -37,9 +32,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | 1 | Foundation | ✅ Complete | 3/3 |
 | 2 | Volunteer Core | ✅ Complete | 3/3 |
 | 3 | Visitor Experience | ✅ Complete | 3/3 |
-| 4 | Dashboard & Polish | ○ Pending | 0/2 |
+| 4 | Dashboard & Polish | ✅ Complete | 2/2 |
 
-Progress: ███████░░░ 75%
+Progress: ██████████ 100%
 
 ## Key Decisions Log
 
