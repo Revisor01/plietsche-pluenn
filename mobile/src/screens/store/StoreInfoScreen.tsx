@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl
+  View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { getStoreInfo, type StoreInfo } from '../../api/store.api';
 
 export default function StoreInfoScreen() {
+  const navigation = useNavigation();
   const [store, setStore] = useState<StoreInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -73,6 +76,10 @@ export default function StoreInfoScreen() {
           <Text style={styles.sectionContent}>{store.description}</Text>
         </View>
       ) : null}
+
+      <TouchableOpacity onPress={() => (navigation as any).navigate('Privacy')}>
+        <Text style={styles.privacyLink}>Datenschutzerklärung</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -91,4 +98,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 13, fontWeight: '600', color: '#6B7280', marginBottom: 6, textTransform: 'uppercase' },
   sectionContent: { fontSize: 16, color: '#111827', lineHeight: 24 },
+  privacyLink: {
+    fontSize: 13,
+    color: '#6B7280',
+    textDecorationLine: 'underline',
+    marginTop: 24,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
 });

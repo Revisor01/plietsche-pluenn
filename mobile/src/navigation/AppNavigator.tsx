@@ -12,6 +12,8 @@ import ScanScreen from '../screens/visitor/ScanScreen';
 import CheckInScreen from '../screens/visitor/CheckInScreen';
 import PointsHistoryScreen from '../screens/visitor/PointsHistoryScreen';
 import HomeScreen from '../screens/visitor/HomeScreen';
+import DashboardScreen from '../screens/admin/DashboardScreen';
+import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
 
 const Stack = createStackNavigator();
@@ -20,6 +22,11 @@ const Tab = createBottomTabNavigator();
 function VolunteerTabs() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: true }}>
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ title: 'Dashboard' }}
+      />
       <Tab.Screen
         name="Items"
         component={ItemListScreen}
@@ -66,6 +73,23 @@ function VisitorTabs() {
   );
 }
 
+function AuthenticatedStack({ role }: { role: string | undefined }) {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {role === 'visitor' ? (
+        <Stack.Screen name="Tabs" component={VisitorTabs} />
+      ) : (
+        <Stack.Screen name="Tabs" component={VolunteerTabs} />
+      )}
+      <Stack.Screen
+        name="Privacy"
+        component={PrivacyScreen}
+        options={{ headerShown: true, title: 'Datenschutz' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export function AppNavigator(): React.JSX.Element {
   const token = useAuthStore((s) => s.token);
   const role = useAuthStore((s) => s.user?.role);
@@ -75,11 +99,12 @@ export function AppNavigator(): React.JSX.Element {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {token ? (
-            role === 'visitor' ? (
-              <Stack.Screen name="App" component={VisitorTabs} />
-            ) : (
-              <Stack.Screen name="App" component={VolunteerTabs} />
-            )
+            <Stack.Screen
+              name="App"
+              options={{ headerShown: false }}
+            >
+              {() => <AuthenticatedStack role={role} />}
+            </Stack.Screen>
           ) : (
             <>
               <Stack.Screen name="Login" component={LoginScreen} />
