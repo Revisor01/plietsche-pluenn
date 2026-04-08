@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome5';
 import Geolocation from 'react-native-geolocation-service';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 import LinearGradient from 'react-native-linear-gradient';
@@ -162,7 +163,7 @@ export default function CheckInScreen() {
   if (step === 'success' && result) {
     return (
       <View style={styles.center}>
-        <Text style={styles.successIcon}>✓</Text>
+        <Icon name="check-circle" solid size={64} color={colors.success} style={{ marginBottom: spacing.sm }} />
         <Text style={styles.title}>Eingecheckt!</Text>
         <Text style={styles.points}>+{result.points + result.itemPoints} PlietschPunkte</Text>
         <Text style={styles.subtitle}>Gesamt: {result.totalPoints} Punkte</Text>
@@ -258,11 +259,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
-  },
-  successIcon: {
-    fontSize: 64,
-    color: colors.success,
-    marginBottom: spacing.sm,
   },
   points: {
     fontSize: 32,

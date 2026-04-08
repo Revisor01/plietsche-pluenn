@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import axios from 'axios';
+import Icon from 'react-native-vector-icons/FontAwesome5';
 import {
   fetchBadgeLevels,
   createBadgeLevel,
@@ -26,7 +27,7 @@ export default function BadgeLevelsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Formular-State
-  const [newEmoji, setNewEmoji] = useState('🏅');
+  const [newIconName, setNewIconName] = useState('medal');
   const [newName, setNewName] = useState('');
   const [newMinPoints, setNewMinPoints] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -55,7 +56,7 @@ export default function BadgeLevelsScreen() {
   const handleDelete = useCallback((level: BadgeLevel) => {
     Alert.alert(
       'Stufe löschen',
-      `"${level.emoji} ${level.name}" wirklich löschen?`,
+      `"${level.name}" wirklich löschen?`,
       [
         { text: 'Abbrechen', style: 'cancel' },
         {
@@ -91,20 +92,20 @@ export default function BadgeLevelsScreen() {
         : 0;
       const created = await createBadgeLevel({
         name: newName.trim(),
-        emoji: newEmoji.trim() || '🏅',
+        iconName: newIconName.trim() || 'medal',
         minPoints: minPts,
         sortOrder,
       });
       setLevels((prev) => [...prev, created].sort((a, b) => a.minPoints - b.minPoints));
       setNewName('');
       setNewMinPoints('');
-      setNewEmoji('🏅');
+      setNewIconName('medal');
     } catch {
       Alert.alert('Fehler', 'Stufe konnte nicht gespeichert werden');
     } finally {
       setIsSaving(false);
     }
-  }, [newName, newEmoji, newMinPoints, levels]);
+  }, [newName, newIconName, newMinPoints, levels]);
 
   if (isLoading) {
     return (
@@ -137,7 +138,9 @@ export default function BadgeLevelsScreen() {
         renderItem={({ item }) => (
           <View style={styles.levelCard}>
             <View style={styles.levelInfo}>
-              <Text style={styles.levelEmoji}>{item.emoji}</Text>
+              <View style={styles.levelIconBox}>
+                <Icon name={item.iconName || 'medal'} solid size={24} color={colors.primary} />
+              </View>
               <View style={styles.levelText}>
                 <Text style={styles.levelName}>{item.name}</Text>
                 <Text style={styles.levelPoints}>ab {item.minPoints} Punkten</Text>
@@ -163,13 +166,9 @@ export default function BadgeLevelsScreen() {
           <View style={styles.form}>
             <Text style={styles.formTitle}>Neue Stufe hinzufügen</Text>
             <View style={styles.formRow}>
-              <TextInput
-                style={[styles.input, styles.inputEmoji]}
-                value={newEmoji}
-                onChangeText={setNewEmoji}
-                placeholder="🏅"
-                maxLength={2}
-              />
+              <View style={styles.iconPreviewBox}>
+                <Icon name={newIconName || 'medal'} solid size={24} color={colors.primary} />
+              </View>
               <TextInput
                 style={[styles.input, styles.inputName]}
                 value={newName}
@@ -178,6 +177,14 @@ export default function BadgeLevelsScreen() {
                 maxLength={100}
               />
             </View>
+            <TextInput
+              style={[styles.input, styles.inputIconName]}
+              value={newIconName}
+              onChangeText={setNewIconName}
+              placeholder="Icon-Name (z.B. medal, star, trophy)"
+              maxLength={50}
+              autoCapitalize="none"
+            />
             <TextInput
               style={styles.input}
               value={newMinPoints}
@@ -228,8 +235,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  levelEmoji: {
-    fontSize: 28,
+  levelIconBox: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: spacing.sm,
   },
   levelText: { flex: 1 },
@@ -304,11 +314,19 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.sm,
   },
-  inputEmoji: {
-    width: 56,
-    textAlign: 'center',
-    fontSize: 20,
-    marginBottom: 0,
+  iconPreviewBox: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: spacing.sm,
+  },
+  inputIconName: {
+    marginBottom: spacing.sm,
   },
   inputName: {
     flex: 1,

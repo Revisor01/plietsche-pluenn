@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/FontAwesome5';
 import { usePointsStore } from '../../store/pointsStore';
 import { useAuthStore } from '../../store/authStore';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
@@ -41,9 +42,10 @@ export default function HomeScreen() {
         <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
         {badge?.currentLevel && (
           <>
-            <Text style={styles.badgeLabel}>
-              {badge.currentLevel.emoji} {badge.currentLevel.name}
-            </Text>
+            <View style={styles.badgeLabel}>
+              <Icon name={badge.currentLevel.iconName} solid size={18} color={colors.white} style={{ marginRight: 6 }} />
+              <Text style={styles.badgeLabelText}>{badge.currentLevel.name}</Text>
+            </View>
             {badge.nextLevel && (
               <View style={styles.progressContainer}>
                 <View style={[styles.progressBar, { width: `${badge.progressPercent}%` as any }]} />
@@ -51,11 +53,15 @@ export default function HomeScreen() {
             )}
             {badge.pointsToNext != null && (
               <Text style={styles.pointsToNextLabel}>
-                Noch {badge.pointsToNext} Punkte bis {badge.nextLevel?.emoji} {badge.nextLevel?.name}
+                Noch {badge.pointsToNext} Punkte bis{' '}
+                {badge.nextLevel?.iconName ? (
+                  <Icon name={badge.nextLevel.iconName} solid size={11} color="rgba(255,255,255,0.7)" />
+                ) : null}{' '}
+                {badge.nextLevel?.name}
               </Text>
             )}
             {!badge.nextLevel && (
-              <Text style={styles.pointsToNextLabel}>Maximales Level erreicht 🎉</Text>
+              <Text style={styles.pointsToNextLabel}>Maximales Level erreicht</Text>
             )}
           </>
         )}
@@ -63,7 +69,10 @@ export default function HomeScreen() {
 
       {showcase.length > 0 && (
         <View style={styles.showcaseSection}>
-          <Text style={styles.showcaseSectionTitle}>Schau mal rein ✨</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+            <Icon name="eye" size={18} color={colors.text} style={{ marginRight: spacing.xs }} />
+            <Text style={styles.showcaseSectionTitle}>Schau mal rein</Text>
+          </View>
           <Text style={styles.showcaseSectionSubtitle}>Ausgewählte Stücke — komm vorbei!</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.showcaseScroll}>
             {showcase.map((item) => (
@@ -127,10 +136,14 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
   },
   badgeLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  badgeLabelText: {
     fontSize: 16,
     fontFamily: fonts.semiBold,
     color: colors.white,
-    marginTop: spacing.sm,
   },
   progressContainer: {
     width: '100%',
@@ -188,7 +201,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fonts.bold,
     color: colors.text,
-    marginBottom: spacing.xs,
   },
   showcaseSectionSubtitle: {
     fontSize: 13,
