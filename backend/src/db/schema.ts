@@ -42,4 +42,15 @@ export const items = pgTable('items', {
     .default('active'),
   qrToken: uuid('qr_token').unique(),
   createdAt: timestamp('created_at').defaultNow(),
+  createdBy: uuid('created_by').references(() => users.id),
+});
+
+export const pointTransactions = pgTable('point_transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  storeId: uuid('store_id').notNull().references(() => stores.id),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  // KEIN itemId — DSGVO: kein User↔Item-Link (per SCAN-02, PUNKT-03)
+  source: text('source', { enum: ['item_scan', 'checkin', 'manual_items'] }).notNull(),
+  points: integer('points').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
 });

@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 import authRouter from './modules/auth/auth.router';
 import itemsRouter from './modules/items/items.router';
 import storesRouter from './modules/stores/stores.router';
+import scanRouter from './modules/scan/scan.router';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use('/api/auth', authRouter);
 app.use('/api/items', itemsRouter);
 app.use('/api/stores', storesRouter);
+app.use('/api/scan', scanRouter);
 
 // Globaler Error Handler (Express 5)
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
