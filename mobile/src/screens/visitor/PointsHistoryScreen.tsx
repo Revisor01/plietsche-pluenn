@@ -8,6 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { fetchHistory, type PointTransaction } from '../../api/points.api';
+import { colors, fonts, spacing } from '../../theme';
 
 const SOURCE_LABELS: Record<string, string> = {
   item_scan: 'QR-Scan',
@@ -53,14 +54,18 @@ export default function PointsHistoryScreen() {
     <View style={styles.container}>
       <Text style={styles.header}>Meine Punkte-Historie</Text>
       {isLoading ? (
-        <ActivityIndicator style={styles.loader} />
+        <ActivityIndicator style={styles.loader} color={colors.primary} />
       ) : (
         <FlatList
           data={transactions}
           keyExtractor={(t) => t.id}
           renderItem={renderItem}
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={() => load(true)} />
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => load(true)}
+              tintColor={colors.primary}
+            />
           }
           ListEmptyComponent={
             <Text style={styles.empty}>Noch keine Aktivitäten</Text>
@@ -75,23 +80,33 @@ export default function PointsHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { fontSize: 18, fontWeight: '700', color: '#111827', padding: 16 },
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    color: colors.text,
+    padding: spacing.md,
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   rowLeft: { flex: 1 },
-  source: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  date: { fontSize: 13, color: '#9CA3AF', marginTop: 2 },
-  points: { fontSize: 18, fontWeight: '700', color: '#2563EB' },
+  source: { fontSize: 15, fontFamily: fonts.semiBold, color: colors.text },
+  date: { fontSize: 13, fontFamily: fonts.regular, color: colors.textLight, marginTop: 2 },
+  points: { fontSize: 18, fontFamily: fonts.bold, color: colors.primary },
   loader: { marginTop: 40 },
-  empty: { textAlign: 'center', color: '#6B7280', fontSize: 16 },
+  empty: {
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    fontSize: 16,
+    textAlign: 'center',
+  },
   emptyContainer: {
     flexGrow: 1,
     justifyContent: 'center',

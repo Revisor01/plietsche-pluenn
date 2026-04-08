@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { scanItem } from '../../api/scan.api';
 import { usePointsStore } from '../../store/pointsStore';
+import { colors, fonts, spacing, borderRadius } from '../../theme';
 
 export default function ScanScreen() {
   const device = useCameraDevice('back');
@@ -54,7 +56,7 @@ export default function ScanScreen() {
   if (hasPermission === null) {
     return (
       <View style={styles.center}>
-        <Text>Kamera wird vorbereitet...</Text>
+        <Text style={styles.permissionText}>Kamera wird vorbereitet...</Text>
       </View>
     );
   }
@@ -63,11 +65,20 @@ export default function ScanScreen() {
       <View style={styles.center}>
         <Text style={styles.permissionText}>Kamera-Zugriff benötigt</Text>
         <TouchableOpacity
+          style={styles.permissionButton}
           onPress={() =>
             Camera.requestCameraPermission().then((s) => setHasPermission(s === 'granted'))
           }
         >
-          <Text style={styles.permissionBtn}>Erlauben</Text>
+          <LinearGradient
+            colors={[...colors.gradientColors]}
+            locations={[...colors.gradientLocations]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.permissionButtonGradient}
+          >
+            <Text style={styles.permissionButtonText}>Erlauben</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     );
@@ -75,7 +86,7 @@ export default function ScanScreen() {
   if (!device) {
     return (
       <View style={styles.center}>
-        <Text>Keine Kamera gefunden</Text>
+        <Text style={styles.permissionText}>Keine Kamera gefunden</Text>
       </View>
     );
   }
@@ -105,27 +116,62 @@ export default function ScanScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scanFrame: {
     width: 240,
     height: 240,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    borderRadius: 12,
+    borderColor: colors.white,
+    borderRadius: borderRadius.md,
     backgroundColor: 'transparent',
   },
-  hint: { color: '#FFFFFF', marginTop: 16, fontSize: 14, textAlign: 'center', paddingHorizontal: 32 },
+  hint: {
+    color: colors.white,
+    marginTop: spacing.md,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
+  },
   errorBanner: {
     position: 'absolute',
     bottom: 80,
-    left: 16,
-    right: 16,
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    padding: 12,
+    left: spacing.md,
+    right: spacing.md,
+    backgroundColor: colors.error,
+    borderRadius: borderRadius.sm,
+    padding: spacing.md,
   },
-  errorText: { color: '#FFFFFF', textAlign: 'center', fontSize: 14, fontWeight: '600' },
-  permissionText: { fontSize: 16, color: '#374151', marginBottom: 12 },
-  permissionBtn: { fontSize: 16, color: '#2563EB', fontWeight: '600' },
+  errorText: {
+    color: colors.white,
+    textAlign: 'center',
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+  },
+  permissionText: {
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  permissionButton: {
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+  },
+  permissionButtonGradient: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  permissionButtonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+  },
 });
