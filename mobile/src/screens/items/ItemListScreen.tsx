@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { listItems, type ItemRow } from '../../api/items.api';
+import { colors, fonts, spacing, borderRadius } from '../../theme';
 
 const CATEGORY_FILTERS = ['Alle', 'Oberteil', 'Hose', 'Jacke', 'Schuhe', 'Kleid', 'Accessoire'];
 const STATUS_FILTERS = ['Alle', 'active', 'taken'];
@@ -78,7 +79,7 @@ export default function ItemListScreen() {
 
   const renderItem = ({ item }: { item: ItemRow }) => (
     <View style={styles.itemRow}>
-      <View style={[styles.colorDot, { backgroundColor: item.color ?? '#D1D5DB' }]} />
+      <View style={[styles.colorDot, { backgroundColor: item.color ?? colors.border }]} />
       <View style={styles.itemInfo}>
         <Text style={styles.itemTitle}>{item.title}</Text>
         <Text style={styles.itemMeta}>
@@ -99,7 +100,7 @@ export default function ItemListScreen() {
         value={search}
         onChangeText={setSearch}
         placeholder="Suchen..."
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textLight}
         returnKeyType="search"
         onSubmitEditing={() => fetchItems()}
       />
@@ -118,13 +119,19 @@ export default function ItemListScreen() {
       />
 
       {isLoading ? (
-        <ActivityIndicator style={styles.loader} />
+        <ActivityIndicator style={styles.loader} color={colors.primary} />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchItems(true)} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => fetchItems(true)}
+              tintColor={colors.primary}
+            />
+          }
           ListEmptyComponent={<Text style={styles.emptyText}>Keine Items gefunden</Text>}
           contentContainerStyle={items.length === 0 ? styles.emptyContainer : undefined}
         />
@@ -134,51 +141,52 @@ export default function ItemListScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: { flex: 1, backgroundColor: colors.background },
   searchInput: {
-    margin: 12,
+    margin: spacing.md,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
     fontSize: 16,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    fontFamily: fonts.regular,
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
-  filterRow: { paddingHorizontal: 12, marginBottom: 4 },
+  filterRow: { paddingHorizontal: spacing.md, marginBottom: 4 },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
-    marginRight: 8,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginRight: spacing.sm,
   },
-  chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  chipText: { fontSize: 13, color: '#374151' },
-  chipTextSelected: { color: '#FFFFFF' },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontSize: 13, fontFamily: fonts.regular, color: colors.textSecondary },
+  chipTextSelected: { color: colors.white, fontFamily: fonts.medium },
   loader: { marginTop: 40 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    backgroundColor: '#FFFFFF',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   colorDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
   itemInfo: { flex: 1 },
-  itemTitle: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  itemMeta: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  itemTitle: { fontSize: 15, fontFamily: fonts.semiBold, color: colors.text },
+  itemMeta: { fontSize: 13, fontFamily: fonts.regular, color: colors.textSecondary, marginTop: 2 },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     backgroundColor: '#D1FAE5',
   },
   statusTaken: { backgroundColor: '#FEE2E2' },
-  statusText: { fontSize: 12, fontWeight: '500', color: '#374151' },
-  emptyText: { textAlign: 'center', color: '#6B7280', fontSize: 16 },
+  statusText: { fontSize: 12, fontFamily: fonts.medium, color: colors.textSecondary },
+  emptyText: { fontFamily: fonts.regular, color: colors.textSecondary, fontSize: 16, textAlign: 'center' },
   emptyContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
 });
