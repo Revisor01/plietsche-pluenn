@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 import Toast from 'react-native-toast-message';
 import { scanItem } from '../../api/scan.api';
+import { usePointsStore } from '../../store/pointsStore';
 
 export default function ScanScreen() {
   const device = useCameraDevice('back');
   const [isScanning, setIsScanning] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const loadBalance = usePointsStore((s) => s.loadBalance);
 
   // Kamera-Permission beim Mount prüfen
   React.useEffect(() => {
@@ -37,6 +39,7 @@ export default function ScanScreen() {
           visibilityTime: 2000,
           onHide: () => setIsScanning(true),
         });
+        loadBalance();
       } catch (err: any) {
         const msg = err?.response?.data?.error ?? 'Fehler beim Scannen';
         setError(msg);
