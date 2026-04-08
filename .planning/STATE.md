@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-04-08T08:40:00.000Z"
+last_updated: "2026-04-08T10:00:00.000Z"
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 25
+  completed_phases: 2
+  total_plans: 6
+  completed_plans: 6
+  percent: 50
 ---
 
 # Project State: Plietsche Plünn
@@ -19,27 +19,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Besucher haben Anreiz regelmäßig zu kommen, Ehrenamtliche sehen was passiert — ohne Personen-Tracking.
-**Current focus:** Phase 1 complete — ready for Phase 2
+**Current focus:** Phase 2 complete — ready for Phase 3
 
 ## Current Phase
 
-**Phase 1: Foundation** ✅ COMPLETE
+**Phase 2: Volunteer Core** ✅ COMPLETE
 
 - Status: Complete
-- Goal: React Native bare + Express 5 + PostgreSQL + JWT Auth mit Rollen
+- Goal: Item-Management, QR-Code-Generierung, Store-Info
 - Plans: 3/3 complete
-- Deployed: https://plietsche-pluenn.godsapp.de/api/health
+- APIs: POST/GET /api/items, GET /api/items/:id/qr, GET/PATCH /api/stores/info
 
 ## Milestone Progress
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
 | 1 | Foundation | ✅ Complete | 3/3 |
-| 2 | Volunteer Core | ○ Pending | 0/3 |
+| 2 | Volunteer Core | ✅ Complete | 3/3 |
 | 3 | Visitor Experience | ○ Pending | 0/3 |
 | 4 | Dashboard & Polish | ○ Pending | 0/2 |
 
-Progress: ██░░░░░░░░ 25%
+Progress: █████░░░░░ 50%
 
 ## Key Decisions Log
 
