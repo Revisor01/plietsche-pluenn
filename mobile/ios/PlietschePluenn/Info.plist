@@ -58,5 +58,12 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>WorkSans-Regular.ttf</string>
+		<string>WorkSans-Medium.ttf</string>
+		<string>WorkSans-SemiBold.ttf</string>
+		<string>WorkSans-Bold.ttf</string>
+	</array>
 </dict>
 </plist>
