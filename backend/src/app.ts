@@ -2,6 +2,7 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import helmet from 'helmet';
 import cors from 'cors';
 import { ZodError } from 'zod';
+import authRouter from './modules/auth/auth.router';
 
 const app = express();
 
@@ -13,9 +14,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Platzhalter für Auth-Router — Plan 03 fügt ihn hier ein:
-// import authRouter from './modules/auth/auth.router';
-// app.use('/api/auth', authRouter);
+app.use('/api/auth', authRouter);
 
 // Globaler Error Handler (Express 5)
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
@@ -24,6 +23,11 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     return;
   }
   if (err instanceof Error) {
+    const statusCode = (err as any).statusCode;
+    if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
+      res.status(statusCode).json({ error: err.message });
+      return;
+    }
     console.error(err.stack);
     res.status(500).json({ error: 'Internal server error' });
     return;
