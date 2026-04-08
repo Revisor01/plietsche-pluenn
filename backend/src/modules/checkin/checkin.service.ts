@@ -3,6 +3,7 @@ import * as checkinRepo from './checkin.repository';
 import { awardPoints } from '../scan/scan.repository';
 import { getStoreSettings } from '../points/points.repository';
 import { getActiveCampaign } from '../campaigns/campaigns.repository';
+import { evaluateAchievements } from '../badges/achievements.engine';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -86,10 +87,19 @@ export async function processCheckin(
   const pointsAwarded = Math.round((basePoints + itemPoints) * multiplier);
   const totalPoints = await awardPoints(userId, storeId, pointsAwarded, 'checkin');
 
+  // Achievement-Auswertung (fire-and-forget, Fehler sollen Check-In nicht blockieren)
+  let newAchievements: Awaited<ReturnType<typeof evaluateAchievements>> = [];
+  try {
+    newAchievements = await evaluateAchievements(userId, storeId, 'checkin');
+  } catch (e) {
+    console.error('Achievement-Auswertung fehlgeschlagen:', e);
+  }
+
   return {
     points: Math.round(basePoints * multiplier),
     itemPoints: Math.round(itemPoints * multiplier),
     totalPoints,
     campaign: campaign ? { title: campaign.title, multiplier } : null,
+    newAchievements,
   };
 }
