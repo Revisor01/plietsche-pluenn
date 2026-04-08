@@ -18,6 +18,7 @@ import DashboardScreen from '../screens/admin/DashboardScreen';
 import CampaignListScreen from '../screens/admin/CampaignListScreen';
 import CampaignCreateScreen from '../screens/admin/CampaignCreateScreen';
 import BadgeLevelsScreen from '../screens/admin/BadgeLevelsScreen';
+import BadgeOverviewScreen from '../screens/visitor/BadgeOverviewScreen';
 import VolunteerManagementScreen from '../screens/admin/VolunteerManagementScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
@@ -253,6 +254,11 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
         name="BadgeLevels"
         component={BadgeLevelsScreen}
         options={{ headerShown: true, title: 'Badge-Stufen' }}
+      />
+      <Stack.Screen
+        name="BadgeOverview"
+        component={BadgeOverviewScreen}
+        options={{ headerShown: true, title: 'Meine Badges' }}
       />
     </Stack.Navigator>
   );

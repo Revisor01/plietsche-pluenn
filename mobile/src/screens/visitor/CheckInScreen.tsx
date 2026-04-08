@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import Toast from 'react-native-toast-message';
 import Geolocation from 'react-native-geolocation-service';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 import LinearGradient from 'react-native-linear-gradient';
@@ -67,6 +68,17 @@ export default function CheckInScreen() {
       setResult(res);
       setStep('success');
       loadBalance();
+      if (res.newAchievements && res.newAchievements.length > 0) {
+        res.newAchievements.forEach((achievement) => {
+          Toast.show({
+            type: 'success',
+            text1: 'Neues Badge freigeschaltet!',
+            text2: achievement.name,
+            visibilityTime: 3000,
+            position: 'top',
+          });
+        });
+      }
     } catch (err: any) {
       setError(err?.response?.data?.error ?? 'Check-In fehlgeschlagen');
       setStep('error');

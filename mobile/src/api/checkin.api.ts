@@ -4,6 +4,7 @@ export interface CheckInResult {
   points: number;
   itemPoints: number;
   totalPoints: number;
+  newAchievements?: Array<{ name: string; iconName: string }>;
 }
 
 export async function submitCheckin(

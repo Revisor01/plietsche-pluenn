@@ -4,6 +4,7 @@ export interface ScanResult {
   points: number;
   title: string;
   totalPoints: number;
+  newAchievements?: Array<{ name: string; iconName: string }>;
 }
 
 export async function scanItem(qrToken: string): Promise<ScanResult> {
