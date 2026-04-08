@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const BASE_URL = (process.env.API_BASE_URL as string | undefined) ?? 'http://localhost:3000';
+const BASE_URL = (process.env.API_BASE_URL as string | undefined) ?? 'https://plietsche-pluenn.godsapp.de/api';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
