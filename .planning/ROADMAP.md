@@ -62,9 +62,9 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 07-01: Onboarding-Flow (3-4 Screens, AsyncStorage, überspringbar)
-- [ ] 07-02: Rollen-Trennung Backend (Volunteer-Einschränkungen) + Admin Volunteer-Verwaltung
+- [ ] 07-01-PLAN.md — Onboarding-Flow (4 Screens, AsyncStorage, überspringbar, Visitor-only)
+- [ ] 07-02-PLAN.md — Rollen-Trennung (AdminTabs/VolunteerTabs) + Backend admin-Modul + VolunteerManagementScreen
 
 ---
 *Roadmap created: 2026-04-08*
-*Last updated: 2026-04-08 after Phase 6 plans created*
+*Last updated: 2026-04-08 after Phase 7 plans created*
