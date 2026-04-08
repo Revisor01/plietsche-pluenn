@@ -2,19 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import { useNavigation } from '@react-navigation/native';
 import { usePointsStore } from '../../store/pointsStore';
 import { useAuthStore } from '../../store/authStore';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
 import { fetchShowcaseItems, type ShowcaseItem } from '../../api/items.api';
-import { fetchMyBadge, type BadgeProgressResponse } from '../../api/badges.api';
+import { fetchMyAchievements, type AchievementWithProgress } from '../../api/badges.api';
 
 export default function HomeScreen() {
   const { balance, isLoading, loadBalance } = usePointsStore();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const navigation = useNavigation();
   const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
   const [showcaseLoading, setShowcaseLoading] = useState(false);
-  const [badge, setBadge] = useState<BadgeProgressResponse | null>(null);
+  const [topAchievement, setTopAchievement] = useState<AchievementWithProgress | null>(null);
+  const [achievementCount, setAchievementCount] = useState<{ completed: number; total: number } | null>(null);
 
   useEffect(() => {
     loadBalance();
@@ -23,8 +26,16 @@ export default function HomeScreen() {
       .then(setShowcase)
       .catch(() => {})
       .finally(() => setShowcaseLoading(false));
-    fetchMyBadge()
-      .then(setBadge)
+    fetchMyAchievements()
+      .then((achievements) => {
+        const total = achievements.length;
+        const completed = achievements.filter((a) => a.completed).length;
+        setAchievementCount({ completed, total });
+        const completedSorted = achievements
+          .filter((a) => a.completed)
+          .sort((a, b) => b.sortOrder - a.sortOrder);
+        setTopAchievement(completedSorted[0] ?? null);
+      })
       .catch(() => {}); // Stiller Fehler
   }, [loadBalance]);
 
@@ -40,30 +51,22 @@ export default function HomeScreen() {
         <Text style={styles.pointsLabel}>PlietschPunkte</Text>
         <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
         <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
-        {badge?.currentLevel && (
-          <>
-            <View style={styles.badgeLabel}>
-              <Icon name={badge.currentLevel.iconName} solid size={18} color={colors.white} style={{ marginRight: 6 }} />
-              <Text style={styles.badgeLabelText}>{badge.currentLevel.name}</Text>
-            </View>
-            {badge.nextLevel && (
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { width: `${badge.progressPercent}%` as any }]} />
-              </View>
-            )}
-            {badge.pointsToNext != null && (
-              <Text style={styles.pointsToNextLabel}>
-                Noch {badge.pointsToNext} Punkte bis{' '}
-                {badge.nextLevel?.iconName ? (
-                  <Icon name={badge.nextLevel.iconName} solid size={11} color="rgba(255,255,255,0.7)" />
-                ) : null}{' '}
-                {badge.nextLevel?.name}
-              </Text>
-            )}
-            {!badge.nextLevel && (
-              <Text style={styles.pointsToNextLabel}>Maximales Level erreicht</Text>
-            )}
-          </>
+        {topAchievement && (
+          <View style={styles.badgeLabel}>
+            <Icon
+              name={topAchievement.iconName || 'trophy'}
+              solid
+              size={18}
+              color={colors.white}
+              style={{ marginRight: 6 }}
+            />
+            <Text style={styles.badgeLabelText}>{topAchievement.name}</Text>
+          </View>
+        )}
+        {achievementCount && (
+          <Text style={styles.pointsToNextLabel}>
+            {achievementCount.completed} von {achievementCount.total} Badges erreicht
+          </Text>
         )}
       </LinearGradient>
 
@@ -86,6 +89,14 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
       )}
+
+      <TouchableOpacity
+        style={styles.badgesButton}
+        onPress={() => navigation.navigate('BadgeOverview' as never)}
+      >
+        <Icon name="medal" solid size={14} color={colors.primary} style={{ marginRight: 6 }} />
+        <Text style={styles.badgesButtonText}>Alle Badges ansehen</Text>
+      </TouchableOpacity>
 
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeTitle}>
@@ -145,24 +156,27 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     color: colors.white,
   },
-  progressContainer: {
-    width: '100%',
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: borderRadius.full,
-    marginTop: spacing.xs,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.full,
-  },
   pointsToNextLabel: {
     fontSize: 11,
     fontFamily: fonts.regular,
     color: 'rgba(255,255,255,0.7)',
     marginTop: spacing.xs,
+  },
+  badgesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
+  },
+  badgesButtonText: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.primary,
   },
   welcomeSection: {
     backgroundColor: colors.surface,

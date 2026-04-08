@@ -41,6 +41,17 @@ export default function ScanScreen() {
           visibilityTime: 2000,
           onHide: () => setIsScanning(true),
         });
+        if (result.newAchievements && result.newAchievements.length > 0) {
+          result.newAchievements.forEach((achievement) => {
+            Toast.show({
+              type: 'success',
+              text1: 'Neues Badge freigeschaltet!',
+              text2: achievement.name,
+              visibilityTime: 3000,
+              position: 'top',
+            });
+          });
+        }
         loadBalance();
       } catch (err: any) {
         const msg = err?.response?.data?.error ?? 'Fehler beim Scannen';
