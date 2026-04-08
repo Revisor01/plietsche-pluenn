@@ -1,8 +1,8 @@
 import { apiClient } from './client';
 
 export interface BadgeProgressResponse {
-  currentLevel: { name: string; emoji: string; minPoints: number } | null;
-  nextLevel: { name: string; emoji: string; minPoints: number } | null;
+  currentLevel: { name: string; iconName: string; minPoints: number } | null;
+  nextLevel: { name: string; iconName: string; minPoints: number } | null;
   progressPercent: number;
   pointsToNext: number | null;
   currentPoints: number;
@@ -12,7 +12,7 @@ export interface BadgeLevel {
   id: string;
   storeId: string;
   name: string;
-  emoji: string;
+  iconName: string;
   minPoints: number;
   sortOrder: number;
 }
@@ -29,7 +29,7 @@ export async function fetchBadgeLevels(): Promise<BadgeLevel[]> {
 
 export async function createBadgeLevel(body: {
   name: string;
-  emoji: string;
+  iconName: string;
   minPoints: number;
   sortOrder: number;
 }): Promise<BadgeLevel> {
