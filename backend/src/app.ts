@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { ZodError } from 'zod';
 import authRouter from './modules/auth/auth.router';
+import itemsRouter from './modules/items/items.router';
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/items', itemsRouter);
 
 // Globaler Error Handler (Express 5)
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
