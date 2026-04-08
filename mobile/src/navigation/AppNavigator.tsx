@@ -2,11 +2,16 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Toast from 'react-native-toast-message';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ItemListScreen from '../screens/items/ItemListScreen';
 import ItemCreateScreen from '../screens/items/ItemCreateScreen';
 import StoreInfoScreen from '../screens/store/StoreInfoScreen';
+import ScanScreen from '../screens/visitor/ScanScreen';
+import CheckInScreen from '../screens/visitor/CheckInScreen';
+import PointsHistoryScreen from '../screens/visitor/PointsHistoryScreen';
+import HomeScreen from '../screens/visitor/HomeScreen';
 import { useAuthStore } from '../store/authStore';
 
 const Stack = createStackNavigator();
@@ -34,21 +39,56 @@ function VolunteerTabs() {
   );
 }
 
+function VisitorTabs() {
+  return (
+    <Tab.Navigator screenOptions={{ headerShown: true }}>
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen
+        name="Scan"
+        component={ScanScreen}
+        options={{ title: 'Scannen', headerShown: false }}
+      />
+      <Tab.Screen
+        name="CheckIn"
+        component={CheckInScreen}
+        options={{ title: 'Check-In' }}
+      />
+      <Tab.Screen
+        name="Punkte"
+        component={PointsHistoryScreen}
+        options={{ title: 'Punkte' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
 export function AppNavigator(): React.JSX.Element {
   const token = useAuthStore((s) => s.token);
+  const role = useAuthStore((s) => s.user?.role);
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {token ? (
-          <Stack.Screen name="App" component={VolunteerTabs} />
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {token ? (
+            role === 'visitor' ? (
+              <Stack.Screen name="App" component={VisitorTabs} />
+            ) : (
+              <Stack.Screen name="App" component={VolunteerTabs} />
+            )
+          ) : (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+      <Toast />
+    </>
   );
 }
