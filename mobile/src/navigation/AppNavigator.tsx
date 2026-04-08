@@ -17,6 +17,7 @@ import DashboardScreen from '../screens/admin/DashboardScreen';
 import CampaignListScreen from '../screens/admin/CampaignListScreen';
 import CampaignCreateScreen from '../screens/admin/CampaignCreateScreen';
 import BadgeLevelsScreen from '../screens/admin/BadgeLevelsScreen';
+import VolunteerManagementScreen from '../screens/admin/VolunteerManagementScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
 import { colors, fonts } from '../theme';
@@ -24,31 +25,31 @@ import { colors, fonts } from '../theme';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function VolunteerTabs() {
+const tabScreenOptions = {
+  headerShown: true,
+  tabBarActiveTintColor: colors.primary,
+  tabBarInactiveTintColor: colors.textSecondary,
+  tabBarStyle: {
+    backgroundColor: colors.surface,
+    borderTopColor: colors.border,
+  },
+  tabBarLabelStyle: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+  },
+  headerStyle: {
+    backgroundColor: colors.primary,
+  },
+  headerTintColor: colors.white,
+  headerTitleStyle: {
+    fontFamily: fonts.bold,
+    fontSize: 17,
+  },
+};
+
+function AdminTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        },
-        tabBarLabelStyle: {
-          fontFamily: fonts.medium,
-          fontSize: 11,
-        },
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
-        headerTintColor: colors.white,
-        headerTitleStyle: {
-          fontFamily: fonts.bold,
-          fontSize: 17,
-        },
-      }}
-    >
+    <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
@@ -78,6 +79,28 @@ function VolunteerTabs() {
         name="Badges"
         component={BadgeLevelsScreen}
         options={{ title: 'Badges' }}
+      />
+      <Tab.Screen
+        name="Volunteers"
+        component={VolunteerManagementScreen}
+        options={{ title: 'Team' }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+function VolunteerTabs() {
+  return (
+    <Tab.Navigator screenOptions={tabScreenOptions}>
+      <Tab.Screen
+        name="Items"
+        component={ItemListScreen}
+        options={{ title: 'Kleidung' }}
+      />
+      <Tab.Screen
+        name="Neu"
+        component={ItemCreateScreen}
+        options={{ title: 'Neu anlegen' }}
       />
     </Tab.Navigator>
   );
@@ -144,6 +167,8 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
     >
       {role === 'visitor' ? (
         <Stack.Screen name="Tabs" component={VisitorTabs} />
+      ) : role === 'admin' ? (
+        <Stack.Screen name="Tabs" component={AdminTabs} />
       ) : (
         <Stack.Screen name="Tabs" component={VolunteerTabs} />
       )}
