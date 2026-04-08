@@ -29,8 +29,8 @@ v1.1 "Engagement & Polish" — Die App wird attraktiv und einladend. UI-Styling 
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: Theme-System ausbauen, Navigation/Tab-Bar stylen, Login + Home finalisieren
-- [ ] 05-02: Alle restlichen Screens auf Theme umstellen (Scan, CheckIn, Items, Dashboard, Store-Info, Punkte, Register)
+- [ ] 05-01-PLAN.md — Tab-Bar/Navigation stylen + Visitor-Screens (Scan, CheckIn, PointsHistory)
+- [ ] 05-02-PLAN.md — Volunteer/Admin-Screens (ItemCreate, ItemList, Dashboard, StoreInfo) + Register + Privacy
 
 ### Phase 6: Engagement Features
 **Goal**: Kampagnen mit Punkt-Multiplikatoren, Schaufenster mit Showcase-Items, und Badges/Achievement-Levels — die drei Säulen der Besucher-Motivation.
@@ -67,4 +67,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-04-08*
-*Last updated: 2026-04-08 after v1.1 milestone definition*
+*Last updated: 2026-04-08 after Phase 5 plans created*
