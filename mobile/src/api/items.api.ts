@@ -48,3 +48,17 @@ export function getItemQrUrl(itemId: string): string {
   const base = (apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
   return `${base}/items/${itemId}/qr`;
 }
+
+export interface ShowcaseItem {
+  id: string;
+  title: string;
+  category: string;
+  size?: string | null;
+  color?: string | null;
+  createdAt: string;
+}
+
+export async function fetchShowcaseItems(): Promise<ShowcaseItem[]> {
+  const { data } = await apiClient.get<ShowcaseItem[]>('/api/items/showcase');
+  return data;
+}
