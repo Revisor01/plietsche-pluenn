@@ -8,6 +8,7 @@ import storesRouter from './modules/stores/stores.router';
 import scanRouter from './modules/scan/scan.router';
 import checkinRouter from './modules/checkin/checkin.router';
 import pointsRouter from './modules/points/points.router';
+import dashboardRouter from './modules/dashboard/dashboard.router';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/stores', storesRouter);
 app.use('/api/scan', scanRouter);
 app.use('/api/checkin', checkinRouter);
 app.use('/api/points', pointsRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 // Globaler Error Handler (Express 5)
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
