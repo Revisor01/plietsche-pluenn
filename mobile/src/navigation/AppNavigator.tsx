@@ -1,5 +1,4 @@
 import React from 'react';
-import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,16 +6,8 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ItemListScreen from '../screens/items/ItemListScreen';
 import ItemCreateScreen from '../screens/items/ItemCreateScreen';
+import StoreInfoScreen from '../screens/store/StoreInfoScreen';
 import { useAuthStore } from '../store/authStore';
-
-// Placeholder für Store-Info (wird in Plan 03 ersetzt)
-function StoreInfoPlaceholder() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Store-Info (kommt in Plan 03)</Text>
-    </View>
-  );
-}
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,7 +27,7 @@ function VolunteerTabs() {
       />
       <Tab.Screen
         name="StoreInfo"
-        component={StoreInfoPlaceholder}
+        component={StoreInfoScreen}
         options={{ title: 'Store-Info' }}
       />
     </Tab.Navigator>
