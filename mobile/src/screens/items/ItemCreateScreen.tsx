@@ -9,9 +9,11 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import ColorPicker, { HueSlider, Panel1 } from 'reanimated-color-picker';
 import { createItem } from '../../api/items.api';
 import { useItemStore } from '../../store/itemStore';
+import { colors, fonts, spacing, borderRadius } from '../../theme';
 
 const CATEGORIES = ['Oberteil', 'Hose', 'Jacke', 'Schuhe', 'Kleid', 'Accessoire'];
 
@@ -83,7 +85,7 @@ export default function ItemCreateScreen() {
         value={title}
         onChangeText={setTitle}
         placeholder="z.B. Blaue Jeans"
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textLight}
       />
 
       <Text style={styles.label}>Kategorie *</Text>
@@ -129,7 +131,7 @@ export default function ItemCreateScreen() {
         value={size}
         onChangeText={setSize}
         placeholder="Oder Freitext (z.B. One Size)"
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textLight}
       />
 
       <Text style={styles.label}>Zustand</Text>
@@ -138,7 +140,7 @@ export default function ItemCreateScreen() {
         value={condition}
         onChangeText={setCondition}
         placeholder="z.B. einwandfrei, kleine Flecken"
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textLight}
       />
 
       <Text style={styles.label}>Farbe</Text>
@@ -157,41 +159,56 @@ export default function ItemCreateScreen() {
         onPress={handleSubmit}
         disabled={isLoading}
       >
-        {isLoading ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.submitButtonText}>Item anlegen</Text>
-        )}
+        <LinearGradient
+          colors={[...colors.gradientColors]}
+          locations={[...colors.gradientLocations]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.submitButtonGradient}
+        >
+          {isLoading ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <Text style={styles.submitButtonText}>Item anlegen</Text>
+          )}
+        </LinearGradient>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { padding: 16, paddingBottom: 40 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginTop: 16, marginBottom: 6 },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.md, paddingBottom: 40 },
+  label: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    marginBottom: 6,
+  },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: borderRadius.sm,
     padding: 12,
     fontSize: 16,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    fontFamily: fonts.regular,
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  chipText: { fontSize: 14, color: '#374151' },
-  chipTextSelected: { color: '#FFFFFF' },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontSize: 14, fontFamily: fonts.regular, color: colors.textSecondary },
+  chipTextSelected: { color: colors.white, fontFamily: fonts.medium },
   sizeScroll: { marginBottom: 8 },
   colorPreview: {
     width: 40,
@@ -199,17 +216,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: colors.border,
   },
   colorPicker: { width: '100%', marginVertical: 8 },
   hueSlider: { marginTop: 12 },
   submitButton: {
-    backgroundColor: '#2563EB',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 24,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    marginTop: spacing.lg,
   },
-  submitButtonDisabled: { backgroundColor: '#93C5FD' },
-  submitButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  submitButtonDisabled: { opacity: 0.6 },
+  submitButtonGradient: { padding: 16, alignItems: 'center' },
+  submitButtonText: { color: colors.white, fontSize: 16, fontFamily: fonts.bold },
 });
