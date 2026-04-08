@@ -9,6 +9,7 @@ import scanRouter from './modules/scan/scan.router';
 import checkinRouter from './modules/checkin/checkin.router';
 import pointsRouter from './modules/points/points.router';
 import dashboardRouter from './modules/dashboard/dashboard.router';
+import campaignsRouter from './modules/campaigns/campaigns.router';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/scan', scanRouter);
 app.use('/api/checkin', checkinRouter);
 app.use('/api/points', pointsRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/campaigns', campaignsRouter);
 
 // Globaler Error Handler (Express 5)
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
