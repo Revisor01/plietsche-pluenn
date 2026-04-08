@@ -1,6 +1,7 @@
 import * as scanRepo from './scan.repository';
 import { getStoreSettings } from '../points/points.repository';
 import { getActiveCampaign } from '../campaigns/campaigns.repository';
+import { evaluateAchievements } from '../badges/achievements.engine';
 
 export async function scanItemQr(qrToken: string, userId: string, storeId: string) {
   const item = await scanRepo.findItemByQrToken(qrToken, storeId);
@@ -23,10 +24,19 @@ export async function scanItemQr(qrToken: string, userId: string, storeId: strin
   await scanRepo.markItemTaken(item.id);
   const totalPoints = await scanRepo.awardPoints(userId, storeId, pointsAwarded, 'item_scan');
 
+  // Achievement-Auswertung (fire-and-forget, Fehler sollen Scan nicht blockieren)
+  let newAchievements: Awaited<ReturnType<typeof evaluateAchievements>> = [];
+  try {
+    newAchievements = await evaluateAchievements(userId, storeId, 'item_scan');
+  } catch (e) {
+    console.error('Achievement-Auswertung fehlgeschlagen:', e);
+  }
+
   return {
     points: pointsAwarded,
     title: item.title,
     totalPoints,
     campaign: campaign ? { title: campaign.title, multiplier } : null,
+    newAchievements,
   };
 }
