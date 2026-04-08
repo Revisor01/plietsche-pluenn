@@ -15,13 +15,36 @@ import HomeScreen from '../screens/visitor/HomeScreen';
 import DashboardScreen from '../screens/admin/DashboardScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
+import { colors, fonts } from '../theme';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function VolunteerTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: true,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
+        tabBarLabelStyle: {
+          fontFamily: fonts.medium,
+          fontSize: 11,
+        },
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: colors.white,
+        headerTitleStyle: {
+          fontFamily: fonts.bold,
+          fontSize: 17,
+        },
+      }}
+    >
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
@@ -48,7 +71,29 @@ function VolunteerTabs() {
 
 function VisitorTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: true,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
+        tabBarLabelStyle: {
+          fontFamily: fonts.medium,
+          fontSize: 11,
+        },
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: colors.white,
+        headerTitleStyle: {
+          fontFamily: fonts.bold,
+          fontSize: 17,
+        },
+      }}
+    >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
@@ -75,7 +120,14 @@ function VisitorTabs() {
 
 function AuthenticatedStack({ role }: { role: string | undefined }) {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: colors.primary },
+        headerTintColor: colors.white,
+        headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
+      }}
+    >
       {role === 'visitor' ? (
         <Stack.Screen name="Tabs" component={VisitorTabs} />
       ) : (
