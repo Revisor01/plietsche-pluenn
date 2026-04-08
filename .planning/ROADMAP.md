@@ -1,70 +1,71 @@
-# Roadmap: Plietsche Plünn
+# Roadmap: Plietsche Pluenn
 
 ## Overview
 
-v1.1 "Engagement & Polish" — Die App wird attraktiv und einladend. UI-Styling durchziehen, Kampagnen für gezielte Aktionen, Schaufenster als Appetitmacher, Badges für Langzeit-Motivation, Onboarding für neue Besucher, und saubere Rollen-Trennung.
+v1.2 "Achievements, Icons & Push" -- Echtes Achievement-System mit kategorie-basierten Badges und Streak-Tracking, Font Awesome Icons statt Emojis fuer ein cleanes Design, und Push-Benachrichtigungen fuer aktive Besucher-Bindung.
 
 ## Phases
 
-- [x] **Phase 1: Foundation** - v1.0 ✓
-- [x] **Phase 2: Volunteer Core** - v1.0 ✓
-- [x] **Phase 3: Visitor Experience** - v1.0 ✓
-- [x] **Phase 4: Dashboard & Polish** - v1.0 ✓
-- [ ] **Phase 5: UI-Styling** - Gradient-Theme, Work Sans, alle Screens konsistent
-- [ ] **Phase 6: Engagement Features** - Kampagnen, Schaufenster, Badges
-- [ ] **Phase 7: Onboarding & Rollen** - Onboarding-Flow, Admin/Volunteer Trennung
+- [x] **Phase 1-4: v1.0** -- Foundation, Volunteer Core, Visitor Experience, Dashboard
+- [x] **Phase 5-7: v1.1** -- UI-Styling, Engagement Features, Onboarding & Rollen
+- [ ] **Phase 8: Icon-Cleanup** -- Font Awesome Line-Icons, alle Emojis raus, Tab-Bar, Badge-Icons
+- [ ] **Phase 9: Achievement-System** -- Badge-Kategorien, Streak-Tracking, Fortschritt, Admin-Verwaltung
+- [ ] **Phase 10: Push-Benachrichtigungen** -- FCM/APNs, Kampagnen-Push, Streak-Erinnerung, Admin-Push
 
 ## Phase Details
 
-### Phase 5: UI-Styling
-**Goal**: Durchgängiges visuelles Theme mit Work Sans, Gradient (#27b092→#79c4b0→#80b4e2), gestylter Tab-Bar und Navigation auf allen Screens.
-**Depends on**: Phase 4
-**Requirements**: STYLE-01, STYLE-02, STYLE-03, STYLE-04, STYLE-05
+### Phase 8: Icon-Cleanup
+**Goal**: Font Awesome Line-Icons als durchgaengiges Icon-System, alle Emojis entfernt, cleanes schlichtes Design.
+**Depends on**: Phase 7
+**Requirements**: ICON-01, ICON-02, ICON-03, ICON-04
 **Success Criteria** (what must be TRUE):
-  1. Work Sans wird auf allen Screens als Schriftart verwendet
-  2. Gradient-Theme ist auf Header, primären Buttons und Highlight-Cards sichtbar
-  3. Tab-Bar und Navigation-Header sind im Theme gestyled
-  4. Alle Screens (Login, Home, Scan, CheckIn, Items, Dashboard, Store-Info, Punkte) sehen konsistent aus
-  5. P² Logo-Platzhalter ist auf dem Login-Screen sichtbar
+  1. react-native-vector-icons mit FontAwesome installiert und auf iOS + Android gelinkt
+  2. Kein einziges Emoji-Zeichen mehr in der gesamten App (grep findet nichts)
+  3. Tab-Bar nutzt Font Awesome Icons
+  4. Badge-Icons nutzen Font Awesome (trophy, star, fire etc.)
+  5. Design bleibt clean und schlicht mit Gradient-Akzenten
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Tab-Bar/Navigation stylen + Visitor-Screens (Scan, CheckIn, PointsHistory)
-- [ ] 05-02-PLAN.md — Volunteer/Admin-Screens (ItemCreate, ItemList, Dashboard, StoreInfo) + Register + Privacy
+- [ ] 08-01: react-native-vector-icons installieren, Tab-Bar Icons umstellen, Navigation-Icons
+- [ ] 08-02: Alle Screens nach Emojis durchsuchen und durch Font Awesome Icons ersetzen
 
-### Phase 6: Engagement Features
-**Goal**: Kampagnen mit Punkt-Multiplikatoren, Schaufenster mit Showcase-Items, und Badges/Achievement-Levels — die drei Säulen der Besucher-Motivation.
-**Depends on**: Phase 5
-**Requirements**: CAMP-01, CAMP-02, CAMP-03, CAMP-04, SHOW-01, SHOW-02, SHOW-03, BADGE-01, BADGE-02, BADGE-03, BADGE-04
+### Phase 9: Achievement-System
+**Goal**: Vollstaendiges Badge-System mit Kategorien (Bringer, Holer, Besucher, Saison, Streaks, Meilensteine), Fortschrittsanzeige, Admin-Verwaltung, und In-App Toast bei neuem Badge.
+**Depends on**: Phase 8
+**Requirements**: ACH-01, ACH-02, ACH-03, ACH-04, ACH-05, ACH-06, ACH-07, ACH-08, ACH-09, ACH-10, ACH-11, ACH-12
 **Success Criteria** (what must be TRUE):
-  1. Admin erstellt Kampagne mit Titel, Zeitraum und Multiplikator → Banner erscheint in Visitor-App
-  2. Punkte-Engine vergibt automatisch multiplizierte Punkte während aktiver Kampagne
-  3. Ehrenamtliche markieren Item als Showcase → Item erscheint auf Visitor-Homescreen
-  4. Besucher sieht aktuelles Badge/Level + Fortschrittsbalken neben Punktestand
-  5. Badge-Stufen sind admin-konfigurierbar (Name + Schwelle)
+  1. Badge-Definitionen mit Trigger-Typ und Zielwert in DB, Default-Badges geseedet
+  2. Besucher sieht Badge-Uebersicht (erreichte + ausstehende mit Fortschrittsbalken)
+  3. Streak wird woechentlich getrackt, Streak-Badge wird korrekt vergeben
+  4. Saison-Badges zaehlen Items pro Saison (Fruehling Maerz-Mai, Sommer Juni-Aug, etc.)
+  5. Admin kann eigene Badges erstellen/bearbeiten mit Trigger-Bedingungen
+  6. Toast-Nachricht wenn neuer Badge freigeschaltet wird
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Kampagnen Backend (CRUD, Multiplikator in Punkte-Engine) + Admin-Screens (CampaignList, CampaignCreate)
-- [ ] 06-02-PLAN.md — Schaufenster Backend (showcase-Flag auf Items) + Visitor-Homescreen Showcase-Sektion
-- [ ] 06-03-PLAN.md — Badges Backend (badge_levels, Fortschritt-Berechnung) + Homescreen Badge-Anzeige + Admin BadgeLevels-Screen
+- [ ] 09-01: Achievement-Schema + Backend-Engine (Trigger-Auswertung, Streak-Berechnung, Badge-Vergabe)
+- [ ] 09-02: Badge-Uebersichtsseite + Homescreen-Integration + Toast bei neuem Badge
+- [ ] 09-03: Admin Badge-Verwaltung (CRUD, Default-Badges, Saison-Config)
 
-### Phase 7: Onboarding & Rollen
-**Goal**: Neue Besucher verstehen sofort das Konzept, und Admin/Volunteer haben klar getrennte Berechtigungen.
-**Depends on**: Phase 5
-**Requirements**: ONBO-01, ONBO-02, ONBO-03, ROLE-01, ROLE-02, ROLE-03, ROLE-04
+### Phase 10: Push-Benachrichtigungen
+**Goal**: Push-Notifications ueber FCM/APNs -- automatisch bei Kampagnen und Streak-Gefahr, manuell durch Admin, deaktivierbar durch Besucher.
+**Depends on**: Phase 9
+**Requirements**: PUSH-01, PUSH-02, PUSH-03, PUSH-04, PUSH-05, PUSH-06, PUSH-07
 **Success Criteria** (what must be TRUE):
-  1. Neue Besucher sehen beim ersten Start 3-4 Onboarding-Screens (überspringbar)
-  2. Onboarding wird nur einmal angezeigt (AsyncStorage Flag)
-  3. Volunteer sieht nur Items-Tab (kein Dashboard, keine Store-Konfiguration)
-  4. Admin sieht Dashboard + Store-Konfiguration + Volunteer-Verwaltung
-  5. Admin kann neue Volunteer-Accounts erstellen
-**Plans**: 2 plans
+  1. Push-Infrastruktur steht (FCM fuer Android, APNs fuer iOS)
+  2. Device-Token wird bei Login registriert und bei Logout entfernt
+  3. Neue Kampagne loest automatisch Push an alle Besucher aus
+  4. Streak-Erinnerung wird Freitags gesendet wenn Besucher diese Woche noch nicht da war
+  5. Admin kann manuellen Push mit eigenem Text senden
+  6. Besucher kann Push in Einstellungen deaktivieren
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Onboarding-Flow (4 Screens, AsyncStorage, überspringbar, Visitor-only)
-- [ ] 07-02-PLAN.md — Rollen-Trennung (AdminTabs/VolunteerTabs) + Backend admin-Modul + VolunteerManagementScreen
+- [ ] 10-01: Push-Infrastruktur (FCM Setup, APNs, Backend-Service, Device-Token-Verwaltung)
+- [ ] 10-02: Automatische Push-Trigger (Kampagne, Streak-Erinnerung, Schaufenster)
+- [ ] 10-03: Admin Push-Screen + Besucher Push-Einstellungen
 
 ---
-*Roadmap created: 2026-04-08*
-*Last updated: 2026-04-08 after Phase 7 plans created*
+*Roadmap created: 2026-04-09*
+*Last updated: 2026-04-09 after v1.2 milestone definition*
