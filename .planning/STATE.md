@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: engagement-polish
-status: defining_requirements
-last_updated: "2026-04-08T19:00:00.000Z"
+status: complete
+last_updated: "2026-04-08T22:00:00.000Z"
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State: Plietsche Plünn
@@ -19,18 +19,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Besucher haben Anreiz regelmäßig zu kommen, Ehrenamtliche sehen was passiert — ohne Personen-Tracking.
-**Current focus:** v1.1 Engagement & Polish — defining requirements
-
-## Current Position
-
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-08 — Milestone v1.1 started
+**Current focus:** v1.1 Milestone COMPLETE
 
 ## Milestone Progress
 
-(No phases yet — requirements being defined)
+| Phase | Name | Status | Plans |
+|-------|------|--------|-------|
+| 5 | UI-Styling | ✅ Complete | 2/2 |
+| 6 | Engagement Features | ✅ Complete | 3/3 |
+| 7 | Onboarding & Rollen | ✅ Complete | 2/2 |
+
+Progress: ██████████ 100%
 
 ## Key Decisions Log
 
