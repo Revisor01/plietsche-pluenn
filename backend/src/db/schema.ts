@@ -63,3 +63,13 @@ export const pointTransactions = pgTable('point_transactions', {
   points: integer('points').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+export const storeSettings = pgTable('store_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  storeId: uuid('store_id').notNull().unique().references(() => stores.id),
+  pointsPerScan: integer('points_per_scan').notNull().default(10),
+  pointsPerCheckin: integer('points_per_checkin').notNull().default(5),
+  pointsPerItem: integer('points_per_item').notNull().default(3),
+  maxItemsPerCheckin: integer('max_items_per_checkin').notNull().default(10),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});

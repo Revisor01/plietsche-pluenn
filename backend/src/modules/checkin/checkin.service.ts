@@ -1,10 +1,9 @@
 import crypto from 'node:crypto';
 import * as checkinRepo from './checkin.repository';
 import { awardPoints } from '../scan/scan.repository';
+import { getStoreSettings } from '../points/points.repository';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const POINTS_PER_CHECKIN = 5;  // Wird in Plan 03-03 durch store_settings ersetzt
-const POINTS_PER_ITEM = 3;     // Wird in Plan 03-03 durch store_settings ersetzt
 
 function currentWeekBucket(): number {
   return Math.floor(Date.now() / WEEK_MS);
@@ -78,8 +77,9 @@ export async function processCheckin(
 
   await checkinRepo.insertCheckin({ userId, storeId, itemCount });
 
-  const basePoints = POINTS_PER_CHECKIN;
-  const itemPoints = itemCount * POINTS_PER_ITEM;
+  const settings = await getStoreSettings(storeId);
+  const basePoints = settings.pointsPerCheckin;
+  const itemPoints = Math.min(itemCount, settings.maxItemsPerCheckin) * settings.pointsPerItem;
   const totalPoints = await awardPoints(userId, storeId, basePoints + itemPoints, 'checkin');
 
   return { points: basePoints, itemPoints, totalPoints };
