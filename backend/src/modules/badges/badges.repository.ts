@@ -10,7 +10,7 @@ export async function getLevels(storeId: string) {
     .orderBy(asc(badgeLevels.sortOrder), asc(badgeLevels.minPoints));
 }
 
-export async function addLevel(storeId: string, data: { name: string; emoji: string; minPoints: number; sortOrder: number }) {
+export async function addLevel(storeId: string, data: { name: string; iconName: string; minPoints: number; sortOrder: number }) {
   const result = await db.insert(badgeLevels).values({ storeId, ...data }).returning();
   return result[0];
 }
@@ -54,8 +54,8 @@ export async function getBadgeProgress(userId: string, storeId: string): Promise
   }
 
   return {
-    currentLevel: currentLevel ? { name: currentLevel.name, emoji: currentLevel.emoji, minPoints: currentLevel.minPoints } : null,
-    nextLevel: nextLevel ? { name: nextLevel.name, emoji: nextLevel.emoji, minPoints: nextLevel.minPoints } : null,
+    currentLevel: currentLevel ? { name: currentLevel.name, iconName: currentLevel.iconName, minPoints: currentLevel.minPoints } : null,
+    nextLevel: nextLevel ? { name: nextLevel.name, iconName: nextLevel.iconName, minPoints: nextLevel.minPoints } : null,
     progressPercent,
     pointsToNext,
     currentPoints,

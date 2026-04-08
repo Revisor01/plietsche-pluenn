@@ -8,7 +8,7 @@ const router = Router();
 
 const AddLevelSchema = z.object({
   name: z.string().min(1).max(100),
-  emoji: z.string().min(1).max(10).default('🏅'),
+  iconName: z.string().min(1).max(50).default('medal'),
   minPoints: z.number().int().min(0),
   sortOrder: z.number().int().min(0).default(0),
 });

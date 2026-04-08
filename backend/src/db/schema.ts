@@ -80,7 +80,7 @@ export const badgeLevels = pgTable('badge_levels', {
   id: uuid('id').primaryKey().defaultRandom(),
   storeId: uuid('store_id').notNull().references(() => stores.id),
   name: text('name').notNull(),
-  emoji: text('emoji').notNull().default('🏅'),
+  iconName: text('icon_name').notNull().default('medal'),
   minPoints: integer('min_points').notNull(),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow(),
