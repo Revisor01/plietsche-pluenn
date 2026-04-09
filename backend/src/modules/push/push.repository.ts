@@ -39,3 +39,12 @@ export async function setPushEnabled(userId: string, enabled: boolean): Promise<
     .set({ pushEnabled: enabled, updatedAt: new Date() })
     .where(eq(deviceTokens.userId, userId));
 }
+
+export async function getPushEnabled(userId: string): Promise<boolean> {
+  const rows = await db
+    .select({ pushEnabled: deviceTokens.pushEnabled })
+    .from(deviceTokens)
+    .where(eq(deviceTokens.userId, userId))
+    .limit(1);
+  return rows[0]?.pushEnabled ?? true; // default true wenn kein Token registriert
+}
