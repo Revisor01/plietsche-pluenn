@@ -12,6 +12,7 @@ import dashboardRouter from './modules/dashboard/dashboard.router';
 import campaignsRouter from './modules/campaigns/campaigns.router';
 import badgesRouter from './modules/badges/badges.router';
 import adminRouter from './modules/admin/admin.router';
+import pushRouter from './modules/push/push.router';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/campaigns', campaignsRouter);
 app.use('/api/badges', badgesRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/push', pushRouter);
 
 // Globaler Error Handler (Express 5)
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
