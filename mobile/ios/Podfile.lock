@@ -1539,6 +1539,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - react-native-vector-icons-fontawesome6 (13.0.0)
   - React-NativeModulesApple (0.85.0):
     - hermes-engine
     - React-callinvoker
@@ -2261,6 +2262,7 @@ DEPENDENCIES:
   - "react-native-blur (from `../node_modules/@react-native-community/blur`)"
   - react-native-geolocation-service (from `../node_modules/react-native-geolocation-service`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
+  - "react-native-vector-icons-fontawesome6 (from `../node_modules/@react-native-vector-icons/fontawesome6`)"
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-networking (from `../node_modules/react-native/ReactCommon/react/networking`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
@@ -2406,6 +2408,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-geolocation-service"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
+  react-native-vector-icons-fontawesome6:
+    :path: "../node_modules/@react-native-vector-icons/fontawesome6"
   React-NativeModulesApple:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios"
   React-networking:
@@ -2547,6 +2551,7 @@ SPEC CHECKSUMS:
   react-native-blur: baf5874b4abf3bb8b2012172a3d0905653a1a2b5
   react-native-geolocation-service: 608e1da71a1ac31b4de64d9ef2815f697978c55b
   react-native-safe-area-context: a2325922b8594ddd27f98fb13437aec126be2502
+  react-native-vector-icons-fontawesome6: a8c495398688c2968b088689a72add570b4f6fa1
   React-NativeModulesApple: 203fb2f050c7949cb500df1ac8bf7c09e8030fca
   React-networking: 368beb4a9537676c58fa72e7816cd969503fce69
   React-oscompat: 5361d0fa7905ba1c3b3c5e7c464d6be9d2d85f4b
