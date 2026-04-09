@@ -64,6 +64,9 @@
 		<string>WorkSans-Medium.ttf</string>
 		<string>WorkSans-SemiBold.ttf</string>
 		<string>WorkSans-Bold.ttf</string>
+		<string>FontAwesome6_Solid.ttf</string>
+		<string>FontAwesome6_Regular.ttf</string>
+		<string>FontAwesome6_Brands.ttf</string>
 	</array>
 </dict>
 </plist>

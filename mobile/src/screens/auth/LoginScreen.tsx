@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert,
+  StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { apiClient } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
-import { colors, fonts, spacing, borderRadius } from '../../theme';
+import { colors, fonts, spacing, borderRadius, glass } from '../../theme';
 import { GlassCard } from '../../components/GlassCard';
 
 type Props = {
@@ -38,80 +38,97 @@ export default function LoginScreen({ navigation }: Props): React.JSX.Element {
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[...colors.gradientColors]}
-        locations={[...colors.gradientLocations]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
+    <LinearGradient
+      colors={[...colors.gradientColors]}
+      locations={[...colors.gradientLocations]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradient}
+    >
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.logoText}>P²</Text>
-        <Text style={styles.title}>Plietsche Plünn</Text>
-        <Text style={styles.subtitle}>Dein Kleidertausch-Laden</Text>
-      </LinearGradient>
+        <View style={styles.header}>
+          <View style={styles.logoRow}>
+            <Text style={styles.logoText}>P</Text>
+            <Text style={styles.superscript}>2</Text>
+          </View>
+          <Text style={styles.title}>Plietsche Plünn</Text>
+          <Text style={styles.subtitle}>Dein Kleidertausch-Laden</Text>
+        </View>
 
-      <GlassCard style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="E-Mail"
-          placeholderTextColor={colors.textLight}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Passwort"
-          placeholderTextColor={colors.textLight}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete="current-password"
-        />
+        <GlassCard style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="E-Mail"
+            placeholderTextColor={colors.textSecondary}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Passwort"
+            placeholderTextColor={colors.textSecondary}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="current-password"
+          />
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          <LinearGradient
-            colors={[...colors.gradientColors]}
-            locations={[...colors.gradientLocations]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.buttonGradient}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.buttonText}>Anmelden</Text>
             )}
-          </LinearGradient>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.linkText}>Noch kein Konto? Registrieren</Text>
-        </TouchableOpacity>
-      </GlassCard>
-    </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.linkText}>Noch kein Konto? Registrieren</Text>
+          </TouchableOpacity>
+        </GlassCard>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  gradient: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
   header: {
-    paddingTop: 80,
-    paddingBottom: 40,
     alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
   },
   logoText: {
-    fontSize: 48,
+    fontSize: 64,
     fontFamily: fonts.bold,
     color: colors.white,
-    marginBottom: spacing.sm,
+  },
+  superscript: {
+    fontSize: 26,
+    fontFamily: fonts.bold,
+    color: colors.white,
+    marginTop: 6,
+    marginLeft: 2,
   },
   title: {
     fontSize: 28,
@@ -125,31 +142,32 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
   },
   form: {
-    flex: 1,
     padding: spacing.lg,
-    marginTop: -20,
   },
   input: {
     backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.12)',
+    borderColor: 'rgba(39,176,146,0.4)',
     borderRadius: borderRadius.sm,
     padding: 14,
     marginBottom: spacing.md,
     fontSize: 16,
     fontFamily: fonts.regular,
     color: colors.text,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   button: {
+    backgroundColor: 'rgba(39,176,146,0.85)',
+    padding: 14,
     borderRadius: borderRadius.sm,
-    overflow: 'hidden',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonGradient: {
-    padding: 14,
-    alignItems: 'center',
-  },
   buttonText: {
     color: colors.white,
     fontSize: 16,
@@ -157,7 +175,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     textAlign: 'center',
-    color: colors.primary,
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 14,
     fontFamily: fonts.medium,
   },
