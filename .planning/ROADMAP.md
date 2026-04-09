@@ -68,13 +68,15 @@ Plans:
 
 ### Phase 11: iOS 26 Liquid Glass Design
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal**: iOS 26 Liquid Glass Design-Sprache -- BlurView Tab-Bar floating, Glass-Header, GlassCard-Komponente fuer strategische Surfaces (Cards, Form-Overlays). Gradient-Theme bleibt Basis, Glass erweiteert es.
+**Requirements**: LG-01, LG-02, LG-03, LG-04, LG-05, LG-06
 **Depends on:** Phase 10
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — @react-native-community/blur installieren + pod install, Theme glass-Namespace, GlassCard-Basiskomponente
+- [ ] 11-02-PLAN.md — Tab-Bar floating + transluzent (BlurView), Navigation-Header Glass + Gradient-Tint
+- [ ] 11-03-PLAN.md — Screen-Cards auf GlassCard umstellen (HomeScreen, LoginScreen, BadgeOverviewScreen, DashboardScreen)
 
 ---
 *Roadmap created: 2026-04-09*
