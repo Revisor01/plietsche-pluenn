@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import { TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import { BlurView } from '@react-native-community/blur';
+import LinearGradient from 'react-native-linear-gradient';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
@@ -25,7 +27,7 @@ import AdminPushScreen from '../screens/admin/AdminPushScreen';
 import SettingsScreen from '../screens/visitor/SettingsScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
-import { colors, fonts } from '../theme';
+import { colors, fonts, borderRadius, glass } from '../theme';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,10 +36,39 @@ const tabScreenOptions = {
   headerShown: true,
   tabBarActiveTintColor: colors.primary,
   tabBarInactiveTintColor: colors.textSecondary,
-  tabBarStyle: {
-    backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-  },
+  tabBarStyle: Platform.select({
+    ios: {
+      position: 'absolute' as const,
+      bottom: 20,
+      left: 20,
+      right: 20,
+      borderRadius: borderRadius.full,
+      backgroundColor: 'transparent',
+      borderTopWidth: 0,
+      elevation: 0,
+      shadowColor: glass.shadowColor,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.18,
+      shadowRadius: 20,
+      height: 72,
+      paddingBottom: 10,
+    },
+    android: {
+      backgroundColor: glass.androidBackground,
+      borderTopColor: glass.androidBorderColor,
+      elevation: 8,
+    },
+  }),
+  tabBarBackground: Platform.OS === 'ios'
+    ? () => (
+        <BlurView
+          blurType={glass.blurType}
+          blurAmount={glass.blurAmount}
+          style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full }]}
+          reducedTransparencyFallbackColor="white"
+        />
+      )
+    : undefined,
   tabBarLabelStyle: {
     fontFamily: fonts.medium,
     fontSize: 11,
@@ -173,10 +204,39 @@ function VisitorTabs() {
         headerShown: true,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        },
+        tabBarStyle: Platform.select({
+          ios: {
+            position: 'absolute' as const,
+            bottom: 20,
+            left: 20,
+            right: 20,
+            borderRadius: borderRadius.full,
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowColor: glass.shadowColor,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.18,
+            shadowRadius: 20,
+            height: 72,
+            paddingBottom: 10,
+          },
+          android: {
+            backgroundColor: glass.androidBackground,
+            borderTopColor: glass.androidBorderColor,
+            elevation: 8,
+          },
+        }),
+        tabBarBackground: Platform.OS === 'ios'
+          ? () => (
+              <BlurView
+                blurType={glass.blurType}
+                blurAmount={glass.blurAmount}
+                style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full }]}
+                reducedTransparencyFallbackColor="white"
+              />
+            )
+          : undefined,
         tabBarLabelStyle: {
           fontFamily: fonts.medium,
           fontSize: 11,
