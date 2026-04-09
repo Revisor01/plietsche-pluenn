@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import { fetchDashboardStats, DashboardStats } from '../../api/dashboard.api';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
@@ -99,7 +100,13 @@ export default function DashboardScreen() {
   }, [load]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <LinearGradient
+      colors={['#e8f7f4', '#edf5f9', '#f0f4f9']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Dashboard</Text>
 
       {/* Zeitraum-Auswahl */}
@@ -164,11 +171,13 @@ export default function DashboardScreen() {
         </View>
       )}
     </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
+  scrollView: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.md },
   title: {
     fontSize: 24,
