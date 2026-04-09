@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -20,6 +21,8 @@ import CampaignCreateScreen from '../screens/admin/CampaignCreateScreen';
 import AchievementAdminScreen from '../screens/admin/AchievementAdminScreen';
 import BadgeOverviewScreen from '../screens/visitor/BadgeOverviewScreen';
 import VolunteerManagementScreen from '../screens/admin/VolunteerManagementScreen';
+import AdminPushScreen from '../screens/admin/AdminPushScreen';
+import SettingsScreen from '../screens/visitor/SettingsScreen';
 import PrivacyScreen from '../screens/legal/PrivacyScreen';
 import { useAuthStore } from '../store/authStore';
 import { colors, fonts } from '../theme';
@@ -122,6 +125,16 @@ function AdminTabs() {
           ),
         }}
       />
+      <Tab.Screen
+        name="Push"
+        component={AdminPushScreen}
+        options={{
+          title: 'Push',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Icon name="bell" solid={focused} size={size} color={color} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -181,12 +194,20 @@ function VisitorTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{
+        options={({ navigation }) => ({
           title: 'Home',
           tabBarIcon: ({ focused, color, size }) => (
             <Icon name="home" solid={focused} size={size} color={color} />
           ),
-        }}
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Settings' as never)}
+              style={{ marginRight: 16 }}
+            >
+              <Icon name="cog" size={20} color={colors.white} />
+            </TouchableOpacity>
+          ),
+        })}
       />
       <Tab.Screen
         name="Scan"
@@ -259,6 +280,11 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
         name="BadgeOverview"
         component={BadgeOverviewScreen}
         options={{ headerShown: true, title: 'Meine Badges' }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ headerShown: true, title: 'Einstellungen' }}
       />
     </Stack.Navigator>
   );
