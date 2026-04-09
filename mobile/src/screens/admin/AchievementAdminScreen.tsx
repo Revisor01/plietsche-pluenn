@@ -198,7 +198,7 @@ export default function AchievementAdminScreen() {
   const handleSeed = useCallback(() => {
     Alert.alert(
       'Default-Badges laden',
-      '23 Standard-Badges fuer alle Kategorien werden angelegt. Bestehende Badges werden nicht ueberschrieben.',
+      '23 Standard-Badges für alle Kategorien werden angelegt. Bestehende Badges werden nicht überschrieben.',
       [
         { text: 'Abbrechen', style: 'cancel' },
         {

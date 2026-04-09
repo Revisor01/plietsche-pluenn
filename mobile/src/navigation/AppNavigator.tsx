@@ -204,25 +204,63 @@ function VolunteerTabs() {
   );
 }
 
-// Visitor: Home / Check-In / Badges / Punkte (Scan+CheckIn zusammengelegt)
+// Visitor: Home / Check-In / Badges / Punkte -- kein Header, iOS 26 Floating Pill Tab-Bar
 function VisitorTabs() {
   return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: 'rgba(80,80,80,0.55)',
+        tabBarShowLabel: true,
+        tabBarStyle: Platform.select({
+          ios: {
+            position: 'absolute' as const,
+            bottom: 28,
+            left: 24,
+            right: 24,
+            borderRadius: borderRadius.full,
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.18,
+            shadowRadius: 20,
+            height: 64,
+            paddingBottom: 8,
+            paddingTop: 8,
+          },
+          android: {
+            backgroundColor: glass.androidBackground,
+            borderTopColor: glass.androidBorderColor,
+            elevation: 8,
+          },
+        }),
+        tabBarBackground: Platform.OS === 'ios'
+          ? () => (
+              <BlurView
+                blurType="chromeMaterialLight"
+                blurAmount={25}
+                style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full, overflow: 'hidden' as const }]}
+                reducedTransparencyFallbackColor="white"
+              />
+            )
+          : undefined,
+        tabBarLabelStyle: {
+          fontFamily: fonts.medium,
+          fontSize: 10,
+          marginTop: 1,
+        },
+      }}
+    >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={({ navigation }) => ({
+        options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => <TabIcon name="house" color={color} size={size} />,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Settings' as never)}
-              style={{ marginRight: 16 }}
-            >
-              <FontAwesome6 name="gear" iconStyle="solid" size={20} color={colors.white} />
-            </TouchableOpacity>
-          ),
-        })}
+        }}
       />
       <Tab.Screen
         name="CheckIn"

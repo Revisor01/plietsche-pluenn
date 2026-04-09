@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 import { useNavigation } from '@react-navigation/native';
@@ -56,16 +56,23 @@ export default function HomeScreen() {
         {/* Punkte-Card: weiss/glass auf Gradient-Hintergrund */}
         <GlassCard style={styles.pointsCard}>
           <Text style={styles.pointsLabel}>PlietschPunkte</Text>
-          <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
+          <View style={styles.pointsRing}>
+            <View style={styles.pointsRingInner}>
+              <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
+            </View>
+          </View>
+          <Text style={styles.pointsMotivation}>
+            {achievementCount && achievementCount.completed > 0 ? 'Weiter so!' : 'Fang an zu sammeln!'}
+          </Text>
           <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
           {topAchievement && (
             <View style={styles.badgeLabel}>
               <FontAwesome6
                 name={(topAchievement.iconName || 'trophy') as any}
                 iconStyle="solid"
-                size={18}
+                size={22}
                 color={colors.primary}
-                style={{ marginRight: 6 }}
+                style={{ marginRight: 8 }}
               />
               <Text style={styles.badgeLabelText}>{topAchievement.name}</Text>
             </View>
@@ -81,16 +88,20 @@ export default function HomeScreen() {
         {showcase.length > 0 && (
           <View style={styles.showcaseSection}>
             <View style={styles.showcaseHeader}>
-              <FontAwesome6 name="eye" iconStyle="solid" size={16} color={colors.white} style={{ marginRight: spacing.xs }} />
+              <FontAwesome6 name="eye" iconStyle="regular" size={16} color={colors.white} style={{ marginRight: spacing.xs }} />
               <Text style={styles.showcaseSectionTitle}>Schau mal rein</Text>
             </View>
-            <Text style={styles.showcaseSectionSubtitle}>Ausgewaehlte Stuecke -- komm vorbei!</Text>
+            <Text style={styles.showcaseSectionSubtitle}>Ausgewählte Stücke — komm vorbei!</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.showcaseScroll}>
               {showcase.map((item) => (
-                <GlassCard key={item.id} style={styles.showcaseCard} radius={12}>
+                <GlassCard key={item.id} style={styles.showcaseCard} radius={14}>
+                  {/* Placeholder-Bild mit Icon */}
+                  <View style={[styles.showcaseImagePlaceholder, item.color ? { backgroundColor: item.color + '33' } : {}]}>
+                    <FontAwesome6 name="shirt" iconStyle="solid" size={28} color={item.color || colors.primary} />
+                  </View>
                   <Text style={styles.showcaseCardTitle} numberOfLines={2}>{item.title}</Text>
                   <Text style={styles.showcaseCardCategory}>{item.category}</Text>
-                  {item.size ? <Text style={styles.showcaseCardMeta}>Groesse: {item.size}</Text> : null}
+                  {item.size ? <Text style={styles.showcaseCardMeta}>Größe: {item.size}</Text> : null}
                   {item.color ? (
                     <View style={styles.colorRow}>
                       <View style={[styles.colorDot, { backgroundColor: item.color }]} />
@@ -103,33 +114,41 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Badges Button */}
-        <GlassCard style={styles.badgesButtonCard} radius={12}>
-          <TouchableOpacity
-            style={styles.badgesButton}
-            onPress={() => navigation.navigate('Badges' as never)}
-          >
-            <FontAwesome6 name="trophy" iconStyle="solid" size={14} color={colors.primary} style={{ marginRight: 6 }} />
-            <Text style={styles.badgesButtonText}>Alle Badges ansehen</Text>
-          </TouchableOpacity>
-        </GlassCard>
-
         {/* Willkommen */}
         <GlassCard style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>
             Willkommen{user?.username ? `, ${user.username}` : ''}!
           </Text>
           <Text style={styles.welcomeText}>
-            Scanne den QR-Code an Kleidungsstuecken oder checke ein, um PlietschPunkte zu sammeln.
+            Scanne den QR-Code an Kleidungsstücken oder checke ein, um PlietschPunkte zu sammeln.
           </Text>
         </GlassCard>
 
-        {/* Abmelden */}
+        {/* Badges Button -- Login-Screen Style */}
+        <TouchableOpacity
+          style={styles.badgesButton}
+          onPress={() => navigation.navigate('Badges' as never)}
+        >
+          <FontAwesome6 name={'trophy' as any} iconStyle="solid" size={14} color={colors.white} style={{ marginRight: 8 }} />
+          <Text style={styles.badgesButtonText}>Alle Badges ansehen</Text>
+        </TouchableOpacity>
+
+        {/* Einstellungen */}
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('Settings' as never)}
+        >
+          <FontAwesome6 name={'gear' as any} iconStyle="solid" size={14} color={colors.white} style={{ marginRight: 8 }} />
+          <Text style={styles.settingsButtonText}>Einstellungen</Text>
+        </TouchableOpacity>
+
+        {/* Abmelden -- rot, solid wie Badges-Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <FontAwesome6 name={'right-from-bracket' as any} iconStyle="solid" size={14} color={colors.white} style={{ marginRight: 8 }} />
           <Text style={styles.logoutText}>Abmelden</Text>
         </TouchableOpacity>
 
-        {/* Extra Padding fuer Floating Tab-Bar */}
+        {/* Extra Padding für Floating Tab-Bar */}
         <View style={{ height: 100 }} />
       </ScrollView>
     </LinearGradient>
@@ -151,17 +170,44 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    marginBottom: spacing.sm,
+  },
+  pointsRing: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 4,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: spacing.sm,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  pointsRingInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pointsValue: {
-    fontSize: 64,
+    fontSize: 72,
     fontFamily: fonts.bold,
     color: colors.text,
-    marginVertical: spacing.xs,
+    lineHeight: 80,
+  },
+  pointsMotivation: {
+    fontSize: 15,
+    fontFamily: fonts.semiBold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
   pointsSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   badgeLabel: {
     flexDirection: 'row',
@@ -205,7 +251,16 @@ const styles = StyleSheet.create({
   showcaseCard: {
     padding: spacing.md,
     marginRight: spacing.sm,
-    width: 140,
+    width: 170,
+  },
+  showcaseImagePlaceholder: {
+    width: '100%',
+    height: 90,
+    borderRadius: 10,
+    backgroundColor: 'rgba(39,176,146,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
   showcaseCardTitle: {
     fontSize: 14,
@@ -237,23 +292,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
   },
-  badgesButtonCard: {
-    marginBottom: spacing.lg,
-  },
   badgesButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    backgroundColor: 'rgba(39,176,146,0.85)',
+    padding: 14,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.sm,
   },
   badgesButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: fonts.semiBold,
-    color: colors.primary,
+    color: colors.white,
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    padding: 14,
+    borderRadius: borderRadius.sm,
+    marginBottom: spacing.sm,
+  },
+  settingsButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    color: colors.white,
   },
   welcomeSection: {
     padding: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   welcomeTitle: {
     fontSize: 18,
@@ -268,11 +339,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 14,
     borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    alignItems: 'center',
+    backgroundColor: 'rgba(239,68,68,0.85)',
+    marginBottom: spacing.sm,
   },
   logoutText: {
     color: colors.white,
