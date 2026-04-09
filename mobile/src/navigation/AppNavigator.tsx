@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Toast from 'react-native-toast-message';
-import Icon from 'react-native-vector-icons/FontAwesome5';
+import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 import { BlurView } from '@react-native-community/blur';
 import LinearGradient from 'react-native-linear-gradient';
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -53,6 +53,10 @@ function GlassHeader() {
   );
 }
 
+function TabIcon({ name, color, size }: { name: any; color: string; size: number }) {
+  return <FontAwesome6 name={name} iconStyle="solid" size={size} color={color} />;
+}
+
 const tabScreenOptions = {
   headerShown: true,
   tabBarActiveTintColor: colors.primary,
@@ -85,7 +89,7 @@ const tabScreenOptions = {
         <BlurView
           blurType={glass.blurType}
           blurAmount={glass.blurAmount}
-          style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full }]}
+          style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full, overflow: 'hidden' as const }]}
           reducedTransparencyFallbackColor="white"
         />
       )
@@ -114,9 +118,7 @@ function AdminTabs() {
         component={DashboardScreen}
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="chart-bar" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="chart-simple" color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -124,9 +126,7 @@ function AdminTabs() {
         component={ItemListScreen}
         options={{
           title: 'Kleidung',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="tshirt" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="shirt" color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -134,29 +134,23 @@ function AdminTabs() {
         component={ItemCreateScreen}
         options={{
           title: 'Neu anlegen',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="plus-circle" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="circle-plus" color={color} size={size} />,
         }}
       />
       <Tab.Screen
         name="StoreInfo"
         component={StoreInfoScreen}
         options={{
-          title: 'Store-Info',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="store" solid={focused} size={size} color={color} />
-          ),
+          title: 'Store',
+          tabBarIcon: ({ color, size }) => <TabIcon name="store" color={color} size={size} />,
         }}
       />
       <Tab.Screen
         name="Kampagnen"
         component={CampaignListScreen}
         options={{
-          title: 'Kampagnen',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="bullhorn" solid={focused} size={size} color={color} />
-          ),
+          title: 'Aktionen',
+          tabBarIcon: ({ color, size }) => <TabIcon name="bullhorn" color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -164,9 +158,7 @@ function AdminTabs() {
         component={AchievementAdminScreen}
         options={{
           title: 'Badges',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="trophy" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="trophy" color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -174,9 +166,7 @@ function AdminTabs() {
         component={VolunteerManagementScreen}
         options={{
           title: 'Team',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="users" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="users" color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -184,9 +174,7 @@ function AdminTabs() {
         component={AdminPushScreen}
         options={{
           title: 'Push',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="bell" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="bell" color={color} size={size} />,
         }}
       />
     </Tab.Navigator>
@@ -201,9 +189,7 @@ function VolunteerTabs() {
         component={ItemListScreen}
         options={{
           title: 'Kleidung',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="tshirt" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="shirt" color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -211,108 +197,47 @@ function VolunteerTabs() {
         component={ItemCreateScreen}
         options={{
           title: 'Neu anlegen',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="plus-circle" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="circle-plus" color={color} size={size} />,
         }}
       />
     </Tab.Navigator>
   );
 }
 
+// Visitor: Home / Check-In / Badges / Punkte (Scan+CheckIn zusammengelegt)
 function VisitorTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute' as const,
-            bottom: 20,
-            left: 20,
-            right: 20,
-            borderRadius: borderRadius.full,
-            backgroundColor: 'transparent',
-            borderTopWidth: 0,
-            elevation: 0,
-            shadowColor: glass.shadowColor,
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.18,
-            shadowRadius: 20,
-            height: 72,
-            paddingBottom: 10,
-          },
-          android: {
-            backgroundColor: glass.androidBackground,
-            borderTopColor: glass.androidBorderColor,
-            elevation: 8,
-          },
-        }),
-        tabBarBackground: Platform.OS === 'ios'
-          ? () => (
-              <BlurView
-                blurType={glass.blurType}
-                blurAmount={glass.blurAmount}
-                style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full }]}
-                reducedTransparencyFallbackColor="white"
-              />
-            )
-          : undefined,
-        tabBarLabelStyle: {
-          fontFamily: fonts.medium,
-          fontSize: 11,
-        },
-        headerTransparent: true,
-        headerStyle: {
-          backgroundColor: 'transparent',
-        },
-        headerBackground: () => <GlassHeader />,
-        headerTintColor: colors.white,
-        headerTitleStyle: {
-          fontFamily: fonts.bold,
-          fontSize: 17,
-        },
-      }}
-    >
+    <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={({ navigation }) => ({
           title: 'Home',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="home" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="house" color={color} size={size} />,
           headerRight: () => (
             <TouchableOpacity
               onPress={() => navigation.navigate('Settings' as never)}
               style={{ marginRight: 16 }}
             >
-              <Icon name="cog" size={20} color={colors.white} />
+              <FontAwesome6 name="gear" iconStyle="solid" size={20} color={colors.white} />
             </TouchableOpacity>
           ),
         })}
-      />
-      <Tab.Screen
-        name="Scan"
-        component={ScanScreen}
-        options={{
-          title: 'Scannen',
-          headerShown: false,
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="qrcode" solid={focused} size={size} color={color} />
-          ),
-        }}
       />
       <Tab.Screen
         name="CheckIn"
         component={CheckInScreen}
         options={{
           title: 'Check-In',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="check-circle" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="qrcode" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Badges"
+        component={BadgeOverviewScreen}
+        options={{
+          title: 'Badges',
+          tabBarIcon: ({ color, size }) => <TabIcon name="trophy" color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -320,9 +245,7 @@ function VisitorTabs() {
         component={PointsHistoryScreen}
         options={{
           title: 'Punkte',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon name="coins" solid={focused} size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <TabIcon name="coins" color={color} size={size} />,
         }}
       />
     </Tab.Navigator>
@@ -364,9 +287,9 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
         options={{ headerShown: true, title: 'Badge-Verwaltung' }}
       />
       <Stack.Screen
-        name="BadgeOverview"
-        component={BadgeOverviewScreen}
-        options={{ headerShown: true, title: 'Meine Badges' }}
+        name="Scan"
+        component={ScanScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Settings"
