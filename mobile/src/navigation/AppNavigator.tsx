@@ -32,6 +32,27 @@ import { colors, fonts, borderRadius, glass } from '../theme';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+function GlassHeader() {
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      {Platform.OS === 'ios' && (
+        <BlurView
+          blurType={glass.blurType}
+          blurAmount={glass.blurAmount}
+          style={StyleSheet.absoluteFill}
+          reducedTransparencyFallbackColor={colors.primary}
+        />
+      )}
+      <LinearGradient
+        colors={['rgba(39,176,146,0.75)', 'rgba(128,180,226,0.65)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
+  );
+}
+
 const tabScreenOptions = {
   headerShown: true,
   tabBarActiveTintColor: colors.primary,
@@ -73,9 +94,11 @@ const tabScreenOptions = {
     fontFamily: fonts.medium,
     fontSize: 11,
   },
+  headerTransparent: true,
   headerStyle: {
-    backgroundColor: colors.primary,
+    backgroundColor: 'transparent',
   },
+  headerBackground: () => <GlassHeader />,
   headerTintColor: colors.white,
   headerTitleStyle: {
     fontFamily: fonts.bold,
@@ -241,9 +264,11 @@ function VisitorTabs() {
           fontFamily: fonts.medium,
           fontSize: 11,
         },
+        headerTransparent: true,
         headerStyle: {
-          backgroundColor: colors.primary,
+          backgroundColor: 'transparent',
         },
+        headerBackground: () => <GlassHeader />,
         headerTintColor: colors.white,
         headerTitleStyle: {
           fontFamily: fonts.bold,
@@ -309,7 +334,9 @@ function AuthenticatedStack({ role }: { role: string | undefined }) {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        headerStyle: { backgroundColor: colors.primary },
+        headerTransparent: true,
+        headerStyle: { backgroundColor: 'transparent' },
+        headerBackground: () => <GlassHeader />,
         headerTintColor: colors.white,
         headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
       }}
