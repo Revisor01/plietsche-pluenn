@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
 import { fetchShowcaseItems, type ShowcaseItem } from '../../api/items.api';
 import { fetchMyAchievements, type AchievementWithProgress } from '../../api/badges.api';
+import { GlassCard } from '../../components/GlassCard';
 
 export default function HomeScreen() {
   const { balance, isLoading, loadBalance } = usePointsStore();
@@ -40,82 +41,92 @@ export default function HomeScreen() {
   }, [loadBalance]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <LinearGradient
-        colors={[...colors.gradientColors]}
-        locations={[...colors.gradientLocations]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.pointsCard}
-      >
-        <Text style={styles.pointsLabel}>PlietschPunkte</Text>
-        <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
-        <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
-        {topAchievement && (
-          <View style={styles.badgeLabel}>
-            <Icon
-              name={topAchievement.iconName || 'trophy'}
-              solid
-              size={18}
-              color={colors.white}
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.badgeLabelText}>{topAchievement.name}</Text>
+    <LinearGradient
+      colors={['#e8f7f4', '#edf5f9', '#f0f4f9']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        <LinearGradient
+          colors={[...colors.gradientColors]}
+          locations={[...colors.gradientLocations]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.pointsCard}
+        >
+          <Text style={styles.pointsLabel}>PlietschPunkte</Text>
+          <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
+          <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
+          {topAchievement && (
+            <View style={styles.badgeLabel}>
+              <Icon
+                name={topAchievement.iconName || 'trophy'}
+                solid
+                size={18}
+                color={colors.white}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.badgeLabelText}>{topAchievement.name}</Text>
+            </View>
+          )}
+          {achievementCount && (
+            <Text style={styles.pointsToNextLabel}>
+              {achievementCount.completed} von {achievementCount.total} Badges erreicht
+            </Text>
+          )}
+        </LinearGradient>
+
+        {showcase.length > 0 && (
+          <View style={styles.showcaseSection}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+              <Icon name="eye" size={18} color={colors.text} style={{ marginRight: spacing.xs }} />
+              <Text style={styles.showcaseSectionTitle}>Schau mal rein</Text>
+            </View>
+            <Text style={styles.showcaseSectionSubtitle}>Ausgewählte Stücke — komm vorbei!</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.showcaseScroll}>
+              {showcase.map((item) => (
+                <GlassCard key={item.id} style={styles.showcaseCard} radius={12}>
+                  <Text style={styles.showcaseCardTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.showcaseCardCategory}>{item.category}</Text>
+                  {item.size ? <Text style={styles.showcaseCardMeta}>Größe: {item.size}</Text> : null}
+                  {item.color ? <Text style={styles.showcaseCardMeta}>{item.color}</Text> : null}
+                </GlassCard>
+              ))}
+            </ScrollView>
           </View>
         )}
-        {achievementCount && (
-          <Text style={styles.pointsToNextLabel}>
-            {achievementCount.completed} von {achievementCount.total} Badges erreicht
+
+        <GlassCard style={{ marginBottom: spacing.lg }} radius={12}>
+          <TouchableOpacity
+            style={styles.badgesButton}
+            onPress={() => navigation.navigate('BadgeOverview' as never)}
+          >
+            <Icon name="medal" solid size={14} color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.badgesButtonText}>Alle Badges ansehen</Text>
+          </TouchableOpacity>
+        </GlassCard>
+
+        <GlassCard style={styles.welcomeSection}>
+          <Text style={styles.welcomeTitle}>
+            Willkommen{user?.username ? `, ${user.username}` : ''}!
           </Text>
-        )}
-      </LinearGradient>
+          <Text style={styles.welcomeText}>
+            Scanne den QR-Code an Kleidungsstücken oder checke ein, um PlietschPunkte zu sammeln.
+          </Text>
+        </GlassCard>
 
-      {showcase.length > 0 && (
-        <View style={styles.showcaseSection}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
-            <Icon name="eye" size={18} color={colors.text} style={{ marginRight: spacing.xs }} />
-            <Text style={styles.showcaseSectionTitle}>Schau mal rein</Text>
-          </View>
-          <Text style={styles.showcaseSectionSubtitle}>Ausgewählte Stücke — komm vorbei!</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.showcaseScroll}>
-            {showcase.map((item) => (
-              <View key={item.id} style={styles.showcaseCard}>
-                <Text style={styles.showcaseCardTitle} numberOfLines={2}>{item.title}</Text>
-                <Text style={styles.showcaseCardCategory}>{item.category}</Text>
-                {item.size ? <Text style={styles.showcaseCardMeta}>Größe: {item.size}</Text> : null}
-                {item.color ? <Text style={styles.showcaseCardMeta}>{item.color}</Text> : null}
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      <TouchableOpacity
-        style={styles.badgesButton}
-        onPress={() => navigation.navigate('BadgeOverview' as never)}
-      >
-        <Icon name="medal" solid size={14} color={colors.primary} style={{ marginRight: 6 }} />
-        <Text style={styles.badgesButtonText}>Alle Badges ansehen</Text>
-      </TouchableOpacity>
-
-      <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeTitle}>
-          Willkommen{user?.username ? `, ${user.username}` : ''}!
-        </Text>
-        <Text style={styles.welcomeText}>
-          Scanne den QR-Code an Kleidungsstücken oder checke ein, um PlietschPunkte zu sammeln.
-        </Text>
-      </View>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Abmelden</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <Text style={styles.logoutText}>Abmelden</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
+  scrollView: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.md },
   pointsCard: {
     borderRadius: borderRadius.lg,
@@ -167,11 +178,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.lg,
   },
   badgesButtonText: {
     fontSize: 14,
@@ -179,7 +185,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   welcomeSection: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
@@ -227,16 +232,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   showcaseCard: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginRight: spacing.sm,
     width: 140,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
   showcaseCardTitle: {
     fontSize: 14,

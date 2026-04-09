@@ -8,6 +8,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { apiClient } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
+import { GlassCard } from '../../components/GlassCard';
 
 type Props = {
   navigation: StackNavigationProp<any>;
@@ -50,7 +51,7 @@ export default function LoginScreen({ navigation }: Props): React.JSX.Element {
         <Text style={styles.subtitle}>Dein Kleidertausch-Laden</Text>
       </LinearGradient>
 
-      <View style={styles.form}>
+      <GlassCard style={styles.form}>
         <TextInput
           style={styles.input}
           placeholder="E-Mail"
@@ -94,7 +95,7 @@ export default function LoginScreen({ navigation }: Props): React.JSX.Element {
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.linkText}>Noch kein Konto? Registrieren</Text>
         </TouchableOpacity>
-      </View>
+      </GlassCard>
     </View>
   );
 }
@@ -127,14 +128,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.lg,
     marginTop: -20,
-    backgroundColor: colors.background,
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
   },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(0,0,0,0.12)',
     borderRadius: borderRadius.sm,
     padding: 14,
     marginBottom: spacing.md,
