@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerPushToken, unregisterPushToken } from '../services/pushService';
 
 export interface AuthUserState {
   id: string;
@@ -20,12 +21,21 @@ interface AuthStore {
   loadOnboardingState: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   token: null,
   user: null,
   onboardingCompleted: false,
-  login: (token, user) => set({ token, user }),
-  logout: () => set({ token: null, user: null }),
+  login: (token, user) => {
+    set({ token, user });
+    registerPushToken(token).catch(() => {});
+  },
+  logout: () => {
+    const currentToken = get().token;
+    if (currentToken) {
+      unregisterPushToken(currentToken).catch(() => {});
+    }
+    set({ token: null, user: null });
+  },
   completeOnboarding: () => {
     set({ onboardingCompleted: true });
     AsyncStorage.setItem('onboarding_completed', 'true');
