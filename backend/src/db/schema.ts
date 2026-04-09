@@ -129,3 +129,14 @@ export const weeklyVisits = pgTable('weekly_visits', {
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.storeId, t.weekStart] }),
 }));
+
+export const deviceTokens = pgTable('device_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  storeId: uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  token: text('token').notNull(),
+  platform: text('platform', { enum: ['ios', 'android'] }).notNull(),
+  pushEnabled: boolean('push_enabled').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});

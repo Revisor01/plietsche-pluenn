@@ -21,6 +21,7 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY drizzle.config.ts ./
 COPY src/db/schema.ts ./src/db/schema.ts
+COPY firebase-service-account.json ./firebase-service-account.json
 
 EXPOSE 3000
 
