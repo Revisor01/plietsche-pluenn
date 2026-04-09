@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "252129474740",
+    "project_id": "plietsche-pluenn",
+    "storage_bucket": "plietsche-pluenn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252129474740:android:b29eca26435652b16f7fe1",
+        "android_client_info": {
+          "package_name": "com.plietschepluenn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApyGHUVzAHqG-vBsG7FjsAHY0fLwE1kCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

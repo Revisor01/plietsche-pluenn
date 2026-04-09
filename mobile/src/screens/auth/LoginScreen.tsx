@@ -50,9 +50,11 @@ export default function LoginScreen({ navigation }: Props): React.JSX.Element {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <Text style={styles.logoText}>P</Text>
-            <Text style={styles.superscript}>2</Text>
+          <View style={styles.logoCircle}>
+            <View style={styles.logoRow}>
+              <Text style={styles.logoText}>P</Text>
+              <Text style={styles.superscript}>2</Text>
+            </View>
           </View>
           <Text style={styles.title}>Plietsche Plünn</Text>
           <Text style={styles.subtitle}>Dein Kleidertausch-Laden</Text>
@@ -113,10 +115,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
+  logoCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
   logoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: spacing.sm,
   },
   logoText: {
     fontSize: 64,
