@@ -53,34 +53,55 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Punkte-Card: weiss/glass auf Gradient-Hintergrund */}
+        {/* Punkte-Card */}
         <GlassCard style={styles.pointsCard}>
           <Text style={styles.pointsLabel}>PlietschPunkte</Text>
-          <View style={styles.pointsRing}>
+
+          {/* Doppelter Ring mit Gradient-Glow */}
+          <LinearGradient
+            colors={[...colors.gradientColors]}
+            locations={[...colors.gradientLocations]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.pointsRingOuter}
+          >
             <View style={styles.pointsRingInner}>
               <Text style={styles.pointsValue}>{isLoading ? '...' : balance}</Text>
+              <Text style={styles.pointsUnit}>Punkte</Text>
             </View>
-          </View>
+          </LinearGradient>
+
+          {/* Motivationstext */}
           <Text style={styles.pointsMotivation}>
-            {achievementCount && achievementCount.completed > 0 ? 'Weiter so!' : 'Fang an zu sammeln!'}
+            {(balance ?? 0) >= 200 ? 'Du bist ein Profi!' :
+             (balance ?? 0) >= 100 ? 'Fantastisch!' :
+             (balance ?? 0) >= 50 ? 'Weiter so!' :
+             (balance ?? 0) > 0 ? 'Guter Start!' : 'Fang an zu sammeln!'}
           </Text>
-          <Text style={styles.pointsSubtitle}>Dein aktueller Stand</Text>
+
+          {/* Badge-Info */}
           {topAchievement && (
             <View style={styles.badgeLabel}>
-              <FontAwesome6
-                name={(topAchievement.iconName || 'trophy') as any}
-                iconStyle="solid"
-                size={22}
-                color={colors.primary}
-                style={{ marginRight: 8 }}
-              />
+              <View style={styles.badgeIconCircle}>
+                <FontAwesome6
+                  name={(topAchievement.iconName || 'trophy') as any}
+                  iconStyle="solid"
+                  size={16}
+                  color={colors.white}
+                />
+              </View>
               <Text style={styles.badgeLabelText}>{topAchievement.name}</Text>
             </View>
           )}
           {achievementCount && (
-            <Text style={styles.badgeCountText}>
-              {achievementCount.completed} von {achievementCount.total} Badges erreicht
-            </Text>
+            <View style={styles.badgeProgress}>
+              <View style={styles.badgeProgressBar}>
+                <View style={[styles.badgeProgressFill, { width: `${Math.round((achievementCount.completed / Math.max(achievementCount.total, 1)) * 100)}%` }]} />
+              </View>
+              <Text style={styles.badgeCountText}>
+                {achievementCount.completed}/{achievementCount.total} Badges
+              </Text>
+            </View>
           )}
         </GlassCard>
 
@@ -172,42 +193,76 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
   },
-  pointsRing: {
+  pointsRingOuter: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    padding: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: spacing.md,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  pointsRingInner: {
     width: 140,
     height: 140,
     borderRadius: 70,
-    borderWidth: 4,
-    borderColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: spacing.sm,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  pointsRingInner: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   pointsValue: {
-    fontSize: 72,
+    fontSize: 48,
     fontFamily: fonts.bold,
     color: colors.text,
-    lineHeight: 80,
+    textAlign: 'center',
+  },
+  pointsUnit: {
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: -2,
   },
   pointsMotivation: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: fonts.semiBold,
     color: colors.primary,
+    textAlign: 'center',
     marginBottom: spacing.xs,
   },
-  pointsSubtitle: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  badgeIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  badgeProgress: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    width: '100%',
+    paddingHorizontal: spacing.md,
+  },
+  badgeProgressBar: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    marginRight: spacing.sm,
+    overflow: 'hidden',
+  },
+  badgeProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: colors.primary,
   },
   badgeLabel: {
     flexDirection: 'row',
