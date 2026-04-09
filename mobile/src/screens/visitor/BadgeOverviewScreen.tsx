@@ -10,6 +10,7 @@ import {
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { fetchMyAchievements, type AchievementWithProgress } from '../../api/badges.api';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
+import { GlassCard } from '../../components/GlassCard';
 
 const TIER_COLORS: Record<string, string> = {
   bronze: '#CD7F32',
@@ -111,12 +112,13 @@ export default function BadgeOverviewScreen() {
             );
 
             return (
-              <View
+              <GlassCard
                 key={achievement.id}
                 style={[
                   styles.badgeCard,
                   achievement.completed && { borderColor: tierColor, borderWidth: 2 },
                 ]}
+                radius={12}
               >
                 <View
                   style={[
@@ -172,7 +174,7 @@ export default function BadgeOverviewScreen() {
                     </Text>
                   )}
                 </View>
-              </View>
+              </GlassCard>
             );
           })}
         </View>
@@ -209,12 +211,9 @@ const styles = StyleSheet.create({
   },
   badgeCard: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
     alignItems: 'flex-start',
   },
   iconContainer: {

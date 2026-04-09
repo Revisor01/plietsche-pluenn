@@ -10,6 +10,7 @@ import {
 import axios from 'axios';
 import { fetchDashboardStats, DashboardStats } from '../../api/dashboard.api';
 import { colors, fonts, spacing, borderRadius } from '../../theme';
+import { GlassCard } from '../../components/GlassCard';
 
 type Period = 'today' | 'week' | 'month' | 'year';
 
@@ -62,10 +63,10 @@ interface StatCardProps {
 
 function StatCard({ label, value, bgColor, accentColor }: StatCardProps) {
   return (
-    <View style={[styles.card, { backgroundColor: bgColor }]}>
+    <GlassCard style={[styles.card, { borderColor: accentColor + '40' }]} radius={12}>
       <Text style={[styles.cardValue, { color: accentColor }]}>{value}</Text>
       <Text style={styles.cardLabel}>{label}</Text>
-    </View>
+    </GlassCard>
   );
 }
 
@@ -231,11 +232,6 @@ const styles = StyleSheet.create({
     width: '47%',
     borderRadius: borderRadius.md,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 3,
   },
   cardValue: {
     fontSize: 40,

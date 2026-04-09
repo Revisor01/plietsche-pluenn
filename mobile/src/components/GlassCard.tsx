@@ -1,12 +1,12 @@
 import React from 'react';
-import { Platform, StyleSheet, View, ViewStyle } from 'react-native';
+import { Platform, StyleSheet, StyleProp, View, ViewStyle } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { BlurView } from '@react-native-community/blur';
 import { borderRadius, glass } from '../theme';
 
 export interface GlassCardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   /** Border-Radius -- Standard: borderRadius.lg (16) */
   radius?: number;
   /** Blur-Staerke uebersteuern -- Standard: glass.blurAmount (20), max 25 */
@@ -17,29 +17,32 @@ export function GlassCard({ children, style, radius = borderRadius.lg, blurAmoun
   // T-11-02: blurAmount auf max 25 begrenzen, hohe Werte koennen auf alten Geraeten laggen
   const clampedBlurAmount = Math.min(blurAmount, 25);
 
-  const containerStyle: ViewStyle = {
-    borderRadius: radius,
-    overflow: 'hidden',
-    borderWidth: glass.borderWidth,
-    borderColor: glass.borderColor,
-    shadowColor: glass.shadowColor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: glass.shadowOpacity,
-    shadowRadius: glass.shadowRadius,
-    elevation: 4,
-  };
+  const containerStyle: StyleProp<ViewStyle> = [
+    {
+      borderRadius: radius,
+      overflow: 'hidden',
+      borderWidth: glass.borderWidth,
+      borderColor: glass.borderColor,
+      shadowColor: glass.shadowColor,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: glass.shadowOpacity,
+      shadowRadius: glass.shadowRadius,
+      elevation: 4,
+    },
+    style,
+  ];
 
   if (Platform.OS === 'android') {
     // Android-Fallback: kein nativer Blur
     return (
-      <View style={[containerStyle, { backgroundColor: glass.androidBackground, borderColor: glass.androidBorderColor }, style]}>
+      <View style={[containerStyle, { backgroundColor: glass.androidBackground, borderColor: glass.androidBorderColor }]}>
         {children}
       </View>
     );
   }
 
   return (
-    <View style={[containerStyle, style]}>
+    <View style={containerStyle}>
       <BlurView
         blurType={glass.blurType}
         blurAmount={clampedBlurAmount}
