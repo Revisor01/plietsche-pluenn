@@ -59,3 +59,25 @@ export const borderRadius = {
   lg: 16,
   full: 999,
 };
+
+export const glass = {
+  // iOS: BlurView-Typ fuer @react-native-community/blur
+  blurType: 'chromeMaterial' as const,  // passt zu iOS 26 frosted glass
+  blurAmount: 20,
+
+  // Tint-Gradient ueber dem Blur (sehr leicht transluzent)
+  tintColors: ['rgba(255,255,255,0.18)', 'rgba(255,255,255,0.08)'] as const,
+
+  // Card-Rahmen
+  borderColor: 'rgba(255,255,255,0.35)',
+  borderWidth: 1,
+
+  // Android-Fallback (kein Blur-Support)
+  androidBackground: 'rgba(255,255,255,0.82)',
+  androidBorderColor: 'rgba(0,0,0,0.08)',
+
+  // Schatten fuer Glass-Cards
+  shadowColor: '#000',
+  shadowOpacity: 0.12,
+  shadowRadius: 12,
+};
