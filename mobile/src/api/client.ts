@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const BASE_URL = (process.env.API_BASE_URL as string | undefined) ?? 'https://xn--plietsche-plnn-rsb.de/api';
+const BASE_URL = (process.env.API_BASE_URL as string | undefined) ?? 'https://xn--plietsche-plnn-rsb.de';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,

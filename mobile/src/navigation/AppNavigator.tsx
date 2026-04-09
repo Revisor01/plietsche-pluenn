@@ -3,6 +3,7 @@ import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import Toast from 'react-native-toast-message';
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 import { BlurView } from '@react-native-community/blur';
@@ -31,6 +32,7 @@ import { colors, fonts, borderRadius, glass } from '../theme';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const NativeTab = createNativeBottomTabNavigator();
 
 function GlassHeader() {
   return (
@@ -204,89 +206,44 @@ function VolunteerTabs() {
   );
 }
 
-// Visitor: Home / Check-In / Badges / Punkte -- kein Header, iOS 26 Floating Pill Tab-Bar
+// Visitor: Home / Check-In / Badges / Punkte -- native iOS 26 Liquid Glass Tab-Bar
 function VisitorTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: 'rgba(80,80,80,0.55)',
-        tabBarShowLabel: true,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute' as const,
-            bottom: 28,
-            left: 24,
-            right: 24,
-            borderRadius: borderRadius.full,
-            backgroundColor: 'transparent',
-            borderTopWidth: 0,
-            elevation: 0,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.18,
-            shadowRadius: 20,
-            height: 64,
-            paddingBottom: 8,
-            paddingTop: 8,
-          },
-          android: {
-            backgroundColor: glass.androidBackground,
-            borderTopColor: glass.androidBorderColor,
-            elevation: 8,
-          },
-        }),
-        tabBarBackground: Platform.OS === 'ios'
-          ? () => (
-              <BlurView
-                blurType="chromeMaterialLight"
-                blurAmount={25}
-                style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.full, overflow: 'hidden' as const }]}
-                reducedTransparencyFallbackColor="white"
-              />
-            )
-          : undefined,
-        tabBarLabelStyle: {
-          fontFamily: fonts.medium,
-          fontSize: 10,
-          marginTop: 1,
-        },
-      }}
-    >
-      <Tab.Screen
+    <NativeTab.Navigator>
+
+      <NativeTab.Screen
         name="Home"
         component={HomeScreen}
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <TabIcon name="house" color={color} size={size} />,
+          tabBarIcon: ({ sfSymbol: 'house' } as any),
         }}
       />
-      <Tab.Screen
+      <NativeTab.Screen
         name="CheckIn"
         component={CheckInScreen}
         options={{
           title: 'Check-In',
-          tabBarIcon: ({ color, size }) => <TabIcon name="qrcode" color={color} size={size} />,
+          tabBarIcon: ({ sfSymbol: 'qrcode.viewfinder' } as any),
         }}
       />
-      <Tab.Screen
+      <NativeTab.Screen
         name="Badges"
         component={BadgeOverviewScreen}
         options={{
           title: 'Badges',
-          tabBarIcon: ({ color, size }) => <TabIcon name="trophy" color={color} size={size} />,
+          tabBarIcon: ({ sfSymbol: 'trophy' } as any),
         }}
       />
-      <Tab.Screen
+      <NativeTab.Screen
         name="Punkte"
         component={PointsHistoryScreen}
         options={{
           title: 'Punkte',
-          tabBarIcon: ({ color, size }) => <TabIcon name="coins" color={color} size={size} />,
+          tabBarIcon: ({ sfSymbol: 'star.circle' } as any),
         }}
       />
-    </Tab.Navigator>
+    </NativeTab.Navigator>
   );
 }
 
