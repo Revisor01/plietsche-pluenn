@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import QRCode from 'qrcode';
 import * as itemsRepo from './items.repository';
+import * as pushService from '../push/push.service';
 import type { CreateItemBody, ItemFilters } from './items.types';
 
 export async function createItem(body: CreateItemBody, storeId: string) {
@@ -24,7 +25,17 @@ export async function getShowcaseItems(storeId: string) {
 }
 
 export async function setShowcase(id: string, storeId: string, isShowcase: boolean) {
-  return itemsRepo.setShowcase(id, storeId, isShowcase);
+  const result = await itemsRepo.setShowcase(id, storeId, isShowcase);
+  if (isShowcase) {
+    pushService.sendToStore(
+      storeId,
+      'Neues Highlight',
+      'Neues Highlight im Laden!'
+    ).catch((err: unknown) => {
+      console.error('[Push] Showcase-Push fehlgeschlagen:', err);
+    });
+  }
+  return result;
 }
 
 export async function getItemQrPng(itemId: string, storeId: string): Promise<Buffer> {
