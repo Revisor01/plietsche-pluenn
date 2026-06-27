@@ -1,4 +1,65 @@
 {
-  "name": "PlietschePluenn",
-  "displayName": "PlietschePluenn"
+  "expo": {
+    "name": "Plietsche Plünn",
+    "slug": "plietsche-pluenn",
+    "owner": "r3visor",
+    "scheme": "pp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "de.godsapp.plietschepluenn",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Plietsche Plünn nutzt die Kamera zum Scannen von Check-In- und Item-QR-Codes.",
+        "NSLocationWhenInUseUsageDescription": "Plietsche Plünn prüft beim Check-In, ob du vor Ort im Laden bist.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "de.godsapp.plietschepluenn",
+      "adaptiveIcon": {
+        "backgroundColor": "#F4F7F4",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Plietsche Plünn nutzt die Kamera zum Scannen von Check-In- und Item-QR-Codes."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Plietsche Plünn prüft beim Check-In, ob du vor Ort im Laden bist."
+        }
+      ],
+      "expo-secure-store",
+      "expo-splash-screen",
+      "expo-font",
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4269fc25-59a2-44e0-9a7f-50a77b3d8288"
+      }
+    }
+  }
 }

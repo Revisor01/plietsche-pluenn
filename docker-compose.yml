@@ -1,52 +1,33 @@
-version: '3.9'
+# Deployment stack for server.godsapp.de (Portainer).
+# Routes via Traefik label → pb.plietsche-plünn.de (Punycode host).
+# Apache (KeyHelp) → 127.0.0.1:8888 (Traefik) → this container.
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: plietsche-postgres
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:0.22.21
+    container_name: plietsche-pocketbase
     restart: unless-stopped
+    command:
+      - "--encryptionEnv=PB_ENCRYPTION_KEY"
+      - "--http=0.0.0.0:8090"
     environment:
-      POSTGRES_USER: plietsche
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-plietsche_secret}
-      POSTGRES_DB: plietschepluenn
+      PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./pb_data:/pb_data
+      - ./pb_hooks:/pb_hooks
+      - ./pb_migrations:/pb_migrations
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U plietsche -d plietschepluenn"]
-      interval: 10s
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8090/api/health"]
+      interval: 30s
       timeout: 5s
-      retries: 5
-    networks:
-      - internal
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: plietsche-backend
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://plietsche:${POSTGRES_PASSWORD:-plietsche_secret}@postgres:5432/plietschepluenn
-      JWT_SECRET: ${JWT_SECRET}
-      DOOR_QR_SECRET: ${DOOR_QR_SECRET}
-      PORT: 3000
-      NODE_ENV: production
-    depends_on:
-      postgres:
-        condition: service_healthy
+      retries: 3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.plietsche-backend.rule=Host(`plietsche-pluenn.godsapp.de`)"
-      - "traefik.http.services.plietsche-backend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.plietsche-pb.rule=Host(`pb.xn--plietsche-plnn-rsb.de`)"
+      - "traefik.http.services.plietsche-pb.loadbalancer.server.port=8090"
     networks:
       - traefik
-      - internal
-
-volumes:
-  postgres_data:
 
 networks:
   traefik:
     external: true
-  internal:
-    driver: bridge

@@ -1,0 +1,52 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Env / Secrets
+.env
+.env.local
+.env.secrets
+*.secrets
+*.p8
+*.p12
+GoogleService-Info.plist
+google-services.json
+
+# Node / Expo
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Expo / EAS
+*.jks
+*.keystore
+.eas/
+
+# iOS / Android native build artifacts (Expo prebuild)
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+android/build/
+
+# PocketBase runtime data
+pocketbase/pb_data/
+pocketbase/pocketbase
+pocketbase/*.zip
+
+# Claude Code
+.claude/
+
+# Backup tarballs
+*.zip
+*.tar.gz
