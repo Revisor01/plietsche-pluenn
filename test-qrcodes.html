@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plietsche Plünn — Test-QR-Codes</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; background: #F4F7F4; color: #1A2E2C; margin: 0; padding: 24px; }
+  h1 { font-size: 22px; letter-spacing: -0.4px; }
+  p.sub { color: #5A6B6A; font-size: 14px; margin-top: -8px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+  .card { background: #fff; border-radius: 22px; padding: 20px; box-shadow: 0 8px 24px rgba(26,46,44,0.06); width: 220px; }
+  .card .qr { display: flex; justify-content: center; padding: 10px; background: #fff; border-radius: 14px; }
+  .label { font-weight: 600; font-size: 15px; margin-top: 12px; }
+  .meta { color: #5A6B6A; font-size: 12.5px; margin-top: 2px; }
+  .door { border: 2px solid #27b092; }
+  .tag { display:inline-block; font-size:10.5px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:#27b092; background:rgba(39,176,146,0.10); padding:4px 10px; border-radius:999px; margin-bottom:6px; }
+</style>
+</head>
+<body>
+<h1>Plietsche Plünn — Test-QR-Codes</h1>
+<p class="sub">Scanne diese mit der App. Tür-QR = Check-In, Item-QRs = Teil scannen.</p>
+<div class="grid" id="grid"></div>
+<script>
+  const codes = [
+    { id: 'door', label: 'Tür-QR (Check-In)', meta: 'Im Check-In-Tab scannen', value: 'pFaPBjolEQVK3zztlrpCXGoIJB3MERF2', door: true, tag: 'Check-In' },
+    { id: 'i1', label: 'Wollpullover, S', meta: '30 Punkte · DEMO-001', value: 'DEMO-001', tag: 'Teil scannen' },
+    { id: 'i2', label: 'Sommerkleid, M', meta: '40 Punkte · DEMO-002', value: 'DEMO-002', tag: 'Teil scannen' },
+    { id: 'i3', label: 'Lederjacke, L', meta: '50 Punkte · DEMO-003', value: 'DEMO-003', tag: 'Teil scannen' },
+  ];
+  const grid = document.getElementById('grid');
+  codes.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'card' + (c.door ? ' door' : '');
+    card.innerHTML = `<span class="tag">${c.tag}</span><div class="qr" id="${c.id}"></div><div class="label">${c.label}</div><div class="meta">${c.meta}</div>`;
+    grid.appendChild(card);
+    new QRCode(document.getElementById(c.id), { text: c.value, width: 180, height: 180, colorDark: '#1A2E2C', colorLight: '#ffffff' });
+  });
+</script>
+</body>
+</html>
