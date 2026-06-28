@@ -72,12 +72,31 @@ onRecordAfterUpdateRequest((e) => {
   const role = `${submitter.get('role')}`;
   if (role !== 'visitor') return;
 
-  const pts = lib.POINTS.bringPerItem || 5;
-  lib.awardPoints(submitter, pts, 'bring', `Teil gebracht: ${r.get('title')}`, r.id);
-
-  // If the staff member credited this item to an action, bump the submitter's
-  // contribution count for that campaign (drives action_participation badges).
+  // If the staff member credited this item to an action, that action's
+  // multiplier applies to the bring points (×1.5/2/3) — "doppelte Punkte" while
+  // an action is running. No campaign credited → plain bring points.
   const campId = `${r.get('campaign') || ''}`.trim();
+  let mult = 1.0;
+  let campLabel = '';
+  if (campId) {
+    try {
+      const camp = dao.findRecordById('campaigns', campId);
+      const m = camp.get('multiplier');
+      if (m && m > 1) mult = m;
+      campLabel = `${camp.get('name') || ''}`.trim();
+    } catch (_) {}
+  }
+
+  const base = lib.POINTS.bringPerItem || 5;
+  const pts = Math.round(base * mult);
+  const label =
+    mult > 1 && campLabel
+      ? `Teil gebracht (${campLabel} ×${mult}): ${r.get('title')}`
+      : `Teil gebracht: ${r.get('title')}`;
+  lib.awardPoints(submitter, pts, 'bring', label, r.id);
+
+  // Bump the submitter's contribution count for that campaign (drives
+  // action_participation badges).
   if (campId) {
     try {
       let cnt;
