@@ -95,7 +95,7 @@ export default function Points() {
                 <Pill icon="arrow-up">+{formatPoints(weekTotal)} diese Woche</Pill>
               )}
               <PPText size={11} color={PP.ink2} style={{ marginTop: 4 }}>
-                {tier.remaining > 0 ? `noch ${formatPoints(tier.remaining)} bis ${tier.name}` : 'Gold erreicht'}
+                {tier.remaining > 0 ? `noch ${formatPoints(tier.remaining)} bis ${tier.name}` : `${tier.current} erreicht`}
               </PPText>
             </View>
           </View>
