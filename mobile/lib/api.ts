@@ -45,6 +45,30 @@ export async function deleteBadge(id: string): Promise<void> {
   await pb.collection('badges').delete(id);
 }
 
+// ── Aktionen (campaigns) ───────────────────────────────────────
+import type { Campaign, Need } from './types';
+
+export async function createCampaign(input: Partial<Omit<Campaign, 'id'>>): Promise<Campaign> {
+  return (await pb.collection('campaigns').create(input)) as unknown as Campaign;
+}
+export async function updateCampaign(id: string, patch: Partial<Campaign>): Promise<Campaign> {
+  return (await pb.collection('campaigns').update(id, patch)) as unknown as Campaign;
+}
+export async function deleteCampaign(id: string): Promise<void> {
+  await pb.collection('campaigns').delete(id);
+}
+
+// ── Bedarf-Aushang (needs) ─────────────────────────────────────
+export async function createNeed(input: Partial<Omit<Need, 'id'>>): Promise<Need> {
+  return (await pb.collection('needs').create(input)) as unknown as Need;
+}
+export async function updateNeed(id: string, patch: Partial<Need>): Promise<Need> {
+  return (await pb.collection('needs').update(id, patch)) as unknown as Need;
+}
+export async function deleteNeed(id: string): Promise<void> {
+  await pb.collection('needs').delete(id);
+}
+
 export interface NewItemInput {
   title: string;
   category: string;

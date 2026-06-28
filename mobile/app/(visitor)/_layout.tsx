@@ -19,7 +19,10 @@ export default function VisitorLayout() {
       <Tabs.Screen name="items/index" options={{ href: null }} />
       <Tabs.Screen name="items/new" options={{ href: null }} />
       <Tabs.Screen name="items/review" options={{ href: null }} />
+      <Tabs.Screen name="items/[id]" options={{ href: null }} />
       <Tabs.Screen name="admin/badges" options={{ href: null }} />
+      <Tabs.Screen name="admin/actions" options={{ href: null }} />
+      <Tabs.Screen name="admin/needs" options={{ href: null }} />
     </Tabs>
   );
 }

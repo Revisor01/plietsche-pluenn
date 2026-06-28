@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
 import { PP } from '../../lib/theme';
-import { useCurrentUser, useShowcase, useActiveCampaign, usePointsLog, usePendingItems, useRecentItems } from '../../lib/hooks/useData';
+import { useCurrentUser, useShowcase, useActiveCampaign, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds } from '../../lib/hooks/useData';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { nextTier, formatPoints, relativeDay, initials, itemThumb } from '../../lib/format';
 import {
@@ -34,6 +34,7 @@ export default function Home() {
   const { data: points } = usePointsLog(3);
   const { data: pending } = usePendingItems();
   const { data: recentItems } = useRecentItems(6);
+  const { data: needs } = useActiveNeeds();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -134,6 +135,25 @@ export default function Home() {
             </View>
           </GradientCard>
         </View>
+      )}
+
+      {!!needs?.length && (
+        <>
+          <SectionTitle title="Das suchen wir gerade" />
+          <View style={{ paddingHorizontal: 20, gap: 10 }}>
+            {needs.map((n) => (
+              <Card key={n.id} pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(128,180,226,0.16)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="search" size={18} color={PP.sky} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{n.title}</PPText>
+                  {!!n.detail && <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 1 }}>{n.detail}</PPText>}
+                </View>
+              </Card>
+            ))}
+          </View>
+        </>
       )}
 
       <View style={{ paddingHorizontal: 20, paddingTop: 14, flexDirection: 'row', gap: 12 }}>

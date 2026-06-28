@@ -10,11 +10,13 @@ import { createBadge, updateBadge, deleteBadge, type BadgeInput } from '../../..
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
 
-const TRIGGERS: { key: string; label: string }[] = [
-  { key: 'visits', label: 'Besuche' },
-  { key: 'scans', label: 'Teile geholt' },
-  { key: 'items_brought', label: 'Teile gebracht' },
-  { key: 'streak_weeks', label: 'Streak-Wochen' },
+const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
+  { key: 'visits', label: 'Besuche', kinds: ['tiered', 'single'] },
+  { key: 'scans', label: 'Teile geholt', kinds: ['tiered', 'single'] },
+  { key: 'items_brought', label: 'Teile gebracht', kinds: ['tiered', 'single'] },
+  { key: 'streak_weeks', label: 'Streak-Wochen', kinds: ['tiered', 'single'] },
+  { key: 'years_active', label: 'Jahre aktiv (Treue)', kinds: ['single'] },
+  { key: 'action_participation', label: 'Aktions-Teilnahme', kinds: ['single'] },
 ];
 
 const TIERS = [
@@ -28,7 +30,10 @@ type Draft = {
   name: string;
   description: string;
   icon: string;
+  kind: 'tiered' | 'single';
   trigger_type: string;
+  trigger_value: string; // single: threshold
+  points_reward: string; // single: one-off bonus
   is_visible: boolean;
   tiers: Record<string, string>; // threshold per tier
   rewards: Record<string, string>; // reward per tier
@@ -39,7 +44,10 @@ function toDraft(b?: Badge): Draft {
     name: b?.name ?? '',
     description: b?.description ?? '',
     icon: b?.icon ?? 'medal',
+    kind: b?.kind ?? 'tiered',
     trigger_type: b?.trigger_type ?? 'visits',
+    trigger_value: String(b?.trigger_value ?? ''),
+    points_reward: String(b?.points_reward ?? ''),
     is_visible: b?.is_visible ?? true,
     tiers: {
       bronze: String(b?.tier_bronze ?? ''),
@@ -58,22 +66,32 @@ function toDraft(b?: Badge): Draft {
 
 function draftToInput(d: Draft): BadgeInput {
   const num = (v: string) => (v.trim() === '' ? 0 : parseInt(v, 10) || 0);
-  return {
+  const base: any = {
     name: d.name.trim(),
     description: d.description.trim(),
     icon: d.icon.trim() || 'medal',
     slug: d.name.trim().toLowerCase().replace(/\s+/g, '-'),
+    kind: d.kind,
     trigger_type: d.trigger_type,
     is_visible: d.is_visible,
-    tier_bronze: num(d.tiers.bronze),
-    tier_silber: num(d.tiers.silber),
-    tier_gold: num(d.tiers.gold),
-    tier_platin: num(d.tiers.platin),
-    reward_bronze: num(d.rewards.bronze),
-    reward_silber: num(d.rewards.silber),
-    reward_gold: num(d.rewards.gold),
-    reward_platin: num(d.rewards.platin),
-  } as BadgeInput;
+  };
+  if (d.kind === 'single') {
+    base.trigger_value = num(d.trigger_value || '1') || 1;
+    base.points_reward = num(d.points_reward);
+    // zero out tier fields for single badges
+    base.tier_bronze = 0; base.tier_silber = 0; base.tier_gold = 0; base.tier_platin = 0;
+    base.reward_bronze = 0; base.reward_silber = 0; base.reward_gold = 0; base.reward_platin = 0;
+  } else {
+    base.tier_bronze = num(d.tiers.bronze);
+    base.tier_silber = num(d.tiers.silber);
+    base.tier_gold = num(d.tiers.gold);
+    base.tier_platin = num(d.tiers.platin);
+    base.reward_bronze = num(d.rewards.bronze);
+    base.reward_silber = num(d.rewards.silber);
+    base.reward_gold = num(d.rewards.gold);
+    base.reward_platin = num(d.rewards.platin);
+  }
+  return base as BadgeInput;
 }
 
 function BadgeEditor({ badge, onSaved }: { badge?: Badge; onSaved: () => void }) {
@@ -126,12 +144,31 @@ function BadgeEditor({ badge, onSaved }: { badge?: Badge; onSaved: () => void })
       <Field label="Beschreibung" value={draft.description} onChangeText={(v) => set({ description: v })} placeholder="Kurzer Text" />
       <Field label="Icon (FA6-Name)" value={draft.icon} onChangeText={(v) => set({ icon: v })} placeholder="medal" />
 
+      {/* Art: Tier-Badge (Bronze→Platin) oder einfaches Abzeichen */}
       <View>
         <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>
-          AUSLÖSER
+          ART
+        </PPText>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <Pressable onPress={() => set({ kind: 'tiered', trigger_type: 'visits' })}>
+            <Pill bg={draft.kind === 'tiered' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'tiered' ? '#fff' : PP.ink2}>
+              Stufen (Bronze→Platin)
+            </Pill>
+          </Pressable>
+          <Pressable onPress={() => set({ kind: 'single' })}>
+            <Pill bg={draft.kind === 'single' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'single' ? '#fff' : PP.ink2}>
+              Einzel-Abzeichen
+            </Pill>
+          </Pressable>
+        </View>
+      </View>
+
+      <View>
+        <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>
+          AUSLÖSER — WOFÜR ES VERGEBEN WIRD
         </PPText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {TRIGGERS.map((t) => (
+          {TRIGGERS.filter((t) => t.kinds.includes(draft.kind)).map((t) => (
             <Pressable key={t.key} onPress={() => set({ trigger_type: t.key })}>
               <Pill bg={draft.trigger_type === t.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.trigger_type === t.key ? '#fff' : PP.ink2}>
                 {t.label}
@@ -141,25 +178,48 @@ function BadgeEditor({ badge, onSaved }: { badge?: Badge; onSaved: () => void })
         </View>
       </View>
 
-      <View style={{ gap: 8 }}>
-        <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
-          STUFEN — SCHWELLE & PUNKTE
-        </PPText>
-        {TIERS.map((t) => (
-          <View key={t.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 64, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.color }} />
-              <PPText size={PP.fontSizes.sm} color={PP.ink}>{t.label}</PPText>
+      {draft.kind === 'single' ? (
+        <View style={{ gap: 8 }}>
+          {draft.trigger_type === 'years_active' && (
+            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+              Wird am 31.12. rückwirkend vergeben — nur wenn im Jahr aktiv. „ab" = ab welchem aktiven Jahr (1 = erstes Jahr).
+            </PPText>
+          )}
+          {draft.trigger_type === 'action_participation' && (
+            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+              Wird vergeben, wer während der gekoppelten Aktion aktiv war. Verknüpfe das Badge in der Aktion.
+            </PPText>
+          )}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <Field label="ab (Schwelle)" value={draft.trigger_value} onChangeText={(v) => set({ trigger_value: v })} keyboardType="number-pad" placeholder="1" />
             </View>
             <View style={{ flex: 1 }}>
-              <Field label="ab" value={draft.tiers[t.key]} onChangeText={(v) => setTier(t.key, v)} keyboardType="number-pad" placeholder="0" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Field label="Punkte" value={draft.rewards[t.key]} onChangeText={(v) => setReward(t.key, v)} keyboardType="number-pad" placeholder="0" />
+              <Field label="Bonus-Punkte" value={draft.points_reward} onChangeText={(v) => set({ points_reward: v })} keyboardType="number-pad" placeholder="0" />
             </View>
           </View>
-        ))}
-      </View>
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
+            STUFEN — „ab" = ab wie vielen, Punkte = einmaliger Bonus
+          </PPText>
+          {TIERS.map((t) => (
+            <View key={t.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 64, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.color }} />
+                <PPText size={PP.fontSizes.sm} color={PP.ink}>{t.label}</PPText>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Field label="ab" value={draft.tiers[t.key]} onChangeText={(v) => setTier(t.key, v)} keyboardType="number-pad" placeholder="0" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Field label="Bonus" value={draft.rewards[t.key]} onChangeText={(v) => setReward(t.key, v)} keyboardType="number-pad" placeholder="0" />
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}>

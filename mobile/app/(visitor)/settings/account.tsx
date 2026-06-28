@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, Alert } from 'react-native';
+import { View, Alert, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { PP } from '../../../lib/theme';
+import { Icon, type IconName } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
 import {
@@ -16,10 +17,26 @@ import {
   IconButton,
 } from '../../../components/ui';
 
+function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress}>
+      <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(39,176,146,0.10)', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={icon} size={18} color={PP.teal} />
+        </View>
+        <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink} style={{ flex: 1 }}>{label}</PPText>
+        <Icon name="chevron-right" size={18} color={PP.ink3} />
+      </Card>
+    </Pressable>
+  );
+}
+
 export default function Account() {
   const router = useRouter();
   const { data: user, refetch } = useCurrentUser();
   const { updateName, updateEmail, updatePassword, logout } = useAuth();
+  const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState('');
@@ -141,6 +158,18 @@ export default function Account() {
           Passwort ändern
         </PPButton>
       </View>
+
+      {isStaff && (
+        <>
+          <SectionTitle title="Verwaltung" />
+          <View style={{ paddingHorizontal: 20, gap: 10 }}>
+            <AdminLink icon="shirt" label="Teile-Inventar" onPress={() => router.push('/(visitor)/items')} />
+            {isAdmin && <AdminLink icon="medal" label="Badges verwalten" onPress={() => router.push('/(visitor)/admin/badges')} />}
+            {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions')} />}
+            <AdminLink icon="search" label="Bedarf-Aushang" onPress={() => router.push('/(visitor)/admin/needs')} />
+          </View>
+        </>
+      )}
 
       <View style={{ paddingHorizontal: 20, marginTop: 32 }}>
         <PPButton variant="ghost" icon="arrow-left" onPress={logout}>

@@ -27,10 +27,22 @@ export interface Item {
 export interface Campaign {
   id: string;
   name: string;
+  description?: string;
   multiplier: number;
   starts_at: string;
   ends_at: string;
   target_role: string;
+  badge?: string;
+  created: string;
+}
+
+export interface Need {
+  id: string;
+  title: string;
+  detail?: string;
+  icon?: string;
+  is_active: boolean;
+  sort?: number;
   created: string;
 }
 
@@ -46,6 +58,8 @@ export interface PointsLog {
 
 export type Tier = 'none' | 'bronze' | 'silber' | 'gold' | 'platin';
 
+export type BadgeKind = 'tiered' | 'single';
+
 export interface Badge {
   id: string;
   slug: string;
@@ -53,7 +67,11 @@ export interface Badge {
   description: string;
   category: string;
   icon: string;
+  kind?: BadgeKind;
   trigger_type: string;
+  trigger_value?: number;
+  campaign?: string;
+  points_reward?: number;
   tier_bronze: number;
   tier_silber: number;
   tier_gold: number;

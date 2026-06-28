@@ -6,6 +6,13 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Neu
+- **Teil antippen → Detailseite zum Bearbeiten.** Alle Felder änderbar (Titel, Größe, Punkte, Standort, Kategorie, Foto), Schaufenster-Schalter, archivieren, freigeben und großer QR-Code zum Drucken.
+- **Aktionen mit Doppelpunkten.** Admin legt Aktionszeiträume an (z.B. „Winterkleidung 1.–31.12., ×2 Punkte"). In dem Zeitraum zählt jeder Scan/Check-in mehrfach. Optional ein Teilnahme-Badge koppeln.
+- **Bedarf-Aushang.** „Das suchen wir gerade" auf der Startseite — Helfer/Admin tragen ein, was der Laden braucht (z.B. „Winterjacken Gr. 140").
+- **Flexibleres Badge-System.** Zwei Arten: Stufen-Badges (Bronze→Platin, wie bisher) und Einzel-Abzeichen (ein Award mit optionalem Bonus) — z.B. für Jahres-Treue („1. Jahr aktiv", rückwirkend) oder Aktions-Teilnahme. Badge-Editor entsprechend erweitert und klarer beschriftet.
+- **Verwaltungs-Bereich** im Profil bündelt Inventar, Badges, Aktionen und Bedarf für Helfer/Admins.
+
 ### Behoben
 - **Gesamtpunkte aktualisierten sich nicht** nach Check-In/Scan. Die Anzeige hing am zwischengespeicherten Login-Stand; jetzt wird der Punktestand nach jedem Scan sofort frisch geladen und in den Login-Speicher zurückgeschrieben.
 - **Tastatur schloss sich nach jedem Buchstaben** in allen Formularen (Profil, Teil einstellen, Badge-Editor). Ursache war ein Render-Bug im Screen-Grundgerüst — behoben, der Fokus bleibt jetzt erhalten.
