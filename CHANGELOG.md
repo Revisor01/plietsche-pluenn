@@ -6,6 +6,13 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Neu
+- **„Bringen" zählt jetzt:** Wenn ein Besucher ein Teil einstellt und ein Helfer es freigibt, bekommt der Einsteller Bring-Punkte (einmalig pro Teil). Das Bringer-Badge zählt freigegebene Einreichungen.
+
+### Behoben
+- **SKU-Vergabe kollisionssicher** (leitet sich aus der höchsten bestehenden Nummer ab, nicht mehr aus der Anzahl — Löschungen verursachen keine Doppel-SKU mehr).
+- **E-Mail-Format wird geprüft**, bevor eine Änderung abgeschickt wird.
+
 ### Behoben (Welle 3 — Datenfluss)
 - **Punkte-History zeigte allen Admins ALLE Nutzer-Punkte** („mega viele Punkte"). Jetzt sieht jeder nur seine eigenen — auch Admins. Gleiches bei der Badge-Sammlung.
 - **Rolle (Helfer/Admin) wird überall konsistent erkannt** — der „Teile"-Tab und Admin-Funktionen erscheinen jetzt zuverlässig, auch direkt nach dem Start.

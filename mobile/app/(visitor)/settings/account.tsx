@@ -67,6 +67,10 @@ export default function Account() {
   const saveEmail = async () => {
     const next = email.trim().toLowerCase();
     if (!next || next === user?.email?.toLowerCase()) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+      Alert.alert('E-Mail', 'Bitte eine gültige E-Mail-Adresse eingeben.');
+      return;
+    }
     setBusy('email');
     try {
       await updateEmail(next);

@@ -295,11 +295,8 @@ module.exports = {
         return dao.findRecordsByFilter('points_log', `user = "${user.id}" && kind = "scan"`).length;
       }
       if (type === 'items_brought') {
-        // Sum confirmed brought items across all confirmed bringings.
-        let total = 0;
-        const rows = dao.findRecordsByFilter('bringings', `user = "${user.id}" && status = "confirmed"`);
-        for (const r of rows) total += r.get('confirmed_count') || 0;
-        return total;
+        // Count approved brought items (one bring-points_log row per item).
+        return dao.findRecordsByFilter('points_log', `user = "${user.id}" && kind = "bring"`, '', 0, 0).length;
       }
       if (type === 'streak_weeks') {
         return user.get('streak_weeks') || 0;
