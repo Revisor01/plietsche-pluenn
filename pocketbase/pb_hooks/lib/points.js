@@ -175,8 +175,28 @@ module.exports = {
         ub.set('current_tier', 'none');
       }
 
+      const kind = `${badge.get('kind') || 'tiered'}`;
       const progress = this.computeProgress(user, badge);
       ub.set('progress', progress);
+
+      if (kind === 'single') {
+        // One-time award: granted once the (single) threshold is met. Awards the
+        // optional points_reward bonus once, sets current_tier='gold' as the
+        // "earned" marker. years_active / action_participation are granted by
+        // their own routines (grantBadge), not here.
+        const need = badge.get('trigger_value') || 1;
+        const already = `${ub.get('current_tier') || 'none'}` !== 'none';
+        const triggerType = `${badge.get('trigger_type')}`;
+        const autoEval = triggerType !== 'years_active' && triggerType !== 'action_participation';
+        if (autoEval && !already && progress >= need) {
+          const bonus = badge.get('points_reward') || 0;
+          if (bonus > 0) this.awardPoints(user, bonus, 'badge', `${badge.get('name')}`, badge.id);
+          ub.set('current_tier', 'gold');
+          ub.set('unlocked_at', new Date().toISOString());
+        }
+        dao.saveRecord(ub);
+        continue;
+      }
 
       const newTier = this.reachedTier(badge, progress);
       const oldTier = `${ub.get('current_tier') || 'none'}`;
@@ -197,6 +217,29 @@ module.exports = {
       }
       dao.saveRecord(ub);
     }
+  },
+
+  // Explicitly grant a single badge to a user (idempotent). Used by the
+  // years-active year-end routine and action-participation grants.
+  grantBadge(user, badge) {
+    const dao = $app.dao();
+    let ub;
+    try {
+      ub = dao.findFirstRecordByFilter('user_badges', `user = "${user.id}" && badge = "${badge.id}"`);
+      if (`${ub.get('current_tier') || 'none'}` !== 'none') return false; // already granted
+    } catch (_) {
+      const col = dao.findCollectionByNameOrId('user_badges');
+      ub = new Record(col);
+      ub.set('user', user.id);
+      ub.set('badge', badge.id);
+    }
+    ub.set('progress', 1);
+    ub.set('current_tier', 'gold');
+    ub.set('unlocked_at', new Date().toISOString());
+    dao.saveRecord(ub);
+    const bonus = badge.get('points_reward') || 0;
+    if (bonus > 0) this.awardPoints(user, bonus, 'badge', `${badge.get('name')}`, badge.id);
+    return true;
   },
 
   computeProgress(user, badge) {

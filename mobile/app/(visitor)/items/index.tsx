@@ -29,7 +29,7 @@ function statusPill(item: Item) {
   return { label: 'im Laden', color: PP.ink2, bg: 'rgba(26,46,44,0.06)' };
 }
 
-function ItemRow({ item, onChange }: { item: Item; onChange: () => void }) {
+function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void; onOpen: () => void }) {
   const uri = itemThumb(item);
   const [busy, setBusy] = useState(false);
   const st = statusPill(item);
@@ -49,7 +49,7 @@ function ItemRow({ item, onChange }: { item: Item; onChange: () => void }) {
 
   return (
     <Card pad={12} style={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', gap: 12 }}>
+      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: 12 }}>
         <View
           style={{
             width: 70,
@@ -90,8 +90,9 @@ function ItemRow({ item, onChange }: { item: Item; onChange: () => void }) {
           <View style={{ padding: 5, backgroundColor: '#fff', borderRadius: 7 }}>
             <QRCode value={item.qr_code || item.sku} size={48} color={PP.ink} backgroundColor="#fff" />
           </View>
+          <Icon name="chevron-right" size={16} color={PP.ink3} />
         </View>
-      </View>
+      </Pressable>
 
       {!item.taken_at && (
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -175,7 +176,9 @@ export default function ItemsInventory() {
 
       <View style={{ paddingHorizontal: 20, gap: 10 }}>
         {filtered.length ? (
-          filtered.map((it) => <ItemRow key={it.id} item={it} onChange={onChange} />)
+          filtered.map((it) => (
+            <ItemRow key={it.id} item={it} onChange={onChange} onOpen={() => router.push(`/(visitor)/items/${it.id}`)} />
+          ))
         ) : (
           <Card pad={16}>
             <PPText size={PP.fontSizes.base} color={PP.ink2}>

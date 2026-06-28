@@ -58,6 +58,15 @@ export function useRecentItems(limit = 6) {
   });
 }
 
+// Single item by id — for the staff detail/edit screen.
+export function useItem(id?: string) {
+  return useQuery({
+    queryKey: ['item', id],
+    enabled: pb.authStore.isValid && !!id,
+    queryFn: async () => (await pb.collection('items').getOne(id!)) as unknown as Item,
+  });
+}
+
 // All items for the staff inventory view — every status, newest first.
 export function useAllItems() {
   return useQuery({
@@ -102,6 +111,41 @@ export function useActiveCampaign() {
       } catch {
         return null;
       }
+    },
+  });
+}
+
+// All campaigns (actions) for the admin screen — newest first.
+export function useCampaigns() {
+  return useQuery({
+    queryKey: ['campaigns', 'all'],
+    enabled: pb.authStore.isValid,
+    queryFn: async () => {
+      const res = await pb.collection('campaigns').getFullList({ sort: '-starts_at' });
+      return res as unknown as import('../types').Campaign[];
+    },
+  });
+}
+
+// Active "Bedarf" notices for the Home feed.
+export function useActiveNeeds() {
+  return useQuery({
+    queryKey: ['needs', 'active'],
+    queryFn: async () => {
+      const res = await pb.collection('needs').getFullList({ filter: 'is_active = true', sort: 'sort' });
+      return res as unknown as import('../types').Need[];
+    },
+  });
+}
+
+// All needs for the admin editor.
+export function useAllNeeds() {
+  return useQuery({
+    queryKey: ['needs', 'all'],
+    enabled: pb.authStore.isValid,
+    queryFn: async () => {
+      const res = await pb.collection('needs').getFullList({ sort: 'sort' });
+      return res as unknown as import('../types').Need[];
     },
   });
 }
