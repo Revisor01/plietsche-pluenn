@@ -15,4 +15,5 @@ export { Screen } from './Screen';
 export { Toast } from './Toast';
 export { Field } from './Field';
 export { IconButton } from './IconButton';
+export { IconPicker } from './IconPicker';
 export { Toggle } from './Toggle';

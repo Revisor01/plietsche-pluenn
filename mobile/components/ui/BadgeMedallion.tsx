@@ -16,6 +16,7 @@ const TIER_COLORS: Record<Exclude<Tier, 'none'>, { base: string; light: string }
   silber: { base: PP.silver, light: '#E0E0E0' },
   gold: { base: PP.gold, light: '#FFD658' },
   platin: { base: PP.platin, light: '#B9DCE8' },
+  diamant: { base: PP.diamant, light: '#B6ECF6' },
 };
 
 export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 56 }: BadgeMedallionProps) {

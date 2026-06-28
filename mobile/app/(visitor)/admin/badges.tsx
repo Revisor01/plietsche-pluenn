@@ -7,7 +7,7 @@ import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useAllBadges } from '../../../lib/hooks/useData';
 import { createBadge, updateBadge, deleteBadge, type BadgeInput } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
 
 const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
@@ -24,6 +24,7 @@ const TIERS = [
   { key: 'silber', label: 'Silber', color: PP.silver },
   { key: 'gold', label: 'Gold', color: PP.gold },
   { key: 'platin', label: 'Platin', color: PP.platin },
+  { key: 'diamant', label: 'Diamant', color: PP.diamant },
 ] as const;
 
 type Draft = {
@@ -54,12 +55,14 @@ function toDraft(b?: Badge): Draft {
       silber: String(b?.tier_silber ?? ''),
       gold: String(b?.tier_gold ?? ''),
       platin: String(b?.tier_platin ?? ''),
+      diamant: String(b?.tier_diamant ?? ''),
     },
     rewards: {
       bronze: String(b?.reward_bronze ?? ''),
       silber: String(b?.reward_silber ?? ''),
       gold: String(b?.reward_gold ?? ''),
       platin: String(b?.reward_platin ?? ''),
+      diamant: String(b?.reward_diamant ?? ''),
     },
   };
 }
@@ -86,10 +89,12 @@ function draftToInput(d: Draft): BadgeInput {
     base.tier_silber = num(d.tiers.silber);
     base.tier_gold = num(d.tiers.gold);
     base.tier_platin = num(d.tiers.platin);
+    base.tier_diamant = num(d.tiers.diamant);
     base.reward_bronze = num(d.rewards.bronze);
     base.reward_silber = num(d.rewards.silber);
     base.reward_gold = num(d.rewards.gold);
     base.reward_platin = num(d.rewards.platin);
+    base.reward_diamant = num(d.rewards.diamant);
   }
   return base as BadgeInput;
 }
@@ -142,7 +147,7 @@ function BadgeEditor({ badge, onSaved }: { badge?: Badge; onSaved: () => void })
     <Card pad={14} style={{ gap: 12 }}>
       <Field label="Name" value={draft.name} onChangeText={(v) => set({ name: v })} placeholder="z.B. Stammgast" />
       <Field label="Beschreibung" value={draft.description} onChangeText={(v) => set({ description: v })} placeholder="Kurzer Text" />
-      <Field label="Icon (FA6-Name)" value={draft.icon} onChangeText={(v) => set({ icon: v })} placeholder="medal" />
+      <IconPicker value={draft.icon} onChange={(ic) => set({ icon: ic })} />
 
       {/* Art: Tier-Badge (Bronze→Platin) oder einfaches Abzeichen */}
       <View>

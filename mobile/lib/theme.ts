@@ -34,6 +34,7 @@ export const PP = {
   silver: '#B8B8B8',
   gold: '#E8B923',
   platin: '#7FB6C9',
+  diamant: '#6FD3E8',
 
   // radii
   rCard: 22,

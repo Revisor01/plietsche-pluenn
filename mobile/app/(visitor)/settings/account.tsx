@@ -165,6 +165,7 @@ export default function Account() {
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
             <AdminLink icon="shirt" label="Teile-Inventar" onPress={() => router.push('/(visitor)/items')} />
             {isAdmin && <AdminLink icon="medal" label="Badges verwalten" onPress={() => router.push('/(visitor)/admin/badges')} />}
+            {isAdmin && <AdminLink icon="gauge" label="Punkte-Ränge" onPress={() => router.push('/(visitor)/admin/tiers')} />}
             {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions')} />}
             <AdminLink icon="search" label="Bedarf-Aushang" onPress={() => router.push('/(visitor)/admin/needs')} />
           </View>

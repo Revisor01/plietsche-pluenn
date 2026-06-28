@@ -56,7 +56,7 @@ export interface PointsLog {
   created: string;
 }
 
-export type Tier = 'none' | 'bronze' | 'silber' | 'gold' | 'platin';
+export type Tier = 'none' | 'bronze' | 'silber' | 'gold' | 'platin' | 'diamant';
 
 export type BadgeKind = 'tiered' | 'single';
 
@@ -76,10 +76,12 @@ export interface Badge {
   tier_silber: number;
   tier_gold: number;
   tier_platin: number;
+  tier_diamant?: number;
   reward_bronze: number;
   reward_silber: number;
   reward_gold: number;
   reward_platin: number;
+  reward_diamant?: number;
   is_visible: boolean;
 }
 
@@ -101,6 +103,7 @@ export interface Store {
   lng: number;
   phone: string;
   hours_json: Record<string, string | null>;
+  tiers_json?: { name: string; at: number }[];
   cover_photo?: string;
   geofence_radius_m: number;
 }

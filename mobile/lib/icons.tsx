@@ -137,3 +137,12 @@ export function Icon({ name, size = 22, color = PP.ink, style }: IconProps) {
   const fa = FA6[name] ?? 'circle';
   return <FontAwesome6 name={fa as any} size={size} color={color} iconStyle="solid" style={style} />;
 }
+
+// All selectable icon names — used by the badge icon picker. Curated to the
+// ones that read well as a badge symbol.
+export const BADGE_ICONS: IconName[] = [
+  'medal', 'trophy', 'star', 'heart', 'flame', 'sparkles', 'gift', 'leaf',
+  'shirt', 'tag', 'coins', 'compass', 'bookmark', 'calendar', 'clock', 'door',
+  'house', 'user', 'users', 'camera', 'image', 'megaphone', 'gauge', 'chart',
+  'map-pin', 'bell', 'search', 'check',
+];

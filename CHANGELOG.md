@@ -7,6 +7,11 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Neu
+- **Icon-Picker für Badges.** Statt FA6-Namen zu tippen, wählt man das Badge-Icon aus einem Raster.
+- **Diamant** als 5. Stufe — bei Badges (zusätzlich zu Bronze/Silber/Gold/Platin) und bei den globalen Punkte-Rängen.
+- **Punkte-Ränge selbst einstellen.** Neuer Admin-Bereich „Punkte-Ränge": die Punktgrenzen für Bronze→Diamant (Startseiten-Ring) frei konfigurierbar.
+
+### Neu (vorherige Runde)
 - **Teil antippen → Detailseite zum Bearbeiten.** Alle Felder änderbar (Titel, Größe, Punkte, Standort, Kategorie, Foto), Schaufenster-Schalter, archivieren, freigeben und großer QR-Code zum Drucken.
 - **Aktionen mit Doppelpunkten.** Admin legt Aktionszeiträume an (z.B. „Winterkleidung 1.–31.12., ×2 Punkte"). In dem Zeitraum zählt jeder Scan/Check-in mehrfach. Optional ein Teilnahme-Badge koppeln.
 - **Bedarf-Aushang.** „Das suchen wir gerade" auf der Startseite — Helfer/Admin tragen ein, was der Laden braucht (z.B. „Winterjacken Gr. 140").
