@@ -96,6 +96,17 @@ export function formatPoints(n: number) {
   return n.toLocaleString('de-DE');
 }
 
+// Reader-friendly label for a campaign's points multiplier, so users see what
+// an action gets them. ×2 → "Doppelte Punkte", ×3 → "Dreifach-Punkte",
+// everything else → "×N Punkte" (e.g. ×1,5).
+export function campaignBonusLabel(multiplier?: number) {
+  const m = multiplier ?? 1;
+  if (m >= 3) return 'Dreifach-Punkte';
+  if (m === 2) return 'Doppelte Punkte';
+  if (m > 1) return `${m.toLocaleString('de-DE')}× Punkte`;
+  return '';
+}
+
 // Colour for a rank/tier name (case-insensitive). No rank yet ("—") is neutral.
 export function tierColor(name?: string) {
   switch ((name ?? '').toLowerCase()) {

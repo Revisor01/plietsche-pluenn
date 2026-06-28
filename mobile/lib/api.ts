@@ -63,6 +63,21 @@ export async function saveTiers(storeId: string, tiers: { name: string; at: numb
   await pb.collection('store').update(storeId, { tiers_json: tiers });
 }
 
+// ── Push: sofort an alle senden ────────────────────────────────
+// Creates a push_messages row scheduled for "now"; the push-scheduled cron
+// (runs every minute) picks it up and delivers it via Expo. Category "other"
+// covers manual store broadcasts (respects each user's push_other_enabled).
+export async function sendPushNow(title: string, body: string, deepLink?: string): Promise<void> {
+  await pb.collection('push_messages').create({
+    title,
+    body,
+    target_segment: 'all',
+    deep_link: deepLink ?? '',
+    scheduled_at: new Date().toISOString(),
+    sent_at: '',
+  });
+}
+
 // ── Bedarf-Aushang (needs) ─────────────────────────────────────
 export async function createNeed(input: Partial<Omit<Need, 'id'>>): Promise<Need> {
   return (await pb.collection('needs').create(input)) as unknown as Need;

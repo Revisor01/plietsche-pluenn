@@ -7,6 +7,11 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Neu
+- **Neuer Tab „Laden":** Alle Nutzer sehen das gesamte verfügbare Angebot im Laden, mit Filtern nach Kleidungsart und Größe. Teile sind antippbar und öffnen eine Detailansicht.
+- **„Neu im Laden" antippbar:** Die Teile auf der Startseite führen jetzt direkt zur Detailansicht; „Alles ansehen" springt in den Laden-Tab.
+- **Schnell-Vorlagen + Push im Aushang:** Im Aushang-Editor gibt es Vorlagen-Buttons (z.B. „Wir haben jetzt geöffnet", „Heute geschlossen", „Neue Ware ist da"). Beim Anlegen kann optional direkt eine Push-Benachrichtigung an alle gesendet werden.
+- **Einreichen mit klarer Wahl:** Beim Vorschlagen eines Teils wählt man jetzt ausdrücklich „Bringe ich in den Laden" oder „Verbleibt bei mir". Bei „Verbleibt bei mir" ist die Standortangabe Pflicht.
+- **Aktions-Bonus sichtbar:** Auf der Startseite zeigt jede laufende Aktion gut sichtbar, was sie bringt (z.B. „Doppelte Punkte", „Dreifach-Punkte"). Im Admin-Editor sieht man die Vorschau direkt beim Einstellen des Faktors.
 - **Doppelte Punkte während einer Aktion:** Ordnet ein Helfer beim Freigeben ein gebrachtes Teil einer laufenden Aktion zu, bekommt der Einsteller die Bring-Punkte mit dem Aktions-Faktor (×1,5/×2/×3). Ohne Aktion bleibt es bei den normalen Bring-Punkten. Der Faktor steht zur Klarheit in der Punkte-History.
 - **Aktions-Badges mit Fortschritt.** Ein Badge für eine Aktion kann jetzt Einzel-Abzeichen ODER Stufen sein (z.B. „Winterkinder": Bronze ab 2 Teilen, Silber ab 4). Das Badge wird im Badge-Editor direkt mit der Aktion verknüpft.
 - **Helfer ordnet Teile einer Aktion zu:** Beim Freigeben fragt die App, zu welcher laufenden Aktion ein Teil zählt — das treibt die Fortschritts-Badges. Vergabe läuft laufend, sobald die Schwelle erreicht ist.

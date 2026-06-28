@@ -53,7 +53,8 @@ export default function NewItem() {
   const [size, setSize] = useState('');
   const [note, setNote] = useState('');
   const [location, setLocation] = useState('');
-  const [staysExternal, setStaysExternal] = useState(false);
+  const [destination, setDestination] = useState<'store' | 'mine' | null>(null);
+  const staysExternal = destination === 'mine';
   const [showcase, setShowcase] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -76,6 +77,14 @@ export default function NewItem() {
   const submit = async () => {
     if (!title.trim()) {
       Alert.alert('Fehlt noch', 'Bitte gib dem Teil einen Namen.');
+      return;
+    }
+    if (destination === null) {
+      Alert.alert('Fehlt noch', 'Bitte wähle, wohin das Teil kommt.');
+      return;
+    }
+    if (destination === 'mine' && location.trim() === '') {
+      Alert.alert('Standort fehlt', 'Bitte gib an, wo das Teil bei dir zu finden ist.');
       return;
     }
     setBusy(true);
@@ -183,26 +192,63 @@ export default function NewItem() {
         ))}
       </ScrollView>
 
-      <SectionTitle title="Standort" />
+      <SectionTitle title="Wohin kommt das Teil?" />
       <View style={{ paddingHorizontal: 20, gap: 12 }}>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <Pressable style={{ flex: 1 }} onPress={() => setDestination('store')}>
+            <Card
+              pad={14}
+              style={{
+                alignItems: 'center',
+                gap: 8,
+                borderWidth: 1.5,
+                borderColor: destination === 'store' ? PP.teal : 'rgba(26,46,44,0.10)',
+                backgroundColor: destination === 'store' ? 'rgba(39,176,146,0.10)' : undefined,
+              }}
+            >
+              <Icon name="house" size={26} color={destination === 'store' ? PP.teal : PP.ink2} />
+              <PPText
+                weight="semibold"
+                size={PP.fontSizes.base}
+                color={destination === 'store' ? PP.teal : PP.ink}
+                style={{ textAlign: 'center' }}
+              >
+                Bringe ich in den Laden
+              </PPText>
+            </Card>
+          </Pressable>
+
+          <Pressable style={{ flex: 1 }} onPress={() => setDestination('mine')}>
+            <Card
+              pad={14}
+              style={{
+                alignItems: 'center',
+                gap: 8,
+                borderWidth: 1.5,
+                borderColor: destination === 'mine' ? PP.teal : 'rgba(26,46,44,0.10)',
+                backgroundColor: destination === 'mine' ? 'rgba(39,176,146,0.10)' : undefined,
+              }}
+            >
+              <Icon name="map-pin" size={26} color={destination === 'mine' ? PP.teal : PP.ink2} />
+              <PPText
+                weight="semibold"
+                size={PP.fontSizes.base}
+                color={destination === 'mine' ? PP.teal : PP.ink}
+                style={{ textAlign: 'center' }}
+              >
+                Verbleibt bei mir
+              </PPText>
+            </Card>
+          </Pressable>
+        </View>
+
         <Field
           icon="map-pin"
-          label="Wo liegt das Teil?"
+          label={destination === 'mine' ? 'Wo liegt das Teil? (Pflicht)' : 'Standort (optional)'}
           value={location}
           onChangeText={setLocation}
-          placeholder="z.B. Regal 3 oder bei Fam. Meyer"
+          placeholder={destination === 'mine' ? 'z.B. bei Fam. Meyer, Hauptstr. 1' : 'z.B. Regal 3'}
         />
-        <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>
-              Verbleibt beim Besitzer
-            </PPText>
-            <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
-              Für große Teile, die nicht im Laden stehen.
-            </PPText>
-          </View>
-          <Toggle value={staysExternal} onChange={setStaysExternal} />
-        </Card>
 
         {isStaff && (
           <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

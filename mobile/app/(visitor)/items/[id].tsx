@@ -7,7 +7,7 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { useItem } from '../../../lib/hooks/useData';
+import { useItem, useCurrentUser } from '../../../lib/hooks/useData';
 import { updateItem, setShowcase, archiveItem, approveItem } from '../../../lib/api';
 import { itemThumb } from '../../../lib/format';
 import { pb } from '../../../lib/pb';
@@ -25,6 +25,8 @@ export default function ItemDetail() {
   const qc = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: item, refetch } = useItem(id);
+  const { data: me } = useCurrentUser();
+  const isStaff = me?.role === 'volunteer' || me?.role === 'admin';
 
   const [title, setTitle] = useState('');
   const [size, setSize] = useState('');
@@ -52,6 +54,59 @@ export default function ItemDetail() {
     return (
       <Screen padBottom={120}>
         <PPHeader subtitle="Teil" title="…" leading={<IconButton icon="chevron-left" onPress={() => router.back()} />} />
+      </Screen>
+    );
+  }
+
+  // Read-only view for normal users — no editing, just the item as shown in the
+  // shop. Staff fall through to the full editor below.
+  if (!isStaff) {
+    const uri = itemThumb(item);
+    return (
+      <Screen padBottom={120}>
+        <PPHeader
+          subtitle={item.sku}
+          title={item.title}
+          leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        />
+        <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ height: 280, borderRadius: 18, overflow: 'hidden', backgroundColor: 'rgba(39,176,146,0.08)', alignItems: 'center', justifyContent: 'center' }}>
+            {uri ? (
+              <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <Icon name="shirt" size={48} color="rgba(39,176,146,0.5)" />
+            )}
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 20, marginTop: 16, gap: 12 }}>
+          <Card pad={16} style={{ gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <PPText weight="bold" size={PP.fontSizes.lg} color={PP.ink}>{item.title}</PPText>
+              <Pill color={PP.teal} bg="rgba(39,176,146,0.12)">{item.points ?? 0} Punkte</Pill>
+            </View>
+            {(!!item.size || !!item.category) && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {!!item.size && <Pill size="s" color={PP.ink2} bg="rgba(26,46,44,0.06)">Größe {item.size}</Pill>}
+                {!!item.category && <Pill size="s" color={PP.ink2} bg="rgba(26,46,44,0.06)">{item.category}</Pill>}
+              </View>
+            )}
+            {!!item.location && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="map-pin" size={14} color={PP.ink2} />
+                <PPText size={PP.fontSizes.sm} color={PP.ink2}>{item.location}</PPText>
+              </View>
+            )}
+            {!!item.note && (
+              <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>{item.note}</PPText>
+            )}
+          </Card>
+          <Card pad={14} style={{ backgroundColor: 'rgba(39,176,146,0.07)' }}>
+            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+              Im Laden vorbeikommen und scannen, um es mitzunehmen.
+            </PPText>
+          </Card>
+        </View>
       </Screen>
     );
   }
