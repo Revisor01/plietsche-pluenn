@@ -7,6 +7,10 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Neu
+- **Aktions-Badges mit Fortschritt.** Ein Badge für eine Aktion kann jetzt Einzel-Abzeichen ODER Stufen sein (z.B. „Winterkinder": Bronze ab 2 Teilen, Silber ab 4). Das Badge wird im Badge-Editor direkt mit der Aktion verknüpft.
+- **Helfer ordnet Teile einer Aktion zu:** Beim Freigeben fragt die App, zu welcher laufenden Aktion ein Teil zählt — das treibt die Fortschritts-Badges. Vergabe läuft laufend, sobald die Schwelle erreicht ist.
+
+### Neu
 - **„Bringen" zählt jetzt:** Wenn ein Besucher ein Teil einstellt und ein Helfer es freigibt, bekommt der Einsteller Bring-Punkte (einmalig pro Teil). Das Bringer-Badge zählt freigegebene Einreichungen.
 
 ### Behoben

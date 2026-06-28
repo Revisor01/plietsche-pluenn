@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { useAllBadges } from '../../../lib/hooks/useData';
+import { useAllBadges, useCampaigns } from '../../../lib/hooks/useData';
+import type { Campaign } from '../../../lib/types';
 import { createBadge, updateBadge, deleteBadge, type BadgeInput } from '../../../lib/api';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
@@ -16,7 +17,7 @@ const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
   { key: 'items_brought', label: 'Teile gebracht', kinds: ['tiered', 'single'] },
   { key: 'streak_weeks', label: 'Streak-Wochen', kinds: ['tiered', 'single'] },
   { key: 'years_active', label: 'Jahre aktiv (Treue)', kinds: ['single'] },
-  { key: 'action_participation', label: 'Aktions-Teilnahme', kinds: ['single'] },
+  { key: 'action_participation', label: 'Aktions-Teilnahme', kinds: ['single', 'tiered'] },
 ];
 
 const TIERS = [
@@ -35,6 +36,7 @@ type Draft = {
   trigger_type: string;
   trigger_value: string; // single: threshold
   points_reward: string; // single: one-off bonus
+  campaign: string; // action_participation: linked campaign id
   is_visible: boolean;
   tiers: Record<string, string>; // threshold per tier
   rewards: Record<string, string>; // reward per tier
@@ -49,6 +51,7 @@ function toDraft(b?: Badge): Draft {
     trigger_type: b?.trigger_type ?? 'visits',
     trigger_value: String(b?.trigger_value ?? ''),
     points_reward: String(b?.points_reward ?? ''),
+    campaign: b?.campaign ?? '',
     is_visible: b?.is_visible ?? true,
     tiers: {
       bronze: String(b?.tier_bronze ?? ''),
@@ -76,6 +79,7 @@ function draftToInput(d: Draft): BadgeInput {
     slug: d.name.trim().toLowerCase().replace(/\s+/g, '-'),
     kind: d.kind,
     trigger_type: d.trigger_type,
+    campaign: d.trigger_type === 'action_participation' ? (d.campaign || null) : null,
     is_visible: d.is_visible,
   };
   if (d.kind === 'single') {
@@ -99,7 +103,7 @@ function draftToInput(d: Draft): BadgeInput {
   return base as BadgeInput;
 }
 
-function BadgeEditor({ badge, onSaved }: { badge?: Badge; onSaved: () => void }) {
+function BadgeEditor({ badge, campaigns, onSaved }: { badge?: Badge; campaigns: Campaign[]; onSaved: () => void }) {
   const [draft, setDraft] = useState<Draft>(toDraft(badge));
   const [busy, setBusy] = useState(false);
 
@@ -183,6 +187,26 @@ function BadgeEditor({ badge, onSaved }: { badge?: Badge; onSaved: () => void })
         </View>
       </View>
 
+      {draft.trigger_type === 'action_participation' && (
+        <View>
+          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>GEKOPPELTE AKTION</PPText>
+          {campaigns.length ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {campaigns.map((c) => (
+                <Pressable key={c.id} onPress={() => set({ campaign: c.id })}>
+                  <Pill bg={draft.campaign === c.id ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.campaign === c.id ? '#fff' : PP.ink2}>{c.name}</Pill>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <PPText size={PP.fontSizes.sm} color={PP.ink2}>Lege zuerst eine Aktion an, dann kannst du sie hier koppeln.</PPText>
+          )}
+          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 6 }}>
+            Beim Freigeben markiert der Helfer, ob ein Teil zu dieser Aktion zählt. Bei „Stufen" gibt es Bronze/Silber/… ab den unten gesetzten Schwellen.
+          </PPText>
+        </View>
+      )}
+
       {draft.kind === 'single' ? (
         <View style={{ gap: 8 }}>
           {draft.trigger_type === 'years_active' && (
@@ -249,6 +273,7 @@ export default function BadgeAdmin() {
   const router = useRouter();
   const qc = useQueryClient();
   const { data: badges, refetch } = useAllBadges();
+  const { data: campaigns } = useCampaigns();
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -280,7 +305,7 @@ export default function BadgeAdmin() {
         <>
           <SectionTitle title="Neues Badge" />
           <View style={{ paddingHorizontal: 20 }}>
-            <BadgeEditor onSaved={onSaved} />
+            <BadgeEditor campaigns={campaigns ?? []} onSaved={onSaved} />
           </View>
         </>
       )}
@@ -307,7 +332,7 @@ export default function BadgeAdmin() {
               </Pressable>
               {openId === b.id && (
                 <View style={{ marginTop: 8 }}>
-                  <BadgeEditor badge={b} onSaved={onSaved} />
+                  <BadgeEditor badge={b} campaigns={campaigns ?? []} onSaved={onSaved} />
                 </View>
               )}
             </View>

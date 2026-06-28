@@ -6,7 +6,8 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { usePendingItems } from '../../../lib/hooks/useData';
+import { usePendingItems, useActiveCampaigns } from '../../../lib/hooks/useData';
+import type { Campaign } from '../../../lib/types';
 import { approveItem, archiveItem } from '../../../lib/api';
 import { itemThumb } from '../../../lib/format';
 import {
@@ -20,21 +21,34 @@ import {
 } from '../../../components/ui';
 import type { Item } from '../../../lib/types';
 
-function PendingCard({ item, onDone }: { item: Item; onDone: () => void }) {
+function PendingCard({ item, campaigns, onDone }: { item: Item; campaigns: Campaign[]; onDone: () => void }) {
   const uri = itemThumb(item);
   const [busy, setBusy] = useState<null | 'approve' | 'reject'>(null);
   const submitter = (item as any).expand?.created_by?.name as string | undefined;
 
-  const approve = async (showcase: boolean) => {
+  const doApprove = async (showcase: boolean, campaignId?: string) => {
     setBusy('approve');
     try {
-      await approveItem(item.id, showcase);
+      await approveItem(item.id, showcase, campaignId);
       onDone();
     } catch (e: any) {
       Alert.alert('Fehler', e?.message ?? 'Konnte nicht freigeben.');
     } finally {
       setBusy(null);
     }
+  };
+
+  // Ask which running action this item counts toward (if any), then approve.
+  const approve = async (showcase: boolean) => {
+    if (!campaigns.length) return doApprove(showcase);
+    Alert.alert(
+      'Zählt zu einer Aktion?',
+      'Wofür soll dieses Teil zählen?',
+      [
+        { text: 'Keine', onPress: () => doApprove(showcase) },
+        ...campaigns.slice(0, 2).map((c) => ({ text: c.name, onPress: () => doApprove(showcase, c.id) })),
+      ],
+    );
   };
 
   const reject = async () => {
@@ -127,6 +141,7 @@ export default function ReviewItems() {
   const router = useRouter();
   const qc = useQueryClient();
   const { data: items, refetch } = usePendingItems();
+  const { data: campaigns } = useActiveCampaigns();
 
   const onDone = async () => {
     await refetch();
@@ -143,7 +158,7 @@ export default function ReviewItems() {
 
       <View style={{ paddingHorizontal: 20, gap: 12 }}>
         {items?.length ? (
-          items.map((it) => <PendingCard key={it.id} item={it} onDone={onDone} />)
+          items.map((it) => <PendingCard key={it.id} item={it} campaigns={campaigns ?? []} onDone={onDone} />)
         ) : (
           <Card pad={16}>
             <PPText size={PP.fontSizes.base} color={PP.ink2}>

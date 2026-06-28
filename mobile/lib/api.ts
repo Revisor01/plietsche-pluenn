@@ -113,10 +113,13 @@ export async function createItem(input: NewItemInput): Promise<Item> {
 }
 
 // Staff approval: pending → approved (optionally push to showcase).
-export async function approveItem(id: string, showcase = false): Promise<Item> {
+// Approve an item. Optionally push to showcase and credit it to a campaign
+// (the latter drives action_participation badges for the submitter).
+export async function approveItem(id: string, showcase = false, campaignId?: string): Promise<Item> {
   return (await pb.collection('items').update(id, {
     status: 'approved',
     ...(showcase ? { is_showcase: true } : {}),
+    ...(campaignId ? { campaign: campaignId } : {}),
   })) as unknown as Item;
 }
 

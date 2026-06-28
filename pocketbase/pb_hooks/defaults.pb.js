@@ -74,6 +74,26 @@ onRecordAfterUpdateRequest((e) => {
 
   const pts = lib.POINTS.bringPerItem || 5;
   lib.awardPoints(submitter, pts, 'bring', `Teil gebracht: ${r.get('title')}`, r.id);
+
+  // If the staff member credited this item to an action, bump the submitter's
+  // contribution count for that campaign (drives action_participation badges).
+  const campId = `${r.get('campaign') || ''}`.trim();
+  if (campId) {
+    try {
+      let cnt;
+      try {
+        cnt = dao.findFirstRecordByFilter('action_counts', `user = "${submitter.id}" && campaign = "${campId}"`);
+      } catch (_) {
+        cnt = new Record(dao.findCollectionByNameOrId('action_counts'));
+        cnt.set('user', submitter.id);
+        cnt.set('campaign', campId);
+        cnt.set('count', 0);
+      }
+      cnt.set('count', (cnt.get('count') || 0) + 1);
+      dao.saveRecord(cnt);
+    } catch (_) {}
+  }
+
   lib.checkBadges(submitter);
 
   // Flag so re-approval doesn't pay twice. Update via dao to avoid re-triggering.
