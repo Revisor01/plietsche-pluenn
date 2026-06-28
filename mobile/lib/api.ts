@@ -58,6 +58,11 @@ export async function deleteCampaign(id: string): Promise<void> {
   await pb.collection('campaigns').delete(id);
 }
 
+// ── Globale Punkte-Ränge (store.tiers_json) ────────────────────
+export async function saveTiers(storeId: string, tiers: { name: string; at: number }[]): Promise<void> {
+  await pb.collection('store').update(storeId, { tiers_json: tiers });
+}
+
 // ── Bedarf-Aushang (needs) ─────────────────────────────────────
 export async function createNeed(input: Partial<Omit<Need, 'id'>>): Promise<Need> {
   return (await pb.collection('needs').create(input)) as unknown as Need;

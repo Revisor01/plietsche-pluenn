@@ -1,4 +1,5 @@
 import { pb } from './pb';
+import { PP } from './theme';
 import type { Item, Badge, Tier } from './types';
 
 // Badge tier progression: current tier, next tier + bar progress toward it.
@@ -8,6 +9,7 @@ const TIER_NAMES: Record<Tier, string> = {
   silber: 'Silber',
   gold: 'Gold',
   platin: 'Platin',
+  diamant: 'Diamant',
 };
 
 export function badgeTierInfo(badge: Badge, progress: number) {
@@ -16,6 +18,7 @@ export function badgeTierInfo(badge: Badge, progress: number) {
     { tier: 'silber', at: badge.tier_silber },
     { tier: 'gold', at: badge.tier_gold },
     { tier: 'platin', at: badge.tier_platin },
+    { tier: 'diamant', at: badge.tier_diamant ?? 0 },
   ] as { tier: Tier; at: number }[]).filter((s) => s.at > 0);
 
   let current: Tier = 'none';
@@ -52,20 +55,26 @@ export function badgeTierInfo(badge: Badge, progress: number) {
   };
 }
 
-// Point tier thresholds (visual gold target on home ring).
-export const TIERS = [
+export type TierStep = { name: string; at: number };
+
+// Default point ranks — used until store.tiers_json is loaded. The admin can
+// override these (incl. Diamant) via the global tier editor.
+export const DEFAULT_TIERS: TierStep[] = [
   { name: 'Bronze', at: 0 },
   { name: 'Silber', at: 750 },
   { name: 'Gold', at: 1500 },
+  { name: 'Platin', at: 3000 },
+  { name: 'Diamant', at: 6000 },
 ];
 
-export function nextTier(points: number) {
-  // Current rank = highest tier whose threshold is already reached.
-  const current = [...TIERS].reverse().find((t) => t.at <= points) ?? TIERS[0];
-  // Next rank = first tier above the current points.
-  const next = TIERS.find((t) => t.at > points);
+// Current rank + progress to the next, against a configurable tier ladder.
+export function nextTier(points: number, tiers: TierStep[] = DEFAULT_TIERS) {
+  const ladder = (tiers && tiers.length ? tiers : DEFAULT_TIERS).slice().sort((a, b) => a.at - b.at);
+  const current = [...ladder].reverse().find((t) => t.at <= points) ?? ladder[0];
+  const next = ladder.find((t) => t.at > points);
   if (!next) {
-    return { current: 'Gold', name: 'Gold', remaining: 0, progress: 1, target: TIERS[TIERS.length - 1].at };
+    const top = ladder[ladder.length - 1];
+    return { current: top.name, name: top.name, remaining: 0, progress: 1, target: top.at };
   }
   const span = next.at - current.at;
   const progress = span > 0 ? (points - current.at) / span : 1;
@@ -80,6 +89,17 @@ export function nextTier(points: number) {
 
 export function formatPoints(n: number) {
   return n.toLocaleString('de-DE');
+}
+
+// Colour for a rank/tier name (case-insensitive). Falls back to bronze.
+export function tierColor(name?: string) {
+  switch ((name ?? '').toLowerCase()) {
+    case 'diamant': return PP.diamant;
+    case 'platin': return PP.platin;
+    case 'gold': return PP.gold;
+    case 'silber': return PP.silver;
+    default: return PP.bronze;
+  }
 }
 
 export function itemThumb(item: Item, size = '400x400') {

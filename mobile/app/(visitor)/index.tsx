@@ -4,9 +4,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
 import { PP } from '../../lib/theme';
-import { useCurrentUser, useShowcase, useActiveCampaign, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds } from '../../lib/hooks/useData';
+import { useCurrentUser, useShowcase, useActiveCampaign, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
 import { useAuth } from '../../lib/hooks/useAuth';
-import { nextTier, formatPoints, relativeDay, initials, itemThumb } from '../../lib/format';
+import { nextTier, formatPoints, relativeDay, initials, itemThumb, tierColor } from '../../lib/format';
 import {
   Screen,
   PPHeader,
@@ -35,6 +35,7 @@ export default function Home() {
   const { data: pending } = usePendingItems();
   const { data: recentItems } = useRecentItems(6);
   const { data: needs } = useActiveNeeds();
+  const { data: store } = useStore();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -44,7 +45,7 @@ export default function Home() {
   }, [qc]);
 
   const total = user?.points_total ?? 0;
-  const tier = nextTier(total);
+  const tier = nextTier(total, (store as any)?.tiers_json);
   const streak = user?.streak_weeks ?? 0;
 
   return (
@@ -72,7 +73,7 @@ export default function Home() {
             <PPText
               weight="semibold"
               size={10.5}
-              color={tier.current === 'Gold' ? PP.gold : tier.current === 'Silber' ? PP.silver : PP.bronze}
+              color={tierColor(tier.current)}
               style={{ marginTop: 1, letterSpacing: 0.3 }}
             >
               {tier.current.toUpperCase()}

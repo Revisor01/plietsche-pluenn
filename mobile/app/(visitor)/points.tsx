@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
-import { useCurrentUser, usePointsLog } from '../../lib/hooks/useData';
+import { useCurrentUser, usePointsLog, useStore } from '../../lib/hooks/useData';
 import { formatPoints, relativeDay } from '../../lib/format';
 import { nextTier } from '../../lib/format';
 import { Screen, PPHeader, PPText, Card, Pill } from '../../components/ui';
@@ -38,6 +38,7 @@ export default function Points() {
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();
   const { data: log } = usePointsLog(300);
+  const { data: store } = useStore();
   const [filter, setFilter] = useState<Filter>('all');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -66,7 +67,7 @@ export default function Points() {
   }, [filtered]);
 
   const total = user?.points_total ?? 0;
-  const tier = nextTier(total);
+  const tier = nextTier(total, (store as any)?.tiers_json);
 
   // Points earned in last 7 days.
   const weekTotal = useMemo(() => {

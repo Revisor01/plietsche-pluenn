@@ -10,7 +10,7 @@ const POINTS = {
   selfEntryBonus: 10, // extra per self-entered (approved) item, on top of bringPerItem
 };
 
-const TIER_ORDER = ['none', 'bronze', 'silber', 'gold', 'platin'];
+const TIER_ORDER = ['none', 'bronze', 'silber', 'gold', 'platin', 'diamant'];
 
 module.exports = {
   POINTS,
@@ -142,6 +142,7 @@ module.exports = {
       { tier: 'silber', at: badge.get('tier_silber') || 0, reward: badge.get('reward_silber') || 0 },
       { tier: 'gold', at: badge.get('tier_gold') || 0, reward: badge.get('reward_gold') || 0 },
       { tier: 'platin', at: badge.get('tier_platin') || 0, reward: badge.get('reward_platin') || 0 },
+      { tier: 'diamant', at: badge.get('tier_diamant') || 0, reward: badge.get('reward_diamant') || 0 },
     ].filter((t) => t.at > 0);
   },
 
