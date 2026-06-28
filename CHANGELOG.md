@@ -7,6 +7,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Neu
+- **Doppelte Punkte während einer Aktion:** Ordnet ein Helfer beim Freigeben ein gebrachtes Teil einer laufenden Aktion zu, bekommt der Einsteller die Bring-Punkte mit dem Aktions-Faktor (×1,5/×2/×3). Ohne Aktion bleibt es bei den normalen Bring-Punkten. Der Faktor steht zur Klarheit in der Punkte-History.
 - **Aktions-Badges mit Fortschritt.** Ein Badge für eine Aktion kann jetzt Einzel-Abzeichen ODER Stufen sein (z.B. „Winterkinder": Bronze ab 2 Teilen, Silber ab 4). Das Badge wird im Badge-Editor direkt mit der Aktion verknüpft.
 - **Helfer ordnet Teile einer Aktion zu:** Beim Freigeben fragt die App, zu welcher laufenden Aktion ein Teil zählt — das treibt die Fortschritts-Badges. Vergabe läuft laufend, sobald die Schwelle erreicht ist.
 
