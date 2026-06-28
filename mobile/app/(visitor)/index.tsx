@@ -4,8 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
 import { PP } from '../../lib/theme';
-import { useCurrentUser, useShowcase, useActiveCampaign, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
-import { useAuth } from '../../lib/hooks/useAuth';
+import { useCurrentUser, useShowcase, useActiveCampaigns, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
 import { nextTier, formatPoints, relativeDay, initials, itemThumb, tierColor } from '../../lib/format';
 import {
   Screen,
@@ -27,10 +26,9 @@ export default function Home() {
   const router = useRouter();
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();
-  const { user: authUser } = useAuth();
-  const isStaff = authUser?.role === 'volunteer' || authUser?.role === 'admin';
+  const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
   const { data: showcase } = useShowcase();
-  const { data: campaign } = useActiveCampaign();
+  const { data: campaigns } = useActiveCampaigns();
   const { data: points } = usePointsLog(3);
   const { data: pending } = usePendingItems();
   const { data: recentItems } = useRecentItems(6);
@@ -108,44 +106,31 @@ export default function Home() {
         </Card>
       </View>
 
-      {campaign && (
-        <View style={{ paddingHorizontal: 20, paddingTop: 14 }}>
-          <GradientCard pad={16} radius={20}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 14,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name="sparkles" size={22} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <PPText weight="semibold" size={14} color="#fff">
-                  {campaign.name}
-                </PPText>
-                <PPText size={11.5} color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
-                  alles ×{campaign.multiplier}
-                </PPText>
-              </View>
-              <Icon name="chevron-right" size={18} color="#fff" />
-            </View>
-          </GradientCard>
-        </View>
-      )}
-
-      {!!needs?.length && (
+      {(!!campaigns?.length || !!needs?.length) && (
         <>
-          <SectionTitle title="Das suchen wir gerade" />
+          <SectionTitle title="Aushang" />
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
-            {needs.map((n) => (
+            {/* Laufende Aktionen (Doppelpunkte) — hervorgehoben. */}
+            {campaigns?.map((c) => (
+              <GradientCard key={c.id} pad={16} radius={20}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="sparkles" size={22} color="#fff" />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <PPText weight="semibold" size={PP.fontSizes.md} color="#fff">{c.name}</PPText>
+                    <PPText size={PP.fontSizes.sm} color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
+                      {c.description ? c.description : `alles ×${c.multiplier}`}
+                    </PPText>
+                  </View>
+                </View>
+              </GradientCard>
+            ))}
+            {/* Freie Ankündigungen vom Laden. */}
+            {needs?.map((n) => (
               <Card key={n.id} pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(128,180,226,0.16)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="search" size={18} color={PP.sky} />
+                  <Icon name="megaphone" size={18} color={PP.sky} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{n.title}</PPText>

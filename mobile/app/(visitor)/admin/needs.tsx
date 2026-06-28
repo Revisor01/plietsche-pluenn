@@ -41,7 +41,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
 
   return (
     <Card pad={14} style={{ gap: 12 }}>
-      <Field label="Was wird gesucht?" value={title} onChangeText={setTitle} placeholder="z.B. Winterjacken Gr. 140" />
+      <Field label="Titel" value={title} onChangeText={setTitle} placeholder="z.B. Laden bleibt 2 Tage geschlossen" />
       <Field label="Details" value={detail} onChangeText={setDetail} placeholder="optional" />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}><PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Aktiv anzeigen</PPText></View>
@@ -72,14 +72,14 @@ export default function NeedsAdmin() {
     <Screen padBottom={120}>
       <PPHeader
         subtitle="Admin"
-        title="Bedarf"
+        title="Aushang"
         leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
       {creating && (
         <>
-          <SectionTitle title="Neuer Bedarf" />
+          <SectionTitle title="Neue Ankündigung" />
           <View style={{ paddingHorizontal: 20 }}>
             <NeedEditor onSaved={onSaved} />
           </View>
@@ -94,7 +94,7 @@ export default function NeedsAdmin() {
               <Pressable onPress={() => setOpenId(openId === n.id ? null : n.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(128,180,226,0.16)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="search" size={20} color={PP.sky} />
+                    <Icon name="megaphone" size={20} color={PP.sky} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{n.title}</PPText>
@@ -108,7 +108,7 @@ export default function NeedsAdmin() {
             </View>
           ))
         ) : (
-          <Card pad={16}><PPText size={PP.fontSizes.base} color={PP.ink2}>Noch kein Bedarf eingetragen.</PPText></Card>
+          <Card pad={16}><PPText size={PP.fontSizes.base} color={PP.ink2}>Noch keine Ankündigung.</PPText></Card>
         )}
       </View>
     </Screen>

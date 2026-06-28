@@ -7,26 +7,33 @@ import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCampaigns, useAllBadges } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE } from '../../../components/ui';
 import type { Campaign, Badge } from '../../../lib/types';
 
 const MULTIPLIERS = [1.5, 2, 3];
 
-// ISO date helper: yyyy-mm-dd → PB date string.
-function isoDay(d: string, end = false) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return '';
-  return `${d.trim()} ${end ? '23:59:59' : '00:00:00'}.000Z`;
+// Parse a PB datetime string into a local Date (for the picker).
+function parseDate(s?: string): Date | null {
+  if (!s) return null;
+  const d = new Date(s.replace(' ', 'T'));
+  return isNaN(d.getTime()) ? null : d;
 }
-function fmtDay(s?: string) {
-  return s ? s.slice(0, 10) : '';
+// Local day → UTC ISO. Start = local 00:00, end = local 23:59:59. The device's
+// timezone (Europe/Berlin) is applied by the Date constructor, so a campaign
+// "1.12.–31.12." covers the full local days incl. the right offset.
+function dayStartIso(d: Date): string {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0).toISOString();
+}
+function dayEndIso(d: Date): string {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).toISOString();
 }
 
 function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; badges: Badge[]; onSaved: () => void }) {
   const [name, setName] = useState(campaign?.name ?? '');
   const [description, setDescription] = useState(campaign?.description ?? '');
   const [multiplier, setMultiplier] = useState(campaign?.multiplier ?? 2);
-  const [start, setStart] = useState(fmtDay(campaign?.starts_at));
-  const [end, setEnd] = useState(fmtDay(campaign?.ends_at));
+  const [start, setStart] = useState<Date | null>(parseDate(campaign?.starts_at));
+  const [end, setEnd] = useState<Date | null>(parseDate(campaign?.ends_at));
   const [badgeId, setBadgeId] = useState(campaign?.badge ?? '');
   const [busy, setBusy] = useState(false);
 
@@ -34,8 +41,12 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
   const actionBadges = badges.filter((b) => b.trigger_type === 'action_participation');
 
   const save = async () => {
-    if (!name.trim() || !isoDay(start) || !isoDay(end, true)) {
-      Alert.alert('Fehlt noch', 'Name und Zeitraum (JJJJ-MM-TT) angeben.');
+    if (!name.trim() || !start || !end) {
+      Alert.alert('Fehlt noch', 'Bitte Name und Zeitraum angeben.');
+      return;
+    }
+    if (end < start) {
+      Alert.alert('Zeitraum', 'Das Enddatum muss nach dem Startdatum liegen.');
       return;
     }
     setBusy(true);
@@ -44,8 +55,8 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
         name: name.trim(),
         description: description.trim(),
         multiplier,
-        starts_at: isoDay(start),
-        ends_at: isoDay(end, true),
+        starts_at: dayStartIso(start),
+        ends_at: dayEndIso(end),
         badge: badgeId || undefined,
       };
       if (campaign) await updateCampaign(campaign.id, payload);
@@ -71,8 +82,8 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
       <Field label="Name" value={name} onChangeText={setName} placeholder="z.B. Winterkleidung" />
       <Field label="Beschreibung" value={description} onChangeText={setDescription} placeholder="Kurzer Hinweis" />
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={{ flex: 1 }}><Field label="Von (JJJJ-MM-TT)" value={start} onChangeText={setStart} placeholder="2026-12-01" /></View>
-        <View style={{ flex: 1 }}><Field label="Bis (JJJJ-MM-TT)" value={end} onChangeText={setEnd} placeholder="2026-12-31" /></View>
+        <View style={{ flex: 1 }}><DateField label="Von" value={start} onChange={setStart} /></View>
+        <View style={{ flex: 1 }}><DateField label="Bis" value={end} onChange={setEnd} /></View>
       </View>
 
       <View>
@@ -86,21 +97,30 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
         </View>
       </View>
 
-      {actionBadges.length > 0 && (
-        <View>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>TEILNAHME-BADGE (optional)</PPText>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            <Pressable onPress={() => setBadgeId('')}>
-              <Pill bg={!badgeId ? PP.teal : 'rgba(26,46,44,0.06)'} color={!badgeId ? '#fff' : PP.ink2}>keins</Pill>
-            </Pressable>
-            {actionBadges.map((b) => (
-              <Pressable key={b.id} onPress={() => setBadgeId(b.id)}>
-                <Pill bg={badgeId === b.id ? PP.teal : 'rgba(26,46,44,0.06)'} color={badgeId === b.id ? '#fff' : PP.ink2}>{b.name}</Pill>
+      <View>
+        <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>TEILNAHME-BADGE (optional)</PPText>
+        {actionBadges.length > 0 ? (
+          <>
+            <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginBottom: 6 }}>
+              Wer während der Aktion aktiv ist, bekommt nach Aktionsende dieses Badge.
+            </PPText>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              <Pressable onPress={() => setBadgeId('')}>
+                <Pill bg={!badgeId ? PP.teal : 'rgba(26,46,44,0.06)'} color={!badgeId ? '#fff' : PP.ink2}>keins</Pill>
               </Pressable>
-            ))}
-          </View>
-        </View>
-      )}
+              {actionBadges.map((b) => (
+                <Pressable key={b.id} onPress={() => setBadgeId(b.id)}>
+                  <Pill bg={badgeId === b.id ? PP.teal : 'rgba(26,46,44,0.06)'} color={badgeId === b.id ? '#fff' : PP.ink2}>{b.name}</Pill>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : (
+          <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+            Noch kein passendes Badge. Lege zuerst unter „Badges" ein Einzel-Abzeichen mit Auslöser „Aktions-Teilnahme" an — dann kannst du es hier verknüpfen.
+          </PPText>
+        )}
+      </View>
 
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{campaign ? 'Speichern' : 'Anlegen'}</PPButton></View>
@@ -124,8 +144,10 @@ export default function ActionsAdmin() {
     await qc.invalidateQueries({ queryKey: ['campaign', 'active'] });
   };
 
-  const now = '2026-06-28';
-  const isActive = (c: Campaign) => fmtDay(c.starts_at) <= now && fmtDay(c.ends_at) >= now;
+  const isActive = (c: Campaign) => {
+    const s = parseDate(c.starts_at), e = parseDate(c.ends_at), n = new Date();
+    return !!s && !!e && s <= n && e >= n;
+  };
 
   return (
     <Screen padBottom={120}>
@@ -135,6 +157,14 @@ export default function ActionsAdmin() {
         leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
+
+      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+        <Card pad={12} style={{ backgroundColor: 'rgba(39,176,146,0.07)' }}>
+          <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+            Aktionen sind Zeiträume mit Bonus-Punkten (z.B. „Winterkleidung, ×2"). Im Zeitraum zählt jeder Scan/Check-in mehrfach. Aktionen erscheinen automatisch als Aushang auf der Startseite.
+          </PPText>
+        </Card>
+      </View>
 
       {creating && (
         <>
@@ -157,7 +187,7 @@ export default function ActionsAdmin() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{c.name}</PPText>
-                    <PPText size={PP.fontSizes.sm} color={PP.ink2}>×{c.multiplier} · {fmtDay(c.starts_at)} – {fmtDay(c.ends_at)}</PPText>
+                    <PPText size={PP.fontSizes.sm} color={PP.ink2}>×{c.multiplier} · {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}</PPText>
                   </View>
                   {isActive(c) && <Pill size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">aktiv</Pill>}
                   <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />

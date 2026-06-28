@@ -6,6 +6,15 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Behoben (Welle 3 — Datenfluss)
+- **Punkte-History zeigte allen Admins ALLE Nutzer-Punkte** („mega viele Punkte"). Jetzt sieht jeder nur seine eigenen — auch Admins. Gleiches bei der Badge-Sammlung.
+- **Rolle (Helfer/Admin) wird überall konsistent erkannt** — der „Teile"-Tab und Admin-Funktionen erscheinen jetzt zuverlässig, auch direkt nach dem Start.
+
+### Geändert
+- **Aushang zusammengefasst:** Laufende Aktionen und freie Ankündigungen erscheinen auf der Startseite gemeinsam unter „Aushang". „Bedarf" ist jetzt „Aushang & Ankündigungen" — für alles vom Laden (z.B. „2 Tage geschlossen").
+- **Aktionen mit echtem Datums-Picker** (Format TT.MM.JJJJ), Zeitzone korrekt berücksichtigt.
+- **Admin-Erklärtexte** in Badges, Aktionen und Ränge-Verwaltung; Teilnahme-Badge-Verknüpfung in Aktionen erklärt.
+
 ### Neu (Welle 2 — zeitgesteuerte Logik)
 - **Push-Benachrichtigungen funktionieren jetzt.** Server versendet geplante Nachrichten (Aktionen, Hinweise) an die App; die App registriert ihr Gerät automatisch. Tote Geräte-Token werden selbst aufgeräumt. Zielgruppen (alle / nach Rolle / Streak / inaktiv) werden berücksichtigt.
 - **Streak verfällt korrekt** bei Inaktivität: Wer länger als eine Woche nicht da war, verliert seinen Streak (täglicher Job) — vorher blieb er für immer stehen.

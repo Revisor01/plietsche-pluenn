@@ -16,4 +16,5 @@ export { Toast } from './Toast';
 export { Field } from './Field';
 export { IconButton } from './IconButton';
 export { IconPicker } from './IconPicker';
+export { DateField, formatDE } from './DateField';
 export { Toggle } from './Toggle';
