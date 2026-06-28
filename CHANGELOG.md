@@ -6,6 +6,13 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Neu (Welle 2 — zeitgesteuerte Logik)
+- **Push-Benachrichtigungen funktionieren jetzt.** Server versendet geplante Nachrichten (Aktionen, Hinweise) an die App; die App registriert ihr Gerät automatisch. Tote Geräte-Token werden selbst aufgeräumt. Zielgruppen (alle / nach Rolle / Streak / inaktiv) werden berücksichtigt.
+- **Streak verfällt korrekt** bei Inaktivität: Wer länger als eine Woche nicht da war, verliert seinen Streak (täglicher Job) — vorher blieb er für immer stehen.
+- **Jahres-Treue-Badges** werden am 31.12. rückwirkend vergeben (für jedes aktive Jahr).
+- **Aktions-Teilnahme-Badges** werden nach Aktionsende an alle Teilnehmer vergeben.
+- **Aktions-Zielgruppen wirken:** Eine Aktion „nur für Inaktive/nach Rolle/Streak" gilt jetzt wirklich nur für diese — vorher für alle.
+
 ### Behoben (Logik-Review Welle 1)
 - **Noch nicht freigegebene Teile waren scanbar** — ein Besucher konnte sein eigenes eingereichtes Teil sofort scannen und Punkte kassieren. Jetzt zählt nur, was ein Helfer freigegeben hat.
 - **Standort-Check beim Item-Scan** ergänzt (galt vorher nur beim Tür-Check-in).

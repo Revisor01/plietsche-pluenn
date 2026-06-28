@@ -16,16 +16,41 @@ module.exports = {
   POINTS,
   TIER_ORDER,
 
-  // Find the highest-multiplier campaign active right now for this user.
-  findActiveCampaign(now) {
+  // Find the highest-multiplier campaign active right now that applies to this
+  // user. Honours target_role: 'all' (everyone), 'by_role'+target_role,
+  // 'streak2plus' (streak >= 2), 'inactive14d' (no visit in 14 days).
+  // Pass user=null to ignore targeting (e.g. for display lookups).
+  findActiveCampaign(now, user) {
     const iso = now.toISOString().replace('T', ' ');
+    let rows;
     try {
-      return $app
+      rows = $app
         .dao()
-        .findFirstRecordByFilter('campaigns', `starts_at <= "${iso}" && ends_at >= "${iso}"`, { sort: '-multiplier' });
+        .findRecordsByFilter('campaigns', `starts_at <= "${iso}" && ends_at >= "${iso}"`, '-multiplier', 0, 0);
     } catch (_) {
       return null;
     }
+    for (const c of rows) {
+      if (!user || this.campaignApplies(c, user, now)) return c;
+    }
+    return null;
+  },
+
+  campaignApplies(camp, user, now) {
+    const seg = `${camp.get('target_segment') || camp.get('target_role') || 'all'}`;
+    if (seg === 'all' || seg === '') return true;
+    if (seg === 'by_role') return `${user.get('role')}` === `${camp.get('target_role')}`;
+    if (seg === 'streak2plus') return (user.get('streak_weeks') || 0) >= 2;
+    if (seg === 'inactive14d') {
+      const last = `${user.get('streak_last_visit')}`.trim();
+      if (!last) return true;
+      return (now - new Date(last)) / 86400000 >= 14;
+    }
+    // Unknown role values (visitor/volunteer/admin) → treat as by_role.
+    if (seg === 'visitor' || seg === 'volunteer' || seg === 'admin') {
+      return `${user.get('role')}` === seg;
+    }
+    return true;
   },
 
   // Award points: write points_log, then recompute users.points_total from the
@@ -84,7 +109,7 @@ module.exports = {
     // Race guard: another request may have created today's visit between the
     // caller's check and here. If so, only count extra stepper items, no bonus.
     if (this.hasVisitToday(user.id, now)) {
-      const camp2 = this.findActiveCampaign(now);
+      const camp2 = this.findActiveCampaign(now, user);
       const mult2 = camp2 ? camp2.get('multiplier') : 1.0;
       const itemsCount2 = Math.max(0, parseInt(opts.itemsCount || 0, 10));
       const stepperOnly = Math.round(itemsCount2 * this.POINTS.takePerItem * mult2);
@@ -94,7 +119,7 @@ module.exports = {
       return { points: stepperOnly, visitId: null, deduped: true };
     }
 
-    const camp = this.findActiveCampaign(now);
+    const camp = this.findActiveCampaign(now, user);
     const mult = camp ? camp.get('multiplier') : 1.0;
     const itemsCount = Math.max(0, parseInt(opts.itemsCount || 0, 10));
 
