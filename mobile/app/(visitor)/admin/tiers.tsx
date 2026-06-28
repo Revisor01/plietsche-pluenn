@@ -32,8 +32,8 @@ export default function TiersAdmin() {
     const tiers = RANKS.map((name, i) => ({ name, at: parseInt(values[i] || '0', 10) || 0 }));
     // Thresholds must be ascending (Bronze lowest).
     for (let i = 1; i < tiers.length; i++) {
-      if (tiers[i].at < tiers[i - 1].at) {
-        Alert.alert('Reihenfolge', `${tiers[i].name} muss mindestens so hoch sein wie ${tiers[i - 1].name}.`);
+      if (tiers[i].at <= tiers[i - 1].at) {
+        Alert.alert('Reihenfolge', `${tiers[i].name} muss höher sein als ${tiers[i - 1].name}.`);
         return;
       }
     }
