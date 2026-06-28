@@ -22,39 +22,35 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'sonstiges', label: 'Sonstiges' },
 ];
 
+// Image-forward grid card — the photo is the hero, text sits below.
 function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
   const uri = itemThumb(item);
   return (
-    <Card pad={12}>
-      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-        <View
-          style={{
-            width: 64,
-            height: 78,
-            borderRadius: 12,
-            overflow: 'hidden',
-            backgroundColor: 'rgba(39,176,146,0.10)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {uri ? (
-            <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-          ) : (
-            <Icon name="shirt" size={24} color="rgba(39,176,146,0.5)" />
-          )}
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink} numberOfLines={1}>
-            {item.title}
-          </PPText>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
-            {item.size ? `Gr. ${item.size} · ` : ''}{item.points ?? 0} P
-          </PPText>
-        </View>
-        <Icon name="chevron-right" size={18} color={PP.ink3} />
-      </Pressable>
-    </Card>
+    <Pressable onPress={onOpen} style={{ flex: 1 }}>
+      <View
+        style={{
+          width: '100%',
+          aspectRatio: 4 / 5,
+          borderRadius: 18,
+          overflow: 'hidden',
+          backgroundColor: 'rgba(39,176,146,0.10)',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {uri ? (
+          <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        ) : (
+          <Icon name="shirt" size={44} color="rgba(39,176,146,0.5)" />
+        )}
+      </View>
+      <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>
+        {item.title}
+      </PPText>
+      <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 1 }}>
+        {item.size ? `Gr. ${item.size} · ` : ''}{item.points ?? 0} P
+      </PPText>
+    </Pressable>
   );
 }
 
@@ -123,11 +119,17 @@ export default function Store() {
         </ScrollView>
       )}
 
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: 20 }}>
         {filtered.length ? (
-          filtered.map((it) => (
-            <StoreCard key={it.id} item={it} onOpen={() => router.push(`/(visitor)/items/${it.id}`)} />
-          ))
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
+            {filtered.map((it) => (
+              <View key={it.id} style={{ width: '47%', flexGrow: 1 }}>
+                <StoreCard item={it} onOpen={() => router.push(`/(visitor)/items/${it.id}`)} />
+              </View>
+            ))}
+            {/* Keep a lone last item left-aligned at half width. */}
+            {filtered.length % 2 === 1 && <View style={{ width: '47%', flexGrow: 1 }} />}
+          </View>
         ) : (
           <Card pad={16}>
             <PPText size={PP.fontSizes.base} color={PP.ink2}>

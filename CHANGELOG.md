@@ -7,8 +7,8 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Neu
-- **Neuer Tab „Laden":** Alle Nutzer sehen das gesamte verfügbare Angebot im Laden, mit Filtern nach Kleidungsart und Größe. Teile sind antippbar und öffnen eine Detailansicht.
-- **„Neu im Laden" antippbar:** Die Teile auf der Startseite führen jetzt direkt zur Detailansicht; „Alles ansehen" springt in den Laden-Tab.
+- **Neuer Tab „Laden":** Alle Nutzer sehen das gesamte verfügbare Angebot im Laden, mit Filtern nach Kleidungsart und Größe. Teile sind antippbar und öffnen eine Detailansicht. Bildbetonte Galerie-Ansicht (zwei Spalten, großes Foto).
+- **„Neu im Laden" antippbar:** Die Teile auf der Startseite führen jetzt direkt zur Detailansicht; „Alles ansehen" springt in den Laden-Tab. Große Bildkarten statt kleiner Vorschau.
 - **Schnell-Vorlagen + Push im Aushang:** Im Aushang-Editor gibt es Vorlagen-Buttons (z.B. „Wir haben jetzt geöffnet", „Heute geschlossen", „Neue Ware ist da"). Beim Anlegen kann optional direkt eine Push-Benachrichtigung an alle gesendet werden.
 - **Einreichen mit klarer Wahl:** Beim Vorschlagen eines Teils wählt man jetzt ausdrücklich „Bringe ich in den Laden" oder „Verbleibt bei mir". Bei „Verbleibt bei mir" ist die Standortangabe Pflicht.
 - **Aktions-Bonus sichtbar:** Auf der Startseite zeigt jede laufende Aktion gut sichtbar, was sie bringt (z.B. „Doppelte Punkte", „Dreifach-Punkte"). Im Admin-Editor sieht man die Vorschau direkt beim Einstellen des Faktors.
