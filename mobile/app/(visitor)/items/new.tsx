@@ -6,7 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { useAuth } from '../../../lib/hooks/useAuth';
+import { useCurrentUser } from '../../../lib/hooks/useData';
 import { createItem } from '../../../lib/api';
 import {
   Screen,
@@ -44,7 +44,7 @@ const CONDITIONS: { key: string; label: string }[] = [
 export default function NewItem() {
   const router = useRouter();
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { data: user } = useCurrentUser();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
 
   const [title, setTitle] = useState('');

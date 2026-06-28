@@ -172,7 +172,7 @@ export default function Account() {
                 was sonst nirgends erreichbar ist. */}
             {isAdmin && <AdminLink icon="gauge" label="Punkte-Ränge" onPress={() => router.push('/(visitor)/admin/tiers')} />}
             {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions')} />}
-            <AdminLink icon="search" label="Bedarf-Aushang" onPress={() => router.push('/(visitor)/admin/needs')} />
+            <AdminLink icon="search" label="Aushang & Ankündigungen" onPress={() => router.push('/(visitor)/admin/needs')} />
           </View>
         </>
       )}

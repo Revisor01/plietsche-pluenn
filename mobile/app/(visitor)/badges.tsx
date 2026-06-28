@@ -4,8 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
 import { PP } from '../../lib/theme';
-import { useBadges, useUserBadges } from '../../lib/hooks/useData';
-import { useAuth } from '../../lib/hooks/useAuth';
+import { useBadges, useUserBadges, useCurrentUser } from '../../lib/hooks/useData';
 import { badgeTierInfo } from '../../lib/format';
 import { Screen, PPHeader, PPText, BadgeMedallion, ProgressBar, Pill, Card, IconButton } from '../../components/ui';
 import type { IconName } from '../../lib/icons';
@@ -13,7 +12,7 @@ import type { IconName } from '../../lib/icons';
 export default function Badges() {
   const qc = useQueryClient();
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: user } = useCurrentUser();
   const isAdmin = user?.role === 'admin';
   const { data: badges } = useBadges();
   const { data: userBadges } = useUserBadges();

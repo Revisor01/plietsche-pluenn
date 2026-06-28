@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PP } from '../lib/theme';
 import { Icon, type IconName } from '../lib/icons';
 import { PPText } from './ui/Text';
-import { useAuth } from '../lib/hooks/useAuth';
+import { useCurrentUser } from '../lib/hooks/useData';
 
 // Minimal shape of the tabBar prop expo-router passes (avoids a direct
 // @react-navigation/bottom-tabs dependency that isn't installed standalone).
@@ -34,7 +34,7 @@ const SLOTS: Slot[] = [
 export function GlassTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: user } = useCurrentUser();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
   const bottom = Math.max(insets.bottom, 12);
   const activeName = state.routes[state.index]?.name;

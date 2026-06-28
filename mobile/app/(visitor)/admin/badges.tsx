@@ -268,6 +268,14 @@ export default function BadgeAdmin() {
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
+      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+        <Card pad={12} style={{ backgroundColor: 'rgba(39,176,146,0.07)' }}>
+          <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+            Badges belohnen Aktivität. „Stufen" (Bronze→Diamant) vergeben bei jeder Schwelle einen Bonus; „Einzel-Abzeichen" sind einmalig (z.B. Jahres-Treue oder Aktions-Teilnahme). „ab" = wie oft, „Bonus" = einmalige Punkte beim Erreichen.
+          </PPText>
+        </Card>
+      </View>
+
       {creating && (
         <>
           <SectionTitle title="Neues Badge" />

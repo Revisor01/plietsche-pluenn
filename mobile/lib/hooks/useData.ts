@@ -127,7 +127,22 @@ export function useCampaigns() {
   });
 }
 
-// Active "Bedarf" notices for the Home feed.
+// All campaigns running right now — for the Home "Aushang" feed.
+export function useActiveCampaigns() {
+  return useQuery({
+    queryKey: ['campaigns', 'active-list'],
+    queryFn: async () => {
+      const now = new Date().toISOString().replace('T', ' ');
+      const res = await pb.collection('campaigns').getFullList({
+        filter: `starts_at <= "${now}" && ends_at >= "${now}"`,
+        sort: '-multiplier',
+      });
+      return res as unknown as import('../types').Campaign[];
+    },
+  });
+}
+
+// Active "Aushang" notices for the Home feed.
 export function useActiveNeeds() {
   return useQuery({
     queryKey: ['needs', 'active'],
@@ -155,7 +170,13 @@ export function usePointsLog(limit = 200) {
     queryKey: ['points_log', limit],
     enabled: pb.authStore.isValid,
     queryFn: async () => {
-      const res = await pb.collection('points_log').getList(1, limit, { sort: '-created' });
+      // Always scope to the current user — admins may read every row (RLS), so
+      // without this filter their history would show everyone's points.
+      const uid = pb.authStore.record?.id;
+      const res = await pb.collection('points_log').getList(1, limit, {
+        filter: `user = "${uid}"`,
+        sort: '-created',
+      });
       return res.items as unknown as PointsLog[];
     },
   });
@@ -188,7 +209,9 @@ export function useUserBadges() {
     queryKey: ['user_badges'],
     enabled: pb.authStore.isValid,
     queryFn: async () => {
-      const res = await pb.collection('user_badges').getFullList({ expand: 'badge' });
+      // Scope to the current user — admins may read all rows (RLS).
+      const uid = pb.authStore.record?.id;
+      const res = await pb.collection('user_badges').getFullList({ filter: `user = "${uid}"`, expand: 'badge' });
       return res as unknown as UserBadge[];
     },
   });
