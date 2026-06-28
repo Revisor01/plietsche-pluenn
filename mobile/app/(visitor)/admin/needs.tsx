@@ -4,16 +4,26 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../../lib/theme';
-import { Icon } from '../../../lib/icons';
+import { Icon, type IconName } from '../../../lib/icons';
 import { useAllNeeds } from '../../../lib/hooks/useData';
-import { createNeed, updateNeed, deleteNeed } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle } from '../../../components/ui';
+import { createNeed, updateNeed, deleteNeed, sendPushNow } from '../../../lib/api';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill } from '../../../components/ui';
 import type { Need } from '../../../lib/types';
+
+// Quick-action templates — one tap pre-fills the editor with a common notice.
+const TEMPLATES: { icon: IconName; title: string; detail: string }[] = [
+  { icon: 'door', title: 'Wir haben jetzt geöffnet', detail: 'Komm vorbei!' },
+  { icon: 'clock', title: 'Heute geschlossen', detail: '' },
+  { icon: 'shirt', title: 'Neue Ware ist da', detail: 'Frisch eingetroffen — schau rein.' },
+  { icon: 'sparkles', title: 'Aktion läuft', detail: 'Jetzt mehr Punkte sammeln.' },
+];
 
 function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
   const [title, setTitle] = useState(need?.title ?? '');
   const [detail, setDetail] = useState(need?.detail ?? '');
   const [active, setActive] = useState(need?.is_active ?? true);
+  // Push only offered for new entries (a one-off broadcast, not on every edit).
+  const [push, setPush] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
@@ -23,6 +33,13 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
       const payload: Partial<Need> = { title: title.trim(), detail: detail.trim(), is_active: active };
       if (need) await updateNeed(need.id, payload);
       else await createNeed(payload);
+      if (push && !need) {
+        try {
+          await sendPushNow(title.trim(), detail.trim() || 'Neuer Aushang im Laden');
+        } catch (e: any) {
+          Alert.alert('Aushang gespeichert', 'Die Push konnte nicht gesendet werden: ' + (e?.message ?? 'Fehler'));
+        }
+      }
       onSaved();
     } catch (e: any) {
       Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
@@ -41,12 +58,38 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
 
   return (
     <Card pad={14} style={{ gap: 12 }}>
+      {!need && (
+        <View>
+          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>
+            SCHNELL-VORLAGEN
+          </PPText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {TEMPLATES.map((t) => (
+              <Pressable key={t.title} onPress={() => { setTitle(t.title); setDetail(t.detail); }}>
+                <Pill icon={t.icon} bg="rgba(39,176,146,0.10)" color={PP.teal}>{t.title}</Pill>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
       <Field label="Titel" value={title} onChangeText={setTitle} placeholder="z.B. Laden bleibt 2 Tage geschlossen" />
       <Field label="Details" value={detail} onChangeText={setDetail} placeholder="optional" />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}><PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Aktiv anzeigen</PPText></View>
         <Toggle value={active} onChange={setActive} />
       </View>
+      {!need && (
+        <Card pad={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(128,180,226,0.10)' }}>
+          <Icon name="bell" size={18} color={PP.sky} />
+          <View style={{ flex: 1 }}>
+            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Als Push senden</PPText>
+            <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+              Alle Nutzer bekommen eine Mitteilung (kommt in ~1 Min an).
+            </PPText>
+          </View>
+          <Toggle value={push} onChange={setPush} />
+        </Card>
+      )}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{need ? 'Speichern' : 'Anlegen'}</PPButton></View>
         {need && <PPButton size="m" variant="ghost" fullWidth={false} onPress={remove}>Löschen</PPButton>}

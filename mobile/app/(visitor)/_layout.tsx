@@ -17,6 +17,7 @@ export default function VisitorLayout() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="badges" />
+      <Tabs.Screen name="store" />
       <Tabs.Screen name="points" />
       {/* Hidden tab routes (reached via header / store screen). */}
       <Tabs.Screen name="settings/push" options={{ href: null }} />

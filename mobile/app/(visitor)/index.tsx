@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 
 import { PP } from '../../lib/theme';
 import { useCurrentUser, useShowcase, useActiveCampaigns, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
-import { nextTier, formatPoints, relativeDay, initials, itemThumb, tierColor } from '../../lib/format';
+import { nextTier, formatPoints, relativeDay, initials, itemThumb, tierColor, campaignBonusLabel } from '../../lib/format';
 import {
   Screen,
   PPHeader,
@@ -111,21 +111,45 @@ export default function Home() {
           <SectionTitle title="Aushang" />
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
             {/* Laufende Aktionen (Doppelpunkte) — hervorgehoben. */}
-            {campaigns?.map((c) => (
-              <GradientCard key={c.id} pad={16} radius={20}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="sparkles" size={22} color="#fff" />
+            {campaigns?.map((c) => {
+              const bonus = campaignBonusLabel(c.multiplier);
+              return (
+                <GradientCard key={c.id} pad={16} radius={20}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="sparkles" size={22} color="#fff" />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <PPText weight="semibold" size={PP.fontSizes.md} color="#fff">{c.name}</PPText>
+                      {!!c.description && (
+                        <PPText size={PP.fontSizes.sm} color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
+                          {c.description}
+                        </PPText>
+                      )}
+                    </View>
                   </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <PPText weight="semibold" size={PP.fontSizes.md} color="#fff">{c.name}</PPText>
-                    <PPText size={PP.fontSizes.sm} color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
-                      {c.description ? c.description : `alles ×${c.multiplier}`}
-                    </PPText>
-                  </View>
-                </View>
-              </GradientCard>
-            ))}
+                  {/* Was es dem User bringt — gut sichtbar. */}
+                  {!!bonus && (
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 6,
+                        alignSelf: 'flex-start',
+                        marginTop: 12,
+                        paddingVertical: 6,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: 'rgba(255,255,255,0.22)',
+                      }}
+                    >
+                      <Icon name="flame" size={13} color="#fff" />
+                      <PPText weight="bold" size={PP.fontSizes.sm} color="#fff">{bonus}</PPText>
+                    </View>
+                  )}
+                </GradientCard>
+              );
+            })}
             {/* Freie Ankündigungen vom Laden. */}
             {needs?.map((n) => (
               <Card key={n.id} pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -192,7 +216,8 @@ export default function Home() {
         )}
       </View>
 
-      {!!showcase?.length && (
+      {/* Schaufenster vorerst nur fürs Team (Nutzer sollen es noch nicht sehen). */}
+      {isStaff && !!showcase?.length && (
         <>
           <SectionTitle
             title="Schaufenster"
@@ -213,17 +238,22 @@ export default function Home() {
 
       {!!recentItems?.length && (
         <>
-          <SectionTitle title="Neu im Laden" />
+          <SectionTitle
+            title="Neu im Laden"
+            action="Alles ansehen"
+            onAction={() => router.push('/(visitor)/store' as any)}
+          />
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
             {recentItems.map((it) => (
-              <ActivityRow
-                key={it.id}
-                icon="shirt"
-                tone="teal"
-                imageUri={itemThumb(it)}
-                title={it.title}
-                subtitle={`${it.size ? `Größe ${it.size} · ` : ''}${relativeDay(it.created)}`}
-              />
+              <Pressable key={it.id} onPress={() => router.push(`/(visitor)/items/${it.id}`)}>
+                <ActivityRow
+                  icon="shirt"
+                  tone="teal"
+                  imageUri={itemThumb(it)}
+                  title={it.title}
+                  subtitle={`${it.size ? `Größe ${it.size} · ` : ''}${relativeDay(it.created)}`}
+                />
+              </Pressable>
             ))}
           </View>
         </>

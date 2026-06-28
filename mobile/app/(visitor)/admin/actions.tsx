@@ -7,6 +7,7 @@ import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCampaigns, useAllBadges } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
+import { campaignBonusLabel } from '../../../lib/format';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE } from '../../../components/ui';
 import type { Campaign, Badge } from '../../../lib/types';
 
@@ -95,6 +96,9 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
             </Pressable>
           ))}
         </View>
+        <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 6 }}>
+          User sehen: <PPText weight="semibold" color={PP.teal}>{campaignBonusLabel(multiplier)}</PPText>
+        </PPText>
       </View>
 
       <View>

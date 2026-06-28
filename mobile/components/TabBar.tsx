@@ -25,8 +25,10 @@ const SLOTS: Slot[] = [
   { name: 'index', label: 'Moin', icon: 'house' },
   { name: 'badges', label: 'Watt', icon: 'medal' },
   { name: 'scan', label: 'Scannen', icon: 'qr-scan', modal: true },
-  // href:null route → not in the tab navigator state, so push it directly.
-  { name: 'items/index', label: 'Teile', icon: 'shirt', staffOnly: true, push: '/(visitor)/items' },
+  // Store browser for everyone (href:null route → push directly).
+  { name: 'store', label: 'Laden', icon: 'shirt', push: '/(visitor)/store' },
+  // Staff inventory (href:null route → push directly).
+  { name: 'items/index', label: 'Teile', icon: 'tag', staffOnly: true, push: '/(visitor)/items' },
   { name: 'points', label: 'Punkte', icon: 'coins' },
 ];
 

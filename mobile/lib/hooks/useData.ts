@@ -58,6 +58,20 @@ export function useRecentItems(limit = 6) {
   });
 }
 
+// All available items in the shop — for the visitor "Alles im Laden" view.
+export function useStoreItems() {
+  return useQuery({
+    queryKey: ['store_items'],
+    queryFn: async () => {
+      const res = await pb.collection('items').getFullList({
+        filter: 'status = "approved" && taken_at = null && archived_at = null',
+        sort: '-created',
+      });
+      return res as unknown as Item[];
+    },
+  });
+}
+
 // Single item by id — for the staff detail/edit screen.
 export function useItem(id?: string) {
   return useQuery({
