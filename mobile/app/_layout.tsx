@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import {
   useFonts,
   WorkSans_400Regular,
@@ -20,6 +21,16 @@ import { useAuth } from '../lib/hooks/useAuth';
 import { PP } from '../lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Show incoming push notifications even while the app is in the foreground.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 // expo-router renders this instead of a blank screen when a route throws.
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {

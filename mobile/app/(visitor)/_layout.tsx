@@ -1,8 +1,15 @@
+import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { GlassTabBar } from '../../components/TabBar';
 import { PP } from '../../lib/theme';
+import { registerPushToken } from '../../lib/push';
 
 export default function VisitorLayout() {
+  // Register the device's Expo push token once the user is in the app.
+  useEffect(() => {
+    registerPushToken();
+  }, []);
+
   return (
     <Tabs
       tabBar={(props) => <GlassTabBar {...(props as any)} />}

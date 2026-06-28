@@ -30,9 +30,10 @@ routerAdd('POST', '/api/pp/scan', (c) => {
   }
   const doorSecret = `${store.get('checkin_qr_secret')}`.trim();
 
-  const camp = lib.findActiveCampaign(now);
-  const mult = camp ? camp.get('multiplier') : 1.0;
   const user = $app.dao().findRecordById('users', auth.id);
+  // Campaign multiplier — only if the user matches the campaign's target.
+  const camp = lib.findActiveCampaign(now, user);
+  const mult = camp ? camp.get('multiplier') : 1.0;
   const alreadyToday = lib.hasVisitToday(auth.id, now);
 
   // ── Case 1: DOOR QR → check-in ─────────────────────────────
