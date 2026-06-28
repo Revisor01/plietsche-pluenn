@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 
 import { PP } from '../../lib/theme';
 import { useCurrentUser, useShowcase, useActiveCampaigns, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
-import { nextTier, formatPoints, relativeDay, initials, itemThumb, tierColor, campaignBonusLabel } from '../../lib/format';
+import { nextTier, formatPoints, relativeDay, initials, tierColor, campaignBonusLabel } from '../../lib/format';
 import {
   Screen,
   PPHeader,
@@ -243,19 +243,19 @@ export default function Home() {
             action="Alles ansehen"
             onAction={() => router.push('/(visitor)/store' as any)}
           />
-          <View style={{ paddingHorizontal: 20, gap: 10 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 4 }}
+          >
             {recentItems.map((it) => (
-              <Pressable key={it.id} onPress={() => router.push(`/(visitor)/items/${it.id}`)}>
-                <ActivityRow
-                  icon="shirt"
-                  tone="teal"
-                  imageUri={itemThumb(it)}
-                  title={it.title}
-                  subtitle={`${it.size ? `Größe ${it.size} · ` : ''}${relativeDay(it.created)}`}
-                />
-              </Pressable>
+              <ShowcaseCard
+                key={it.id}
+                item={it}
+                onPress={() => router.push(`/(visitor)/items/${it.id}`)}
+              />
             ))}
-          </View>
+          </ScrollView>
         </>
       )}
 
