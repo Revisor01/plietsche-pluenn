@@ -6,6 +6,17 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Behoben (Logik-Review Welle 1)
+- **Noch nicht freigegebene Teile waren scanbar** — ein Besucher konnte sein eigenes eingereichtes Teil sofort scannen und Punkte kassieren. Jetzt zählt nur, was ein Helfer freigegeben hat.
+- **Standort-Check beim Item-Scan** ergänzt (galt vorher nur beim Tür-Check-in).
+- **„Teile"-Tab reagierte nicht** auf Antippen — jetzt öffnet er das Inventar zuverlässig.
+- **Profil-Namensfeld blieb leer** — zeigt jetzt den aktuellen Namen.
+- **Doppelter Check-in** bei schnellem Doppeltippen verhindert (kein doppelter Bonus mehr).
+
+### Geändert
+- **Bronze-Rang muss verdient werden:** Unter 150 Punkten hat man noch keinen Rang (vorher startete Bronze bei 0). Schwellen bleiben im Admin frei einstellbar.
+- **Verwaltungs-Menü entschlackt:** Teile und Badges nicht mehr doppelt (über Tab bzw. Zahnrad erreichbar).
+
 ### Neu
 - **Icon-Picker für Badges.** Statt FA6-Namen zu tippen, wählt man das Badge-Icon aus einem Raster.
 - **Diamant** als 5. Stufe — bei Badges (zusätzlich zu Bronze/Silber/Gold/Platin) und bei den globalen Punkte-Rängen.

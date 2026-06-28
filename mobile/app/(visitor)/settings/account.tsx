@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Alert, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -44,6 +44,11 @@ export default function Account() {
   const [newPw, setNewPw] = useState('');
 
   const [busy, setBusy] = useState<null | 'name' | 'email' | 'pw'>(null);
+
+  // useCurrentUser loads async; hydrate the name field once the user arrives.
+  useEffect(() => {
+    if (user?.name) setName(user.name);
+  }, [user?.id]);
 
   const saveName = async () => {
     if (!name.trim() || name.trim() === user?.name) return;
@@ -163,8 +168,8 @@ export default function Account() {
         <>
           <SectionTitle title="Verwaltung" />
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
-            <AdminLink icon="shirt" label="Teile-Inventar" onPress={() => router.push('/(visitor)/items')} />
-            {isAdmin && <AdminLink icon="medal" label="Badges verwalten" onPress={() => router.push('/(visitor)/admin/badges')} />}
+            {/* Teile = eigener Tab, Badges = Zahnrad im Badges-Tab. Hier nur,
+                was sonst nirgends erreichbar ist. */}
             {isAdmin && <AdminLink icon="gauge" label="Punkte-Ränge" onPress={() => router.push('/(visitor)/admin/tiers')} />}
             {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions')} />}
             <AdminLink icon="search" label="Bedarf-Aushang" onPress={() => router.push('/(visitor)/admin/needs')} />

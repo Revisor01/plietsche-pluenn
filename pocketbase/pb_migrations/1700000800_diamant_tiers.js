@@ -45,7 +45,7 @@ migrate(
       const rec = dao.findFirstRecordByFilter('store', '1=1');
       if (rec && !rec.get('tiers_json')) {
         rec.set('tiers_json', [
-          { name: 'Bronze', at: 0 },
+          { name: 'Bronze', at: 150 },
           { name: 'Silber', at: 750 },
           { name: 'Gold', at: 1500 },
           { name: 'Platin', at: 3000 },
