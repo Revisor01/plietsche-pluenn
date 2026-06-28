@@ -301,6 +301,17 @@ module.exports = {
       if (type === 'streak_weeks') {
         return user.get('streak_weeks') || 0;
       }
+      if (type === 'action_participation') {
+        // Contributions to the campaign this badge is linked to.
+        const campId = `${badge.get('campaign') || ''}`.trim();
+        if (!campId) return 0;
+        try {
+          const rec = dao.findFirstRecordByFilter('action_counts', `user = "${user.id}" && campaign = "${campId}"`);
+          return rec.get('count') || 0;
+        } catch (_) {
+          return 0;
+        }
+      }
     } catch (_) {
       return 0;
     }
