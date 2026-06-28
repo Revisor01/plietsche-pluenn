@@ -58,9 +58,10 @@ export function badgeTierInfo(badge: Badge, progress: number) {
 export type TierStep = { name: string; at: number };
 
 // Default point ranks — used until store.tiers_json is loaded. The admin can
-// override these (incl. Diamant) via the global tier editor.
+// override these (incl. Diamant) via the global tier editor. Even Bronze must
+// be earned: below the first threshold the user has no rank yet ("—").
 export const DEFAULT_TIERS: TierStep[] = [
-  { name: 'Bronze', at: 0 },
+  { name: 'Bronze', at: 150 },
   { name: 'Silber', at: 750 },
   { name: 'Gold', at: 1500 },
   { name: 'Platin', at: 3000 },
@@ -68,18 +69,22 @@ export const DEFAULT_TIERS: TierStep[] = [
 ];
 
 // Current rank + progress to the next, against a configurable tier ladder.
+// Below the lowest threshold there is no rank yet — current is '—' and progress
+// counts up toward the first rank (Bronze).
 export function nextTier(points: number, tiers: TierStep[] = DEFAULT_TIERS) {
   const ladder = (tiers && tiers.length ? tiers : DEFAULT_TIERS).slice().sort((a, b) => a.at - b.at);
-  const current = [...ladder].reverse().find((t) => t.at <= points) ?? ladder[0];
+  const current = [...ladder].reverse().find((t) => t.at <= points) ?? null;
   const next = ladder.find((t) => t.at > points);
   if (!next) {
     const top = ladder[ladder.length - 1];
     return { current: top.name, name: top.name, remaining: 0, progress: 1, target: top.at };
   }
-  const span = next.at - current.at;
-  const progress = span > 0 ? (points - current.at) / span : 1;
+  // Span starts at 0 (no rank yet) or at the current rank's threshold.
+  const from = current ? current.at : 0;
+  const span = next.at - from;
+  const progress = span > 0 ? (points - from) / span : 1;
   return {
-    current: current.name,
+    current: current ? current.name : '—',
     name: next.name,
     remaining: next.at - points,
     progress: Math.max(0, Math.min(1, progress)),
@@ -91,14 +96,15 @@ export function formatPoints(n: number) {
   return n.toLocaleString('de-DE');
 }
 
-// Colour for a rank/tier name (case-insensitive). Falls back to bronze.
+// Colour for a rank/tier name (case-insensitive). No rank yet ("—") is neutral.
 export function tierColor(name?: string) {
   switch ((name ?? '').toLowerCase()) {
     case 'diamant': return PP.diamant;
     case 'platin': return PP.platin;
     case 'gold': return PP.gold;
     case 'silber': return PP.silver;
-    default: return PP.bronze;
+    case 'bronze': return PP.bronze;
+    default: return PP.ink3; // "—" / kein Rang
   }
 }
 

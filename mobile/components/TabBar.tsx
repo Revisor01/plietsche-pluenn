@@ -20,12 +20,13 @@ type TabBarProps = {
 
 // Fixed visual order. "Scannen" is not a tab route — it opens the modal
 // universal-scanner screen at the root, so the tab bar stays out of the way there.
-type Slot = { name: string; label: string; icon: IconName; modal?: boolean; staffOnly?: boolean };
+type Slot = { name: string; label: string; icon: IconName; modal?: boolean; staffOnly?: boolean; push?: string };
 const SLOTS: Slot[] = [
   { name: 'index', label: 'Moin', icon: 'house' },
   { name: 'badges', label: 'Watt', icon: 'medal' },
   { name: 'scan', label: 'Scannen', icon: 'qr-scan', modal: true },
-  { name: 'items/index', label: 'Teile', icon: 'shirt', staffOnly: true },
+  // href:null route → not in the tab navigator state, so push it directly.
+  { name: 'items/index', label: 'Teile', icon: 'shirt', staffOnly: true, push: '/(visitor)/items' },
   { name: 'points', label: 'Punkte', icon: 'coins' },
 ];
 
@@ -49,6 +50,10 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
           const onPress = () => {
             if (slot.modal) {
               router.push('/scan');
+              return;
+            }
+            if (slot.push) {
+              router.push(slot.push as any);
               return;
             }
             const route = state.routes.find((r) => r.name === slot.name);

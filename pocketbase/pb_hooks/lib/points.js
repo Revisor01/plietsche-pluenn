@@ -76,8 +76,24 @@ module.exports = {
   },
 
   // Create a visit + award check-in bonus + update streak. Returns awarded points.
+  // Guards against a double check-in race (fast double-tap / retry): re-checks
+  // hasVisitToday immediately before inserting the visit, so two concurrent
+  // requests can't both create a visit + bonus for the same day.
   doCheckin(user, now, opts) {
     opts = opts || {};
+    // Race guard: another request may have created today's visit between the
+    // caller's check and here. If so, only count extra stepper items, no bonus.
+    if (this.hasVisitToday(user.id, now)) {
+      const camp2 = this.findActiveCampaign(now);
+      const mult2 = camp2 ? camp2.get('multiplier') : 1.0;
+      const itemsCount2 = Math.max(0, parseInt(opts.itemsCount || 0, 10));
+      const stepperOnly = Math.round(itemsCount2 * this.POINTS.takePerItem * mult2);
+      if (stepperOnly > 0) {
+        this.awardPoints(user, stepperOnly, 'checkin', `${itemsCount2} Teile mitgenommen`, null);
+      }
+      return { points: stepperOnly, visitId: null, deduped: true };
+    }
+
     const camp = this.findActiveCampaign(now);
     const mult = camp ? camp.get('multiplier') : 1.0;
     const itemsCount = Math.max(0, parseInt(opts.itemsCount || 0, 10));

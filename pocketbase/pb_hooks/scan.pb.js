@@ -83,6 +83,19 @@ routerAdd('POST', '/api/pp/scan', (c) => {
   }
   if (`${item.get('taken_at')}`.trim() !== '') throw new ApiError(409, 'Schon mitgenommen');
   if (`${item.get('archived_at')}`.trim() !== '') throw new ApiError(410, 'Nicht mehr verfügbar');
+  // Only approved items may be taken — a pending (unreviewed) submission can't
+  // be scanned for points before a staff member approves it.
+  const itemStatus = `${item.get('status') || ''}`.trim();
+  if (itemStatus && itemStatus !== 'approved') throw new ApiError(409, 'Noch nicht freigegeben');
+
+  // Geofence also applies to item scans (an item scan triggers a check-in).
+  // GPS is optional — when provided it must be within the radius; without it we
+  // fall back to trusting the in-store QR secret (same as the door check-in).
+  if (lat != null && lng != null) {
+    const d = lib.distanceM(lat, lng, store.get('lat'), store.get('lng'));
+    const radius = store.get('geofence_radius_m') || 150;
+    if (d > radius) throw new ApiError(400, 'Du bist nicht im Laden');
+  }
 
   // First scan of the day also checks the user in (visit bonus + streak).
   let checkinPts = 0;
