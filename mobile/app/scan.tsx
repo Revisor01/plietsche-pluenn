@@ -11,6 +11,7 @@ import { PP } from '../lib/theme';
 import { Icon } from '../lib/icons';
 import { pb } from '../lib/pb';
 import { scan, type ScanResult } from '../lib/api';
+import { useStore } from '../lib/hooks/useData';
 
 // Write the fresh total back into the auth-store record so useAuth() consumers
 // (and any screen reading authStore.record) reflect it immediately, without
@@ -38,6 +39,8 @@ export default function Scan() {
   const [extraItems, setExtraItems] = useState(0);
   const [extraBusy, setExtraBusy] = useState(false);
   const [doorSecret, setDoorSecret] = useState<string | null>(null);
+  const { data: store } = useStore();
+  const maxItems = store?.max_items_take ?? 7;
 
   const getCoords = async () => {
     try {
@@ -213,8 +216,11 @@ export default function Scan() {
                       TEILE OHNE QR MITGENOMMEN?
                     </PPText>
                     <View style={{ alignItems: 'center', marginTop: 12 }}>
-                      <Stepper value={extraItems} onChange={setExtraItems} />
+                      <Stepper value={extraItems} onChange={setExtraItems} max={maxItems} />
                     </View>
+                    <PPText size={11} color={PP.ink3} style={{ textAlign: 'center', marginTop: 6 }}>
+                      Höchstens {maxItems} Teile pro Besuch.
+                    </PPText>
                     {extraItems > 0 && (
                       <View style={{ marginTop: 14 }}>
                         <PPButton icon="plus" loading={extraBusy} onPress={addExtraItems}>

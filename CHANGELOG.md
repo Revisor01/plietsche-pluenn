@@ -6,6 +6,14 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Neu (Punkte-System flexibel)
+- **Punktwerte im Admin einstellbar:** Check-in, Punkte pro mitgenommenem und pro gebrachtem Teil sowie das Mitnahme-Limit sind jetzt im Admin-Bereich „Punkte & Ränge" konfigurierbar (keine festen Werte mehr im Code).
+- **Aktionen mit gezielten Faktoren:** Statt „doppelte Punkte für alles" kann eine Aktion jeden Aktionstyp einzeln erhöhen — Vorbeikommen, Mitnehmen und Bringen je mit eigenem Faktor (×1/×1,5/×2/×3). So sind Aktionen wie „Nightshopping: ×3 aufs Vorbeikommen und ×2 aufs Mitnehmen" möglich.
+- **Ränge frei erweiterbar:** Ränge lassen sich im Admin umbenennen, hinzufügen und entfernen — auch über Diamant hinaus.
+- **Maximal 7 Teile pro Besuch** (Wert einstellbar): Mehr Teile lassen sich beim Scannen/Eintragen nicht gutschreiben.
+- **Artikel-Detailansicht übersichtlicher:** klare Eigenschaften (Für wen · Art · Größe · Zustand) statt loser Schlagworte.
+- **Schaufenster für alle:** Die kuratierten Schaufenster-Teile erscheinen wieder für alle Nutzer auf der Startseite, antippbar zur Detailansicht.
+
 ### Neu
 - **Neuer Tab „Laden":** Alle Nutzer sehen das gesamte verfügbare Angebot im Laden, mit Filtern nach Kleidungsart und Größe. Teile sind antippbar und öffnen eine Detailansicht. Bildbetonte Galerie-Ansicht (zwei Spalten, großes Foto).
 - **„Neu im Laden" antippbar:** Die Teile auf der Startseite führen jetzt direkt zur Detailansicht; „Alles ansehen" springt in den Laden-Tab. Große Bildkarten statt kleiner Vorschau.

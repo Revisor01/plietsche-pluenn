@@ -18,3 +18,4 @@ export { IconButton } from './IconButton';
 export { IconPicker } from './IconPicker';
 export { DateField, formatDE } from './DateField';
 export { Toggle } from './Toggle';
+export { Hint } from './Hint';

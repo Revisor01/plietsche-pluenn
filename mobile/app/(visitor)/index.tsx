@@ -216,13 +216,13 @@ export default function Home() {
         )}
       </View>
 
-      {/* Schaufenster vorerst nur fürs Team (Nutzer sollen es noch nicht sehen). */}
-      {isStaff && !!showcase?.length && (
+      {/* Schaufenster — kuratierte Highlights für alle Nutzer. */}
+      {!!showcase?.length && (
         <>
           <SectionTitle
             title="Schaufenster"
             action="Alles ansehen"
-            onAction={() => router.push('/(visitor)/showcase')}
+            onAction={() => router.push('/(visitor)/store' as any)}
           />
           <ScrollView
             horizontal
@@ -230,7 +230,11 @@ export default function Home() {
             contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 4 }}
           >
             {showcase.map((item) => (
-              <ShowcaseCard key={item.id} item={item} />
+              <ShowcaseCard
+                key={item.id}
+                item={item}
+                onPress={() => router.push(`/(visitor)/items/${item.id}`)}
+              />
             ))}
           </ScrollView>
         </>

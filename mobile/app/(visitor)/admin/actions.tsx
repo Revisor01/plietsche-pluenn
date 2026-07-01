@@ -7,11 +7,25 @@ import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCampaigns, useAllBadges } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
-import { campaignBonusLabel } from '../../../lib/format';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint } from '../../../components/ui';
 import type { Campaign, Badge } from '../../../lib/types';
 
-const MULTIPLIERS = [1.5, 2, 3];
+const FACTORS = [1, 1.5, 2, 3]; // 1 = kein Bonus
+
+// Kompakte Zusammenfassung der aktiven Typen für die Listendarstellung.
+function factorLabel(m: number): string {
+  return `${m}`.replace('.', ',');
+}
+function campaignTypesLabel(c: Campaign): string {
+  const v = c.mult_visit, t = c.mult_take, b = c.mult_bring;
+  // Alte Aktion ohne die neuen Felder → auf multiplier zurückfallen.
+  if (v == null && t == null && b == null) return `×${factorLabel(c.multiplier)}`;
+  const parts: string[] = [];
+  if ((v ?? 1) > 1) parts.push(`Vorbeikommen ×${factorLabel(v!)}`);
+  if ((t ?? 1) > 1) parts.push(`Mitnehmen ×${factorLabel(t!)}`);
+  if ((b ?? 1) > 1) parts.push(`Bringen ×${factorLabel(b!)}`);
+  return parts.length ? parts.join(' · ') : 'kein Bonus';
+}
 
 // Parse a PB datetime string into a local Date (for the picker).
 function parseDate(s?: string): Date | null {
@@ -32,7 +46,9 @@ function dayEndIso(d: Date): string {
 function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; badges: Badge[]; onSaved: () => void }) {
   const [name, setName] = useState(campaign?.name ?? '');
   const [description, setDescription] = useState(campaign?.description ?? '');
-  const [multiplier, setMultiplier] = useState(campaign?.multiplier ?? 2);
+  const [multVisit, setMultVisit] = useState(campaign?.mult_visit ?? 1);
+  const [multTake, setMultTake] = useState(campaign?.mult_take ?? 2);
+  const [multBring, setMultBring] = useState(campaign?.mult_bring ?? 1);
   const [start, setStart] = useState<Date | null>(parseDate(campaign?.starts_at));
   const [end, setEnd] = useState<Date | null>(parseDate(campaign?.ends_at));
   const [badgeId, setBadgeId] = useState(campaign?.badge ?? '');
@@ -55,7 +71,10 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
       const payload: Partial<Campaign> = {
         name: name.trim(),
         description: description.trim(),
-        multiplier,
+        mult_visit: multVisit,
+        mult_take: multTake,
+        mult_bring: multBring,
+        multiplier: Math.max(multVisit, multTake, multBring), // Leit-Faktor für Sortierung/Back-compat
         starts_at: dayStartIso(start),
         ends_at: dayEndIso(end),
         badge: badgeId || undefined,
@@ -87,18 +106,38 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
         <View style={{ flex: 1 }}><DateField label="Bis" value={end} onChange={setEnd} /></View>
       </View>
 
-      <View>
-        <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>PUNKTE-MULTIPLIKATOR</PPText>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          {MULTIPLIERS.map((m) => (
-            <Pressable key={m} onPress={() => setMultiplier(m)}>
-              <Pill bg={multiplier === m ? PP.teal : 'rgba(26,46,44,0.06)'} color={multiplier === m ? '#fff' : PP.ink2}>×{m}</Pill>
-            </Pressable>
-          ))}
+      <View style={{ gap: 12 }}>
+        <View>
+          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>VORBEIKOMMEN (CHECK-IN)</PPText>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {FACTORS.map((m) => (
+              <Pressable key={m} onPress={() => setMultVisit(m)}>
+                <Pill bg={multVisit === m ? PP.teal : 'rgba(26,46,44,0.06)'} color={multVisit === m ? '#fff' : PP.ink2}>×{factorLabel(m)}</Pill>
+              </Pressable>
+            ))}
+          </View>
         </View>
-        <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 6 }}>
-          User sehen: <PPText weight="semibold" color={PP.teal}>{campaignBonusLabel(multiplier)}</PPText>
-        </PPText>
+        <View>
+          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>MITNEHMEN</PPText>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {FACTORS.map((m) => (
+              <Pressable key={m} onPress={() => setMultTake(m)}>
+                <Pill bg={multTake === m ? PP.teal : 'rgba(26,46,44,0.06)'} color={multTake === m ? '#fff' : PP.ink2}>×{factorLabel(m)}</Pill>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+        <View>
+          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>BRINGEN</PPText>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {FACTORS.map((m) => (
+              <Pressable key={m} onPress={() => setMultBring(m)}>
+                <Pill bg={multBring === m ? PP.teal : 'rgba(26,46,44,0.06)'} color={multBring === m ? '#fff' : PP.ink2}>×{factorLabel(m)}</Pill>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+        <Hint icon="info" tone="info">×1 = kein Bonus. Du kannst mehrere Typen gleichzeitig erhöhen.</Hint>
       </View>
 
       <View>
@@ -163,11 +202,9 @@ export default function ActionsAdmin() {
       />
 
       <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
-        <Card pad={12} style={{ backgroundColor: 'rgba(39,176,146,0.07)' }}>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-            Aktionen sind Zeiträume mit Bonus-Punkten (z.B. „Winterkleidung, ×2"). Im Zeitraum zählt jeder Scan/Check-in mehrfach. Aktionen erscheinen automatisch als Aushang auf der Startseite.
-          </PPText>
-        </Card>
+        <Hint icon="info" tone="info">
+          Aktionen sind Zeiträume mit Bonus-Punkten (z.B. „Winterkleidung, ×2"). Im Zeitraum zählt jeder Scan/Check-in mehrfach. Aktionen erscheinen automatisch als Aushang auf der Startseite.
+        </Hint>
       </View>
 
       {creating && (
@@ -191,7 +228,7 @@ export default function ActionsAdmin() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{c.name}</PPText>
-                    <PPText size={PP.fontSizes.sm} color={PP.ink2}>×{c.multiplier} · {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}</PPText>
+                    <PPText size={PP.fontSizes.sm} color={PP.ink2} numberOfLines={1}>{campaignTypesLabel(c)} · {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}</PPText>
                   </View>
                   {isActive(c) && <Pill size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">aktiv</Pill>}
                   <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />

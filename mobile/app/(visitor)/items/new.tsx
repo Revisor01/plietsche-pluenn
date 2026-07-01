@@ -8,6 +8,7 @@ import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { createItem } from '../../../lib/api';
+import { CATEGORY_GROUPS, CATEGORY_TYPES, GROUPS_WITH_TYPE } from '../../../lib/format';
 import {
   Screen,
   PPHeader,
@@ -19,20 +20,8 @@ import {
   IconButton,
   Pill,
   Toggle,
+  Hint,
 } from '../../../components/ui';
-
-const CATEGORIES: { key: string; label: string }[] = [
-  { key: 'damen-oberteil', label: 'Damen Oberteil' },
-  { key: 'damen-hose', label: 'Damen Hose' },
-  { key: 'damen-kleid', label: 'Damen Kleid' },
-  { key: 'damen-schuhe', label: 'Damen Schuhe' },
-  { key: 'herren-oberteil', label: 'Herren Oberteil' },
-  { key: 'herren-hose', label: 'Herren Hose' },
-  { key: 'herren-schuhe', label: 'Herren Schuhe' },
-  { key: 'kinder', label: 'Kinder' },
-  { key: 'accessoires', label: 'Accessoires' },
-  { key: 'sonstiges', label: 'Sonstiges' },
-];
 
 const CONDITIONS: { key: string; label: string }[] = [
   { key: 'neu', label: 'Neu' },
@@ -48,7 +37,11 @@ export default function NewItem() {
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
 
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('sonstiges');
+  // Kategorie = Gruppe (+ optionale Art bei Damen/Herren). Zusammengesetzt zum
+  // gespeicherten category-Key "<group>" oder "<group>-<type>".
+  const [group, setGroup] = useState('sonstiges');
+  const [type, setType] = useState<string | null>(null);
+  const category = group && GROUPS_WITH_TYPE.includes(group) && type ? `${group}-${type}` : group;
   const [condition, setCondition] = useState('gut');
   const [size, setSize] = useState('');
   const [note, setNote] = useState('');
@@ -87,6 +80,11 @@ export default function NewItem() {
       Alert.alert('Standort fehlt', 'Bitte gib an, wo das Teil bei dir zu finden ist.');
       return;
     }
+    // Standort nur übernehmen, wenn er im Formular auch erfasst wurde:
+    // bei "verbleibt bei mir" (Abholadresse) oder Staff im Laden (Regalplatz).
+    const locationToSave =
+      destination === 'mine' || (isStaff && destination === 'store') ? location.trim() || undefined : undefined;
+
     setBusy(true);
     try {
       await createItem({
@@ -95,7 +93,7 @@ export default function NewItem() {
         condition,
         size: size.trim() || undefined,
         note: note.trim() || undefined,
-        location: location.trim() || undefined,
+        location: locationToSave,
         stays_external: staysExternal,
         is_showcase: isStaff ? showcase : false,
         photoUri,
@@ -126,11 +124,9 @@ export default function NewItem() {
 
       {!isStaff && (
         <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
-          <Card pad={12} style={{ backgroundColor: 'rgba(232,169,59,0.10)' }}>
-            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-              Dein Vorschlag wird von einem Helfer geprüft und dann freigegeben.
-            </PPText>
-          </Card>
+          <Hint icon="info" tone="warn">
+            Dein Vorschlag wird von einem Helfer geprüft und dann freigegeben.
+          </Hint>
         </View>
       )}
 
@@ -170,16 +166,34 @@ export default function NewItem() {
         <Field label="Größe (optional)" value={size} onChangeText={setSize} placeholder="z.B. M / 38 / 134" />
       </View>
 
-      <SectionTitle title="Kategorie" />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}>
-        {CATEGORIES.map((c) => (
-          <Pressable key={c.key} onPress={() => setCategory(c.key)}>
-            <Pill bg={category === c.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={category === c.key ? '#fff' : PP.ink2}>
-              {c.label}
+      <SectionTitle title="Für wen" />
+      <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {CATEGORY_GROUPS.map((g) => (
+          <Pressable
+            key={g.key}
+            onPress={() => { setGroup(g.key); if (!GROUPS_WITH_TYPE.includes(g.key)) setType(null); }}
+          >
+            <Pill bg={group === g.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={group === g.key ? '#fff' : PP.ink2}>
+              {g.label}
             </Pill>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
+
+      {GROUPS_WITH_TYPE.includes(group) && (
+        <>
+          <SectionTitle title="Art" />
+          <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {CATEGORY_TYPES.map((t) => (
+              <Pressable key={t.key} onPress={() => setType(t.key)}>
+                <Pill bg={type === t.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={type === t.key ? '#fff' : PP.ink2}>
+                  {t.label}
+                </Pill>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
 
       <SectionTitle title="Zustand" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}>
@@ -194,61 +208,79 @@ export default function NewItem() {
 
       <SectionTitle title="Wohin kommt das Teil?" />
       <View style={{ paddingHorizontal: 20, gap: 12 }}>
-        <View style={{ flexDirection: 'row', gap: 12 }}>
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'stretch' }}>
           <Pressable style={{ flex: 1 }} onPress={() => setDestination('store')}>
-            <Card
-              pad={14}
+            <View
               style={{
+                minHeight: 112,
                 alignItems: 'center',
-                gap: 8,
-                borderWidth: 1.5,
-                borderColor: destination === 'store' ? PP.teal : 'rgba(26,46,44,0.10)',
-                backgroundColor: destination === 'store' ? 'rgba(39,176,146,0.10)' : undefined,
+                justifyContent: 'center',
+                gap: 10,
+                paddingHorizontal: 12,
+                borderRadius: PP.rCard,
+                backgroundColor: destination === 'store' ? PP.teal : '#fff',
+                ...PP.shadowCard,
               }}
             >
-              <Icon name="house" size={26} color={destination === 'store' ? PP.teal : PP.ink2} />
+              <Icon name="house" size={26} color={destination === 'store' ? '#fff' : PP.teal} />
               <PPText
                 weight="semibold"
                 size={PP.fontSizes.base}
-                color={destination === 'store' ? PP.teal : PP.ink}
+                color={destination === 'store' ? '#fff' : PP.ink}
                 style={{ textAlign: 'center' }}
               >
                 Bringe ich in den Laden
               </PPText>
-            </Card>
+            </View>
           </Pressable>
 
           <Pressable style={{ flex: 1 }} onPress={() => setDestination('mine')}>
-            <Card
-              pad={14}
+            <View
               style={{
+                minHeight: 112,
                 alignItems: 'center',
-                gap: 8,
-                borderWidth: 1.5,
-                borderColor: destination === 'mine' ? PP.teal : 'rgba(26,46,44,0.10)',
-                backgroundColor: destination === 'mine' ? 'rgba(39,176,146,0.10)' : undefined,
+                justifyContent: 'center',
+                gap: 10,
+                paddingHorizontal: 12,
+                borderRadius: PP.rCard,
+                backgroundColor: destination === 'mine' ? PP.teal : '#fff',
+                ...PP.shadowCard,
               }}
             >
-              <Icon name="map-pin" size={26} color={destination === 'mine' ? PP.teal : PP.ink2} />
+              <Icon name="map-pin" size={26} color={destination === 'mine' ? '#fff' : PP.teal} />
               <PPText
                 weight="semibold"
                 size={PP.fontSizes.base}
-                color={destination === 'mine' ? PP.teal : PP.ink}
+                color={destination === 'mine' ? '#fff' : PP.ink}
                 style={{ textAlign: 'center' }}
               >
                 Verbleibt bei mir
               </PPText>
-            </Card>
+            </View>
           </Pressable>
         </View>
 
-        <Field
-          icon="map-pin"
-          label={destination === 'mine' ? 'Wo liegt das Teil? (Pflicht)' : 'Standort (optional)'}
-          value={location}
-          onChangeText={setLocation}
-          placeholder={destination === 'mine' ? 'z.B. bei Fam. Meyer, Hauptstr. 1' : 'z.B. Regal 3'}
-        />
+        {/* Standort nur, wenn das Teil beim Besitzer bleibt (Abhol-Adresse, Pflicht)
+            oder wenn das Team einstellt (interner Regalplatz). Bringt ein Besucher
+            das Teil selbst in den Laden, gibt es KEIN Standortfeld. */}
+        {destination === 'mine' && (
+          <Field
+            icon="map-pin"
+            label="Wo ist das Teil abzuholen? (Pflicht)"
+            value={location}
+            onChangeText={setLocation}
+            placeholder="z.B. bei Fam. Meyer, Hauptstr. 1"
+          />
+        )}
+        {isStaff && destination === 'store' && (
+          <Field
+            icon="map-pin"
+            label="Regalplatz (optional, intern)"
+            value={location}
+            onChangeText={setLocation}
+            placeholder="z.B. Regal 3"
+          />
+        )}
 
         {isStaff && (
           <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

@@ -18,7 +18,6 @@ routerAdd('POST', '/api/pp/scan', (c) => {
 
   const lat = data.gps_lat;
   const lng = data.gps_lng;
-  const itemsCount = Math.max(0, parseInt(data.items_count || 0, 10));
   const now = new Date();
 
   // Store singleton (door secret + geofence).
@@ -30,10 +29,18 @@ routerAdd('POST', '/api/pp/scan', (c) => {
   }
   const doorSecret = `${store.get('checkin_qr_secret')}`.trim();
 
+  const cfg = lib.config();
+  // Hard cap on the stepper "took N items" figure.
+  const rawCount = Math.max(0, parseInt(data.items_count || 0, 10));
+  if (rawCount > cfg.maxItemsTake) {
+    throw new ApiError(400, `Höchstens ${cfg.maxItemsTake} Teile pro Besuch.`);
+  }
+  const itemsCount = Math.min(rawCount, cfg.maxItemsTake);
+
   const user = $app.dao().findRecordById('users', auth.id);
-  // Campaign multiplier — only if the user matches the campaign's target.
+  // Per-type campaign multipliers — only if the user matches the campaign target.
   const camp = lib.findActiveCampaign(now, user);
-  const mult = camp ? camp.get('multiplier') : 1.0;
+  const multTake = lib.campaignMult(camp, 'take');
   const alreadyToday = lib.hasVisitToday(auth.id, now);
 
   // ── Case 1: DOOR QR → check-in ─────────────────────────────
@@ -48,7 +55,7 @@ routerAdd('POST', '/api/pp/scan', (c) => {
 
     if (alreadyToday) {
       // Already checked in today — only count extra stepper items, no second bonus.
-      const stepperPts = Math.round(itemsCount * lib.POINTS.takePerItem * mult);
+      const stepperPts = Math.round(itemsCount * cfg.takePerItem * multTake);
       if (stepperPts > 0) {
         lib.awardPoints(user, stepperPts, 'checkin', `${itemsCount} Teile mitgenommen`, null);
       }
@@ -107,8 +114,9 @@ routerAdd('POST', '/api/pp/scan', (c) => {
     didCheckin = true;
   }
 
-  // Item points (PLAIN-TEXT label, no FK to item — privacy).
-  const itemPts = Math.round((item.get('points') || 30) * mult);
+  // Item points (PLAIN-TEXT label, no FK to item — privacy). A scanned item is
+  // a "take", so the campaign's take multiplier applies.
+  const itemPts = Math.round((item.get('points') || 30) * multTake);
   const size = item.get('size');
   const label = size ? `${item.get('title')}, ${size}` : item.get('title');
   lib.awardPoints(user, itemPts, 'scan', label, null);

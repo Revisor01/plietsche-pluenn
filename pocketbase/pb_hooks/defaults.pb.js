@@ -72,22 +72,20 @@ onRecordAfterUpdateRequest((e) => {
   const role = `${submitter.get('role')}`;
   if (role !== 'visitor') return;
 
-  // If the staff member credited this item to an action, that action's
-  // multiplier applies to the bring points (×1.5/2/3) — "doppelte Punkte" while
-  // an action is running. No campaign credited → plain bring points.
+  // If the staff member credited this item to an action, that action's BRING
+  // multiplier applies to the bring points. No campaign credited → plain points.
   const campId = `${r.get('campaign') || ''}`.trim();
   let mult = 1.0;
   let campLabel = '';
   if (campId) {
     try {
       const camp = dao.findRecordById('campaigns', campId);
-      const m = camp.get('multiplier');
-      if (m && m > 1) mult = m;
+      mult = lib.campaignMult(camp, 'bring');
       campLabel = `${camp.get('name') || ''}`.trim();
     } catch (_) {}
   }
 
-  const base = lib.POINTS.bringPerItem || 5;
+  const base = lib.config().bringPerItem;
   const pts = Math.round(base * mult);
   const label =
     mult > 1 && campLabel

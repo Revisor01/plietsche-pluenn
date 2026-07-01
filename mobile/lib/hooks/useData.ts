@@ -18,6 +18,9 @@ export function useCurrentUser() {
 export function useShowcase(limit = 12) {
   return useQuery({
     queryKey: ['showcase', limit],
+    // Shop content should feel fresh — refetch whenever the screen mounts.
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const res = await pb.collection('items').getList(1, limit, {
         filter: 'is_showcase = true && taken_at = null && archived_at = null',
@@ -48,6 +51,8 @@ export function useMyItems() {
 export function useRecentItems(limit = 6) {
   return useQuery({
     queryKey: ['recent_items', limit],
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const res = await pb.collection('items').getList(1, limit, {
         filter: 'status = "approved" && taken_at = null && archived_at = null',
@@ -62,6 +67,8 @@ export function useRecentItems(limit = 6) {
 export function useStoreItems() {
   return useQuery({
     queryKey: ['store_items'],
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const res = await pb.collection('items').getFullList({
         filter: 'status = "approved" && taken_at = null && archived_at = null',

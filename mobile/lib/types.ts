@@ -28,7 +28,10 @@ export interface Campaign {
   id: string;
   name: string;
   description?: string;
-  multiplier: number;
+  multiplier: number; // legacy "leading" factor, kept for sort/back-compat
+  mult_visit?: number;
+  mult_take?: number;
+  mult_bring?: number;
   starts_at: string;
   ends_at: string;
   target_role: string;
@@ -106,4 +109,9 @@ export interface Store {
   tiers_json?: { name: string; at: number }[];
   cover_photo?: string;
   geofence_radius_m: number;
+  // Admin-configurable point values + item cap.
+  pts_checkin?: number;
+  pts_take?: number;
+  pts_bring?: number;
+  max_items_take?: number;
 }

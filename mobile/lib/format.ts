@@ -2,6 +2,71 @@ import { pb } from './pb';
 import { PP } from './theme';
 import type { Item, Badge, Tier } from './types';
 
+// ── Kategorien — eine einzige Quelle für die ganze App ──────────
+// Eine Kategorie besteht aus Zielgruppe (group) und optionaler Art (type).
+// Der gespeicherte category-Key ist "<group>-<type>" (z.B. "damen-hose") oder
+// eine reine Gruppe ("kinder", "accessoires", "sonstiges").
+export const CATEGORY_GROUPS: { key: string; label: string }[] = [
+  { key: 'damen', label: 'Damen' },
+  { key: 'herren', label: 'Herren' },
+  { key: 'kinder', label: 'Kinder' },
+  { key: 'accessoires', label: 'Accessoires' },
+  { key: 'sonstiges', label: 'Sonstiges' },
+];
+
+export const CATEGORY_TYPES: { key: string; label: string }[] = [
+  { key: 'oberteil', label: 'Oberteile' },
+  { key: 'hose', label: 'Hosen' },
+  { key: 'kleid', label: 'Kleider' },
+  { key: 'schuhe', label: 'Schuhe' },
+];
+
+// Nur Damen/Herren haben eine Art-Unterteilung.
+export const GROUPS_WITH_TYPE = ['damen', 'herren'];
+
+export function categoryGroup(category?: string): string {
+  const c = `${category || ''}`;
+  if (c.startsWith('damen')) return 'damen';
+  if (c.startsWith('herren')) return 'herren';
+  if (c.startsWith('kinder')) return 'kinder';
+  if (c.startsWith('accessoires')) return 'accessoires';
+  return 'sonstiges';
+}
+
+export function categoryType(category?: string): string | null {
+  const c = `${category || ''}`;
+  const dash = c.indexOf('-');
+  return dash >= 0 ? c.slice(dash + 1) : null;
+}
+
+// Klartext-Label für einen category-Key, z.B. "damen-hose" → "Damen · Hosen".
+export function categoryLabel(category?: string): string {
+  const g = CATEGORY_GROUPS.find((x) => x.key === categoryGroup(category));
+  const t = CATEGORY_TYPES.find((x) => x.key === categoryType(category));
+  if (!g) return '';
+  return t ? `${g.label} · ${t.label}` : g.label;
+}
+
+// Nur die Zielgruppe als Label ("Damen" / "Kinder" …).
+export function groupLabel(category?: string): string {
+  return CATEGORY_GROUPS.find((x) => x.key === categoryGroup(category))?.label ?? '';
+}
+
+// Nur die Art als Label ("Hosen" …) oder '' wenn keine.
+export function typeLabel(category?: string): string {
+  return CATEGORY_TYPES.find((x) => x.key === categoryType(category))?.label ?? '';
+}
+
+const CONDITION_LABELS: Record<string, string> = {
+  neu: 'Neu',
+  'sehr-gut': 'Sehr gut',
+  gut: 'Gut',
+  gebraucht: 'Gebraucht',
+};
+export function conditionLabel(condition?: string): string {
+  return CONDITION_LABELS[`${condition || ''}`] ?? '';
+}
+
 // Badge tier progression: current tier, next tier + bar progress toward it.
 const TIER_NAMES: Record<Tier, string> = {
   none: '—',
