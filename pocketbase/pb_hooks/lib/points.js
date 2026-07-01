@@ -1,8 +1,8 @@
 // Shared business logic for points, streaks, campaigns, badges.
 // Imported by hook files via require(__hooks + '/lib/points.js').
 
-// Central point values — adjust here. Bringing and taking are equally valued;
-// campaigns add a multiplier on top. Self-entered items earn a bonus per entry.
+// Fallback point values, used only if the store singleton has none configured.
+// The live values are admin-editable on the store record (pts_checkin/…).
 const POINTS = {
   checkin: 10,
   takePerItem: 5, // scanning / "took N" via stepper
@@ -10,11 +10,47 @@ const POINTS = {
   selfEntryBonus: 10, // extra per self-entered (approved) item, on top of bringPerItem
 };
 
+const DEFAULT_MAX_ITEMS_TAKE = 7; // internal rule: max items taken per visit
+
 const TIER_ORDER = ['none', 'bronze', 'silber', 'gold', 'platin', 'diamant'];
 
 module.exports = {
   POINTS,
   TIER_ORDER,
+  DEFAULT_MAX_ITEMS_TAKE,
+
+  // Read admin-configured point values + item cap from the store singleton,
+  // falling back to POINTS defaults when a value isn't set.
+  config() {
+    let s;
+    try {
+      s = $app.dao().findFirstRecordByFilter('store', '1=1');
+    } catch (_) {
+      s = null;
+    }
+    const val = (field, def) => {
+      const v = s ? s.get(field) : 0;
+      return v && v > 0 ? v : def;
+    };
+    return {
+      checkin: val('pts_checkin', POINTS.checkin),
+      takePerItem: val('pts_take', POINTS.takePerItem),
+      bringPerItem: val('pts_bring', POINTS.bringPerItem),
+      maxItemsTake: val('max_items_take', DEFAULT_MAX_ITEMS_TAKE),
+    };
+  },
+
+  // Per-type multiplier for an active campaign. type ∈ 'visit' | 'take' | 'bring'.
+  // Uses the new mult_<type> field, falling back to the legacy single multiplier,
+  // then 1.0. A campaign only boosts a type if that factor is > 1.
+  campaignMult(camp, type) {
+    if (!camp) return 1.0;
+    const field = type === 'visit' ? 'mult_visit' : type === 'take' ? 'mult_take' : 'mult_bring';
+    const v = camp.get(field);
+    if (v && v > 0) return v;
+    const legacy = camp.get('multiplier');
+    return legacy && legacy > 0 ? legacy : 1.0;
+  },
 
   // Find the highest-multiplier campaign active right now that applies to this
   // user. Honours target_role: 'all' (everyone), 'by_role'+target_role,
@@ -106,22 +142,23 @@ module.exports = {
   // requests can't both create a visit + bonus for the same day.
   doCheckin(user, now, opts) {
     opts = opts || {};
+    const cfg = this.config();
+    const camp = this.findActiveCampaign(now, user);
+    const multVisit = this.campaignMult(camp, 'visit');
+    const multTake = this.campaignMult(camp, 'take');
+    // Hard cap: never award / record more than the configured max items taken.
+    const rawCount = Math.max(0, parseInt(opts.itemsCount || 0, 10));
+    const itemsCount = Math.min(rawCount, cfg.maxItemsTake);
+
     // Race guard: another request may have created today's visit between the
     // caller's check and here. If so, only count extra stepper items, no bonus.
     if (this.hasVisitToday(user.id, now)) {
-      const camp2 = this.findActiveCampaign(now, user);
-      const mult2 = camp2 ? camp2.get('multiplier') : 1.0;
-      const itemsCount2 = Math.max(0, parseInt(opts.itemsCount || 0, 10));
-      const stepperOnly = Math.round(itemsCount2 * this.POINTS.takePerItem * mult2);
+      const stepperOnly = Math.round(itemsCount * cfg.takePerItem * multTake);
       if (stepperOnly > 0) {
-        this.awardPoints(user, stepperOnly, 'checkin', `${itemsCount2} Teile mitgenommen`, null);
+        this.awardPoints(user, stepperOnly, 'checkin', `${itemsCount} Teile mitgenommen`, null);
       }
       return { points: stepperOnly, visitId: null, deduped: true };
     }
-
-    const camp = this.findActiveCampaign(now, user);
-    const mult = camp ? camp.get('multiplier') : 1.0;
-    const itemsCount = Math.max(0, parseInt(opts.itemsCount || 0, 10));
 
     const visitsCol = $app.dao().findCollectionByNameOrId('visits');
     const visit = new Record(visitsCol);
@@ -133,8 +170,8 @@ module.exports = {
     if (opts.distance != null) visit.set('gps_distance_m', Math.round(opts.distance));
     if (camp) visit.set('campaign', camp.id);
 
-    const checkinPts = Math.round(this.POINTS.checkin * mult);
-    const stepperPts = Math.round(itemsCount * this.POINTS.takePerItem * mult);
+    const checkinPts = Math.round(cfg.checkin * multVisit);
+    const stepperPts = Math.round(itemsCount * cfg.takePerItem * multTake);
     visit.set('points_awarded', checkinPts + stepperPts);
     $app.dao().saveRecord(visit);
 

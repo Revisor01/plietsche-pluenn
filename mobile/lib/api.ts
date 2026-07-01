@@ -63,6 +63,17 @@ export async function saveTiers(storeId: string, tiers: { name: string; at: numb
   await pb.collection('store').update(storeId, { tiers_json: tiers });
 }
 
+// ── Punktwerte + Mitnahme-Limit (store) ────────────────────────
+export interface PointConfig {
+  pts_checkin: number;
+  pts_take: number;
+  pts_bring: number;
+  max_items_take: number;
+}
+export async function savePointConfig(storeId: string, cfg: PointConfig): Promise<void> {
+  await pb.collection('store').update(storeId, cfg);
+}
+
 // ── Push: sofort an alle senden ────────────────────────────────
 // Creates a push_messages row scheduled for "now"; the push-scheduled cron
 // (runs every minute) picks it up and delivers it via Expo. Category "other"

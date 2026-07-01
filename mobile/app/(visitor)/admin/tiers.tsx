@@ -1,48 +1,95 @@
 import { useState, useEffect } from 'react';
-import { View, Alert } from 'react-native';
+import { View, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../../lib/theme';
+import { Icon } from '../../../lib/icons';
 import { useStore } from '../../../lib/hooks/useData';
-import { saveTiers } from '../../../lib/api';
+import { saveTiers, savePointConfig } from '../../../lib/api';
 import { DEFAULT_TIERS, tierColor } from '../../../lib/format';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Hint } from '../../../components/ui';
 
-// Fixed 5-rank ladder; only the point thresholds are editable.
-const RANKS = ['Bronze', 'Silber', 'Gold', 'Platin', 'Diamant'];
+// Parse a numeric string; empty/NaN/negative → clamped to `min`.
+function parseNum(s: string, min = 0): number {
+  const n = parseInt((s ?? '').trim() || '0', 10);
+  if (isNaN(n) || n < min) return min;
+  return n;
+}
+
+type Rank = { name: string; at: string };
 
 export default function TiersAdmin() {
   const router = useRouter();
   const qc = useQueryClient();
   const { data: store, refetch } = useStore();
-  const [values, setValues] = useState<string[]>([]);
+
+  // Point values (kept as strings for editing, like the existing values pattern).
+  const [ptsCheckin, setPtsCheckin] = useState('');
+  const [ptsTake, setPtsTake] = useState('');
+  const [ptsBring, setPtsBring] = useState('');
+  const [maxTake, setMaxTake] = useState('');
+
+  // Dynamic ranks.
+  const [ranks, setRanks] = useState<Rank[]>([]);
+
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const tiers = (store as any)?.tiers_json?.length ? (store as any).tiers_json : DEFAULT_TIERS;
-    setValues(RANKS.map((name) => {
-      const t = tiers.find((x: any) => (x.name || '').toLowerCase() === name.toLowerCase());
-      return String(t?.at ?? '');
-    }));
+    const s = store as any;
+    if (!s?.id) return;
+    setPtsCheckin(String(s.pts_checkin ?? 10));
+    setPtsTake(String(s.pts_take ?? 5));
+    setPtsBring(String(s.pts_bring ?? 5));
+    setMaxTake(String(s.max_items_take ?? 7));
+
+    const tiers = s.tiers_json?.length ? s.tiers_json : DEFAULT_TIERS;
+    setRanks(tiers.map((t: any) => ({ name: String(t.name ?? ''), at: String(t.at ?? '') })));
   }, [store?.id]);
+
+  const setRank = (i: number, patch: Partial<Rank>) =>
+    setRanks((arr) => arr.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const removeRank = (i: number) => setRanks((arr) => arr.filter((_, j) => j !== i));
+  const addRank = () => setRanks((arr) => [...arr, { name: '', at: '' }]);
 
   const save = async () => {
     if (!store?.id) return;
-    const tiers = RANKS.map((name, i) => ({ name, at: parseInt(values[i] || '0', 10) || 0 }));
-    // Thresholds must be ascending (Bronze lowest).
+
+    // ── Punktwerte validieren ──
+    const pc = parseNum(ptsCheckin);
+    const pt = parseNum(ptsTake);
+    const pb = parseNum(ptsBring);
+    const mt = parseNum(maxTake, 1);
+    if (parseNum(maxTake) < 1) {
+      Alert.alert('Maximale Teile', 'Es muss mindestens 1 Teil pro Besuch erlaubt sein.');
+      return;
+    }
+
+    // ── Ränge validieren ──
+    // Leere Ränge (Name UND Schwelle leer) rausfiltern.
+    const cleaned = ranks.filter((r) => r.name.trim() !== '' || r.at.trim() !== '');
+    for (const r of cleaned) {
+      if (!r.name.trim()) {
+        Alert.alert('Name fehlt', 'Bitte gib jedem Rang einen Namen (oder entferne die Zeile).');
+        return;
+      }
+    }
+    const tiers = cleaned.map((r) => ({ name: r.name.trim(), at: parseNum(r.at) }));
+    // Schwellen müssen strikt aufsteigend sein.
     for (let i = 1; i < tiers.length; i++) {
       if (tiers[i].at <= tiers[i - 1].at) {
         Alert.alert('Reihenfolge', `${tiers[i].name} muss höher sein als ${tiers[i - 1].name}.`);
         return;
       }
     }
+
     setBusy(true);
     try {
+      await savePointConfig(store.id, { pts_checkin: pc, pts_take: pt, pts_bring: pb, max_items_take: mt });
       await saveTiers(store.id, tiers);
       await refetch();
       await qc.invalidateQueries({ queryKey: ['store'] });
-      Alert.alert('Gespeichert', 'Die Ränge wurden aktualisiert.');
+      Alert.alert('Gespeichert', 'Punkte und Ränge wurden aktualisiert.');
     } catch (e: any) {
       Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
     } finally {
@@ -54,37 +101,90 @@ export default function TiersAdmin() {
     <Screen padBottom={120}>
       <PPHeader
         subtitle="Admin"
-        title="Punkte-Ränge"
+        title="Punkte & Ränge"
         leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
       />
 
-      <View style={{ paddingHorizontal: 20 }}>
-        <Card pad={12}>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-            Ab wie vielen Gesamtpunkten ein Rang gilt. Der Ring auf der Startseite richtet sich danach.
-          </PPText>
-        </Card>
+      {/* ── SEKTION 1: Punkte pro Aktion ── */}
+      <SectionTitle title="Punkte pro Aktion" />
+      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+        <Hint icon="info" tone="info">Wie viele Punkte es pro Aktion gibt. Wirkt sofort.</Hint>
+      </View>
+      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+        <Field
+          label="Check-in im Laden"
+          value={ptsCheckin}
+          onChangeText={setPtsCheckin}
+          keyboardType="number-pad"
+          placeholder="10"
+        />
+        <Field
+          label="Pro mitgenommenem Teil"
+          value={ptsTake}
+          onChangeText={setPtsTake}
+          keyboardType="number-pad"
+          placeholder="5"
+        />
+        <Field
+          label="Pro gebrachtem Teil"
+          value={ptsBring}
+          onChangeText={setPtsBring}
+          keyboardType="number-pad"
+          placeholder="5"
+        />
+        <Field
+          label="Maximale Teile pro Besuch"
+          value={maxTake}
+          onChangeText={setMaxTake}
+          keyboardType="number-pad"
+          placeholder="7"
+        />
+        <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: -2 }}>
+          Mehr Teile können pro Besuch nicht mitgenommen bzw. gescannt werden.
+        </PPText>
       </View>
 
-      <SectionTitle title="Schwellen" />
+      {/* ── SEKTION 2: Ränge ── */}
+      <SectionTitle title="Ränge" />
+      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+        <Hint icon="info" tone="info">
+          Ab wie vielen Gesamtpunkten ein Rang gilt. Der Ring auf der Startseite richtet sich danach. Du kannst Ränge hinzufügen, umbenennen und entfernen.
+        </Hint>
+      </View>
       <View style={{ paddingHorizontal: 20, gap: 10 }}>
-        {RANKS.map((name, i) => (
-          <View key={name} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 92, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: tierColor(name) }} />
-              <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{name}</PPText>
-            </View>
+        {ranks.map((r, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: tierColor(r.name) }} />
             <View style={{ flex: 1 }}>
               <Field
+                label="Name"
+                value={r.name}
+                onChangeText={(v) => setRank(i, { name: v })}
+                placeholder="z.B. Bronze"
+              />
+            </View>
+            <View style={{ width: 110 }}>
+              <Field
                 label="ab Punkten"
-                value={values[i] ?? ''}
-                onChangeText={(v) => setValues((arr) => arr.map((x, j) => (j === i ? v : x)))}
+                value={r.at}
+                onChangeText={(v) => setRank(i, { at: v })}
                 keyboardType="number-pad"
                 placeholder="0"
               />
             </View>
+            <Pressable
+              onPress={() => removeRank(i)}
+              hitSlop={8}
+              style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(26,46,44,0.06)' }}
+            >
+              <Icon name="trash" size={16} color={PP.ink3} />
+            </Pressable>
           </View>
         ))}
+
+        <View style={{ marginTop: 4 }}>
+          <PPButton variant="ghost" icon="plus" onPress={addRank}>Rang hinzufügen</PPButton>
+        </View>
       </View>
 
       <View style={{ paddingHorizontal: 20, marginTop: 24 }}>

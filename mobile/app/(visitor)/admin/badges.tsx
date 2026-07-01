@@ -8,7 +8,7 @@ import { Icon } from '../../../lib/icons';
 import { useAllBadges, useCampaigns } from '../../../lib/hooks/useData';
 import type { Campaign } from '../../../lib/types';
 import { createBadge, updateBadge, deleteBadge, type BadgeInput } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
 
 const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
@@ -294,11 +294,9 @@ export default function BadgeAdmin() {
       />
 
       <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
-        <Card pad={12} style={{ backgroundColor: 'rgba(39,176,146,0.07)' }}>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-            Badges belohnen Aktivität. „Stufen" (Bronze→Diamant) vergeben bei jeder Schwelle einen Bonus; „Einzel-Abzeichen" sind einmalig (z.B. Jahres-Treue oder Aktions-Teilnahme). „ab" = wie oft, „Bonus" = einmalige Punkte beim Erreichen.
-          </PPText>
-        </Card>
+        <Hint icon="info" tone="info">
+          Badges belohnen Aktivität. „Stufen" (Bronze→Diamant) vergeben bei jeder Schwelle einen Bonus; „Einzel-Abzeichen" sind einmalig (z.B. Jahres-Treue oder Aktions-Teilnahme). „ab" = wie oft, „Bonus" = einmalige Punkte beim Erreichen.
+        </Hint>
       </View>
 
       {creating && (

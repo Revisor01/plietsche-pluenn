@@ -79,7 +79,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         <Toggle value={active} onChange={setActive} />
       </View>
       {!need && (
-        <Card pad={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(128,180,226,0.10)' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(128,180,226,0.10)', borderRadius: PP.rField, padding: 12 }}>
           <Icon name="bell" size={18} color={PP.sky} />
           <View style={{ flex: 1 }}>
             <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Als Push senden</PPText>
@@ -88,7 +88,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
             </PPText>
           </View>
           <Toggle value={push} onChange={setPush} />
-        </Card>
+        </View>
       )}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{need ? 'Speichern' : 'Anlegen'}</PPButton></View>

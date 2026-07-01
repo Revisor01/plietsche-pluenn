@@ -1,26 +1,21 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Image, Pressable, ScrollView } from 'react-native';
+import { View, Image, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PP } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
 import { useStoreItems } from '../../lib/hooks/useData';
-import { itemThumb } from '../../lib/format';
-import { Screen, PPHeader, PPText, Card, Pill } from '../../components/ui';
+import {
+  itemThumb,
+  CATEGORY_GROUPS as GROUPS,
+  CATEGORY_TYPES as TYPES,
+  GROUPS_WITH_TYPE,
+  categoryGroup as groupOf,
+  categoryType as typeOf,
+} from '../../lib/format';
+import { Screen, PPHeader, PPText, Card, PPButton } from '../../components/ui';
 import type { Item } from '../../lib/types';
-
-const CATEGORIES: { key: string; label: string }[] = [
-  { key: 'damen-oberteil', label: 'Damen Oberteil' },
-  { key: 'damen-hose', label: 'Damen Hose' },
-  { key: 'damen-kleid', label: 'Damen Kleid' },
-  { key: 'damen-schuhe', label: 'Damen Schuhe' },
-  { key: 'herren-oberteil', label: 'Herren Oberteil' },
-  { key: 'herren-hose', label: 'Herren Hose' },
-  { key: 'herren-schuhe', label: 'Herren Schuhe' },
-  { key: 'kinder', label: 'Kinder' },
-  { key: 'accessoires', label: 'Accessoires' },
-  { key: 'sonstiges', label: 'Sonstiges' },
-];
 
 // Image-forward grid card — the photo is the hero, text sits below.
 function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
@@ -54,12 +49,63 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
   );
 }
 
+// A labelled row of selectable options inside the filter sheet.
+function FilterRow({
+  title,
+  options,
+  value,
+  onSelect,
+}: {
+  title: string;
+  options: { key: string; label: string }[];
+  value: string | null;
+  onSelect: (key: string | null) => void;
+}) {
+  return (
+    <View style={{ gap: 8 }}>
+      <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
+        {title.toUpperCase()}
+      </PPText>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <SelectChip label="Alle" active={value === null} onPress={() => onSelect(null)} />
+        {options.map((o) => (
+          <SelectChip key={o.key} label={o.label} active={value === o.key} onPress={() => onSelect(o.key)} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function SelectChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        paddingVertical: 9,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        backgroundColor: active ? PP.teal : 'rgba(26,46,44,0.05)',
+        borderWidth: 1,
+        borderColor: active ? PP.teal : 'rgba(26,46,44,0.08)',
+      }}
+    >
+      <PPText weight={active ? 'semibold' : 'medium'} size={PP.fontSizes.base} color={active ? '#fff' : PP.ink}>
+        {label}
+      </PPText>
+    </Pressable>
+  );
+}
+
 export default function Store() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data: items, refetch } = useStoreItems();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [group, setGroup] = useState<string | null>(null);
+  const [type, setType] = useState<string | null>(null);
+  const [size, setSize] = useState<string | null>(null);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -67,57 +113,64 @@ export default function Store() {
     setRefreshing(false);
   }, [refetch]);
 
+  // Sizes available within the current group/type selection (so the size list
+  // is never cluttered with sizes that can't be reached).
   const sizes = useMemo(() => {
     const set = new Set<string>();
     for (const it of items ?? []) {
+      if (group && groupOf(it.category) !== group) continue;
+      if (type && typeOf(it.category) !== type) continue;
       if (it.size) set.add(it.size);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'de', { numeric: true }));
-  }, [items]);
+  }, [items, group, type]);
 
   const filtered = useMemo(() => {
     return (items ?? []).filter((it) => {
-      if (selectedCategory && it.category !== selectedCategory) return false;
-      if (selectedSize && it.size !== selectedSize) return false;
+      if (group && groupOf(it.category) !== group) return false;
+      if (type && typeOf(it.category) !== type) return false;
+      if (size && it.size !== size) return false;
       return true;
     });
-  }, [items, selectedCategory, selectedSize]);
+  }, [items, group, type, size]);
+
+  // Reset type/size when leaving a group that supported them.
+  const selectGroup = (g: string | null) => {
+    setGroup(g);
+    if (!g || !GROUPS_WITH_TYPE.includes(g)) setType(null);
+    setSize(null);
+  };
+
+  const activeCount = [group, type, size].filter((v) => v !== null).length;
+  const showType = group !== null && GROUPS_WITH_TYPE.includes(group);
+
+  const sizeOptions = sizes.map((s) => ({ key: s, label: s }));
 
   return (
     <Screen padBottom={120} refreshing={refreshing} onRefresh={onRefresh}>
-      <PPHeader subtitle="Im Laden" title="Alles im Laden" />
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6, paddingBottom: 12 }}>
-        <Pressable onPress={() => setSelectedCategory(null)}>
-          <Pill bg={selectedCategory === null ? PP.teal : 'rgba(26,46,44,0.06)'} color={selectedCategory === null ? '#fff' : PP.ink2}>
-            Alle
-          </Pill>
-        </Pressable>
-        {CATEGORIES.map((c) => (
-          <Pressable key={c.key} onPress={() => setSelectedCategory(c.key)}>
-            <Pill bg={selectedCategory === c.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={selectedCategory === c.key ? '#fff' : PP.ink2}>
-              {c.label}
-            </Pill>
+      <PPHeader
+        subtitle="Im Laden"
+        title="Alles im Laden"
+        trailing={
+          <Pressable
+            onPress={() => setSheetOpen(true)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              borderRadius: 12,
+              backgroundColor: activeCount > 0 ? PP.teal : 'rgba(26,46,44,0.05)',
+            }}
+          >
+            <Icon name="filter" size={15} color={activeCount > 0 ? '#fff' : PP.ink2} />
+            <PPText weight="semibold" size={PP.fontSizes.sm} color={activeCount > 0 ? '#fff' : PP.ink2}>
+              Filter{activeCount > 0 ? ` (${activeCount})` : ''}
+            </PPText>
           </Pressable>
-        ))}
-      </ScrollView>
-
-      {sizes.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6, paddingBottom: 12 }}>
-          <Pressable onPress={() => setSelectedSize(null)}>
-            <Pill bg={selectedSize === null ? PP.teal : 'rgba(26,46,44,0.06)'} color={selectedSize === null ? '#fff' : PP.ink2}>
-              Alle Größen
-            </Pill>
-          </Pressable>
-          {sizes.map((s) => (
-            <Pressable key={s} onPress={() => setSelectedSize(s)}>
-              <Pill bg={selectedSize === s ? PP.teal : 'rgba(26,46,44,0.06)'} color={selectedSize === s ? '#fff' : PP.ink2}>
-                {s}
-              </Pill>
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
+        }
+      />
 
       <View style={{ paddingHorizontal: 20 }}>
         {filtered.length ? (
@@ -127,7 +180,6 @@ export default function Store() {
                 <StoreCard item={it} onOpen={() => router.push(`/(visitor)/items/${it.id}`)} />
               </View>
             ))}
-            {/* Keep a lone last item left-aligned at half width. */}
             {filtered.length % 2 === 1 && <View style={{ width: '47%', flexGrow: 1 }} />}
           </View>
         ) : (
@@ -138,6 +190,71 @@ export default function Store() {
           </Card>
         )}
       </View>
+
+      {/* Filter sheet */}
+      <Modal visible={sheetOpen} animationType="slide" transparent onRequestClose={() => setSheetOpen(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.40)' }} onPress={() => setSheetOpen(false)} />
+          <View
+            style={{
+              backgroundColor: PP.bg,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              paddingHorizontal: 22,
+              paddingTop: 10,
+              paddingBottom: Math.max(insets.bottom, 16) + 12,
+              gap: 22,
+              ...PP.shadowCard,
+            }}
+          >
+            {/* Grabber */}
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(26,46,44,0.16)' }} />
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <PPText weight="bold" size={PP.fontSizes.xl} color={PP.ink} style={{ letterSpacing: -0.3 }}>
+                Filter
+              </PPText>
+              <Pressable
+                onPress={() => setSheetOpen(false)}
+                hitSlop={10}
+                style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(26,46,44,0.05)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Icon name="x" size={16} color={PP.ink2} />
+              </Pressable>
+            </View>
+
+            <FilterRow title="Für wen" options={GROUPS} value={group} onSelect={selectGroup} />
+
+            {showType && (
+              <FilterRow title="Art" options={TYPES} value={type} onSelect={setType} />
+            )}
+
+            {sizeOptions.length > 0 && (
+              <FilterRow title="Größe" options={sizeOptions} value={size} onSelect={setSize} />
+            )}
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 2 }}>
+              {activeCount > 0 && (
+                <PPButton
+                  size="m"
+                  variant="ghost"
+                  fullWidth={false}
+                  onPress={() => { setGroup(null); setType(null); setSize(null); }}
+                >
+                  Zurücksetzen
+                </PPButton>
+              )}
+              <View style={{ flex: 1 }}>
+                <PPButton size="m" onPress={() => setSheetOpen(false)}>
+                  {filtered.length} {filtered.length === 1 ? 'Teil' : 'Teile'} zeigen
+                </PPButton>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }

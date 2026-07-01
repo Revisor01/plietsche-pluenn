@@ -9,10 +9,10 @@ import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useItem, useCurrentUser } from '../../../lib/hooks/useData';
 import { updateItem, setShowcase, archiveItem, approveItem } from '../../../lib/api';
-import { itemThumb } from '../../../lib/format';
+import { itemThumb, groupLabel, typeLabel, conditionLabel } from '../../../lib/format';
 import { pb } from '../../../lib/pb';
 import {
-  Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle,
+  Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, Hint,
 } from '../../../components/ui';
 
 const CATEGORIES = [
@@ -80,32 +80,49 @@ export default function ItemDetail() {
         </View>
 
         <View style={{ paddingHorizontal: 20, marginTop: 16, gap: 12 }}>
-          <Card pad={16} style={{ gap: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <PPText weight="bold" size={PP.fontSizes.lg} color={PP.ink}>{item.title}</PPText>
+          <Card pad={16} style={{ gap: 14 }}>
+            {/* Titel + Punkte */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <PPText weight="bold" size={PP.fontSizes.lg} color={PP.ink} style={{ flex: 1 }}>{item.title}</PPText>
               <Pill color={PP.teal} bg="rgba(39,176,146,0.12)">{item.points ?? 0} Punkte</Pill>
             </View>
-            {(!!item.size || !!item.category) && (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {!!item.size && <Pill size="s" color={PP.ink2} bg="rgba(26,46,44,0.06)">Größe {item.size}</Pill>}
-                {!!item.category && <Pill size="s" color={PP.ink2} bg="rgba(26,46,44,0.06)">{item.category}</Pill>}
-              </View>
-            )}
-            {!!item.location && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Icon name="map-pin" size={14} color={PP.ink2} />
-                <PPText size={PP.fontSizes.sm} color={PP.ink2}>{item.location}</PPText>
-              </View>
-            )}
+
+            {/* Eigenschaften — klare Zeilen statt loser Pills. */}
+            <View style={{ gap: 1, borderRadius: PP.rField, overflow: 'hidden' }}>
+              {[
+                { label: 'Für wen', value: groupLabel(item.category) },
+                { label: 'Art', value: typeLabel(item.category) },
+                { label: 'Größe', value: item.size },
+                { label: 'Zustand', value: conditionLabel(item.condition) },
+              ]
+                .filter((r) => !!r.value)
+                .map((r, i) => (
+                  <View
+                    key={r.label}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      backgroundColor: i % 2 === 0 ? 'rgba(26,46,44,0.035)' : 'transparent',
+                    }}
+                  >
+                    <PPText size={PP.fontSizes.sm} color={PP.ink3}>{r.label}</PPText>
+                    <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{r.value}</PPText>
+                  </View>
+                ))}
+            </View>
+
+            {/* WICHTIG: item.location (Regal/Lagerplatz) ist INTERN und wird einem
+                normalen Nutzer NIE gezeigt. Nur das Team sieht ihn im Editor. */}
             {!!item.note && (
-              <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>{item.note}</PPText>
+              <PPText size={PP.fontSizes.sm} color={PP.ink2}>{item.note}</PPText>
             )}
           </Card>
-          <Card pad={14} style={{ backgroundColor: 'rgba(39,176,146,0.07)' }}>
-            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-              Im Laden vorbeikommen und scannen, um es mitzunehmen.
-            </PPText>
-          </Card>
+          <Hint icon="qr-scan" tone="info">
+            Im Laden vorbeikommen und scannen, um es mitzunehmen.
+          </Hint>
         </View>
       </Screen>
     );
@@ -199,12 +216,12 @@ export default function ItemDetail() {
 
       {item.status === 'pending' && (
         <View style={{ paddingHorizontal: 20, marginTop: 12 }}>
-          <Card pad={12} style={{ backgroundColor: 'rgba(232,169,59,0.10)', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ backgroundColor: 'rgba(232,169,59,0.12)', borderRadius: PP.rField, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={{ flex: 1 }}>
               <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Noch nicht freigegeben</PPText>
             </View>
             <PPButton size="s" fullWidth={false} onPress={async () => { await approveItem(item.id, false); await done(); }}>Freigeben</PPButton>
-          </Card>
+          </View>
         </View>
       )}
 
