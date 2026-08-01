@@ -1,6 +1,6 @@
 import { View, ViewStyle, StyleProp } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP } from '../../lib/theme';
+import { PP, isAndroid, MD3_SHAPE, surfaceElevation } from '../../lib/theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -10,12 +10,14 @@ interface CardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function Card({ children, pad = PP.space.lg, radius = PP.rCard, bg = PP.surface, style }: CardProps) {
+export function Card({ children, pad = PP.space.lg, radius, bg = PP.surface, style }: CardProps) {
+  // MD3 nutzt kleinere Radien als die iOS-Formsprache dieser App.
+  const r = radius ?? (isAndroid ? MD3_SHAPE.md : PP.rCard);
   return (
     <View
       style={[
-        { backgroundColor: bg, borderRadius: radius, padding: pad },
-        PP.shadowCard,
+        { backgroundColor: bg, borderRadius: r, padding: pad },
+        surfaceElevation(1),
         style,
       ]}
     >
@@ -31,7 +33,8 @@ interface GradientCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function GradientCard({ children, pad = PP.space.lg, radius = PP.rCard, style }: GradientCardProps) {
+export function GradientCard({ children, pad = PP.space.lg, radius, style }: GradientCardProps) {
+  const r = radius ?? (isAndroid ? MD3_SHAPE.md : PP.rCard);
   return (
     <LinearGradient
       colors={PP.gradient}
@@ -39,15 +42,15 @@ export function GradientCard({ children, pad = PP.space.lg, radius = PP.rCard, s
       end={{ x: 1, y: 1 }}
       style={[
         {
-          borderRadius: radius,
+          borderRadius: r,
           padding: pad,
           overflow: 'hidden',
           shadowColor: PP.teal,
           shadowOpacity: 0.18,
           shadowRadius: 24,
           shadowOffset: { width: 0, height: 8 },
-          elevation: 4,
         },
+        surfaceElevation(1),
         style,
       ]}
     >

@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native';
-import { PP } from '../../lib/theme';
+import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 
 interface IconButtonProps {
@@ -14,15 +14,19 @@ export function IconButton({ icon, badge, dark = false, onPress }: IconButtonPro
     <Pressable
       onPress={onPress}
       hitSlop={8}
-      style={{
+      android_ripple={ripple(dark ? '#ffffff' : PP.ink, true)}
+      style={({ pressed }) => ({
         width: 40,
         height: 40,
-        borderRadius: 14,
-        backgroundColor: dark ? 'rgba(255,255,255,0.18)' : '#fff',
+        // MD3 Icon Buttons sind rund; iOS behält das abgerundete Quadrat.
+        borderRadius: isAndroid ? MD3_SHAPE.full : 14,
+        backgroundColor: dark ? 'rgba(255,255,255,0.18)' : isAndroid ? 'transparent' : '#fff',
         alignItems: 'center',
         justifyContent: 'center',
-        ...(dark ? {} : PP.shadowCard),
-      }}
+        opacity: pressedOpacity(pressed),
+        // Auf Android trägt der Ripple das Feedback — keine Erhebung nötig.
+        ...(dark || isAndroid ? {} : PP.shadowCard),
+      })}
     >
       <Icon name={icon} size={20} color={dark ? '#fff' : PP.ink} />
       {badge && (
