@@ -1,11 +1,14 @@
-import { View, Pressable, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PP } from '../lib/theme';
+import { PP, isAndroid, ripple, surfaceElevation } from '../lib/theme';
 import { Icon, type IconName } from '../lib/icons';
 import { PPText } from './ui/Text';
 import { useCurrentUser } from '../lib/hooks/useData';
+
+const LIQUID_GLASS = isLiquidGlassAvailable();
 
 // Minimal shape of the tabBar prop expo-router passes (avoids a direct
 // @react-navigation/bottom-tabs dependency that isn't installed standalone).
@@ -32,52 +35,93 @@ const SLOTS: Slot[] = [
   { name: 'points', label: 'Punkte', icon: 'coins' },
 ];
 
-// Floating liquid-glass tab bar (HANDOFF §8 Glass variant).
+// Tab bar je Plattform:
+//  - iOS   → schwebende Liquid-Glass-Leiste (HANDOFF §8 Glass variant)
+//  - Android → MD3 Navigation Bar: am Rand verankert, Pill-Indikator, Ripple
 export function GlassTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: user } = useCurrentUser();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
-  const bottom = Math.max(insets.bottom, 12);
   const activeName = state.routes[state.index]?.name;
   const slots = SLOTS.filter((s) => !s.staffOnly || isStaff);
 
-  return (
-    <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
-      <BlurView intensity={Platform.OS === 'ios' ? 60 : 100} tint="light" style={styles.bar}>
+  const press = (slot: Slot, isActive: boolean) => () => {
+    if (slot.modal) {
+      router.push('/scan');
+      return;
+    }
+    if (slot.push) {
+      router.push(slot.push as any);
+      return;
+    }
+    const route = state.routes.find((r) => r.name === slot.name);
+    if (!route) return;
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (!isActive && !event.defaultPrevented) {
+      navigation.navigate(slot.name);
+    }
+  };
+
+  // --- Android: MD3 Navigation Bar -----------------------------------------
+  if (isAndroid) {
+    return (
+      <View style={[styles.md3Bar, { paddingBottom: insets.bottom }]}>
         {slots.map((slot) => {
           const isActive = !slot.modal && activeName === slot.name;
-          const color = isActive ? PP.teal : PP.ink3;
-
-          const onPress = () => {
-            if (slot.modal) {
-              router.push('/scan');
-              return;
-            }
-            if (slot.push) {
-              router.push(slot.push as any);
-              return;
-            }
-            const route = state.routes.find((r) => r.name === slot.name);
-            if (!route) return;
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!isActive && !event.defaultPrevented) {
-              navigation.navigate(slot.name);
-            }
-          };
-
+          const color = isActive ? PP.teal : PP.ink2;
           return (
-            <Pressable key={slot.name} onPress={onPress} style={styles.item}>
-              <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
+            <Pressable
+              key={slot.name}
+              onPress={press(slot, isActive)}
+              android_ripple={ripple(PP.teal, false)}
+              style={styles.md3Item}
+            >
+              <View style={styles.md3IndicatorWrap}>
                 <Icon name={slot.icon} size={22} color={color} />
               </View>
-              <PPText weight={isActive ? 'semibold' : 'medium'} size={10} color={color} style={{ letterSpacing: 0.1 }}>
+              <PPText weight={isActive ? 'semibold' : 'medium'} size={10} color={color} style={{ letterSpacing: 0.4 }}>
                 {slot.label}
               </PPText>
             </Pressable>
           );
         })}
-      </BlurView>
+      </View>
+    );
+  }
+
+  // --- iOS: schwebendes Glas ------------------------------------------------
+  const bottom = Math.max(insets.bottom, 12);
+  const items = slots.map((slot) => {
+    const isActive = !slot.modal && activeName === slot.name;
+    const color = isActive ? PP.teal : PP.ink3;
+    return (
+      <Pressable
+        key={slot.name}
+        onPress={press(slot, isActive)}
+        style={({ pressed }) => [styles.item, { opacity: pressed ? 0.7 : 1 }]}
+      >
+        <View style={styles.iconWrap}>
+          <Icon name={slot.icon} size={22} color={color} />
+        </View>
+        <PPText weight={isActive ? 'semibold' : 'medium'} size={10} color={color} style={{ letterSpacing: 0.1 }}>
+          {slot.label}
+        </PPText>
+      </Pressable>
+    );
+  });
+
+  return (
+    <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
+      {LIQUID_GLASS ? (
+        <GlassView glassEffectStyle="regular" isInteractive colorScheme="light" style={[styles.bar, styles.barGlass]}>
+          {items}
+        </GlassView>
+      ) : (
+        <BlurView intensity={60} tint="light" style={[styles.bar, styles.barBlur]}>
+          {items}
+        </BlurView>
+      )}
     </View>
   );
 }
@@ -95,9 +139,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 4,
+  },
+  // Echtes Liquid Glass bringt Rand und Tiefe selbst mit — ein eigener
+  // Hintergrund oder Border würde das Material überdecken.
+  barGlass: {
+    ...PP.shadowTabBar,
+  },
+  barBlur: {
     borderWidth: 1,
     borderColor: 'rgba(39,176,146,0.35)',
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.55)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
     ...PP.shadowTabBar,
   },
   item: {
@@ -113,7 +164,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapActive: {
-    backgroundColor: 'rgba(39,176,146,0.14)',
+
+  // --- MD3 Navigation Bar (Android) ---------------------------------------
+  // Material verankert die Leiste am Rand statt sie schweben zu lassen.
+  md3Bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: PP.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: PP.hairline,
+    paddingTop: 12,
+    ...surfaceElevation(2),
+  },
+  md3Item: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingBottom: 12,
+  },
+  // Der aktive Zustand wird allein über die Farbe von Icon und Label getragen —
+  // bewusst ohne den MD3-Pill hinter dem Icon.
+  md3IndicatorWrap: {
+    width: 64,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

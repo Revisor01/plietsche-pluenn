@@ -1,6 +1,8 @@
 // Design tokens (1:1 from design/HANDOFF.md §3 + design/theme.jsx).
 // Use `PP` for all colors, radii, font sizes — never hard-code these in screens.
 
+import { Platform } from 'react-native';
+
 export const PP = {
   // brand gradient (teal -> mint -> sky)
   teal: '#27b092',
@@ -95,3 +97,98 @@ export const PP = {
 } as const;
 
 export type PPTheme = typeof PP;
+
+// ---------------------------------------------------------------------------
+// Platform design language
+//
+// Ziel: iOS sieht nach iOS aus (Liquid Glass), Android nach Android (Material 3).
+// Die Marke (PP-Farben, Work Sans) bleibt auf beiden Plattformen gleich — es
+// ändern sich Form, Elevation und Feedback-Verhalten, nicht die Identität.
+//
+// Screens nutzen weiterhin nur die UI-Komponenten; diese Tokens sind für die
+// Komponenten selbst gedacht, nicht für den direkten Gebrauch in Screens.
+// ---------------------------------------------------------------------------
+
+export const isAndroid = Platform.OS === 'android';
+export const isIOS = Platform.OS === 'ios';
+
+/**
+ * MD3 state layers: Material legt bei Interaktion eine Farbschicht mit fester
+ * Opazität über die Fläche, statt wie iOS die ganze View abzudunkeln.
+ * Werte aus der MD3-Spec (State layers).
+ */
+export const MD3_STATE = {
+  hover: 0.08,
+  focus: 0.1,
+  pressed: 0.1,
+  dragged: 0.16,
+} as const;
+
+/**
+ * MD3 shape scale. Material bevorzugt durchgängig kleinere Radien als das
+ * iOS-Design dieser App — Buttons sind dort vollrund (full), Karten medium.
+ */
+export const MD3_SHAPE = {
+  none: 0,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 28,
+  full: 999,
+} as const;
+
+/**
+ * MD3 elevation levels 0–5 als React-Native-Elevation. iOS nutzt stattdessen
+ * die weichen Schatten aus PP.shadowCard / PP.shadowTabBar.
+ */
+export const MD3_ELEVATION = [0, 1, 3, 6, 8, 12] as const;
+
+/**
+ * Ein Radius-Wert je Plattform: iOS behält die bestehende, weichere Formsprache,
+ * Android bekommt die MD3-Shape-Skala.
+ */
+export function radius(ios: number, android: number): number {
+  return isAndroid ? android : ios;
+}
+
+/**
+ * Overlay-Farbe für einen MD3 state layer. Auf iOS gibt es keine state layers —
+ * dort wird stattdessen mit Opazität gearbeitet (siehe `pressedOpacity`).
+ */
+export function stateLayer(color: string, opacity: number): string {
+  const hex = color.replace('#', '');
+  if (hex.length !== 6) return color;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${opacity})`;
+}
+
+/**
+ * Press-Feedback: iOS dimmt die gesamte View, Android nutzt den state layer und
+ * lässt die View selbst unverändert (dort kommt zusätzlich der Ripple dazu).
+ */
+export function pressedOpacity(pressed: boolean): number {
+  if (!pressed) return 1;
+  return isAndroid ? 1 : 0.7;
+}
+
+/**
+ * android_ripple-Konfiguration für Pressable. Auf iOS bewusst `undefined`,
+ * damit dort nichts passiert.
+ */
+export function ripple(color: string = PP.teal, borderless = false) {
+  if (!isAndroid) return undefined;
+  return { color: stateLayer(color, MD3_STATE.pressed), borderless };
+}
+
+/**
+ * Plattform-Erhebung: auf Android eine MD3-Elevation-Stufe, auf iOS der
+ * bestehende weiche Schatten.
+ */
+export function surfaceElevation(level: 0 | 1 | 2 | 3 | 4 | 5) {
+  if (isAndroid) return { elevation: MD3_ELEVATION[level] };
+  if (level === 0) return {};
+  return PP.shadowCard;
+}

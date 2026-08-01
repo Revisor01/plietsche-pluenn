@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { PP } from '../../lib/theme';
+import { PP, isAndroid } from '../../lib/theme';
 import { PPText } from './Text';
 
 interface PPHeaderProps {
@@ -28,7 +28,13 @@ export function PPHeader({ title, subtitle, leading, trailing }: PPHeaderProps) 
             {subtitle}
           </PPText>
         )}
-        <PPText weight="semibold" size={PP.fontSizes.xl} color={PP.ink} style={{ letterSpacing: -0.4 }}>
+        {/* iOS: großer Titel mit engem Tracking. MD3 headline-small: keins. */}
+        <PPText
+          weight="semibold"
+          size={isAndroid ? PP.fontSizes.lg : PP.fontSizes.xl}
+          color={PP.ink}
+          style={{ letterSpacing: isAndroid ? 0 : -0.4 }}
+        >
           {title}
         </PPText>
       </View>

@@ -6,6 +6,12 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Geändert (Plattform-Design: iOS und Android jeweils typisch)
+- **iOS bekommt echtes Liquid Glass:** Tab-Leiste und Glas-Karten nutzen jetzt Apples System-Material (`expo-glass-effect`) statt einer nachgebauten Weichzeichnung. Auf Geräten unter iOS 26 bleibt die bisherige Optik als Rückfallebene erhalten.
+- **Android folgt Material 3:** Die Tab-Leiste sitzt am unteren Rand statt zu schweben, Schaltflächen sind vollrund und antworten mit dem typischen Material-Aufleuchten, Karten sind etwas eckiger und arbeiten mit Höhenstufen statt weicher Schatten. Chips und Überschriften folgen ebenfalls der Material-Typografie.
+- **Eine Codebasis, zwei Design-Sprachen:** Beide Plattformen teilen sich Farben, Schrift und Aufbau — unterschiedlich sind nur Form, Tiefe und Reaktion auf Berührung. Umgesetzt über Plattform-Bausteine im zentralen Design-System, ohne zusätzliche Fremdbibliothek.
+- **Aktiver Tab ohne Hinterlegung:** Der aktive Tab wird allein durch die Farbe von Symbol und Beschriftung markiert (statt zusätzlich durch eine farbige Fläche dahinter) — ruhigeres Bild in der Leiste.
+
 ### Neu (Punkte-System flexibel)
 - **Punktwerte im Admin einstellbar:** Check-in, Punkte pro mitgenommenem und pro gebrachtem Teil sowie das Mitnahme-Limit sind jetzt im Admin-Bereich „Punkte & Ränge" konfigurierbar (keine festen Werte mehr im Code).
 - **Aktionen mit gezielten Faktoren:** Statt „doppelte Punkte für alles" kann eine Aktion jeden Aktionstyp einzeln erhöhen — Vorbeikommen, Mitnehmen und Bringen je mit eigenem Faktor (×1/×1,5/×2/×3). So sind Aktionen wie „Nightshopping: ×3 aufs Vorbeikommen und ×2 aufs Mitnehmen" möglich.

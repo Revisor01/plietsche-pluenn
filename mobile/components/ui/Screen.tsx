@@ -1,7 +1,7 @@
 import { View, ScrollView, StyleProp, ViewStyle, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP } from '../../lib/theme';
+import { PP, isAndroid } from '../../lib/theme';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -15,7 +15,13 @@ interface ScreenProps {
 }
 
 // Screen wrapper that handles safe-area top inset and optional scroll.
-// Tab screens pass padBottom ~110 to clear the floating glass tab bar.
+// Tab screens pass padBottom ~110 to clear the floating glass tab bar (iOS).
+//
+// Auf Android ist die MD3 Navigation Bar im Layout verankert statt schwebend —
+// der Platz darunter ist dort bereits reserviert. Der Freiraum wird deshalb
+// zentral zurückgenommen, statt ihn in 18 Screens einzeln zu korrigieren.
+const TAB_CLEARANCE = 100;
+
 export function Screen({
   children,
   scroll = true,
@@ -28,11 +34,13 @@ export function Screen({
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const padTop = insets.top + 8;
+  // Werte über TAB_CLEARANCE sind Freiraum für die schwebende iOS-Leiste.
+  const padBot = isAndroid && padBottom >= TAB_CLEARANCE ? PP.space.xxl : padBottom;
 
   const inner = scroll ? (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={[{ paddingTop: padTop, paddingBottom: padBottom }, contentStyle]}
+      contentContainerStyle={[{ paddingTop: padTop, paddingBottom: padBot}, contentStyle]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       refreshControl={
@@ -42,7 +50,7 @@ export function Screen({
       {children}
     </ScrollView>
   ) : (
-    <View style={[{ flex: 1, paddingTop: padTop, paddingBottom: padBottom }, contentStyle]}>{children}</View>
+    <View style={[{ flex: 1, paddingTop: padTop, paddingBottom: padBot}, contentStyle]}>{children}</View>
   );
 
   // NOTE: never define the wrapper as an inline component — a fresh component
