@@ -56,36 +56,68 @@ cronAdd('streak-reset', '5 3 * * *', () => {
   }
 });
 
-// ── 3. Grant action-participation badges after a campaign ends ──
+// ── 3. Grant action-participation badges (Sicherheitsnetz) ─────
+// Der Regelfall läuft sofort: Beim Freigeben eines gebrachten Teils zählt
+// defaults.pb.js action_counts hoch und ruft checkBadges — das Badge kommt
+// also direkt, nicht erst nach Aktionsende.
+//
+// Dieser Job fängt nur die Fälle ab, die dabei durchrutschen können:
+//   - Teilnahme durch reinen Besuch (kein gebrachtes Teil)
+//   - Aktion/Badge erst nachträglich verknüpft, Beiträge lagen schon vor
+// Läuft deshalb über LAUFENDE und beendete Aktionen, nicht nur beendete.
 cronAdd('action-badges', '20 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
   const dao = $app.dao();
-  const nowIso = new Date().toISOString().replace('T', ' ');
-  let ended;
+  let camps;
   try {
-    // Campaigns that have ended and carry a linked participation badge.
-    ended = dao.findRecordsByFilter('campaigns', `ends_at <= "${nowIso}" && badge != ""`, '', 0, 0);
+    camps = dao.findRecordsByFilter('campaigns', `badge != ""`, '', 0, 0);
   } catch (_) {
     return;
   }
-  for (const camp of ended) {
+  for (const camp of camps) {
     const badgeId = `${camp.get('badge')}`;
     let badge;
     try { badge = dao.findRecordById('badges', badgeId); } catch (_) { continue; }
-    // Everyone with a visit during the campaign window gets the badge.
-    const start = `${camp.get('starts_at')}`.replace('T', ' ');
-    const end = `${camp.get('ends_at')}`.replace('T', ' ');
-    let visits;
-    try {
-      visits = dao.findRecordsByFilter('visits', `checkin_at >= "${start}" && checkin_at <= "${end}"`, '', 0, 0);
-    } catch (_) { continue; }
+
+    // Gestufte Badges laufen ausschließlich über computeProgress/checkBadges —
+    // grantBadge würde sie sofort auf Gold setzen und die Stufen überspringen.
+    if (`${badge.get('kind')}` === 'tiered') {
+      let counts = [];
+      try {
+        counts = dao.findRecordsByFilter('action_counts', `campaign = "${camp.id}" && count > 0`, '', 0, 0);
+      } catch (_) {}
+      for (const c of counts) {
+        try { lib.checkBadges(dao.findRecordById('users', `${c.get('user')}`)); } catch (_) {}
+      }
+      continue;
+    }
+
     const seen = {};
-    for (const v of visits) {
-      const uid = `${v.get('user')}`;
-      if (seen[uid]) continue;
+    const grant = (uid) => {
+      if (!uid || seen[uid]) return;
       seen[uid] = true;
       try { lib.grantBadge(dao.findRecordById('users', uid), badge); } catch (_) {}
-    }
+    };
+
+    // a) Wer der Aktion ein Teil beigesteuert hat.
+    try {
+      const counts = dao.findRecordsByFilter('action_counts', `campaign = "${camp.id}" && count > 0`, '', 0, 0);
+      for (const c of counts) grant(`${c.get('user')}`);
+    } catch (_) {}
+
+    // b) Wer im Aktionszeitraum da war.
+    const start = `${camp.get('starts_at')}`.replace('T', ' ');
+    const end = `${camp.get('ends_at')}`.replace('T', ' ');
+    try {
+      const visits = dao.findRecordsByFilter(
+        'visits',
+        `checkin_at >= "${start}" && checkin_at <= "${end}"`,
+        '',
+        0,
+        0
+      );
+      for (const v of visits) grant(`${v.get('user')}`);
+    } catch (_) {}
   }
 });
 

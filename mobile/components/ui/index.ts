@@ -16,6 +16,7 @@ export { Toast } from './Toast';
 export { Field } from './Field';
 export { IconButton } from './IconButton';
 export { IconPicker } from './IconPicker';
+export { ColorPicker, AUSHANG_COLORS } from './ColorPicker';
 export { DateField, formatDE } from './DateField';
 export { Toggle } from './Toggle';
 export { Hint } from './Hint';

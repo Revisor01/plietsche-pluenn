@@ -50,12 +50,10 @@ export function GlassCard({
   }
 
   if (LIQUID_GLASS) {
+    // Kein `overflow: hidden` — die Clipping-Ebene würde verhindern, dass das
+    // Material den Inhalt dahinter sampelt (siehe TabBar).
     return (
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={tint}
-        style={[{ borderRadius: r, padding: pad, overflow: 'hidden' }, style]}
-      >
+      <GlassView glassEffectStyle="regular" colorScheme={tint} style={[{ borderRadius: r, padding: pad }, style]}>
         {children}
       </GlassView>
     );

@@ -36,6 +36,8 @@ export interface Campaign {
   ends_at: string;
   target_role: string;
   badge?: string;
+  /** Akzentfarbe (#RRGGBB) — leer: Marken-Verlauf. */
+  color?: string;
   created: string;
 }
 
@@ -46,6 +48,10 @@ export interface Need {
   icon?: string;
   is_active: boolean;
   sort?: number;
+  /** Akzentfarbe (#RRGGBB) — leer: Standard-Sky. */
+  color?: string;
+  /** Verknüpfte Aktion — solange sie läuft, zeigt der Aushang nur die Aktion. */
+  campaign?: string;
   created: string;
 }
 

@@ -206,3 +206,159 @@ export function initials(name?: string) {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
+
+// ── Motivation auf der Startseite ──────────────────────────────
+// Statt zweier fester Sätze: die passendste Situation gewinnt. Reihenfolge =
+// Priorität — je konkreter der Anlass, desto weiter oben.
+
+export interface Motivation {
+  /** Kurzer Chip über dem Text. */
+  pill: string;
+  /** Icon des Chips (Name aus lib/icons). */
+  icon: string;
+  /** Farbe des Chips. */
+  tone: 'warn' | 'teal' | 'sky';
+  /** Der Motivationssatz. */
+  text: string;
+}
+
+export interface MotivationInput {
+  streakWeeks: number;
+  /** Punkte bis zum nächsten Rang; 0 = höchster Rang erreicht. */
+  tierRemaining: number;
+  tierName: string;
+  /** Name einer gerade laufenden Aktion, falls es eine gibt. */
+  campaignName?: string | null;
+  /** Bonus-Text der Aktion, z.B. 'Doppelte Punkte'. */
+  campaignBonus?: string | null;
+  /** Tage seit dem letzten Besuch; null = noch nie da gewesen. */
+  daysSinceVisit: number | null;
+  /** Gesamtpunkte — unterscheidet "neu" von "war lange nicht da". */
+  totalPoints: number;
+}
+
+export function motivationFor(input: MotivationInput): Motivation {
+  const { streakWeeks, tierRemaining, tierName, campaignName, campaignBonus, daysSinceVisit, totalPoints } = input;
+
+  // 1. Ganz neu — noch nie da gewesen.
+  if (daysSinceVisit === null && totalPoints === 0) {
+    return {
+      pill: 'Leg los',
+      icon: 'sparkles',
+      tone: 'teal',
+      text: 'Check beim nächsten Besuch ein und sammle deine ersten Punkte.',
+    };
+  }
+
+  // 2. Kurz vor dem nächsten Rang — der stärkste Anreiz, wenn er greifbar ist.
+  if (tierRemaining > 0 && tierRemaining <= 50) {
+    return {
+      pill: `Fast ${tierName}`,
+      icon: 'medal',
+      tone: 'warn',
+      text: `Nur noch ${formatPoints(tierRemaining)} Punkte — dann bist du ${tierName}.`,
+    };
+  }
+
+  // 3. Läuft gerade eine Aktion? Dann lohnt sich der Besuch doppelt.
+  if (campaignName) {
+    return {
+      pill: campaignBonus || 'Aktion läuft',
+      icon: 'flame',
+      tone: 'warn',
+      text: `„${campaignName}" läuft gerade — jetzt vorbeikommen lohnt sich besonders.`,
+    };
+  }
+
+  // 4. Streak in Gefahr (über eine Woche nicht da).
+  if (streakWeeks > 0 && daysSinceVisit !== null && daysSinceVisit >= 7) {
+    return {
+      pill: `${streakWeeks} ${streakWeeks === 1 ? 'Woche' : 'Wochen'} Streak`,
+      icon: 'flame',
+      tone: 'warn',
+      text: 'Dein Streak wackelt! Komm diese Woche vorbei, dann bleibt er dir erhalten.',
+    };
+  }
+
+  // 5. Streak läuft.
+  if (streakWeeks > 0) {
+    return {
+      pill: `${streakWeeks} ${streakWeeks === 1 ? 'Woche' : 'Wochen'} Streak`,
+      icon: 'flame',
+      tone: 'warn',
+      text: "Watt'n Lauf! Komm diese Woche vorbei, dann hältst du dein Streak.",
+    };
+  }
+
+  // 6. War schon da, aber länger nicht mehr.
+  if (daysSinceVisit !== null && daysSinceVisit >= 21) {
+    return {
+      pill: 'Lang nicht gesehen',
+      icon: 'sparkles',
+      tone: 'sky',
+      text: 'Schön, dass du wieder da bist — im Laden wartet neue Ware auf dich.',
+    };
+  }
+
+  // 7. Standard: dran bleiben.
+  if (tierRemaining > 0) {
+    return {
+      pill: 'Dabei',
+      icon: 'sparkles',
+      tone: 'teal',
+      text: `Weiter so — mit jedem Besuch kommst du ${tierName} näher.`,
+    };
+  }
+
+  // 8. Höchster Rang erreicht.
+  return {
+    pill: 'Spitzenreiter',
+    icon: 'medal',
+    tone: 'warn',
+    text: 'Du hast den höchsten Rang erreicht. Schön, dass du dabei bist!',
+  };
+}
+
+// ── Aushang-Farben ─────────────────────────────────────────────
+// Aktionen und Ankündigungen können im Admin eine eigene Akzentfarbe bekommen.
+// Leer/ungültig → null, dann greift die Standardoptik.
+
+/** '#27b092' oder '27b092' → '#27b092'. Ungültiges → null. */
+export function normalizeHex(value?: string | null): string | null {
+  const v = `${value ?? ''}`.trim();
+  if (!v) return null;
+  const hex = v.startsWith('#') ? v.slice(1) : v;
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return null;
+  return `#${hex.toLowerCase()}`;
+}
+
+/** Hex + Deckkraft → rgba(). Für dezente Icon-Hintergründe. */
+export function withAlpha(hex: string, alpha: number): string {
+  const h = normalizeHex(hex);
+  if (!h) return `rgba(0,0,0,${alpha})`;
+  const r = parseInt(h.slice(1, 3), 16);
+  const g = parseInt(h.slice(3, 5), 16);
+  const b = parseInt(h.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/** Hex um `amount` aufhellen (0..1) — erzeugt das helle Ende des Verlaufs. */
+function lighten(hex: string, amount: number): string {
+  const h = normalizeHex(hex) ?? '#000000';
+  const mix = (c: number) => Math.round(c + (255 - c) * amount);
+  const r = mix(parseInt(h.slice(1, 3), 16));
+  const g = mix(parseInt(h.slice(3, 5), 16));
+  const b = mix(parseInt(h.slice(5, 7), 16));
+  return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * Verlauf für eine Aktions-Karte. Ohne eigene Farbe bleibt es beim
+ * Marken-Verlauf; mit Farbe wird ein Verlauf aus ihr gezogen (satt → hell),
+ * damit der Aushang bunter werden kann, ohne dass Text darauf untergeht.
+ */
+export function accentGradient(color?: string | null): readonly [string, string, string] | undefined {
+  const base = normalizeHex(color);
+  if (!base) return undefined; // → GradientCard nutzt PP.gradient
+  return [base, lighten(base, 0.22), lighten(base, 0.42)] as const;
+}

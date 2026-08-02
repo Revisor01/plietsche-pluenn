@@ -135,17 +135,18 @@ const styles = StyleSheet.create({
   bar: {
     height: 64,
     borderRadius: 26,
-    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  // Echtes Liquid Glass bringt Rand und Tiefe selbst mit — ein eigener
-  // Hintergrund oder Border würde das Material überdecken.
-  barGlass: {
-    ...PP.shadowTabBar,
-  },
+  // Echtes Liquid Glass sampelt den Inhalt DAHINTER auf Systemebene. Deshalb
+  // hier kein `overflow: hidden` (die Clipping-Ebene kappt genau das und macht
+  // aus dem Material eine milchige Fläche), kein eigener Hintergrund, kein
+  // Border und kein Schatten — Tiefe und Rand bringt das Material selbst mit.
+  barGlass: {},
   barBlur: {
+    // Der Fallback-Blur braucht das Clipping, sonst läuft er über die Ecken.
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(39,176,146,0.35)',
     backgroundColor: 'rgba(255,255,255,0.55)',
