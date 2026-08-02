@@ -5,9 +5,9 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
-import { useAllNeeds } from '../../../lib/hooks/useData';
+import { useAllNeeds, useActiveCampaigns } from '../../../lib/hooks/useData';
 import { createNeed, updateNeed, deleteNeed, sendPushNow } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill, ColorPicker, Hint } from '../../../components/ui';
 import type { Need } from '../../../lib/types';
 
 // Quick-action templates — one tap pre-fills the editor with a common notice.
@@ -22,15 +22,24 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
   const [title, setTitle] = useState(need?.title ?? '');
   const [detail, setDetail] = useState(need?.detail ?? '');
   const [active, setActive] = useState(need?.is_active ?? true);
+  const [color, setColor] = useState(need?.color ?? '');
+  const [campaign, setCampaign] = useState(need?.campaign ?? '');
   // Push only offered for new entries (a one-off broadcast, not on every edit).
   const [push, setPush] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { data: campaigns } = useActiveCampaigns();
 
   const save = async () => {
     if (!title.trim()) { Alert.alert('Fehlt noch', 'Bitte einen Titel angeben.'); return; }
     setBusy(true);
     try {
-      const payload: Partial<Need> = { title: title.trim(), detail: detail.trim(), is_active: active };
+      const payload: Partial<Need> = {
+        title: title.trim(),
+        detail: detail.trim(),
+        is_active: active,
+        color,
+        campaign: campaign || undefined,
+      };
       if (need) await updateNeed(need.id, payload);
       else await createNeed(payload);
       if (push && !need) {
@@ -74,6 +83,48 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
       )}
       <Field label="Titel" value={title} onChangeText={setTitle} placeholder="z.B. Laden bleibt 2 Tage geschlossen" />
       <Field label="Details" value={detail} onChangeText={setDetail} placeholder="optional" />
+
+      <ColorPicker value={color} onChange={setColor} />
+
+      {/* Verknüpfung mit einer Aktion: verhindert, dass dasselbe Thema doppelt
+          im Aushang steht (einmal als Aktion, einmal als Ankündigung). */}
+      {!!campaigns?.length && (
+        <View>
+          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 8, letterSpacing: 0.3 }}>
+            GEHÖRT ZU AKTION
+          </PPText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            <Pressable onPress={() => setCampaign('')}>
+              <Pill
+                bg={!campaign ? 'rgba(39,176,146,0.14)' : 'rgba(26,46,44,0.05)'}
+                color={!campaign ? PP.teal : PP.ink2}
+              >
+                Eigenständig
+              </Pill>
+            </Pressable>
+            {campaigns.map((c) => (
+              <Pressable key={c.id} onPress={() => setCampaign(c.id)}>
+                <Pill
+                  icon="sparkles"
+                  bg={campaign === c.id ? 'rgba(39,176,146,0.14)' : 'rgba(26,46,44,0.05)'}
+                  color={campaign === c.id ? PP.teal : PP.ink2}
+                >
+                  {c.name}
+                </Pill>
+              </Pressable>
+            ))}
+          </View>
+          {!!campaign && (
+            <View style={{ marginTop: 8 }}>
+              <Hint>
+                Solange die Aktion läuft, zeigt die Startseite nur die Aktions-Karte. Danach erscheint diese
+                Ankündigung wieder eigenständig.
+              </Hint>
+            </View>
+          )}
+        </View>
+      )}
+
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}><PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Aktiv anzeigen</PPText></View>
         <Toggle value={active} onChange={setActive} />

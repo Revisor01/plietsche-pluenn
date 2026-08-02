@@ -5,7 +5,18 @@ import { useState, useCallback } from 'react';
 
 import { PP } from '../../lib/theme';
 import { useCurrentUser, useShowcase, useActiveCampaigns, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
-import { nextTier, formatPoints, relativeDay, initials, tierColor, campaignBonusLabel } from '../../lib/format';
+import {
+  nextTier,
+  formatPoints,
+  relativeDay,
+  initials,
+  tierColor,
+  campaignBonusLabel,
+  motivationFor,
+  accentGradient,
+  normalizeHex,
+  withAlpha,
+} from '../../lib/format';
 import {
   Screen,
   PPHeader,
@@ -44,7 +55,28 @@ export default function Home() {
 
   const total = user?.points_total ?? 0;
   const tier = nextTier(total, (store as any)?.tiers_json);
-  const streak = user?.streak_weeks ?? 0;
+
+  // Ankündigungen, die eine laufende Aktion bereits abdeckt, werden von der
+  // Aktions-Karte geschluckt — sonst stünde dasselbe Thema doppelt im Aushang.
+  const activeCampaignIds = new Set((campaigns ?? []).map((c) => c.id));
+  const visibleNeeds = (needs ?? []).filter((n) => !n.campaign || !activeCampaignIds.has(n.campaign));
+
+  // Motivationstext passt sich der Lage an (Rang, Aktion, Streak, Abwesenheit).
+  const leadCampaign = campaigns?.[0];
+  const daysSinceVisit = user?.streak_last_visit
+    ? Math.floor((Date.now() - new Date(user.streak_last_visit).getTime()) / 86400000)
+    : null;
+  const motivation = motivationFor({
+    streakWeeks: user?.streak_weeks ?? 0,
+    tierRemaining: tier.remaining,
+    tierName: tier.name,
+    campaignName: leadCampaign?.name,
+    campaignBonus: campaignBonusLabel(leadCampaign?.multiplier),
+    daysSinceVisit,
+    totalPoints: total,
+  });
+  const motivationColor =
+    motivation.tone === 'warn' ? PP.warn : motivation.tone === 'sky' ? PP.sky : PP.teal;
 
   return (
     <Screen padBottom={110} refreshing={refreshing} onRefresh={onRefresh}>
@@ -78,26 +110,18 @@ export default function Home() {
             </PPText>
           </GradientRing>
           <View style={{ flex: 1 }}>
-            {streak > 0 ? (
-              <>
-                <Pill icon="flame" color={PP.warn} bg="rgba(232,169,59,0.14)">
-                  {streak} {streak === 1 ? 'Woche' : 'Wochen'} Streak
-                </Pill>
-                <PPText size={13.5} color={PP.ink} style={{ marginTop: 12, lineHeight: 19 }}>
-                  Watt'n Lauf! Komm diese Woche vorbei, dann hältst du dein Streak.
-                </PPText>
-              </>
-            ) : (
-              <>
-                <Pill icon="sparkles" color={PP.teal}>
-                  Leg los
-                </Pill>
-                <PPText size={13.5} color={PP.ink} style={{ marginTop: 12, lineHeight: 19 }}>
-                  Check beim nächsten Besuch ein und sammle deine ersten Punkte.
-                </PPText>
-              </>
-            )}
-            {tier.remaining > 0 && (
+            <Pill
+              icon={motivation.icon as any}
+              color={motivationColor}
+              bg={withAlpha(motivationColor, 0.14)}
+            >
+              {motivation.pill}
+            </Pill>
+            <PPText size={13.5} color={PP.ink} style={{ marginTop: 12, lineHeight: 19 }}>
+              {motivation.text}
+            </PPText>
+            {/* Nur zeigen, wenn der Motivationstext den Rang nicht schon nennt. */}
+            {tier.remaining > 0 && !motivation.text.includes(tier.name) && (
               <PPText size={12} color={PP.ink2} style={{ marginTop: 10 }}>
                 Noch <PPText weight="semibold" size={12} color={PP.teal}>{formatPoints(tier.remaining)}</PPText> bis {tier.name}.
               </PPText>
@@ -106,7 +130,7 @@ export default function Home() {
         </Card>
       </View>
 
-      {(!!campaigns?.length || !!needs?.length) && (
+      {(!!campaigns?.length || !!visibleNeeds.length) && (
         <>
           <SectionTitle title="Aushang" />
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
@@ -114,7 +138,7 @@ export default function Home() {
             {campaigns?.map((c) => {
               const bonus = campaignBonusLabel(c.multiplier);
               return (
-                <GradientCard key={c.id} pad={16} radius={20}>
+                <GradientCard key={c.id} pad={16} radius={20} colors={accentGradient(c.color)}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon name="sparkles" size={22} color="#fff" />
@@ -150,18 +174,22 @@ export default function Home() {
                 </GradientCard>
               );
             })}
-            {/* Freie Ankündigungen vom Laden. */}
-            {needs?.map((n) => (
+            {/* Freie Ankündigungen vom Laden — ohne die, die eine laufende
+                Aktion bereits abdeckt (sonst stünde dasselbe Thema doppelt). */}
+            {visibleNeeds.map((n) => {
+              const accent = normalizeHex(n.color) ?? PP.sky;
+              return (
               <Card key={n.id} pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(128,180,226,0.16)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="megaphone" size={18} color={PP.sky} />
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: withAlpha(accent, 0.16), alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="megaphone" size={18} color={accent} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{n.title}</PPText>
                   {!!n.detail && <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 1 }}>{n.detail}</PPText>}
                 </View>
               </Card>
-            ))}
+              );
+            })}
           </View>
         </>
       )}

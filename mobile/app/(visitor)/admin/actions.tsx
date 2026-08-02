@@ -7,7 +7,7 @@ import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCampaigns, useAllBadges } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint, ColorPicker } from '../../../components/ui';
 import type { Campaign, Badge } from '../../../lib/types';
 
 const FACTORS = [1, 1.5, 2, 3]; // 1 = kein Bonus
@@ -52,6 +52,7 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
   const [start, setStart] = useState<Date | null>(parseDate(campaign?.starts_at));
   const [end, setEnd] = useState<Date | null>(parseDate(campaign?.ends_at));
   const [badgeId, setBadgeId] = useState(campaign?.badge ?? '');
+  const [color, setColor] = useState(campaign?.color ?? '');
   const [busy, setBusy] = useState(false);
 
   // Only single, action-participation badges make sense to link.
@@ -78,6 +79,7 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
         starts_at: dayStartIso(start),
         ends_at: dayEndIso(end),
         badge: badgeId || undefined,
+        color,
       };
       if (campaign) await updateCampaign(campaign.id, payload);
       else await createCampaign(payload);
@@ -105,6 +107,9 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
         <View style={{ flex: 1 }}><DateField label="Von" value={start} onChange={setStart} /></View>
         <View style={{ flex: 1 }}><DateField label="Bis" value={end} onChange={setEnd} /></View>
       </View>
+
+      {/* Farbe der Aushang-Karte — der Verlauf wird auf diese Farbe gezogen. */}
+      <ColorPicker value={color} onChange={setColor} label="FARBE IM AUSHANG" />
 
       <View style={{ gap: 12 }}>
         <View>

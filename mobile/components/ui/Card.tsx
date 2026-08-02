@@ -30,14 +30,16 @@ interface GradientCardProps {
   children: React.ReactNode;
   pad?: number;
   radius?: number;
+  /** Eigener Verlauf (z.B. aus einer Admin-Farbe). Ohne Angabe: Marken-Verlauf. */
+  colors?: readonly [string, string, string];
   style?: StyleProp<ViewStyle>;
 }
 
-export function GradientCard({ children, pad = PP.space.lg, radius, style }: GradientCardProps) {
+export function GradientCard({ children, pad = PP.space.lg, radius, colors, style }: GradientCardProps) {
   const r = radius ?? (isAndroid ? MD3_SHAPE.md : PP.rCard);
   return (
     <LinearGradient
-      colors={PP.gradient}
+      colors={colors ?? PP.gradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[
@@ -45,7 +47,9 @@ export function GradientCard({ children, pad = PP.space.lg, radius, style }: Gra
           borderRadius: r,
           padding: pad,
           overflow: 'hidden',
-          shadowColor: PP.teal,
+          // Schatten folgt der Kartenfarbe, sonst schimmert bei einer eigenen
+          // Akzentfarbe das Teal der Marke darunter durch.
+          shadowColor: colors?.[0] ?? PP.teal,
           shadowOpacity: 0.18,
           shadowRadius: 24,
           shadowOffset: { width: 0, height: 8 },
