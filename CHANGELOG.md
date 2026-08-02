@@ -6,6 +6,15 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Behoben
+- **Liquid Glass sah aus wie einfacher Weichzeichner:** Die Tab-Leiste beschnitt ihren eigenen Inhalt, wodurch das Apple-Material den Hintergrund nicht mehr aufnehmen konnte. Jetzt kommt das Glas richtig zur Geltung (iOS 26+).
+- **Aushang zeigte dasselbe Thema doppelt:** Lief zu einer Ankündigung auch eine Aktion, standen beide untereinander. Ankündigungen lassen sich jetzt einer Aktion zuordnen — solange die Aktion läuft, erscheint nur die Aktions-Karte.
+- **Aktions-Abzeichen gingen an den falschen Kreis:** Vergeben wurde nur an Nutzer mit Check-in im Aktionszeitraum — wer ein Teil zur Aktion **gebracht** hatte, ging leer aus. Jetzt zählt beides. Außerdem kam das Abzeichen erst nach Aktionsende; es wird nun sofort vergeben, sobald die Bedingung erfüllt ist.
+
+### Neu
+- **Aushang-Farbe frei wählbar:** Aktionen und Ankündigungen bekommen im Admin eine Akzentfarbe aus acht abgestimmten Tönen. Bei Aktionen wird der Verlauf auf diese Farbe gezogen — der Aushang darf bunter werden.
+- **Motivation passt sich an:** Der Text auf der Startseite richtet sich nach der Lage statt immer gleich zu sein — kurz vor dem nächsten Rang, laufende Aktion, Streak in Gefahr, längere Abwesenheit oder erster Besuch.
+
 ### Geändert (Plattform-Design: iOS und Android jeweils typisch)
 - **iOS bekommt echtes Liquid Glass:** Tab-Leiste und Glas-Karten nutzen jetzt Apples System-Material (`expo-glass-effect`) statt einer nachgebauten Weichzeichnung. Auf Geräten unter iOS 26 bleibt die bisherige Optik als Rückfallebene erhalten.
 - **Android folgt Material 3:** Die Tab-Leiste sitzt am unteren Rand statt zu schweben, Schaltflächen sind vollrund und antworten mit dem typischen Material-Aufleuchten, Karten sind etwas eckiger und arbeiten mit Höhenstufen statt weicher Schatten. Chips und Überschriften folgen ebenfalls der Material-Typografie.
