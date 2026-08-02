@@ -153,8 +153,10 @@ export default function TiersAdmin() {
       </View>
       <View style={{ paddingHorizontal: 20, gap: 10 }}>
         {ranks.map((r, i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: tierColor(r.name) }} />
+          // alignItems: 'stretch' — beide Felder gleich hoch, egal wie lang das
+          // Label ist. Sonst springt die Zeile, sobald eins davon umbricht.
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'stretch', gap: 10 }}>
+            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: tierColor(r.name), alignSelf: 'center' }} />
             <View style={{ flex: 1 }}>
               <Field
                 label="Name"
@@ -163,9 +165,10 @@ export default function TiersAdmin() {
                 placeholder="z.B. Bronze"
               />
             </View>
-            <View style={{ width: 110 }}>
+            <View style={{ width: 96 }}>
+              {/* Kurzes Label — "ab Punkten" bricht in dieser Breite um. */}
               <Field
-                label="ab Punkten"
+                label="Punkte"
                 value={r.at}
                 onChangeText={(v) => setRank(i, { at: v })}
                 keyboardType="number-pad"
@@ -175,7 +178,7 @@ export default function TiersAdmin() {
             <Pressable
               onPress={() => removeRank(i)}
               hitSlop={8}
-              style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(26,46,44,0.06)' }}
+              style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(26,46,44,0.06)', alignSelf: 'center' }}
             >
               <Icon name="trash" size={16} color={PP.ink3} />
             </Pressable>

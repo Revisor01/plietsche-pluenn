@@ -13,9 +13,13 @@ interface PillProps {
 }
 
 export function Pill({ children, color = PP.teal, bg = 'rgba(39,176,146,0.10)', icon, size = 'm', style }: PillProps) {
-  const padH = size === 's' ? 8 : 12;
-  const padV = size === 's' ? 4 : 6;
   const fs = size === 's' ? 11 : 12.5;
+  // Polsterung und Mindesthöhe wachsen mit der Schrift mit (PP.fontScale),
+  // sonst wird der Chip bei größerer Typo zu eng und die Schrift beschnitten.
+  const scale = PP.fontScale;
+  const padH = Math.round((size === 's' ? 8 : 12) * scale);
+  const padV = Math.round((size === 's' ? 4 : 6) * scale);
+  const minHeight = Math.round((size === 's' ? 22 : 28) * scale);
 
   return (
     <View
@@ -26,6 +30,7 @@ export function Pill({ children, color = PP.teal, bg = 'rgba(39,176,146,0.10)', 
           gap: 6,
           paddingHorizontal: padH,
           paddingVertical: padV,
+          minHeight,
           // MD3 Chips sind eckig (8dp), iOS-Pills vollrund.
           borderRadius: isAndroid ? MD3_SHAPE.sm : PP.rPill,
           backgroundColor: bg,

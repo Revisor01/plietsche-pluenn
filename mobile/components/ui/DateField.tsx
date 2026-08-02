@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Pressable, Platform } from 'react-native';
+import { View, Pressable, Platform, Modal } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { PP } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
@@ -15,6 +15,12 @@ export function formatDE(d: Date | null): string {
 
 // A tappable field that opens a native date picker. Value/onChange use a Date
 // (local time). Display is TT.MM.JJJJ.
+//
+// iOS: Der Kalender läuft in einem Sheet, NICHT inline im Layout. Inline zwängt
+// er sich in die Breite des Feldes — bei zwei Feldern nebeneinander ("Von"/"Bis"
+// mit je flex:1) läuft er rechts aus dem Bild, und zwei geöffnete Picker
+// überlagern sich gegenseitig. Android bringt seinen eigenen System-Dialog mit,
+// der ohnehin über dem Layout schwebt.
 export function DateField({
   label,
   value,
@@ -25,11 +31,18 @@ export function DateField({
   onChange: (d: Date) => void;
 }) {
   const [open, setOpen] = useState(false);
+  // Auf iOS wird erst beim Bestätigen übernommen, damit "Abbrechen" verwirft.
+  const [draft, setDraft] = useState<Date | null>(null);
+
+  const openPicker = () => {
+    setDraft(value ?? new Date());
+    setOpen(true);
+  };
 
   return (
     <View>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={openPicker}
         style={{
           backgroundColor: '#fff',
           borderRadius: PP.rField,
@@ -43,34 +56,98 @@ export function DateField({
         }}
       >
         <Icon name="calendar" size={18} color={PP.ink3} />
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
             {label.toUpperCase()}
           </PPText>
-          <PPText weight="medium" size={PP.fontSizes.md} color={value ? PP.ink : PP.ink3} style={{ marginTop: 1 }}>
+          <PPText
+            weight="medium"
+            size={PP.fontSizes.md}
+            color={value ? PP.ink : PP.ink3}
+            numberOfLines={1}
+            style={{ marginTop: 1 }}
+          >
             {value ? formatDE(value) : 'TT.MM.JJJJ'}
           </PPText>
         </View>
       </Pressable>
 
-      {open && (
+      {/* Android: System-Dialog, schwebt selbst über dem Layout. */}
+      {open && Platform.OS !== 'ios' && (
         <DateTimePicker
           value={value ?? new Date()}
           mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          display="default"
           onChange={(event, selected) => {
-            // Android fires once and closes; iOS inline stays open.
-            if (Platform.OS !== 'ios') setOpen(false);
-            if (event.type === 'dismissed') { setOpen(false); return; }
+            setOpen(false);
+            if (event.type === 'dismissed') return;
             if (selected) onChange(selected);
           }}
         />
       )}
 
-      {open && Platform.OS === 'ios' && (
-        <Pressable onPress={() => setOpen(false)} style={{ alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 8 }}>
-          <PPText weight="semibold" size={PP.fontSizes.base} color={PP.teal}>Fertig</PPText>
-        </Pressable>
+      {/* iOS: eigenes Sheet über die volle Breite. */}
+      {Platform.OS === 'ios' && (
+        <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={{ flex: 1, backgroundColor: 'rgba(26,46,44,0.35)', justifyContent: 'flex-end' }}
+          >
+            {/* Tippen im Sheet darf es nicht schließen. */}
+            <Pressable
+              onPress={() => {}}
+              style={{
+                backgroundColor: PP.surface,
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                paddingHorizontal: 16,
+                paddingTop: 8,
+                paddingBottom: 28,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 8,
+                }}
+              >
+                <Pressable onPress={() => setOpen(false)} hitSlop={8}>
+                  <PPText weight="medium" size={PP.fontSizes.md} color={PP.ink2}>
+                    Abbrechen
+                  </PPText>
+                </Pressable>
+                <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>
+                  {label}
+                </PPText>
+                <Pressable
+                  onPress={() => {
+                    if (draft) onChange(draft);
+                    setOpen(false);
+                  }}
+                  hitSlop={8}
+                >
+                  <PPText weight="semibold" size={PP.fontSizes.md} color={PP.teal}>
+                    Fertig
+                  </PPText>
+                </Pressable>
+              </View>
+
+              <DateTimePicker
+                value={draft ?? value ?? new Date()}
+                mode="date"
+                display="inline"
+                locale="de-DE"
+                themeVariant="light"
+                style={{ alignSelf: 'stretch' }}
+                onChange={(_event, selected) => {
+                  if (selected) setDraft(selected);
+                }}
+              />
+            </Pressable>
+          </Pressable>
+        </Modal>
       )}
     </View>
   );
