@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Image, Alert } from 'react-native';
+import { View, Image, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import QRCode from 'react-native-qrcode-svg';
@@ -21,13 +21,13 @@ import {
 } from '../../../components/ui';
 import type { Item } from '../../../lib/types';
 
-function PendingCard({ item, campaigns, onDone }: { item: Item; campaigns: Campaign[]; onDone: () => void }) {
+function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaigns: Campaign[]; onDone: () => void; onOpen: () => void }) {
   const uri = itemThumb(item);
-  const [busy, setBusy] = useState<null | 'approve' | 'reject'>(null);
+  const [busy, setBusy] = useState<null | 'approve' | 'showcase' | 'reject'>(null);
   const submitter = (item as any).expand?.created_by?.name as string | undefined;
 
   const doApprove = async (showcase: boolean, campaignId?: string) => {
-    setBusy('approve');
+    setBusy(showcase ? 'showcase' : 'approve');
     try {
       await approveItem(item.id, showcase, campaignId);
       onDone();
@@ -65,7 +65,8 @@ function PendingCard({ item, campaigns, onDone }: { item: Item; campaigns: Campa
 
   return (
     <Card pad={14} style={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', gap: 12 }}>
+      {/* Tippen öffnet die Detailansicht zum Prüfen/Bearbeiten vor der Freigabe. */}
+      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: 12 }}>
         <View
           style={{
             width: 76,
@@ -116,22 +117,18 @@ function PendingCard({ item, campaigns, onDone }: { item: Item; campaigns: Campa
             {item.qr_code || item.sku}
           </PPText>
         </View>
-      </View>
+      </Pressable>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      {/* Nur die Hauptaktion trägt Text — Schaufenster und Ablehnen sind
+          Icon-Buttons, damit auf schmalen Geräten nichts umbricht. */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <View style={{ flex: 1 }}>
-          <PPButton size="s" loading={busy === 'approve'} onPress={() => approve(false)}>
+          <PPButton size="s" icon="check" loading={busy === 'approve'} onPress={() => approve(false)}>
             Freigeben
           </PPButton>
         </View>
-        <View style={{ flex: 1 }}>
-          <PPButton size="s" variant="secondary" onPress={() => approve(true)}>
-            + Schaufenster
-          </PPButton>
-        </View>
-        <PPButton size="s" variant="ghost" fullWidth={false} loading={busy === 'reject'} onPress={reject}>
-          Ablehnen
-        </PPButton>
+        <IconButton icon="star" tint={PP.teal} bg="rgba(39,176,146,0.12)" loading={busy === 'showcase'} onPress={() => approve(true)} />
+        <IconButton icon="x" tint={PP.err} bg="rgba(217,83,79,0.12)" loading={busy === 'reject'} onPress={reject} />
       </View>
     </Card>
   );
@@ -158,7 +155,15 @@ export default function ReviewItems() {
 
       <View style={{ paddingHorizontal: 20, gap: 12 }}>
         {items?.length ? (
-          items.map((it) => <PendingCard key={it.id} item={it} campaigns={campaigns ?? []} onDone={onDone} />)
+          items.map((it) => (
+            <PendingCard
+              key={it.id}
+              item={it}
+              campaigns={campaigns ?? []}
+              onDone={onDone}
+              onOpen={() => router.push(`/(visitor)/items/${it.id}`)}
+            />
+          ))
         ) : (
           <Card pad={16}>
             <PPText size={PP.fontSizes.base} color={PP.ink2}>

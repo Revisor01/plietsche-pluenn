@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { Pressable, View, ActivityIndicator } from 'react-native';
 import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 
@@ -6,29 +6,35 @@ interface IconButtonProps {
   icon: IconName;
   badge?: boolean;
   dark?: boolean;
+  // Getönte Aktions-Variante (z.B. rotes Ablehnen): eigene Fläche + Icon-Farbe
+  // auf beiden Plattformen, dann ohne Header-Schatten.
+  tint?: string;
+  bg?: string;
+  loading?: boolean;
   onPress?: () => void;
 }
 
-export function IconButton({ icon, badge, dark = false, onPress }: IconButtonProps) {
+export function IconButton({ icon, badge, dark = false, tint, bg, loading, onPress }: IconButtonProps) {
+  const iconColor = tint ?? (dark ? '#fff' : PP.ink);
   return (
     <Pressable
-      onPress={onPress}
+      onPress={loading ? undefined : onPress}
       hitSlop={8}
-      android_ripple={ripple(dark ? '#ffffff' : PP.ink, true)}
+      android_ripple={ripple(tint ?? (dark ? '#ffffff' : PP.ink), true)}
       style={({ pressed }) => ({
         width: 40,
         height: 40,
         // MD3 Icon Buttons sind rund; iOS behält das abgerundete Quadrat.
         borderRadius: isAndroid ? MD3_SHAPE.full : 14,
-        backgroundColor: dark ? 'rgba(255,255,255,0.18)' : isAndroid ? 'transparent' : '#fff',
+        backgroundColor: bg ?? (dark ? 'rgba(255,255,255,0.18)' : isAndroid ? 'transparent' : '#fff'),
         alignItems: 'center',
         justifyContent: 'center',
         opacity: pressedOpacity(pressed),
         // Auf Android trägt der Ripple das Feedback — keine Erhebung nötig.
-        ...(dark || isAndroid ? {} : PP.shadowCard),
+        ...(dark || isAndroid || bg ? {} : PP.shadowCard),
       })}
     >
-      <Icon name={icon} size={20} color={dark ? '#fff' : PP.ink} />
+      {loading ? <ActivityIndicator size="small" color={iconColor} /> : <Icon name={icon} size={20} color={iconColor} />}
       {badge && (
         <View
           style={{

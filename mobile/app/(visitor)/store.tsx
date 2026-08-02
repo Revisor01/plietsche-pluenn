@@ -38,6 +38,27 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
         ) : (
           <Icon name="shirt" size={44} color="rgba(39,176,146,0.5)" />
         )}
+        {item.stays_external && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 10,
+              backgroundColor: 'rgba(255,255,255,0.92)',
+            }}
+          >
+            <Icon name="map-pin" size={11} color={PP.warn} />
+            <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink}>
+              beim Besitzer
+            </PPText>
+          </View>
+        )}
       </View>
       <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>
         {item.title}
@@ -106,6 +127,8 @@ export default function Store() {
   const [group, setGroup] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
+  // Aufbewahrung: im Laden vs. verbleibt beim Besitzer (große Teile).
+  const [loc, setLoc] = useState<string | null>(null);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -130,9 +153,11 @@ export default function Store() {
       if (group && groupOf(it.category) !== group) return false;
       if (type && typeOf(it.category) !== type) return false;
       if (size && it.size !== size) return false;
+      if (loc === 'store' && it.stays_external) return false;
+      if (loc === 'external' && !it.stays_external) return false;
       return true;
     });
-  }, [items, group, type, size]);
+  }, [items, group, type, size, loc]);
 
   // Reset type/size when leaving a group that supported them.
   const selectGroup = (g: string | null) => {
@@ -141,7 +166,7 @@ export default function Store() {
     setSize(null);
   };
 
-  const activeCount = [group, type, size].filter((v) => v !== null).length;
+  const activeCount = [group, type, size, loc].filter((v) => v !== null).length;
   const showType = group !== null && GROUPS_WITH_TYPE.includes(group);
 
   const sizeOptions = sizes.map((s) => ({ key: s, label: s }));
@@ -235,13 +260,23 @@ export default function Store() {
               <FilterRow title="Größe" options={sizeOptions} value={size} onSelect={setSize} />
             )}
 
+            <FilterRow
+              title="Aufbewahrung"
+              options={[
+                { key: 'store', label: 'Im Laden' },
+                { key: 'external', label: 'Beim Besitzer' },
+              ]}
+              value={loc}
+              onSelect={setLoc}
+            />
+
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 2 }}>
               {activeCount > 0 && (
                 <PPButton
                   size="m"
                   variant="ghost"
                   fullWidth={false}
-                  onPress={() => { setGroup(null); setType(null); setSize(null); }}
+                  onPress={() => { setGroup(null); setType(null); setSize(null); setLoc(null); }}
                 >
                   Zurücksetzen
                 </PPButton>
