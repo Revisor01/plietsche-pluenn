@@ -47,6 +47,9 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 1,
     borderColor: 'rgba(26,46,44,0.06)',
+    // Füllt die Höhe der Zeile, wenn der Container streckt (Ränge-Liste im
+    // Admin: zwei Felder nebeneinander sollen gleich hoch sein).
+    flexGrow: 1,
   },
   label: {
     letterSpacing: 0.3,
