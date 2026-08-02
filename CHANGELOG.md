@@ -6,6 +6,18 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Geändert (Eingereichte Teile & Laden)
+- **Freigabe-Buttons brechen nicht mehr um:** Bei „Eingereichte Teile" trägt nur noch die Hauptaktion „Freigeben" einen Text; „+ Schaufenster" (Stern) und „Ablehnen" (rotes X) sind jetzt Icon-Buttons. Ablehnen ist rot. Dieselbe Lösung im Teile-Inventar: Archivieren ist ein roter Papierkorb-Button.
+- **Eingereichtes Teil antippbar:** Ein Tipp auf die Karte öffnet die Detailansicht — dort lässt sich das Teil vor der Freigabe noch bearbeiten (Foto, Titel, Größe, Punkte, Standort) und direkt freigeben.
+- **Extern gelagerte Teile im Laden sichtbar:** Teile, die beim Besitzer verbleiben, tragen im Laden ein „beim Besitzer"-Schild auf dem Foto und lassen sich über den neuen Filter „Aufbewahrung" (Im Laden / Beim Besitzer) gezielt anzeigen. In der Detailansicht steht statt des Scan-Hinweises: im Laden ansprechen, wir stellen den Kontakt her.
+- **Extern-Filter im Inventar:** Das Team kann die Teile-Übersicht jetzt auch nach „Extern" filtern.
+
+### Behoben (Darstellung)
+- **Abgeschnittene Schrift:** Bei größeren Zahlen und Beschriftungen wurden Ober- und Unterlängen gekappt — die Zeilenhöhe wuchs nicht mit der App-Schriftgröße mit. Betraf Punktestand, Startseite und Hinweistexte.
+- **Chips zu niedrig:** Die Filter auf dem Punkte-Bildschirm (Alle · Check-Ins · Teile · Badges) hatten zu wenig Luft, die Schrift stieß oben und unten an.
+- **Springende Zeilen bei den Rängen:** Im Admin unter „Punkte & Ränge" war das Punkte-Feld höher als das Namensfeld daneben, weil seine Beschriftung umbrach. Beide Felder sind jetzt immer gleich hoch.
+- **Datumsauswahl bei Aktionen überlagerte sich:** „Von" und „Bis" öffneten ihren Kalender direkt im Formular — er passte nicht in die halbe Spaltenbreite, lief seitlich aus dem Bild, und zwei geöffnete Kalender lagen übereinander. Die Auswahl öffnet sich jetzt als eigenes Fenster über die volle Breite, mit „Abbrechen" und „Fertig".
+
 ### Behoben
 - **Liquid Glass sah aus wie einfacher Weichzeichner:** Die Tab-Leiste beschnitt ihren eigenen Inhalt, wodurch das Apple-Material den Hintergrund nicht mehr aufnehmen konnte. Jetzt kommt das Glas richtig zur Geltung (iOS 26+).
 - **Aushang zeigte dasselbe Thema doppelt:** Lief zu einer Ankündigung auch eine Aktion, standen beide untereinander. Ankündigungen lassen sich jetzt einer Aktion zuordnen — solange die Aktion läuft, erscheint nur die Aktions-Karte.

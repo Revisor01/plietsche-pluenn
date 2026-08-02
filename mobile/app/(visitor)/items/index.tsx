@@ -12,12 +12,13 @@ import { itemThumb } from '../../../lib/format';
 import { Screen, PPHeader, PPText, Card, Pill, IconButton, PPButton } from '../../../components/ui';
 import type { Item } from '../../../lib/types';
 
-type Filter = 'all' | 'showcase' | 'pending' | 'taken';
+type Filter = 'all' | 'showcase' | 'pending' | 'external' | 'taken';
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'Alle' },
   { key: 'showcase', label: 'Schaufenster' },
   { key: 'pending', label: 'Zu prüfen' },
+  { key: 'external', label: 'Extern' },
   { key: 'taken', label: 'Vergeben' },
 ];
 
@@ -95,10 +96,12 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
       </Pressable>
 
       {!item.taken_at && (
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        // Hauptaktion mit Text, Archivieren als roter Icon-Button — bricht
+        // auch bei großer Schrift nicht um.
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {item.status === 'pending' ? (
             <View style={{ flex: 1 }}>
-              <PPButton size="s" loading={busy} onPress={() => run(() => approveItem(item.id, false))}>
+              <PPButton size="s" icon="check" loading={busy} onPress={() => run(() => approveItem(item.id, false))}>
                 Freigeben
               </PPButton>
             </View>
@@ -106,6 +109,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
             <View style={{ flex: 1 }}>
               <PPButton
                 size="s"
+                icon="star"
                 variant={item.is_showcase ? 'secondary' : 'primary'}
                 loading={busy}
                 onPress={() => run(() => setShowcase(item.id, !item.is_showcase))}
@@ -114,9 +118,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
               </PPButton>
             </View>
           )}
-          <PPButton size="s" variant="ghost" fullWidth={false} loading={busy} onPress={() => run(() => archiveItem(item.id))}>
-            Archivieren
-          </PPButton>
+          <IconButton icon="trash" tint={PP.err} bg="rgba(217,83,79,0.12)" loading={busy} onPress={() => run(() => archiveItem(item.id))} />
         </View>
       )}
     </Card>
@@ -149,6 +151,8 @@ export default function ItemsInventory() {
         return all.filter((i) => i.is_showcase && !i.taken_at);
       case 'pending':
         return all.filter((i) => i.status === 'pending');
+      case 'external':
+        return all.filter((i) => i.stays_external && !i.taken_at);
       case 'taken':
         return all.filter((i) => !!i.taken_at);
       default:

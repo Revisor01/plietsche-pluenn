@@ -120,9 +120,15 @@ export default function ItemDetail() {
               <PPText size={PP.fontSizes.sm} color={PP.ink2}>{item.note}</PPText>
             )}
           </Card>
-          <Hint icon="qr-scan" tone="info">
-            Im Laden vorbeikommen und scannen, um es mitzunehmen.
-          </Hint>
+          {item.stays_external ? (
+            <Hint icon="map-pin" tone="info">
+              Dieses Teil lagert beim Besitzer — sprich uns im Laden an, wir stellen den Kontakt her.
+            </Hint>
+          ) : (
+            <Hint icon="qr-scan" tone="info">
+              Im Laden vorbeikommen und scannen, um es mitzunehmen.
+            </Hint>
+          )}
         </View>
       </Screen>
     );
