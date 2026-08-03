@@ -13,6 +13,12 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Punktestand und Serie sind schreibgeschützt:** Diese Felder konnten von der App aus verändert werden — was die Abzeichen-Vergabe angreifbar machte. Sie werden jetzt nur noch serverseitig gesetzt; das Team behält seine Korrekturmöglichkeit.
 - **Fortschritt wird vollständig gezählt:** Bei Besuchen und Scans war die Zählung auf die ersten Einträge begrenzt, wodurch der Fortschritt ab einem bestimmten Punkt stehen blieb.
 
+### Neu (Verwaltung)
+- **Systeminfo im Konto:** Admins sehen unter Konto → System die iOS-Version, die App-Version, ob Apples Glas-Material auf dem Gerät verfügbar ist und ob die Bedienungshilfe „Transparenz reduzieren" es abschaltet. Damit lässt sich am Gerät selbst klären, warum die Tab-Leiste so aussieht, wie sie aussieht.
+
+### Behoben (Verständlichkeit)
+- **Verknüpfte Ankündigungen verschwanden unerwartet:** Wird eine Ankündigung einer laufenden Aktion zugeordnet, blendet die Startseite sie aus — die Aktions-Karte deckt das Thema bereits ab. Das war so gewollt, im Formular aber zu beiläufig erklärt: Der Hinweis sagt jetzt deutlich, dass die Ankündigung dadurch **nicht angezeigt** wird, und wie man das ändert.
+
 ### Behoben (Bedienung)
 - **Zurück führt jetzt überall zurück:** Aus den Einstellungen, dem Aushang-Editor, der Abzeichen- und Rangverwaltung sowie dem Schaufenster landete man beim Zurückgehen auf der Startseite statt beim vorherigen Bildschirm. Ursache war dieselbe wie zuvor bei den Teilen: Diese Ansichten liegen technisch in der Tab-Leiste, wo „zurück" auf den ersten Tab springt. Alle zehn betroffenen Bildschirme nutzen jetzt denselben Weg wie die Teile-Ansicht.
 - **Liquid Glass wird zuverlässiger erkannt:** Die Prüfung, ob das Gerät Apples Glas-Material unterstützt, lief einmalig beim Programmstart — war das zuständige System-Modul zu diesem Zeitpunkt noch nicht bereit, blieb die Leiste für die gesamte Sitzung beim Ersatz-Weichzeichner. Die Prüfung findet jetzt statt, wenn die Leiste tatsächlich gezeichnet wird. Zusätzlich wird die Bedienungshilfe „Transparenz reduzieren" berücksichtigt: Ist sie aktiv, kommt bewusst der Weichzeichner zum Einsatz.

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Alert, Pressable } from 'react-native';
+import { View, Alert, Pressable, Platform, AccessibilityInfo } from 'react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
+import { isLiquidGlassAvailable } from 'expo-glass-effect';
 
 import { PP } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
@@ -29,6 +31,67 @@ function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; on
         <Icon name="chevron-right" size={18} color={PP.ink3} />
       </Card>
     </Pressable>
+  );
+}
+
+// Diagnose für den Admin: zeigt, warum Liquid Glass greift oder eben nicht.
+// Die drei Bedingungen (iOS 26, Glass-API vorhanden, Transparenz nicht
+// reduziert) lassen sich sonst nur auf dem Gerät selbst auseinanderhalten.
+function SystemInfo() {
+  const [reduceTransparency, setReduceTransparency] = useState<boolean | null>(null);
+  useEffect(() => {
+    AccessibilityInfo.isReduceTransparencyEnabled()
+      .then(setReduceTransparency)
+      .catch(() => setReduceTransparency(null));
+  }, []);
+
+  let glassAvailable: boolean | null = null;
+  try {
+    glassAvailable = isLiquidGlassAvailable();
+  } catch {
+    glassAvailable = null;
+  }
+
+  const rows: { label: string; value: string }[] = [
+    { label: 'System', value: `${Platform.OS} ${Platform.Version}` },
+    { label: 'App-Version', value: `${Constants.expoConfig?.version ?? '–'}` },
+    {
+      label: 'Liquid Glass',
+      value:
+        Platform.OS !== 'ios' ? 'nur iOS'
+        : glassAvailable === null ? 'Modul nicht erreichbar'
+        : glassAvailable ? 'verfügbar'
+        : 'nicht verfügbar (braucht iOS 26)',
+    },
+    {
+      label: 'Transparenz reduziert',
+      value: reduceTransparency === null ? '–' : reduceTransparency ? 'ja — Glas ist abgeschaltet' : 'nein',
+    },
+  ];
+
+  return (
+    <Card pad={0} style={{ overflow: 'hidden' }}>
+      {rows.map((r, i) => (
+        <View
+          key={r.label}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderTopWidth: i === 0 ? 0 : 1,
+            borderTopColor: PP.hairline,
+          }}
+        >
+          <PPText size={PP.fontSizes.sm} color={PP.ink3}>{r.label}</PPText>
+          <PPText weight="semibold" size={PP.fontSizes.sm} color={PP.ink} style={{ flexShrink: 1, textAlign: 'right' }}>
+            {r.value}
+          </PPText>
+        </View>
+      ))}
+    </Card>
   );
 }
 
@@ -181,6 +244,15 @@ export default function Account() {
             {isAdmin && <AdminLink icon="medal" label="Abzeichen" onPress={() => router.push('/(visitor)/admin/badges?from=/(visitor)/settings/account')} />}
             {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions?from=/(visitor)/settings/account')} />}
             {isAdmin && <AdminLink icon="gauge" label="Punkte-Ränge" onPress={() => router.push('/(visitor)/admin/tiers?from=/(visitor)/settings/account')} />}
+          </View>
+        </>
+      )}
+
+      {isAdmin && (
+        <>
+          <SectionTitle title="System" />
+          <View style={{ paddingHorizontal: 20 }}>
+            <SystemInfo />
           </View>
         </>
       )}
