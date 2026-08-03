@@ -22,6 +22,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ### Neu (Wartung)
 - **Sicherheitsupdates eingespielt:** `tar`, `shell-quote` und `zustand` angehoben. Damit ist die einzige als kritisch eingestufte Meldung erledigt. Betroffen waren ohnehin nur Bauwerkzeuge, nicht die ausgelieferte App.
+- **TypeScript auf 7.0:** Übersetzt den Quelltext und baut das Programmpaket fehlerfrei. Die Angabe im Steckbrief stand noch auf 5.9 — tatsächlich lief seit dem SDK-Wechsel bereits 6.0.
 - **Dependabot eingerichtet:** Wöchentliche Prüfung auf Bibliotheks-Updates, allerdings bewusst eng gefasst. 33 der 36 Abhängigkeiten hängen an der Expo-SDK- oder PocketBase-Version und dürfen nur gemeinsam angehoben werden — einzeln aktualisiert würden sie den Build brechen. Vorschläge kommen daher nur für die drei wirklich unabhängigen Pakete.
 
 ### Geändert (Unterbau)

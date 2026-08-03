@@ -17,7 +17,7 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 
 | Ebene | Technologie | Version |
 |---|---|---|
-| Sprache | TypeScript | 5.9 |
+| Sprache | TypeScript | 7.0 |
 | App-Framework | React Native | 0.86.2 |
 | | React | 19.2.3 |
 | | Expo SDK | 57 |
