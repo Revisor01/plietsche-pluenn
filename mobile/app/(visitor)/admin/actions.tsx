@@ -11,7 +11,8 @@ import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButt
 import type { Campaign, Badge } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 
-const FACTORS = [1, 1.5, 2, 3]; // 1 = kein Bonus
+const FACTORS = [1, 2, 3]; // 1 = kein Bonus. Ganze Zahlen: schnell zu erfassen,
+// ×1,5 war in der Praxis weder nötig noch auf einen Blick lesbar.
 
 // Kompakte Zusammenfassung der aktiven Typen für die Listendarstellung.
 function factorLabel(m: number): string {
@@ -250,19 +251,20 @@ export default function ActionsAdmin() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{c.name}</PPText>
-                    {/* Zeitraum und Faktoren getrennt: zusammen in einer Zeile
-                        wurden die Faktoren abgeschnitten — gerade die will man
-                        aber auf einen Blick sehen. */}
+                    {/* Zeitraum und Faktoren in einer Zeile — die Faktoren als
+                        Kurzform (K/M/B ×N), damit sie sichtbar bleiben, ohne die
+                        Zeile zu verdoppeln. */}
                     <PPText size={PP.fontSizes.sm} color={PP.ink2} numberOfLines={1}>
                       {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}
+                      {campaignFactorRows(c).length > 0 && (
+                        <PPText size={PP.fontSizes.sm} color={PP.teal}>
+                          {'  ·  '}
+                          {campaignFactorRows(c)
+                            .map((f) => `${f.label.charAt(0)}×${factorLabel(f.factor)}`)
+                            .join(' ')}
+                        </PPText>
+                      )}
                     </PPText>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                      {campaignFactorRows(c).map((f) => (
-                        <Pill key={f.label} size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">
-                          {f.label} ×{factorLabel(f.factor)}
-                        </Pill>
-                      ))}
-                    </View>
                   </View>
                   {isActive(c) && <Pill size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">aktiv</Pill>}
                   <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />
