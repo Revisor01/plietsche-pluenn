@@ -23,7 +23,7 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 | | Expo SDK | 57 |
 | Architektur | React Native New Architecture (Fabric, TurboModules) | verpflichtend ab SDK 55 |
 | Navigation | Expo Router (dateibasiert, typisierte Routen) | 57.0 |
-| Server-State | TanStack Query | 5.100 |
+| Server-State | TanStack Query | 5.101 |
 | Client-State | Zustand | 5.0 |
 | Backend | PocketBase (Go, eingebettetes SQLite) | 0.22.21 |
 | Backend-Logik | JavaScript-Hooks (Goja-Runtime) | ES5-kompatibel |
