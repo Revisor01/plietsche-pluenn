@@ -46,12 +46,20 @@ cronAdd('streak-reset', '5 3 * * *', () => {
   }
   for (const u of users) {
     const last = `${u.get('streak_last_visit')}`.trim();
-    if (!last) { u.set('streak_weeks', 0); dao.saveRecord(u); continue; }
+    if (!last) {
+      u.set('streak_weeks', 0);
+      dao.saveRecord(u);
+      // user_badges.progress is a cache — without this the old streak count
+      // stays visible ("1/2 Wochen in Folge") even though the streak is gone.
+      try { lib.checkBadges(u); } catch (_) {}
+      continue;
+    }
     const lastWeek = lib.isoWeek(new Date(last));
     // Allow current week and the immediately preceding week (grace).
     if (thisWeek - lastWeek > 1 && !(thisWeek % 100 === 1 && lastWeek % 100 >= 52)) {
       u.set('streak_weeks', 0);
       dao.saveRecord(u);
+      try { lib.checkBadges(u); } catch (_) {}
     }
   }
 });

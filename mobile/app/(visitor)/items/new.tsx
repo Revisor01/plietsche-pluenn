@@ -260,7 +260,7 @@ export default function NewItem() {
           </Pressable>
         </View>
 
-        {/* Standort nur, wenn das Teil beim Besitzer bleibt (Abhol-Adresse, Pflicht)
+        {/* Standort nur, wenn das Teil extern bleibt (Abhol-Adresse, Pflicht)
             oder wenn das Team einstellt (interner Regalplatz). Bringt ein Besucher
             das Teil selbst in den Laden, gibt es KEIN Standortfeld. */}
         {destination === 'mine' && (

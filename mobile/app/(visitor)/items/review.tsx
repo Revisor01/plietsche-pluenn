@@ -161,7 +161,7 @@ export default function ReviewItems() {
               item={it}
               campaigns={campaigns ?? []}
               onDone={onDone}
-              onOpen={() => router.push(`/(visitor)/items/${it.id}`)}
+              onOpen={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)/items/review`)}
             />
           ))
         ) : (

@@ -181,7 +181,7 @@ export default function ItemsInventory() {
       <View style={{ paddingHorizontal: 20, gap: 10 }}>
         {filtered.length ? (
           filtered.map((it) => (
-            <ItemRow key={it.id} item={it} onChange={onChange} onOpen={() => router.push(`/(visitor)/items/${it.id}`)} />
+            <ItemRow key={it.id} item={it} onChange={onChange} onOpen={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)/items`)} />
           ))
         ) : (
           <Card pad={16}>

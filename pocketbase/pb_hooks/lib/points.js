@@ -180,7 +180,35 @@ module.exports = {
       this.awardPoints(user, stepperPts, 'checkin', `${itemsCount} Teile mitgenommen`, visit.id);
     }
     this.updateStreak(user, now);
+    this.pushCheckinConfirmation(user, checkinPts + stepperPts, itemsCount);
     return { points: checkinPts + stepperPts, visitId: visit.id };
+  },
+
+  // Immediate confirmation that the points landed, so the user sees a result
+  // without opening the app. Mentions the streak once it's actually running
+  // (2+ weeks — "1 week in a row" isn't a streak worth celebrating).
+  // Never throws: a failed push must not roll back a valid check-in.
+  pushCheckinConfirmation(user, points, itemsCount) {
+    try {
+      if (points <= 0) return;
+      const push = require(`${__hooks}/lib/push.js`);
+      const targets = push.tokensForUser(user, 'streak');
+      if (!targets.length) return;
+
+      const streak = user.get('streak_weeks') || 0;
+      let body = `${points} Punkte gutgeschrieben`;
+      if (itemsCount > 0) {
+        body += ` — Check-in und ${itemsCount} ${itemsCount === 1 ? 'Teil' : 'Teile'}`;
+      }
+      if (streak >= 2) {
+        body += `. ${streak} Wochen in Folge — weiter so!`;
+      } else {
+        body += '.';
+      }
+      push.send(targets, 'Moin!', body, '/(visitor)/points');
+    } catch (_) {
+      // ignore
+    }
   },
 
   // ISO week number for streak comparison.
@@ -191,6 +219,50 @@ module.exports = {
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
     return d.getUTCFullYear() * 100 + week;
+  },
+
+  // Current streak derived from the visits table: how many consecutive ISO weeks
+  // up to now (or last week, grace period) the user has actually checked in.
+  // Returns 0 when there are no visits at all — this is the value badge progress
+  // is based on, so a user who never checked in can never show streak progress.
+  streakFromVisits(user) {
+    let visits;
+    try {
+      visits = $app.dao().findRecordsByFilter(
+        'visits', `user = "${user.id}"`, '-checkin_at', 0, 0
+      );
+    } catch (_) {
+      return 0;
+    }
+    if (!visits || !visits.length) return 0;
+
+    // Unique ISO weeks that have at least one visit, newest first.
+    const weeks = [];
+    for (const v of visits) {
+      const raw = `${v.get('checkin_at')}`.trim();
+      if (!raw) continue;
+      const w = this.isoWeek(new Date(raw));
+      if (weeks.indexOf(w) === -1) weeks.push(w);
+    }
+    if (!weeks.length) return 0;
+    weeks.sort((a, b) => b - a);
+
+    const thisWeek = this.isoWeek(new Date());
+    // Streak is alive if the newest visit week is this week or the one before.
+    if (!this.isWeekAdjacent(weeks[0], thisWeek) && weeks[0] !== thisWeek) return 0;
+
+    let count = 1;
+    for (let i = 1; i < weeks.length; i++) {
+      if (this.isWeekAdjacent(weeks[i], weeks[i - 1])) count++;
+      else break;
+    }
+    return count;
+  },
+
+  // True when `later` is exactly one ISO week after `earlier` (handles year wrap).
+  isWeekAdjacent(earlier, later) {
+    if (later - earlier === 1) return true;
+    return later % 100 === 1 && earlier % 100 >= 52 && Math.floor(later / 100) - Math.floor(earlier / 100) === 1;
   },
 
   updateStreak(user, visitDate) {
@@ -326,17 +398,20 @@ module.exports = {
     const type = badge.get('trigger_type');
     try {
       if (type === 'visits') {
-        return dao.findRecordsByFilter('visits', `user = "${user.id}"`).length;
+        return dao.findRecordsByFilter('visits', `user = "${user.id}"`, '', 0, 0).length;
       }
       if (type === 'scans') {
-        return dao.findRecordsByFilter('points_log', `user = "${user.id}" && kind = "scan"`).length;
+        return dao.findRecordsByFilter('points_log', `user = "${user.id}" && kind = "scan"`, '', 0, 0).length;
       }
       if (type === 'items_brought') {
         // Count approved brought items (one bring-points_log row per item).
         return dao.findRecordsByFilter('points_log', `user = "${user.id}" && kind = "bring"`, '', 0, 0).length;
       }
       if (type === 'streak_weeks') {
-        return user.get('streak_weeks') || 0;
+        // Derived from actual visits, not from users.streak_weeks: that field is
+        // client-writable and survives as a stale cache when the reset cron runs
+        // between two checkBadges calls. No visits => no streak, always.
+        return this.streakFromVisits(user);
       }
       if (type === 'action_participation') {
         // Contributions to the campaign this badge is linked to.
