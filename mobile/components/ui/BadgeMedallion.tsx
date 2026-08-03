@@ -11,7 +11,7 @@ interface BadgeMedallionProps {
   size?: number;
 }
 
-const TIER_COLORS: Record<Exclude<Tier, 'none'>, { base: string; light: string }> = {
+export const TIER_COLORS: Record<Exclude<Tier, 'none'>, { base: string; light: string }> = {
   bronze: { base: PP.bronze, light: '#E89E58' },
   silber: { base: PP.silver, light: '#E0E0E0' },
   gold: { base: PP.gold, light: '#FFD658' },

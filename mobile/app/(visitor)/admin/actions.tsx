@@ -251,20 +251,18 @@ export default function ActionsAdmin() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{c.name}</PPText>
-                    {/* Zeitraum und Faktoren in einer Zeile — die Faktoren als
-                        Kurzform (K/M/B ×N), damit sie sichtbar bleiben, ohne die
-                        Zeile zu verdoppeln. */}
+                    {/* Zeitraum und Boni in getrennten Zeilen — in einer Zeile
+                        schnitt der Zeitraum die Faktoren regelmäßig ab. */}
                     <PPText size={PP.fontSizes.sm} color={PP.ink2} numberOfLines={1}>
                       {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}
-                      {campaignFactorRows(c).length > 0 && (
-                        <PPText size={PP.fontSizes.sm} color={PP.teal}>
-                          {'  ·  '}
-                          {campaignFactorRows(c)
-                            .map((f) => `${f.label.charAt(0)}×${factorLabel(f.factor)}`)
-                            .join(' ')}
-                        </PPText>
-                      )}
                     </PPText>
+                    {campaignFactorRows(c).length > 0 && (
+                      <PPText size={PP.fontSizes.sm} color={PP.teal} numberOfLines={1} style={{ marginTop: 1 }}>
+                        {campaignFactorRows(c)
+                          .map((f) => `${f.label} ×${factorLabel(f.factor)}`)
+                          .join(' · ')}
+                      </PPText>
+                    )}
                   </View>
                   {isActive(c) && <Pill size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">aktiv</Pill>}
                   <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />

@@ -182,7 +182,6 @@ export default function Account() {
         <Field icon="user" label="Anzeigename" value={name} onChangeText={setName} autoCapitalize="words" />
         <PPButton
           size="m"
-          variant="secondary"
           loading={busy === 'name'}
           disabled={!name.trim() || name.trim() === user?.name}
           onPress={saveName}
@@ -210,7 +209,6 @@ export default function Account() {
         />
         <PPButton
           size="m"
-          variant="secondary"
           loading={busy === 'email'}
           disabled={!email.trim()}
           onPress={saveEmail}
@@ -243,7 +241,7 @@ export default function Account() {
                 funktionen gehören in diesen Bereich, nicht in die Kopfzeilen. */}
             <AdminLink icon="search" label="Aushang & Ankündigungen" onPress={() => router.push('/(visitor)/admin/needs?from=/(visitor)/settings/account')} />
             {isAdmin && <AdminLink icon="medal" label="Abzeichen" onPress={() => router.push('/(visitor)/admin/badges?from=/(visitor)/settings/account')} />}
-            {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions?from=/(visitor)/settings/account')} />}
+            {isAdmin && <AdminLink icon="sparkles" label="Aktionen" onPress={() => router.push('/(visitor)/admin/actions?from=/(visitor)/settings/account')} />}
             {isAdmin && <AdminLink icon="gauge" label="Punkte-Ränge" onPress={() => router.push('/(visitor)/admin/tiers?from=/(visitor)/settings/account')} />}
           </View>
         </>
