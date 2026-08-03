@@ -18,10 +18,11 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 | Ebene | Technologie | Version |
 |---|---|---|
 | Sprache | TypeScript | 5.9 |
-| App-Framework | React Native | 0.81.5 |
-| | React | 19.1.0 |
-| | Expo SDK | 54 |
-| Navigation | Expo Router (dateibasiert, typisierte Routen) | 6.0 |
+| App-Framework | React Native | 0.86.2 |
+| | React | 19.2.3 |
+| | Expo SDK | 57 |
+| Architektur | React Native New Architecture (Fabric, TurboModules) | verpflichtend ab SDK 55 |
+| Navigation | Expo Router (dateibasiert, typisierte Routen) | 57.0 |
 | Server-State | TanStack Query | 5.100 |
 | Client-State | Zustand | 5.0 |
 | Backend | PocketBase (Go, eingebettetes SQLite) | 0.22.21 |
@@ -37,30 +38,41 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 
 | | |
 |---|---|
-| iOS | ab 15.1, iPhone (kein iPad) |
-| Android | Adaptive Icon mit Monochrom-Ebene (Themed Icons) |
+| iOS | ab 16.4, iPhone (kein iPad) |
+| Android | minSdk 24, targetSdk 36 (Android 16), compileSdk 36 |
+| | Adaptive Icon mit Monochrom-Ebene (Themed Icons) |
 | Ausrichtung | nur Hochformat |
 | Erscheinungsbild | fester Hellmodus |
 | Bundle-ID / Package | `de.godsapp.plietschepluenn` |
 | URL-Schema | `pp://` |
 
+> Google Play verlangt ab dem 31. August 2026 targetSdk 36 für neue Apps und Updates.
+> Diese Vorgabe ist erfüllt.
+
 ---
 
 ## Abhängigkeiten
 
-**Expo-Module:** camera · location · notifications · secure-store · image-picker ·
-constants · device · font · splash-screen · status-bar · system-ui · linking ·
-blur · glass-effect · linear-gradient · haptics
+36 direkte Abhängigkeiten.
+
+**Expo-Module (18):** router · camera · location · notifications · secure-store ·
+image-picker · constants · device · font · splash-screen · status-bar · system-ui ·
+linking · blur · glass-effect · linear-gradient · haptics
 
 **Weitere Bibliotheken:** react-native-reanimated · react-native-worklets ·
 react-native-gesture-handler · react-native-screens · react-native-safe-area-context ·
 react-native-svg · react-native-qrcode-svg · @react-native-community/datetimepicker ·
-@expo/vector-icons (Font Awesome 6) · @expo-google-fonts/work-sans · pocketbase-js-sdk
+@expo/vector-icons (Font Awesome 6) · @expo-google-fonts/work-sans · pocketbase-js-sdk ·
+@tanstack/react-query · zustand
 
 **Schrift:** Work Sans (400/500/600/700), lokal gebündelt
 
 > Die JS-SDK-Version muss zur PocketBase-Server-Hauptversion passen — deshalb ist
 > `pocketbase` exakt auf 0.22.1 festgenagelt.
+
+**Bekannte Meldungen aus `npm audit`:** 15 Hinweise, davon einer kritisch und zwei hoch.
+Alle betreffen ausschließlich Entwicklungswerkzeuge (`react-devtools-core`, `@expo/cli`,
+`@expo/fingerprint`) und landen nicht im ausgelieferten App-Bundle.
 
 ---
 
@@ -133,8 +145,8 @@ Benachrichtigungen — mit dem Expo-Push-Dienst.
 | App-Quelltext | rund 7.800 Zeilen TypeScript |
 | Backend-Quelltext | rund 2.300 Zeilen JavaScript |
 | Bildschirme | 23 |
-| Fremdabhängigkeiten (direkt) | 33 |
-| Commits | 165 |
+| Fremdabhängigkeiten (direkt) | 36 |
+| Commits | 166 |
 
 ---
 

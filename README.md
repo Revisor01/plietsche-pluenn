@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iOS%2015.1%2B%20%C2%B7%20Android-blue?logo=apple" alt="Platform">
+  <img src="https://img.shields.io/badge/Platform-iOS%2016.4%2B%20%C2%B7%20Android-blue?logo=apple" alt="Platform">
   <img src="https://img.shields.io/badge/Version-1.0.0-green" alt="Version">
-  <img src="https://img.shields.io/badge/Expo-SDK%2054-000020?logo=expo" alt="Expo">
+  <img src="https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo" alt="Expo">
   <img src="https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript" alt="TypeScript">
   <img src="https://img.shields.io/badge/Backend-PocketBase%200.22-b8dbe4" alt="PocketBase">
   <img src="https://img.shields.io/badge/Tracking-Keins-brightgreen" alt="Kein Tracking">
@@ -76,7 +76,7 @@ denen einzelne Handlungen mehr zählen. Alles läuft über ein selbst gehostetes
 
 ## Bemerkenswert
 
-- **Zwei Designsprachen, eine Codebasis** — iOS bekommt Apples Liquid Glass, Android
+- **Zwei Designsprachen, eine Codebasis** — iOS folgt Apples Gestaltungsregeln, Android
   Material 3. Farben, Schrift und Aufbau sind identisch; unterschiedlich sind Form,
   Tiefe und Reaktion auf Berührung.
 - **Datenschutz durch Datenmodell** — Ein mitgenommenes Teil speichert keine Referenz
@@ -93,7 +93,7 @@ denen einzelne Handlungen mehr zählen. Alles läuft über ein selbst gehostetes
 
 ## Voraussetzungen
 
-- iOS 15.1+ oder Android
+- iOS 16.4+ oder Android 7.0+ (API 24)
 - Node 22 LTS für die Entwicklung
 - Eine PocketBase-Instanz (Docker-Compose liegt bei)
 
