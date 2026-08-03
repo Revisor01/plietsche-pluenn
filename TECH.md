@@ -1,6 +1,6 @@
 # Plietsche Plünn — Technischer Steckbrief
 
-Stand: 3. August 2026 · App-Version 1.0.0 (Build 20)
+Stand: 3. August 2026 · App-Version 1.0.0 (Build 21)
 
 ---
 
@@ -70,9 +70,10 @@ react-native-svg · react-native-qrcode-svg · @react-native-community/datetimep
 > Die JS-SDK-Version muss zur PocketBase-Server-Hauptversion passen — deshalb ist
 > `pocketbase` exakt auf 0.22.1 festgenagelt.
 
-**Bekannte Meldungen aus `npm audit`:** 15 Hinweise, davon einer kritisch und zwei hoch.
+**Bekannte Meldungen aus `npm audit`:** 14 Hinweise, davon zwei hoch, keine kritischen.
 Alle betreffen ausschließlich Entwicklungswerkzeuge (`react-devtools-core`, `@expo/cli`,
-`@expo/fingerprint`) und landen nicht im ausgelieferten App-Bundle.
+`@expo/fingerprint`) und landen nicht im ausgelieferten App-Bundle — im gebauten Bundle
+ist keines dieser Pakete enthalten.
 
 **Aktualisierung:** 33 der 36 Abhängigkeiten sind an das Expo SDK oder die
 PocketBase-Serverversion gebunden und werden nur gemeinsam angehoben
@@ -152,7 +153,7 @@ Benachrichtigungen — mit dem Expo-Push-Dienst.
 | Backend-Quelltext | rund 2.300 Zeilen JavaScript |
 | Bildschirme | 23 |
 | Fremdabhängigkeiten (direkt) | 36 |
-| Commits | 166 |
+| Commits | 172 |
 
 ---
 
