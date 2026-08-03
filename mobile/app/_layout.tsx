@@ -18,6 +18,7 @@ import {
 
 import { queryClient } from '../lib/queryClient';
 import { useAuth } from '../lib/hooks/useAuth';
+import { initialDeepLink, parseDeepLink } from '../lib/push';
 import { PP } from '../lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -61,6 +62,30 @@ function RootNavigator() {
   const segments = useSegments();
   const router = useRouter();
 
+  // Target of a tapped notification, held until the user is actually allowed
+  // into the app. Navigating earlier would be overwritten by the auth redirect
+  // below (cold start: the tap is known before auth has even resolved).
+  const [pendingLink, setPendingLink] = useState<string | null>(null);
+  const linkedIn = isAuthenticated && !!user?.onboarding_complete;
+
+  // Cold start: the app was launched by tapping a notification.
+  useEffect(() => {
+    let cancelled = false;
+    initialDeepLink().then((link) => {
+      if (!cancelled && link) setPendingLink(link);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Warm: notification tapped while the app was running or backgrounded.
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+      const link = parseDeepLink(res);
+      if (link) setPendingLink(link);
+    });
+    return () => sub.remove();
+  }, []);
+
   useEffect(() => {
     if (!ready) return;
     const group = segments[0];
@@ -75,6 +100,17 @@ function RootNavigator() {
       router.replace('/(visitor)');
     }
   }, [ready, isAuthenticated, user?.onboarding_complete, segments]);
+
+  // Consume the pending link once the user is past login/onboarding.
+  useEffect(() => {
+    if (!ready || !linkedIn || !pendingLink) return;
+    const link = pendingLink;
+    setPendingLink(null);
+    // One tick after the auth redirect so we navigate on top of the tabs,
+    // not into a layout that is about to be replaced.
+    const t = setTimeout(() => router.push(link as any), 0);
+    return () => clearTimeout(t);
+  }, [ready, linkedIn, pendingLink]);
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: PP.bg } }}>
