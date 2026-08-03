@@ -1,6 +1,6 @@
 # Plietsche Plünn — Technischer Steckbrief
 
-Stand: 3. August 2026 · App-Version 1.0.0 (Build 22)
+Stand: 3. August 2026 · App-Version 1.0.0 (Build 23)
 
 ---
 

@@ -59,7 +59,8 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Zurück führt zurück:** Ein Teil aus dem Laden zu öffnen und wieder zu schließen landete auf der Startseite statt in der Liste, aus der man kam. Gilt ebenso für Schaufenster, Inventar und die Freigabe-Liste.
 
 ### Neu (App-Symbol)
-- **Neues App-Symbol:** Ein Stapel gefalteter Kleidung im Kreislauf-Ring — weiß auf dem Marken-Verlauf (Teal → Mint → Sky). Löst das bisherige „P²" ab, das bei Symbolgröße schlecht lesbar war.
+- **Neues App-Symbol:** Ein „P", in dessen Bauch ein angedeutetes, zufrieden geschlossenes Auge sitzt — je nach Blick ein Lächeln. Weiß auf dem Marken-Verlauf, mit einem langen Schatten nach rechts unten. Der Name „plietsch" heißt klug und gewitzt; das Zeichen trägt genau dieses Augenzwinkern, statt Kleidung abzubilden.
+- **Als Marke verwendbar:** Das Zeichen liegt zusätzlich einfarbig vor (weiß, Teal, schwarz) und funktioniert dadurch auf Stofftaschen, Stempeln und Schildern. Bauch und Auge sind echte Aussparungen, keine weiß gefüllten Flächen — die Form trägt jeden Untergrund. Quelldateien in `design/logo/`.
 - **Android-Symbol mitgezogen:** Vordergrund, Monochrom-Fassung (für eingefärbte Startbildschirme) und Hintergrund neu erzeugt. Der Hintergrund trägt jetzt den Marken-Verlauf statt des bisherigen Hellgraus, auf dem ein weißes Motiv unsichtbar gewesen wäre.
 
 ### Geändert (Eingereichte Teile & Laden)
