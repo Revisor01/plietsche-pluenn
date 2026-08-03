@@ -143,8 +143,17 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
 
   return (
     <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
+      {/* colorScheme bleibt auf 'auto': mit 'light' erzeugt iOS ein helles Glas,
+          das auf unserem hellen Hintergrund praktisch unsichtbar ist — der Effekt
+          greift, nur sieht man ihn nicht. Der leichte Tint gibt dem Material
+          zusätzlich Kante, ohne es zuzukleistern. */}
       {glass ? (
-        <GlassView glassEffectStyle="regular" isInteractive colorScheme="light" style={[styles.bar, styles.barGlass]}>
+        <GlassView
+          glassEffectStyle="regular"
+          isInteractive
+          tintColor="rgba(255,255,255,0.30)"
+          style={[styles.bar, styles.barGlass]}
+        >
           {items}
         </GlassView>
       ) : (

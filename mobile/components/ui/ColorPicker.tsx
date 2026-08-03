@@ -42,12 +42,14 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
             borderRadius: 12,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(26,46,44,0.05)',
-            borderWidth: !current ? 2 : 1,
-            borderColor: !current ? PP.ink : PP.hairline,
+            // Standard = Markenfarbe. Vorher ein Zauberstab-Symbol, das wie
+            // "Farbe automatisch wählen" aussah und niemand deuten konnte.
+            backgroundColor: PP.teal,
+            borderWidth: !current ? 2 : 0,
+            borderColor: PP.ink,
           }}
         >
-          <Icon name="sparkles" size={18} color={PP.ink2} />
+          {!current && <Icon name="check" size={18} color="#fff" />}
         </Pressable>
 
         {AUSHANG_COLORS.map((c) => {

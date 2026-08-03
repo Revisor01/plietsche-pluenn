@@ -165,7 +165,8 @@ Siehe [CHANGELOG.md](CHANGELOG.md).
 
 ## Lizenz
 
-Noch nicht festgelegt.
+[GNU Affero General Public License v3.0](LICENSE) — wer die App oder das
+Backend betreibt, muss seine Änderungen ebenfalls offenlegen.
 
 ---
 

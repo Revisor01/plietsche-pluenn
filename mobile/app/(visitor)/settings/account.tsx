@@ -257,10 +257,40 @@ export default function Account() {
         </>
       )}
 
-      <View style={{ paddingHorizontal: 20, marginTop: 32 }}>
-        <PPButton variant="ghost" icon="arrow-left" onPress={logout}>
-          Abmelden
-        </PPButton>
+      {/* Abmelden ist eine ernste, aber keine zerstörerische Aktion: als Karte
+          abgesetzt und rot beschriftet, damit sie auffindbar ist — jedoch ohne
+          die volle Signalwirkung eines Lösch-Buttons. Der vorherige Geister-
+          Button mit Zurück-Pfeil las sich wie "eine Ebene zurück". */}
+      <View style={{ paddingHorizontal: 20, marginTop: 36 }}>
+        <Pressable onPress={logout}>
+          <Card
+            pad={14}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              backgroundColor: 'rgba(217,83,79,0.07)',
+              borderWidth: 1,
+              borderColor: 'rgba(217,83,79,0.22)',
+            }}
+          >
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                backgroundColor: 'rgba(217,83,79,0.12)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon name="arrow-left" size={18} color={PP.err} />
+            </View>
+            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.err} style={{ flex: 1 }}>
+              Abmelden
+            </PPText>
+          </Card>
+        </Pressable>
       </View>
     </Screen>
   );

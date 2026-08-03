@@ -39,7 +39,9 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         detail: detail.trim(),
         is_active: active,
         color,
-        campaign: campaign || undefined,
+        // Leerstring, NICHT undefined: PocketBase überspringt undefined-Felder
+        // beim Update — die Verknüpfung ließe sich sonst nie wieder lösen.
+        campaign: campaign || '',
       };
       if (need) await updateNeed(need.id, payload);
       else await createNeed(payload);
@@ -174,6 +176,14 @@ export default function NeedsAdmin() {
         leading={<IconButton icon="chevron-left" onPress={goBack} />}
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
+
+      <View style={{ paddingHorizontal: 20, marginBottom: 14 }}>
+        <Hint icon="info" tone="info">
+          Ankündigungen stehen auf der Startseite ganz oben — für Öffnungszeiten, Hinweise
+          oder was gerade gebraucht wird. Wer eine Ankündigung einer laufenden Aktion
+          zuordnet, blendet sie damit aus: Die Aktions-Karte deckt das Thema schon ab.
+        </Hint>
+      </View>
 
       {creating && (
         <>
