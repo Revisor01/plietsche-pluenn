@@ -86,11 +86,11 @@ export default function Home() {
         subtitle="Plietsche Plünn"
         title={`Moin, ${user?.name?.split(' ')[0] ?? 'du'}!`}
         leading={
-          <Pressable onPress={() => router.push('/(visitor)/settings/account')} hitSlop={8}>
+          <Pressable onPress={() => router.push('/(visitor)/settings/account?from=/(visitor)')} hitSlop={8}>
             <Avatar initials={initials(user?.name)} gradient />
           </Pressable>
         }
-        trailing={<IconButton icon="bell" badge onPress={() => router.push('/(visitor)/settings/push')} />}
+        trailing={<IconButton icon="bell" badge onPress={() => router.push('/(visitor)/settings/push?from=/(visitor)')} />}
       />
 
       <View style={{ paddingHorizontal: 20 }}>

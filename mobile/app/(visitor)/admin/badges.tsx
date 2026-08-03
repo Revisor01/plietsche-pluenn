@@ -10,6 +10,7 @@ import type { Campaign } from '../../../lib/types';
 import { createBadge, updateBadge, deleteBadge, type BadgeInput } from '../../../lib/api';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
   { key: 'visits', label: 'Besuche', kinds: ['tiered', 'single'] },
@@ -271,6 +272,7 @@ function BadgeEditor({ badge, campaigns, onSaved }: { badge?: Badge; campaigns: 
 
 export default function BadgeAdmin() {
   const router = useRouter();
+  const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: badges, refetch } = useAllBadges();
   const { data: campaigns } = useCampaigns();
@@ -289,7 +291,7 @@ export default function BadgeAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Badges"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 

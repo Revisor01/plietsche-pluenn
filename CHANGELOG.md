@@ -13,6 +13,21 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Punktestand und Serie sind schreibgeschützt:** Diese Felder konnten von der App aus verändert werden — was die Abzeichen-Vergabe angreifbar machte. Sie werden jetzt nur noch serverseitig gesetzt; das Team behält seine Korrekturmöglichkeit.
 - **Fortschritt wird vollständig gezählt:** Bei Besuchen und Scans war die Zählung auf die ersten Einträge begrenzt, wodurch der Fortschritt ab einem bestimmten Punkt stehen blieb.
 
+### Behoben (Bedienung)
+- **Zurück führt jetzt überall zurück:** Aus den Einstellungen, dem Aushang-Editor, der Abzeichen- und Rangverwaltung sowie dem Schaufenster landete man beim Zurückgehen auf der Startseite statt beim vorherigen Bildschirm. Ursache war dieselbe wie zuvor bei den Teilen: Diese Ansichten liegen technisch in der Tab-Leiste, wo „zurück" auf den ersten Tab springt. Alle zehn betroffenen Bildschirme nutzen jetzt denselben Weg wie die Teile-Ansicht.
+- **Liquid Glass wird zuverlässiger erkannt:** Die Prüfung, ob das Gerät Apples Glas-Material unterstützt, lief einmalig beim Programmstart — war das zuständige System-Modul zu diesem Zeitpunkt noch nicht bereit, blieb die Leiste für die gesamte Sitzung beim Ersatz-Weichzeichner. Die Prüfung findet jetzt statt, wenn die Leiste tatsächlich gezeichnet wird. Zusätzlich wird die Bedienungshilfe „Transparenz reduzieren" berücksichtigt: Ist sie aktiv, kommt bewusst der Weichzeichner zum Einsatz.
+
+### Geändert (Verwaltung)
+- **Alle Verwaltungsfunktionen an einem Ort:** Die Abzeichen-Verwaltung war über ein Zahnrad in der Abzeichen-Übersicht versteckt, der Rest lag unter „Konto". Jetzt sitzt alles gebündelt unter Konto → Verwaltung: Aushang, Abzeichen, Aktionen und Punkte-Ränge. Die Tabs selbst zeigen dem Team dieselbe Ansicht wie allen anderen.
+
+### Neu (Wartung)
+- **Dependabot eingerichtet:** Wöchentliche Prüfung auf Bibliotheks-Updates, allerdings bewusst eng gefasst. 33 der 36 Abhängigkeiten hängen an der Expo-SDK- oder PocketBase-Version und dürfen nur gemeinsam angehoben werden — einzeln aktualisiert würden sie den Build brechen. Vorschläge kommen daher nur für die drei wirklich unabhängigen Pakete.
+
+### Geändert (Unterbau)
+- **Expo SDK 54 → 57:** Drei Hauptversionen übersprungen, React Native von 0.81 auf 0.86, React auf 19.2. Damit läuft die App auf der neuen React-Native-Architektur, die seit SDK 55 verpflichtend ist. Die App ist dadurch etwas größer geworden (18 → 23 MB), weil die neue Architektur mehr nativen Code mitbringt.
+- **Android zielt auf Android 16 (API 36):** Google Play verlangt das ab dem 31. August 2026 für neue Apps und Updates. Die Vorgabe war bereits erfüllt und bleibt es.
+- **iOS setzt jetzt 16.4 voraus** (vorher 15.1). Das ist eine Vorgabe von Expo SDK 56 und betrifft iPhone 7, 6s und SE der ersten Generation — diese Geräte werden nicht mehr unterstützt.
+
 ### Neu (Dokumentation)
 - **README neu aufgesetzt:** Logo, vollständige Funktionsübersicht nach Zielgruppe, Aufbau des Projekts und ein Datenschutz-Abschnitt. Die alten Angaben waren teils veraltet (Expo SDK 51 statt 54).
 - **Technischer Steckbrief (`TECH.md`):** Stack mit Versionen, Abhängigkeiten, Datenmodell, Berechtigungen und Kennzahlen — knapp genug für die Homepage.

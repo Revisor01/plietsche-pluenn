@@ -1,0 +1,54 @@
+version: 2
+
+# Achtung beim Erweitern: Der Großteil der Abhängigkeiten dieser App ist an die
+# Expo-SDK-Version gebunden. Expo-Module, React, React Native und die nativen
+# Bibliotheken (reanimated, screens, gesture-handler, svg, worklets, …) dürfen
+# NICHT einzeln aktualisiert werden — sie werden ausschließlich über
+# `npx expo install expo@^<major> --fix` gemeinsam angehoben. Einzelne Updates
+# führen zu Versionskonflikten mit dem nativen Teil und brechen den Build.
+#
+# Deshalb sind hier nur die wenigen Pakete freigegeben, die unabhängig vom SDK
+# leben. Der Rest ist explizit ausgenommen.
+
+updates:
+  # ── App-Abhängigkeiten (npm) ────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: scope
+    labels:
+      - dependencies
+    ignore:
+      # An das Expo SDK gebunden — nur gemeinsam über `expo install --fix`.
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "@expo-google-fonts/*"
+      - dependency-name: "react"
+      - dependency-name: "react-native"
+      - dependency-name: "@react-native/*"
+      - dependency-name: "@react-native-community/*"
+      # Native Module: Version muss zum React-Native-Unterbau passen.
+      - dependency-name: "react-native-*"
+      # Muss zur PocketBase-Hauptversion auf dem Server passen (aktuell 0.22).
+      # Wird bewusst exakt gepinnt — siehe TECH.md.
+      - dependency-name: "pocketbase"
+      # React-Typen folgen der React-Version aus dem SDK.
+      - dependency-name: "@types/react"
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore"
+    labels:
+      - dependencies

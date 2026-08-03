@@ -9,6 +9,7 @@ import { useCampaigns, useAllBadges } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint, ColorPicker } from '../../../components/ui';
 import type { Campaign, Badge } from '../../../lib/types';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 const FACTORS = [1, 1.5, 2, 3]; // 1 = kein Bonus
 
@@ -180,6 +181,7 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
 
 export default function ActionsAdmin() {
   const router = useRouter();
+  const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: campaigns, refetch } = useCampaigns();
   const { data: badges } = useAllBadges();
@@ -202,7 +204,7 @@ export default function ActionsAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Aktionen"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 

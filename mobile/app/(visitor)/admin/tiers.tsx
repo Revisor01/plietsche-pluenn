@@ -9,6 +9,7 @@ import { useStore } from '../../../lib/hooks/useData';
 import { saveTiers, savePointConfig } from '../../../lib/api';
 import { DEFAULT_TIERS, tierColor } from '../../../lib/format';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Hint } from '../../../components/ui';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 // Parse a numeric string; empty/NaN/negative → clamped to `min`.
 function parseNum(s: string, min = 0): number {
@@ -21,6 +22,7 @@ type Rank = { name: string; at: string };
 
 export default function TiersAdmin() {
   const router = useRouter();
+  const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: store, refetch } = useStore();
 
@@ -102,7 +104,7 @@ export default function TiersAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Punkte & Ränge"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       {/* ── SEKTION 1: Punkte pro Aktion ── */}
