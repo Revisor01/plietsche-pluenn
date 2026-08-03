@@ -8,6 +8,7 @@ import { Icon, type IconName } from '../../../lib/icons';
 import { pb } from '../../../lib/pb';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { Screen, PPHeader, PPText, Card, Toggle, IconButton } from '../../../components/ui';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 type PrefKey = 'push_streak_enabled' | 'push_campaign_enabled' | 'push_badge_enabled' | 'push_other_enabled';
 
@@ -20,6 +21,7 @@ const ROWS: { key: PrefKey; icon: IconName; title: string; sub: string }[] = [
 
 export default function PushSettings() {
   const router = useRouter();
+  const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();
   const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
@@ -55,7 +57,7 @@ export default function PushSettings() {
       <PPHeader
         subtitle="Einstellungen"
         title="Benachrichtigungen"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       <View style={{ paddingHorizontal: 20, gap: 16 }}>

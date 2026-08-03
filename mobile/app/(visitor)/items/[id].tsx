@@ -8,6 +8,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useItem, useCurrentUser } from '../../../lib/hooks/useData';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { updateItem, setShowcase, archiveItem, approveItem } from '../../../lib/api';
 import { itemThumb, groupLabel, typeLabel, conditionLabel } from '../../../lib/format';
 import { pb } from '../../../lib/pb';
@@ -23,16 +24,8 @@ const CATEGORIES = [
 export default function ItemDetail() {
   const router = useRouter();
   const qc = useQueryClient();
-  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
-
-  // These screens live inside the tab navigator, so router.back() would pop to
-  // the first tab (home) instead of the list we came from. Callers pass ?from=,
-  // and we navigate there explicitly.
-  const goBack = () => {
-    if (from) router.replace(from as any);
-    else if (router.canGoBack()) router.back();
-    else router.replace('/(visitor)');
-  };
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const goBack = useGoBack();
   const { data: item, refetch } = useItem(id);
   const { data: me } = useCurrentUser();
   const isStaff = me?.role === 'volunteer' || me?.role === 'admin';

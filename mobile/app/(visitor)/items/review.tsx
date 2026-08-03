@@ -20,6 +20,7 @@ import {
   Pill,
 } from '../../../components/ui';
 import type { Item } from '../../../lib/types';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaigns: Campaign[]; onDone: () => void; onOpen: () => void }) {
   const uri = itemThumb(item);
@@ -136,6 +137,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
 
 export default function ReviewItems() {
   const router = useRouter();
+  const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: items, refetch } = usePendingItems();
   const { data: campaigns } = useActiveCampaigns();
@@ -150,7 +152,7 @@ export default function ReviewItems() {
       <PPHeader
         subtitle="Freigabe"
         title="Eingereichte Teile"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       <View style={{ paddingHorizontal: 20, gap: 12 }}>
