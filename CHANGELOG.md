@@ -16,8 +16,13 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ### Behoben
 - **Ankündigung ließ sich nicht von einer Aktion lösen:** Wer die Zuordnung auf „Eigenständig" stellte, sah die Änderung gespeichert — tatsächlich blieb die alte Verknüpfung bestehen, und die Ankündigung blieb unsichtbar. Ursache: Das leere Feld wurde beim Speichern verschluckt statt übertragen.
 
+### Geändert
+- **Aktions-Faktoren nur noch ×1, ×2, ×3:** Der Zwischenschritt ×1,5 war weder nötig noch auf einen Blick zu erfassen. Ganze Zahlen gehen schneller von der Hand.
+- **Aktionsliste kompakter:** Zeitraum und Faktoren stehen wieder in einer Zeile, die Faktoren als Kurzform (K×2 M×3) — sichtbar, ohne die Zeilenhöhe zu verdoppeln.
+- **App-Symbol feiner abgestimmt:** etwas kleiner als zuletzt, der senkrechte Strich ragt ein Stück unter den Bauch.
+
 ### Behoben (Darstellung)
-- **Liquid Glass beim Tab-Wechsel:** Der fließende Übergang blieb aus, weil die Leiste aus einer einzigen Glasfläche bestand. Der Effekt entsteht erst, wenn zwei Glasflächen in einem gemeinsamen Rahmen einander nahe kommen und verschmelzen. Die Leiste hat jetzt eine wandernde Kachel, die beim Tabwechsel zum gewählten Bereich fließt.
+- **Tab-Leiste unverändert gelassen:** Ein Versuch, den fließenden Übergang beim Tabwechsel nachzubauen, machte die Leiste kantig und ersetzte die Hervorhebung durch einen wandernden Punkt — schlechter als vorher. Zurückgenommen.
 - **Aktions-Übersicht zeigt die Faktoren wieder:** Faktoren und Zeitraum standen zusammen in einer Zeile, die abgeschnitten wurde — ausgerechnet die Faktoren fielen weg. Jetzt stehen sie als eigene Marken darunter und sind auf einen Blick lesbar.
 - **„Name speichern" wie die anderen Knöpfe:** Der Knopf war farblos, während „E-Mail ändern" und „Passwort ändern" daneben eingefärbt sind.
 
