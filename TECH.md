@@ -74,6 +74,12 @@ react-native-svg · react-native-qrcode-svg · @react-native-community/datetimep
 Alle betreffen ausschließlich Entwicklungswerkzeuge (`react-devtools-core`, `@expo/cli`,
 `@expo/fingerprint`) und landen nicht im ausgelieferten App-Bundle.
 
+**Aktualisierung:** 33 der 36 Abhängigkeiten sind an das Expo SDK oder die
+PocketBase-Serverversion gebunden und werden nur gemeinsam angehoben
+(`npx expo install expo@^<major> --fix`). Dependabot ist entsprechend eingeschränkt und
+schlägt nur für die drei freien Pakete Updates vor (`@tanstack/react-query`, `zustand`,
+`typescript`) — siehe `.github/dependabot.yml`.
+
 ---
 
 ## Datenhaltung
