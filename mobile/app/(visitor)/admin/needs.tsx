@@ -117,9 +117,11 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           </View>
           {!!campaign && (
             <View style={{ marginTop: 8 }}>
-              <Hint>
-                Solange die Aktion läuft, zeigt die Startseite nur die Aktions-Karte. Danach erscheint diese
-                Ankündigung wieder eigenständig.
+              <Hint icon="bell" tone="warn">
+                Diese Ankündigung wird dadurch <PPText weight="bold" size={PP.fontSizes.sm} color={PP.warn}>nicht angezeigt</PPText>,
+                solange die Aktion läuft — die Aktions-Karte deckt das Thema bereits ab. Erst nach Ende der
+                Aktion erscheint sie eigenständig im Aushang. Soll sie sofort sichtbar sein, wähle
+                „Eigenständig".
               </Hint>
             </View>
           )}
