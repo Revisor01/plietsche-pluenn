@@ -112,37 +112,38 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
       {/* Farbe der Aushang-Karte — der Verlauf wird auf diese Farbe gezogen. */}
       <ColorPicker value={color} onChange={setColor} label="FARBE IM AUSHANG" />
 
-      <View style={{ gap: 12 }}>
-        <View>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>VORBEIKOMMEN (CHECK-IN)</PPText>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {FACTORS.map((m) => (
-              <Pressable key={m} onPress={() => setMultVisit(m)}>
-                <Pill bg={multVisit === m ? PP.teal : 'rgba(26,46,44,0.06)'} color={multVisit === m ? '#fff' : PP.ink2}>×{factorLabel(m)}</Pill>
-              </Pressable>
-            ))}
+      <View style={{ gap: 8 }}>
+        {/* Eine Zeile je Typ: Beschriftung links, Faktoren rechts. Vorher drei
+            gestapelte Blöcke mit eigener Überschrift — viel Platz für wenig Inhalt. */}
+        {([
+          { label: 'Vorbeikommen', value: multVisit, set: setMultVisit },
+          { label: 'Mitnehmen', value: multTake, set: setMultTake },
+          { label: 'Bringen', value: multBring, set: setMultBring },
+        ] as const).map((row) => (
+          <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <PPText
+              weight="medium"
+              size={PP.fontSizes.sm}
+              color={PP.ink2}
+              style={{ width: 104 }}
+              numberOfLines={1}
+            >
+              {row.label}
+            </PPText>
+            <View style={{ flexDirection: 'row', gap: 6, flex: 1 }}>
+              {FACTORS.map((m) => (
+                <Pressable key={m} onPress={() => row.set(m)} style={{ flex: 1 }}>
+                  <Pill
+                    bg={row.value === m ? PP.teal : 'rgba(26,46,44,0.06)'}
+                    color={row.value === m ? '#fff' : PP.ink2}
+                  >
+                    ×{factorLabel(m)}
+                  </Pill>
+                </Pressable>
+              ))}
+            </View>
           </View>
-        </View>
-        <View>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>MITNEHMEN</PPText>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {FACTORS.map((m) => (
-              <Pressable key={m} onPress={() => setMultTake(m)}>
-                <Pill bg={multTake === m ? PP.teal : 'rgba(26,46,44,0.06)'} color={multTake === m ? '#fff' : PP.ink2}>×{factorLabel(m)}</Pill>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-        <View>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>BRINGEN</PPText>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            {FACTORS.map((m) => (
-              <Pressable key={m} onPress={() => setMultBring(m)}>
-                <Pill bg={multBring === m ? PP.teal : 'rgba(26,46,44,0.06)'} color={multBring === m ? '#fff' : PP.ink2}>×{factorLabel(m)}</Pill>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        ))}
         <Hint icon="info" tone="info">×1 = kein Bonus. Du kannst mehrere Typen gleichzeitig erhöhen.</Hint>
       </View>
 

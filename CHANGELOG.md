@@ -13,6 +13,17 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Punktestand und Serie sind schreibgeschützt:** Diese Felder konnten von der App aus verändert werden — was die Abzeichen-Vergabe angreifbar machte. Sie werden jetzt nur noch serverseitig gesetzt; das Team behält seine Korrekturmöglichkeit.
 - **Fortschritt wird vollständig gezählt:** Bei Besuchen und Scans war die Zählung auf die ersten Einträge begrenzt, wodurch der Fortschritt ab einem bestimmten Punkt stehen blieb.
 
+### Behoben
+- **Ankündigung ließ sich nicht von einer Aktion lösen:** Wer die Zuordnung auf „Eigenständig" stellte, sah die Änderung gespeichert — tatsächlich blieb die alte Verknüpfung bestehen, und die Ankündigung blieb unsichtbar. Ursache: Das leere Feld wurde beim Speichern verschluckt statt übertragen.
+
+### Geändert (Bedienung & Aussehen)
+- **Größeres App-Symbol:** Das Zeichen füllt jetzt deutlich mehr Fläche. Der senkrechte Strich endet am unteren Bogen, statt darunter hinauszulaufen — das P bleibt angedeutet, die Form liest sich stärker als Auge oder Smiley.
+- **Farbwahl ohne Rätselraten:** Das erste Feld im Farbwähler zeigte ein Zauberstab-Symbol, das aussah, als würde eine Farbe automatisch gewählt. Gemeint war schlicht die Standardfarbe — jetzt steht dort der Markenton selbst.
+- **Aushang erklärt sich:** Wie bei den Abzeichen steht oben ein kurzer Text, wofür Ankündigungen da sind und was die Zuordnung zu einer Aktion bewirkt.
+- **Aktions-Faktoren kompakter:** Vorbeikommen, Mitnehmen und Bringen standen als drei gestapelte Blöcke mit je eigener Überschrift untereinander. Jetzt eine Zeile pro Typ — deutlich weniger Platz bei gleichem Inhalt.
+- **Abmelden sichtbar gestaltet:** Der Knopf war ein blasser Geister-Button mit Zurück-Pfeil und las sich wie „eine Ebene zurück". Jetzt eine abgesetzte, rot beschriftete Karte.
+- **Liquid Glass:** Die Leiste forderte ausdrücklich die helle Glas-Variante an — auf hellem Hintergrund ist die praktisch unsichtbar. Jetzt überlässt sie iOS die Wahl und bekommt einen leichten Farbstich, damit das Material Kante zeigt.
+
 ### Neu (Verwaltung)
 - **Systeminfo im Konto:** Admins sehen unter Konto → System die iOS-Version, die App-Version, ob Apples Glas-Material auf dem Gerät verfügbar ist und ob die Bedienungshilfe „Transparenz reduzieren" es abschaltet. Damit lässt sich am Gerät selbst klären, warum die Tab-Leiste so aussieht, wie sie aussieht.
 

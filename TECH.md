@@ -1,6 +1,6 @@
 # Plietsche Plünn — Technischer Steckbrief
 
-Stand: 3. August 2026 · App-Version 1.0.0 (Build 23)
+Stand: 3. August 2026 · App-Version 1.0.0 (Build 24)
 
 ---
 
@@ -162,7 +162,7 @@ Benachrichtigungen — mit dem Expo-Push-Dienst.
 | | |
 |---|---|
 | Repository | https://github.com/Revisor01/plietsche-pluenn |
-| Lizenz | *noch nicht festgelegt* |
+| Lizenz | AGPL-3.0 |
 | iOS | in Vorbereitung zur Einreichung (TestFlight läuft) |
 | Android | noch nicht eingereicht |
 | Entwicklung | Simon Luthe |
