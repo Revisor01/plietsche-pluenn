@@ -182,6 +182,7 @@ export default function Account() {
         <Field icon="user" label="Anzeigename" value={name} onChangeText={setName} autoCapitalize="words" />
         <PPButton
           size="m"
+          variant="secondary"
           loading={busy === 'name'}
           disabled={!name.trim() || name.trim() === user?.name}
           onPress={saveName}

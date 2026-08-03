@@ -16,6 +16,11 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ### Behoben
 - **Ankündigung ließ sich nicht von einer Aktion lösen:** Wer die Zuordnung auf „Eigenständig" stellte, sah die Änderung gespeichert — tatsächlich blieb die alte Verknüpfung bestehen, und die Ankündigung blieb unsichtbar. Ursache: Das leere Feld wurde beim Speichern verschluckt statt übertragen.
 
+### Behoben (Darstellung)
+- **Liquid Glass beim Tab-Wechsel:** Der fließende Übergang blieb aus, weil die Leiste aus einer einzigen Glasfläche bestand. Der Effekt entsteht erst, wenn zwei Glasflächen in einem gemeinsamen Rahmen einander nahe kommen und verschmelzen. Die Leiste hat jetzt eine wandernde Kachel, die beim Tabwechsel zum gewählten Bereich fließt.
+- **Aktions-Übersicht zeigt die Faktoren wieder:** Faktoren und Zeitraum standen zusammen in einer Zeile, die abgeschnitten wurde — ausgerechnet die Faktoren fielen weg. Jetzt stehen sie als eigene Marken darunter und sind auf einen Blick lesbar.
+- **„Name speichern" wie die anderen Knöpfe:** Der Knopf war farblos, während „E-Mail ändern" und „Passwort ändern" daneben eingefärbt sind.
+
 ### Geändert (Bedienung & Aussehen)
 - **Größeres App-Symbol:** Das Zeichen füllt jetzt deutlich mehr Fläche. Der senkrechte Strich endet am unteren Bogen, statt darunter hinauszulaufen — das P bleibt angedeutet, die Form liest sich stärker als Auge oder Smiley.
 - **Farbwahl ohne Rätselraten:** Das erste Feld im Farbwähler zeigte ein Zauberstab-Symbol, das aussah, als würde eine Farbe automatisch gewählt. Gemeint war schlicht die Standardfarbe — jetzt steht dort der Markenton selbst.
