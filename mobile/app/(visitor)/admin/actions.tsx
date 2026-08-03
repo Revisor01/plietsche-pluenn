@@ -17,6 +17,20 @@ const FACTORS = [1, 1.5, 2, 3]; // 1 = kein Bonus
 function factorLabel(m: number): string {
   return `${m}`.replace('.', ',');
 }
+// Faktoren als einzelne Marken für die Übersicht — kein Fließtext, damit auf
+// einen Blick sichtbar ist, welche Werte eingetragen sind.
+function campaignFactorRows(c: Campaign): { label: string; factor: number }[] {
+  const { mult_visit: v, mult_take: t, mult_bring: b } = c;
+  if (v == null && t == null && b == null) {
+    return (c.multiplier ?? 1) > 1 ? [{ label: 'Punkte', factor: c.multiplier }] : [];
+  }
+  const out: { label: string; factor: number }[] = [];
+  if ((v ?? 1) > 1) out.push({ label: 'Kommen', factor: v! });
+  if ((t ?? 1) > 1) out.push({ label: 'Mitnehmen', factor: t! });
+  if ((b ?? 1) > 1) out.push({ label: 'Bringen', factor: b! });
+  return out;
+}
+
 function campaignTypesLabel(c: Campaign): string {
   const v = c.mult_visit, t = c.mult_take, b = c.mult_bring;
   // Alte Aktion ohne die neuen Felder → auf multiplier zurückfallen.
@@ -236,7 +250,19 @@ export default function ActionsAdmin() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{c.name}</PPText>
-                    <PPText size={PP.fontSizes.sm} color={PP.ink2} numberOfLines={1}>{campaignTypesLabel(c)} · {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}</PPText>
+                    {/* Zeitraum und Faktoren getrennt: zusammen in einer Zeile
+                        wurden die Faktoren abgeschnitten — gerade die will man
+                        aber auf einen Blick sehen. */}
+                    <PPText size={PP.fontSizes.sm} color={PP.ink2} numberOfLines={1}>
+                      {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}
+                    </PPText>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                      {campaignFactorRows(c).map((f) => (
+                        <Pill key={f.label} size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">
+                          {f.label} ×{factorLabel(f.factor)}
+                        </Pill>
+                      ))}
+                    </View>
                   </View>
                   {isActive(c) && <Pill size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">aktiv</Pill>}
                   <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />

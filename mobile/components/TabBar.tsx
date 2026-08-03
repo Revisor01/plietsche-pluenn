@@ -1,7 +1,7 @@
-import { View, Pressable, StyleSheet, AccessibilityInfo } from 'react-native';
-import { useState, useEffect } from 'react';
+import { View, Pressable, StyleSheet, AccessibilityInfo, Animated } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
 import { BlurView } from 'expo-blur';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { GlassView, GlassContainer, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PP, isAndroid, ripple, surfaceElevation } from '../lib/theme';
@@ -93,6 +93,23 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
     }
   };
 
+  // Wandernde Glaskachel: Position und Breite müssen VOR jedem frühen return
+  // berechnet werden — Hooks dürfen nie bedingt laufen (Android kehrt gleich zurück).
+  const activeIndex = slots.findIndex((s2) => !s2.modal && activeName === s2.name);
+  const [barWidth, setBarWidth] = useState(0);
+  const slotWidth = barWidth > 0 ? (barWidth - 8) / slots.length : 0;
+  const pill = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (activeIndex < 0 || slotWidth === 0) return;
+    Animated.spring(pill, {
+      toValue: 4 + activeIndex * slotWidth,
+      useNativeDriver: false,
+      damping: 18,
+      stiffness: 180,
+      mass: 0.9,
+    }).start();
+  }, [activeIndex, slotWidth]);
+
   // --- Android: MD3 Navigation Bar -----------------------------------------
   if (isAndroid) {
     return (
@@ -121,7 +138,12 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
   }
 
   // --- iOS: schwebendes Glas ------------------------------------------------
+  // Der Morph-Effekt beim Tab-Wechsel entsteht NICHT aus einer einzelnen
+  // GlassView: Zwei Glasflächen innerhalb eines GlassContainer verschmelzen,
+  // sobald sie sich näher kommen als `spacing` — das ist das Fließen. Deshalb
+  // liegt hier eine wandernde Kachel über der Leiste, beide aus Glas.
   const bottom = Math.max(insets.bottom, 12);
+
   const items = slots.map((slot) => {
     const isActive = !slot.modal && activeName === slot.name;
     const color = isActive ? PP.teal : PP.ink3;
@@ -141,26 +163,43 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
     );
   });
 
-  return (
-    <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
-      {/* colorScheme bleibt auf 'auto': mit 'light' erzeugt iOS ein helles Glas,
-          das auf unserem hellen Hintergrund praktisch unsichtbar ist — der Effekt
-          greift, nur sieht man ihn nicht. Der leichte Tint gibt dem Material
-          zusätzlich Kante, ohne es zuzukleistern. */}
-      {glass ? (
-        <GlassView
-          glassEffectStyle="regular"
-          isInteractive
-          tintColor="rgba(255,255,255,0.30)"
-          style={[styles.bar, styles.barGlass]}
-        >
-          {items}
-        </GlassView>
-      ) : (
+  if (!glass) {
+    return (
+      <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
         <BlurView intensity={60} tint="light" style={[styles.bar, styles.barBlur]}>
           {items}
         </BlurView>
-      )}
+      </View>
+    );
+  }
+
+  return (
+    <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
+      {/* spacing bestimmt, ab welchem Abstand die Kachel mit der Leiste
+          verschmilzt — großzügig gewählt, damit das Fließen sichtbar wird. */}
+      <GlassContainer spacing={28} style={styles.bar} onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}>
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
+        {activeIndex >= 0 && slotWidth > 0 && (
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: pill,
+              top: 6,
+              width: slotWidth,
+              height: 52,
+            }}
+          >
+            <GlassView
+              glassEffectStyle="regular"
+              isInteractive
+              tintColor="rgba(39,176,146,0.22)"
+              style={{ flex: 1, borderRadius: 20 }}
+            />
+          </Animated.View>
+        )}
+        <View style={styles.row}>{items}</View>
+      </GlassContainer>
     </View>
   );
 }
@@ -170,6 +209,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
+  },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   bar: {
     height: 64,
