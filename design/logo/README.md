@@ -5,6 +5,12 @@ hier als ein Pfad mit `fill-rule="evenodd"` aufbereitet: Bauch und Auge sind
 echte Aussparungen, keine übereinandergelegten Flächen. Dadurch trägt die
 Form jede Farbkombination und taugt als Stanz-, Präge- und Stempelvorlage.
 
+Die Kontur ist gegenüber der Erstzeichnung um 10 Einheiten ausgedünnt
+(Außenkante nach innen, Aussparungen nach außen — die Strichstärke sinkt also
+von beiden Seiten, die Form bleibt an Ort und Stelle). `icon.svg` hält den
+Pfad einmal in `<defs id="pp-mark">`; die 60 Schattenstufen referenzieren ihn
+per `<use>`, statt ihn zu kopieren.
+
 | Datei | Verwendung |
 |---|---|
 | `icon.svg` | App-Icon: Marken-Verlauf, langer Schatten (80 px, 22 % Deckkraft) |

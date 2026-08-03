@@ -4,11 +4,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
 import { PP } from '../../lib/theme';
-import { useCurrentUser, useShowcase, useActiveCampaigns, usePointsLog, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
+import { useCurrentUser, useShowcase, useActiveCampaigns, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
 import {
   nextTier,
   formatPoints,
-  relativeDay,
   initials,
   tierColor,
   campaignBonusLabel,
@@ -31,7 +30,6 @@ import {
   IconButton,
 } from '../../components/ui';
 import { Icon } from '../../lib/icons';
-import { ActivityRow } from '../../components/ActivityRow';
 import { ShowcaseCard } from '../../components/ShowcaseCard';
 
 export default function Home() {
@@ -41,7 +39,6 @@ export default function Home() {
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
   const { data: showcase } = useShowcase();
   const { data: campaigns } = useActiveCampaigns();
-  const { data: points } = usePointsLog(3);
   const { data: pending } = usePendingItems();
   const openCount = pending?.length ?? 0;
   const { data: recentItems } = useRecentItems(6);
@@ -93,7 +90,9 @@ export default function Home() {
         trailing={<IconButton icon="bell" badge onPress={() => router.push('/(visitor)/settings/push?from=/(visitor)')} />}
       />
 
-      <View style={{ paddingHorizontal: 20 }}>
+      {/* Die Fortschrittskarte führt in die Punkte-Übersicht — der Verlauf
+          stand vorher doppelt als "Watt's neu" unter dem Dashboard. */}
+      <Pressable style={{ paddingHorizontal: 20 }} onPress={() => router.push('/(visitor)/points')}>
         <Card pad={22} radius={26} style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
           <GradientRing size={120} stroke={11} progress={tier.progress}>
             <PPText weight="medium" size={11} color={PP.ink2} style={{ letterSpacing: 0.3 }}>
@@ -130,13 +129,43 @@ export default function Home() {
             )}
           </View>
         </Card>
-      </View>
+      </Pressable>
 
       {(!!campaigns?.length || !!visibleNeeds.length) && (
         <>
           <SectionTitle title="Aushang" />
+          {/* Freie Ankündigungen zuerst: dort stehen Dinge wie Öffnungszeiten,
+              die immer obenauf gehören. Aktionen laufen befristet darunter. */}
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
-            {/* Laufende Aktionen (Doppelpunkte) — hervorgehoben. */}
+            {visibleNeeds.map((n) => {
+              const accent = normalizeHex(n.color) ?? PP.sky;
+              return (
+              // Die gewählte Farbe trägt die ganze Karte (Kante + getönte
+              // Fläche) — nur im Icon war sie gegen den Standard nicht zu
+              // unterscheiden. Text bleibt dunkel, die Tönung ist schwach genug.
+              <Card
+                key={n.id}
+                pad={14}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  backgroundColor: withAlpha(accent, 0.08),
+                  borderLeftWidth: 4,
+                  borderLeftColor: accent,
+                }}
+              >
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: withAlpha(accent, 0.18), alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="megaphone" size={18} color={accent} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{n.title}</PPText>
+                  {!!n.detail && <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 1 }}>{n.detail}</PPText>}
+                </View>
+              </Card>
+              );
+            })}
+            {/* Laufende Aktionen — hervorgehoben. */}
             {campaigns?.map((c) => {
               // Every boosted type gets its own badge — an action can raise
               // coming, taking and bringing by different factors.
@@ -181,22 +210,6 @@ export default function Home() {
                     </View>
                   )}
                 </GradientCard>
-              );
-            })}
-            {/* Freie Ankündigungen vom Laden — ohne die, die eine laufende
-                Aktion bereits abdeckt (sonst stünde dasselbe Thema doppelt). */}
-            {visibleNeeds.map((n) => {
-              const accent = normalizeHex(n.color) ?? PP.sky;
-              return (
-              <Card key={n.id} pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: withAlpha(accent, 0.16), alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="megaphone" size={18} color={accent} />
-                </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{n.title}</PPText>
-                  {!!n.detail && <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 1 }}>{n.detail}</PPText>}
-                </View>
-              </Card>
               );
             })}
           </View>
@@ -334,26 +347,6 @@ export default function Home() {
         </>
       )}
 
-      <SectionTitle title="Watt's neu" />
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
-        {points?.length ? (
-          points.map((p) => (
-            <ActivityRow
-              key={p.id}
-              icon={p.kind === 'badge' ? 'medal' : p.kind === 'scan' ? 'shirt' : p.kind === 'streak' ? 'flame' : 'coins'}
-              tone={p.kind === 'badge' ? 'gold' : 'teal'}
-              title={p.label || (p.kind === 'checkin' ? 'Check-In im Laden' : 'Punkte gutgeschrieben')}
-              subtitle={`${relativeDay(p.created)} · ${p.points >= 0 ? '+' : ''}${p.points} Punkte`}
-            />
-          ))
-        ) : (
-          <Card pad={16}>
-            <PPText size={13} color={PP.ink2}>
-              Noch nichts passiert. Dein erster Check-In wartet auf dich.
-            </PPText>
-          </Card>
-        )}
-      </View>
     </Screen>
   );
 }

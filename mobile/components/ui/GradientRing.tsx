@@ -7,6 +7,10 @@ interface GradientRingProps {
   stroke?: number;
   progress?: number; // 0..1
   trackColor?: string;
+  /** Verlauf des Fortschritts-Bogens. Ohne Angabe der Marken-Verlauf. */
+  colors?: readonly [string, string, string];
+  /** Unterscheidet mehrere Ringe gleicher Größe im selben SVG-Namensraum. */
+  gradientKey?: string;
   children?: React.ReactNode;
 }
 
@@ -15,22 +19,27 @@ export function GradientRing({
   stroke = 12,
   progress = 0,
   trackColor = 'rgba(26,46,44,0.06)',
+  colors,
+  gradientKey,
   children,
 }: GradientRingProps) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const clamped = Math.max(0, Math.min(1, progress));
   const off = c * (1 - clamped);
-  const gid = `ppg-${size}-${stroke}`;
+  // Ohne eigenen Schlüssel kollidieren zwei Ringe gleicher Größe mit
+  // verschiedenen Farben — SVG-Verlaufs-IDs sind dokumentweit eindeutig.
+  const gid = `ppg-${size}-${stroke}-${gradientKey ?? 'brand'}`;
+  const [c0, c1, c2] = colors ?? [PP.teal, PP.mint, PP.sky];
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
         <Defs>
           <SvgGrad id={gid} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={PP.teal} />
-            <Stop offset="0.5" stopColor={PP.mint} />
-            <Stop offset="1" stopColor={PP.sky} />
+            <Stop offset="0" stopColor={c0} />
+            <Stop offset="0.5" stopColor={c1} />
+            <Stop offset="1" stopColor={c2} />
           </SvgGrad>
         </Defs>
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={stroke} fill="none" />

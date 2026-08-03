@@ -92,6 +92,8 @@ export interface Badge {
   reward_platin: number;
   reward_diamant?: number;
   is_visible: boolean;
+  /** Geheim: Name und Fortschritt erst sichtbar, wenn verdient. */
+  is_secret?: boolean;
 }
 
 export interface UserBadge {

@@ -9,7 +9,7 @@ export { Avatar } from './Avatar';
 export { PPHeader } from './PPHeader';
 export { SectionTitle } from './SectionTitle';
 export { Stepper } from './Stepper';
-export { BadgeMedallion } from './BadgeMedallion';
+export { BadgeMedallion, TIER_COLORS } from './BadgeMedallion';
 export { Stat } from './Stat';
 export { Screen } from './Screen';
 export { Toast } from './Toast';

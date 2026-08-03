@@ -39,6 +39,7 @@ type Draft = {
   points_reward: string; // single: one-off bonus
   campaign: string; // action_participation: linked campaign id
   is_visible: boolean;
+  is_secret: boolean;
   tiers: Record<string, string>; // threshold per tier
   rewards: Record<string, string>; // reward per tier
 };
@@ -54,6 +55,7 @@ function toDraft(b?: Badge): Draft {
     points_reward: String(b?.points_reward ?? ''),
     campaign: b?.campaign ?? '',
     is_visible: b?.is_visible ?? true,
+    is_secret: b?.is_secret ?? false,
     tiers: {
       bronze: String(b?.tier_bronze ?? ''),
       silber: String(b?.tier_silber ?? ''),
@@ -82,6 +84,7 @@ function draftToInput(d: Draft): BadgeInput {
     trigger_type: d.trigger_type,
     campaign: d.trigger_type === 'action_participation' ? (d.campaign || null) : null,
     is_visible: d.is_visible,
+    is_secret: d.is_secret,
   };
   if (d.kind === 'single') {
     base.trigger_value = num(d.trigger_value || '1') || 1;
@@ -254,8 +257,22 @@ function BadgeEditor({ badge, campaigns, onSaved }: { badge?: Badge; campaigns: 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}>
           <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Sichtbar für Nutzer</PPText>
+          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+            Aus: Das Badge ist komplett aus der App genommen.
+          </PPText>
         </View>
         <Toggle value={draft.is_visible} onChange={(v) => set({ is_visible: v })} />
+      </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ flex: 1 }}>
+          <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Geheim</PPText>
+          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+            Steht grau als „Geheim" in der Sammlung — Name und Fortschritt
+            erscheinen erst mit der ersten Stufe.
+          </PPText>
+        </View>
+        <Toggle value={draft.is_secret} onChange={(v) => set({ is_secret: v })} />
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -326,6 +343,7 @@ export default function BadgeAdmin() {
                       {TRIGGERS.find((t) => t.key === b.trigger_type)?.label ?? b.trigger_type} · {b.tier_bronze}/{b.tier_silber}/{b.tier_gold}/{b.tier_platin}
                     </PPText>
                   </View>
+                  {b.is_secret && <Pill size="s" icon="lock" color={PP.ink2} bg="rgba(26,46,44,0.08)">geheim</Pill>}
                   {!b.is_visible && <Pill size="s" color={PP.ink2} bg="rgba(26,46,44,0.08)">versteckt</Pill>}
                   <Icon name={openId === b.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />
                 </Card>

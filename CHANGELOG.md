@@ -6,6 +6,19 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Neu
+- **Geheime Abzeichen:** Ein Abzeichen lässt sich als geheim markieren. Es steht dann grau und namenlos in der Sammlung — man sieht, dass es etwas zu holen gibt, aber nicht was. Mit der ersten Stufe klappt es auf. Auch nach Ende einer Aktion bleibt die Kachel stehen: Wer nicht dabei war, behält eine Leerstelle.
+- **Abzeichen als Raster:** Die Sammlung steht in zwei Spalten statt untereinander — bei einem Abzeichen pro Aktion wurde die Liste zu lang zum Überblicken.
+- **Fortschritt als Ring:** Jede Kachel trägt einen Ring in der Farbe der erreichten Stufe (Bronze bis Diamant), ungelöst grau.
+
+### Geändert
+- **Aushang: Ankündigungen zuerst:** Freie Ankündigungen stehen jetzt über den Aktionen — dort gehören Dinge wie Öffnungszeiten hin, die dauerhaft gelten. Befristete Aktionen folgen darunter.
+- **Aushang-Farbe wirkt:** Die gewählte Farbe färbt jetzt die ganze Karte (Kante und getönte Fläche) statt nur des kleinen Symbols. Vorher war eine Farbwahl praktisch nicht zu erkennen.
+- **„Watt's neu" vom Dashboard entfernt:** Der Verlauf stand dort ein zweites Mal. Stattdessen führt ein Tippen auf den Punktestand oben direkt in die Punkte-Übersicht.
+- **Schlankeres Logo:** Die Kontur des P ist gleichmäßig ausgedünnt — der Strich war insgesamt zu fett. App-Symbole für iOS und Android neu abgeleitet.
+- **Aktionsliste zeigt die Boni ausgeschrieben:** Zeitraum und Boni stehen in getrennten Zeilen; die Boni nennen den Anlass beim Namen (`Kommen ×2 · Mitnehmen ×3`) statt als Kürzel. In einer Zeile schnitt der Zeitraum sie regelmäßig ab.
+- **„Aktionen" ohne Klammerzusatz:** Der Eintrag in den Einstellungen hieß „Aktionen (Doppelpunkte)".
+
 ### Behoben (Abzeichen zeigen jetzt die Wahrheit)
 - **„Durchhalter" zeigte Fortschritt ohne Check-in:** Das Abzeichen stand auf „1/2 Wochen in Folge", obwohl seit Wochen niemand da war. Ursache waren zwei Fehler, die sich gegenseitig verdeckt haben: der Fortschritt lag als Kopie in der Abzeichen-Tabelle und wurde beim nächtlichen Zurücksetzen der Serie nicht mitgezogen — und die Serie selbst hing an einem Zählerfeld beim Nutzer statt an den tatsächlichen Besuchen.
 - **Serie zählt jetzt aus den Besuchen:** Wie viele Wochen jemand in Folge da war, wird aus den echten Check-ins abgeleitet. Ohne Besuch gibt es keinen Fortschritt — auch dann nicht, wenn ein alter Zählerstand herumliegt.
@@ -18,7 +31,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ### Geändert
 - **Aktions-Faktoren nur noch ×1, ×2, ×3:** Der Zwischenschritt ×1,5 war weder nötig noch auf einen Blick zu erfassen. Ganze Zahlen gehen schneller von der Hand.
-- **Aktionsliste kompakter:** Zeitraum und Faktoren stehen wieder in einer Zeile, die Faktoren als Kurzform (K×2 M×3) — sichtbar, ohne die Zeilenhöhe zu verdoppeln.
+- **Aktionsliste kompakter:** Zeitraum und Faktoren stehen wieder in einer Zeile, die Faktoren als Kurzform (K×2 M×3) — sichtbar, ohne die Zeilenhöhe zu verdoppeln. (Inzwischen überholt: siehe oben, die Boni stehen jetzt ausgeschrieben in einer eigenen Zeile.)
 - **App-Symbol feiner abgestimmt:** etwas kleiner als zuletzt, der senkrechte Strich ragt ein Stück unter den Bauch.
 
 ### Behoben (Darstellung)
