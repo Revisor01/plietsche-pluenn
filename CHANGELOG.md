@@ -13,6 +13,9 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Punktestand und Serie sind schreibgeschützt:** Diese Felder konnten von der App aus verändert werden — was die Abzeichen-Vergabe angreifbar machte. Sie werden jetzt nur noch serverseitig gesetzt; das Team behält seine Korrekturmöglichkeit.
 - **Fortschritt wird vollständig gezählt:** Bei Besuchen und Scans war die Zählung auf die ersten Einträge begrenzt, wodurch der Fortschritt ab einem bestimmten Punkt stehen blieb.
 
+### Neu (Wartung)
+- **Dependabot eingerichtet:** Wöchentliche Prüfung auf Bibliotheks-Updates, allerdings bewusst eng gefasst. 33 der 36 Abhängigkeiten hängen an der Expo-SDK- oder PocketBase-Version und dürfen nur gemeinsam angehoben werden — einzeln aktualisiert würden sie den Build brechen. Vorschläge kommen daher nur für die drei wirklich unabhängigen Pakete.
+
 ### Geändert (Unterbau)
 - **Expo SDK 54 → 57:** Drei Hauptversionen übersprungen, React Native von 0.81 auf 0.86, React auf 19.2. Damit läuft die App auf der neuen React-Native-Architektur, die seit SDK 55 verpflichtend ist.
 - **Android zielt auf Android 16 (API 36):** Google Play verlangt das ab dem 31. August 2026 für neue Apps und Updates. Die Vorgabe war bereits erfüllt und bleibt es.
