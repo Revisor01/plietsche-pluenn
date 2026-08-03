@@ -6,6 +6,10 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Neu (App-Symbol)
+- **Neues App-Symbol:** Ein Kleiderbügel, dessen unterer Balken zur Welle wird — Kleidung und Nordsee in einem Zeichen, weiß auf dem Marken-Verlauf (Teal → Mint → Sky). Löst das bisherige „P²" ab, das bei Symbolgröße schlecht lesbar war.
+- **Android-Symbol mitgezogen:** Vordergrund, Monochrom-Fassung (für eingefärbte Startbildschirme) und Hintergrund neu erzeugt. Der Hintergrund trägt jetzt den Marken-Verlauf statt des bisherigen Hellgraus, auf dem ein weißes Motiv unsichtbar gewesen wäre.
+
 ### Geändert (Eingereichte Teile & Laden)
 - **Freigabe-Buttons brechen nicht mehr um:** Bei „Eingereichte Teile" trägt nur noch die Hauptaktion „Freigeben" einen Text; „+ Schaufenster" (Stern) und „Ablehnen" (rotes X) sind jetzt Icon-Buttons. Ablehnen ist rot. Dieselbe Lösung im Teile-Inventar: Archivieren ist ein roter Papierkorb-Button.
 - **Eingereichtes Teil antippbar:** Ein Tipp auf die Karte öffnet die Detailansicht — dort lässt sich das Teil vor der Freigabe noch bearbeiten (Foto, Titel, Größe, Punkte, Standort) und direkt freigeben.
