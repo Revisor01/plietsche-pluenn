@@ -21,6 +21,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Alle Verwaltungsfunktionen an einem Ort:** Die Abzeichen-Verwaltung war über ein Zahnrad in der Abzeichen-Übersicht versteckt, der Rest lag unter „Konto". Jetzt sitzt alles gebündelt unter Konto → Verwaltung: Aushang, Abzeichen, Aktionen und Punkte-Ränge. Die Tabs selbst zeigen dem Team dieselbe Ansicht wie allen anderen.
 
 ### Neu (Wartung)
+- **Sicherheitsupdates eingespielt:** `tar`, `shell-quote` und `zustand` angehoben. Damit ist die einzige als kritisch eingestufte Meldung erledigt. Betroffen waren ohnehin nur Bauwerkzeuge, nicht die ausgelieferte App.
 - **Dependabot eingerichtet:** Wöchentliche Prüfung auf Bibliotheks-Updates, allerdings bewusst eng gefasst. 33 der 36 Abhängigkeiten hängen an der Expo-SDK- oder PocketBase-Version und dürfen nur gemeinsam angehoben werden — einzeln aktualisiert würden sie den Build brechen. Vorschläge kommen daher nur für die drei wirklich unabhängigen Pakete.
 
 ### Geändert (Unterbau)
