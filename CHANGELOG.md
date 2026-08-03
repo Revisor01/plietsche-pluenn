@@ -17,7 +17,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Dependabot eingerichtet:** Wöchentliche Prüfung auf Bibliotheks-Updates, allerdings bewusst eng gefasst. 33 der 36 Abhängigkeiten hängen an der Expo-SDK- oder PocketBase-Version und dürfen nur gemeinsam angehoben werden — einzeln aktualisiert würden sie den Build brechen. Vorschläge kommen daher nur für die drei wirklich unabhängigen Pakete.
 
 ### Geändert (Unterbau)
-- **Expo SDK 54 → 57:** Drei Hauptversionen übersprungen, React Native von 0.81 auf 0.86, React auf 19.2. Damit läuft die App auf der neuen React-Native-Architektur, die seit SDK 55 verpflichtend ist.
+- **Expo SDK 54 → 57:** Drei Hauptversionen übersprungen, React Native von 0.81 auf 0.86, React auf 19.2. Damit läuft die App auf der neuen React-Native-Architektur, die seit SDK 55 verpflichtend ist. Die App ist dadurch etwas größer geworden (18 → 23 MB), weil die neue Architektur mehr nativen Code mitbringt.
 - **Android zielt auf Android 16 (API 36):** Google Play verlangt das ab dem 31. August 2026 für neue Apps und Updates. Die Vorgabe war bereits erfüllt und bleibt es.
 - **iOS setzt jetzt 16.4 voraus** (vorher 15.1). Das ist eine Vorgabe von Expo SDK 56 und betrifft iPhone 7, 6s und SE der ersten Generation — diese Geräte werden nicht mehr unterstützt.
 
