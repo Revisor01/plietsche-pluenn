@@ -13,6 +13,13 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Punktestand und Serie sind schreibgeschützt:** Diese Felder konnten von der App aus verändert werden — was die Abzeichen-Vergabe angreifbar machte. Sie werden jetzt nur noch serverseitig gesetzt; das Team behält seine Korrekturmöglichkeit.
 - **Fortschritt wird vollständig gezählt:** Bei Besuchen und Scans war die Zählung auf die ersten Einträge begrenzt, wodurch der Fortschritt ab einem bestimmten Punkt stehen blieb.
 
+### Behoben (Bedienung)
+- **Zurück führt jetzt überall zurück:** Aus den Einstellungen, dem Aushang-Editor, der Abzeichen- und Rangverwaltung sowie dem Schaufenster landete man beim Zurückgehen auf der Startseite statt beim vorherigen Bildschirm. Ursache war dieselbe wie zuvor bei den Teilen: Diese Ansichten liegen technisch in der Tab-Leiste, wo „zurück" auf den ersten Tab springt. Alle zehn betroffenen Bildschirme nutzen jetzt denselben Weg wie die Teile-Ansicht.
+- **Liquid Glass wird zuverlässiger erkannt:** Die Prüfung, ob das Gerät Apples Glas-Material unterstützt, lief einmalig beim Programmstart — war das zuständige System-Modul zu diesem Zeitpunkt noch nicht bereit, blieb die Leiste für die gesamte Sitzung beim Ersatz-Weichzeichner. Die Prüfung findet jetzt statt, wenn die Leiste tatsächlich gezeichnet wird. Zusätzlich wird die Bedienungshilfe „Transparenz reduzieren" berücksichtigt: Ist sie aktiv, kommt bewusst der Weichzeichner zum Einsatz.
+
+### Geändert (Verwaltung)
+- **Alle Verwaltungsfunktionen an einem Ort:** Die Abzeichen-Verwaltung war über ein Zahnrad in der Abzeichen-Übersicht versteckt, der Rest lag unter „Konto". Jetzt sitzt alles gebündelt unter Konto → Verwaltung: Aushang, Abzeichen, Aktionen und Punkte-Ränge. Die Tabs selbst zeigen dem Team dieselbe Ansicht wie allen anderen.
+
 ### Neu (Wartung)
 - **Dependabot eingerichtet:** Wöchentliche Prüfung auf Bibliotheks-Updates, allerdings bewusst eng gefasst. 33 der 36 Abhängigkeiten hängen an der Expo-SDK- oder PocketBase-Version und dürfen nur gemeinsam angehoben werden — einzeln aktualisiert würden sie den Build brechen. Vorschläge kommen daher nur für die drei wirklich unabhängigen Pakete.
 

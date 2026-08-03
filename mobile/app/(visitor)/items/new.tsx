@@ -9,6 +9,7 @@ import { Icon } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { createItem } from '../../../lib/api';
 import { CATEGORY_GROUPS, CATEGORY_TYPES, GROUPS_WITH_TYPE } from '../../../lib/format';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 import {
   Screen,
   PPHeader,
@@ -32,6 +33,7 @@ const CONDITIONS: { key: string; label: string }[] = [
 
 export default function NewItem() {
   const router = useRouter();
+  const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
@@ -105,7 +107,7 @@ export default function NewItem() {
         isStaff
           ? 'Das Teil ist eingestellt und freigegeben.'
           : 'Das Teil wurde eingereicht und wird von einem Helfer freigegeben.',
-        [{ text: 'OK', onPress: () => router.back() }],
+        [{ text: 'OK', onPress: goBack }],
       );
     } catch (e: any) {
       Alert.alert('Fehler', e?.message ?? 'Konnte das Teil nicht einstellen.');
@@ -119,7 +121,7 @@ export default function NewItem() {
       <PPHeader
         subtitle={isStaff ? 'Neues Teil' : 'Teil vorschlagen'}
         title="Teil einstellen"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       {!isStaff && (
