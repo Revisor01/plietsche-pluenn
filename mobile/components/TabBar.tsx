@@ -1,4 +1,5 @@
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet, AccessibilityInfo } from 'react-native';
+import { useState, useEffect } from 'react';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
@@ -8,7 +9,17 @@ import { Icon, type IconName } from '../lib/icons';
 import { PPText } from './ui/Text';
 import { useCurrentUser } from '../lib/hooks/useData';
 
-const LIQUID_GLASS = isLiquidGlassAvailable();
+// Evaluated lazily, not at module load: isLiquidGlassAvailable() reaches into a
+// native module, and at import time that module may not be registered yet — it
+// would then answer `false` and stay wrong for the whole session, because the
+// result is cached inside expo-glass-effect after the first call.
+function liquidGlassAvailable(): boolean {
+  try {
+    return isLiquidGlassAvailable();
+  } catch {
+    return false;
+  }
+}
 
 // Minimal shape of the tabBar prop expo-router passes (avoids a direct
 // @react-navigation/bottom-tabs dependency that isn't installed standalone).
@@ -41,6 +52,25 @@ const SLOTS: Slot[] = [
 export function GlassTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  // Liquid Glass needs iOS 26 AND the system's transparency setting left on —
+  // "Reduce Transparency" (Accessibility → Display) silently flattens the
+  // material, in which case the blur fallback is the better-looking option.
+  const [glass, setGlass] = useState(() => !isAndroid && liquidGlassAvailable());
+  useEffect(() => {
+    if (isAndroid) return;
+    let alive = true;
+    const apply = (reduced: boolean) => {
+      if (alive) setGlass(liquidGlassAvailable() && !reduced);
+    };
+    AccessibilityInfo.isReduceTransparencyEnabled().then(apply).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceTransparencyChanged', apply);
+    return () => {
+      alive = false;
+      sub?.remove();
+    };
+  }, []);
+
   const { data: user } = useCurrentUser();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
   const activeName = state.routes[state.index]?.name;
@@ -113,7 +143,7 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
 
   return (
     <View pointerEvents="box-none" style={[styles.host, { bottom }]}>
-      {LIQUID_GLASS ? (
+      {glass ? (
         <GlassView glassEffectStyle="regular" isInteractive colorScheme="light" style={[styles.bar, styles.barGlass]}>
           {items}
         </GlassView>

@@ -7,6 +7,7 @@ import { useShowcase } from '../../lib/hooks/useData';
 import { itemThumb } from '../../lib/format';
 import { Screen, PPHeader, PPText, Card, IconButton } from '../../components/ui';
 import type { Item } from '../../lib/types';
+import { useGoBack } from '../../lib/hooks/useGoBack';
 
 // Two-column grid card for the full showcase listing.
 function GridCard({ item }: { item: Item }) {
@@ -42,6 +43,7 @@ function GridCard({ item }: { item: Item }) {
 
 export default function Showcase() {
   const router = useRouter();
+  const goBack = useGoBack();
   const { data: items } = useShowcase(200);
 
   return (
@@ -49,7 +51,7 @@ export default function Showcase() {
       <PPHeader
         subtitle="Im Laden"
         title="Schaufenster"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       <View

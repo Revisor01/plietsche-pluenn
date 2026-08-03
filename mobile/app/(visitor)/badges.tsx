@@ -1,19 +1,15 @@
 import { View } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 
 import { PP } from '../../lib/theme';
-import { useBadges, useUserBadges, useCurrentUser } from '../../lib/hooks/useData';
+import { useBadges, useUserBadges } from '../../lib/hooks/useData';
 import { badgeTierInfo } from '../../lib/format';
-import { Screen, PPHeader, PPText, BadgeMedallion, ProgressBar, Pill, Card, IconButton } from '../../components/ui';
+import { Screen, PPHeader, PPText, BadgeMedallion, ProgressBar, Pill, Card } from '../../components/ui';
 import type { IconName } from '../../lib/icons';
 
 export default function Badges() {
   const qc = useQueryClient();
-  const router = useRouter();
-  const { data: user } = useCurrentUser();
-  const isAdmin = user?.role === 'admin';
   const { data: badges } = useBadges();
   const { data: userBadges } = useUserBadges();
   const [refreshing, setRefreshing] = useState(false);
@@ -29,11 +25,9 @@ export default function Badges() {
 
   return (
     <Screen padBottom={110} refreshing={refreshing} onRefresh={onRefresh}>
-      <PPHeader
-        subtitle="Sammlung"
-        title="Watt'n Schatz"
-        trailing={isAdmin ? <IconButton icon="gear" onPress={() => router.push('/(visitor)/admin/badges')} /> : undefined}
-      />
+      {/* Bewusst ohne Admin-Zahnrad: Die Verwaltung sitzt gebündelt unter
+          Konto → Verwaltung. Das Team sieht hier dieselbe Ansicht wie alle. */}
+      <PPHeader subtitle="Sammlung" title="Watt'n Schatz" />
 
       <View style={{ paddingHorizontal: 20, gap: 10 }}>
         {(badges ?? []).map((b) => {

@@ -6,6 +6,7 @@ import { Icon } from '../../../lib/icons';
 import { useStore } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
 import { Screen, PPHeader, PPText, Card, Pill, SectionTitle, IconButton, PPButton } from '../../../components/ui';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 const DAYS: { key: string; label: string }[] = [
   { key: 'mo', label: 'Mo' },
@@ -27,6 +28,7 @@ function fmtHours(v: string | null) {
 
 export default function StoreInfo() {
   const router = useRouter();
+  const goBack = useGoBack();
   const { data: store } = useStore();
   const { logout } = useAuth();
 
@@ -44,7 +46,7 @@ export default function StoreInfo() {
       <PPHeader
         subtitle="Über"
         title="Der Laden"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       <View style={{ paddingHorizontal: 20 }}>

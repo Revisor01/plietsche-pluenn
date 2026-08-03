@@ -6,6 +6,7 @@ import { PP } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 import {
   Screen,
   PPHeader,
@@ -33,6 +34,7 @@ function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; on
 
 export default function Account() {
   const router = useRouter();
+  const goBack = useGoBack();
   const { data: user, refetch } = useCurrentUser();
   const { updateName, updateEmail, updatePassword, logout } = useAuth();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
@@ -109,7 +111,7 @@ export default function Account() {
       <PPHeader
         subtitle="Dein Konto"
         title="Profil"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       <SectionTitle title="Name" />
@@ -172,11 +174,13 @@ export default function Account() {
         <>
           <SectionTitle title="Verwaltung" />
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
-            {/* Teile = eigener Tab, Badges = Zahnrad im Badges-Tab. Hier nur,
-                was sonst nirgends erreichbar ist. */}
-            {isAdmin && <AdminLink icon="gauge" label="Punkte-Ränge" onPress={() => router.push('/(visitor)/admin/tiers')} />}
-            {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions')} />}
-            <AdminLink icon="search" label="Aushang & Ankündigungen" onPress={() => router.push('/(visitor)/admin/needs')} />
+            {/* Alle Verwaltungswege sitzen hier gebündelt. Die Tabs selbst
+                zeigen dem Team dieselbe Ansicht wie allen anderen — Sonder-
+                funktionen gehören in diesen Bereich, nicht in die Kopfzeilen. */}
+            <AdminLink icon="search" label="Aushang & Ankündigungen" onPress={() => router.push('/(visitor)/admin/needs?from=/(visitor)/settings/account')} />
+            {isAdmin && <AdminLink icon="medal" label="Abzeichen" onPress={() => router.push('/(visitor)/admin/badges?from=/(visitor)/settings/account')} />}
+            {isAdmin && <AdminLink icon="sparkles" label="Aktionen (Doppelpunkte)" onPress={() => router.push('/(visitor)/admin/actions?from=/(visitor)/settings/account')} />}
+            {isAdmin && <AdminLink icon="gauge" label="Punkte-Ränge" onPress={() => router.push('/(visitor)/admin/tiers?from=/(visitor)/settings/account')} />}
           </View>
         </>
       )}

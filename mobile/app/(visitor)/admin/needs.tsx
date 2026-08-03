@@ -9,6 +9,7 @@ import { useAllNeeds, useActiveCampaigns } from '../../../lib/hooks/useData';
 import { createNeed, updateNeed, deleteNeed, sendPushNow } from '../../../lib/api';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill, ColorPicker, Hint } from '../../../components/ui';
 import type { Need } from '../../../lib/types';
+import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 // Quick-action templates — one tap pre-fills the editor with a common notice.
 const TEMPLATES: { icon: IconName; title: string; detail: string }[] = [
@@ -151,6 +152,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
 
 export default function NeedsAdmin() {
   const router = useRouter();
+  const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: needs, refetch } = useAllNeeds();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -167,7 +169,7 @@ export default function NeedsAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Aushang"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
