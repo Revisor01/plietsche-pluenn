@@ -50,3 +50,9 @@ pocketbase/*.zip
 # Backup tarballs
 *.zip
 *.tar.gz
+
+# Test-QR-Codes: enthalten das Tür-Geheimnis des Ladens als Bild
+test-qrcodes.html
+
+# Backup der alten App-Icons (lokal, nicht im Repo)
+mobile/assets/.icon-backup/

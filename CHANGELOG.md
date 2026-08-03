@@ -13,9 +13,21 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Punktestand und Serie sind schreibgeschützt:** Diese Felder konnten von der App aus verändert werden — was die Abzeichen-Vergabe angreifbar machte. Sie werden jetzt nur noch serverseitig gesetzt; das Team behält seine Korrekturmöglichkeit.
 - **Fortschritt wird vollständig gezählt:** Bei Besuchen und Scans war die Zählung auf die ersten Einträge begrenzt, wodurch der Fortschritt ab einem bestimmten Punkt stehen blieb.
 
+### Neu (Dokumentation)
+- **README neu aufgesetzt:** Logo, vollständige Funktionsübersicht nach Zielgruppe, Aufbau des Projekts und ein Datenschutz-Abschnitt. Die alten Angaben waren teils veraltet (Expo SDK 51 statt 54).
+- **Technischer Steckbrief (`TECH.md`):** Stack mit Versionen, Abhängigkeiten, Datenmodell, Berechtigungen und Kennzahlen — knapp genug für die Homepage.
+
+### Entfernt
+- **Mikrofon-Berechtigung:** Android forderte `RECORD_AUDIO` an, obwohl die App nirgends Ton aufnimmt. Die Berechtigung stammte aus einer Vorgabe des Kamera-Moduls und ist jetzt raus.
+
+### Sicherheit
+- **Tür-Code erneuert:** Das Check-in-Geheimnis lag im Klartext in der Versionsgeschichte (über die Test-QR-Seite). Es wurde serverseitig durch ein neues ersetzt, womit der alte Wert wertlos ist. **Der QR-Code an der Ladentür muss einmal neu ausgedruckt werden.**
+- **Test-QR-Seite nicht mehr im Repository:** Sie enthält das Tür-Geheimnis als Bild und liegt jetzt nur noch lokal.
+
 ### Neu (Sofort-Benachrichtigungen)
 - **Push direkt nach dem Check-in:** Wer eincheckt, bekommt sofort eine Nachricht mit den gutgeschriebenen Punkten — inklusive mitgenommener Teile. Läuft eine Serie (ab zwei Wochen), steht sie mit in der Nachricht.
 - **Push bei Freigabe eines gebrachten Teils:** Wird ein eingereichtes Teil freigegeben, erfährt die einreichende Person das jetzt mit den erhaltenen Punkten. Vorher blieb die Freigabe unbemerkt.
+- **Tippen führt zum richtigen Bildschirm:** Eine angetippte Benachrichtigung öffnete bisher nur die App. Jetzt landet man dort, wo es um die Nachricht geht — auch wenn die App vorher geschlossen war. Aus Sicherheitsgründen sind nur bekannte Ziele erlaubt; alles andere öffnet schlicht die Startseite.
 
 ### Geändert (Team & Laden)
 - **Offene Freigaben sind nicht mehr zu übersehen:** Warten eingereichte Teile, färbt sich die Freigabe-Kachel auf der Startseite und trägt einen Zähler — statt wie bisher unverändert auszusehen, egal ob null oder zwölf Teile offen sind.
