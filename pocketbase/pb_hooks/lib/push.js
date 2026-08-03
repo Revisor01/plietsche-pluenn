@@ -52,6 +52,30 @@ module.exports = {
     return out;
   },
 
+  // Tokens of a single user, honouring their opt-in flag for this category.
+  // Used for immediate, personal pushes (points credited) — collectTokens walks
+  // every user and is meant for campaigns.
+  tokensForUser(user, category) {
+    const flag =
+      category === 'streak' ? 'push_streak_enabled'
+      : category === 'campaign' ? 'push_campaign_enabled'
+      : category === 'badge' ? 'push_badge_enabled'
+      : 'push_other_enabled';
+    if (!user.get(flag)) return [];
+    let devices;
+    try {
+      devices = $app.dao().findRecordsByFilter('push_devices', `user = "${user.id}"`, '', 0, 0);
+    } catch (_) {
+      return [];
+    }
+    const out = [];
+    for (const d of devices) {
+      const tok = `${d.get('expo_token')}`.trim();
+      if (tok) out.push({ token: tok, userId: user.id, deviceId: d.id });
+    }
+    return out;
+  },
+
   // Send a batch of messages to Expo. Removes tokens Expo reports as dead.
   send(targets, title, body, deepLink) {
     if (!targets.length) return { sent: 0 };

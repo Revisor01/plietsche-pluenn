@@ -6,8 +6,25 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Behoben (Abzeichen zeigen jetzt die Wahrheit)
+- **„Durchhalter" zeigte Fortschritt ohne Check-in:** Das Abzeichen stand auf „1/2 Wochen in Folge", obwohl seit Wochen niemand da war. Ursache waren zwei Fehler, die sich gegenseitig verdeckt haben: der Fortschritt lag als Kopie in der Abzeichen-Tabelle und wurde beim nächtlichen Zurücksetzen der Serie nicht mitgezogen — und die Serie selbst hing an einem Zählerfeld beim Nutzer statt an den tatsächlichen Besuchen.
+- **Serie zählt jetzt aus den Besuchen:** Wie viele Wochen jemand in Folge da war, wird aus den echten Check-ins abgeleitet. Ohne Besuch gibt es keinen Fortschritt — auch dann nicht, wenn ein alter Zählerstand herumliegt.
+- **Nächtliches Zurücksetzen zieht die Abzeichen mit:** Verfällt eine Serie, wird der angezeigte Fortschritt sofort mit korrigiert.
+- **Punktestand und Serie sind schreibgeschützt:** Diese Felder konnten von der App aus verändert werden — was die Abzeichen-Vergabe angreifbar machte. Sie werden jetzt nur noch serverseitig gesetzt; das Team behält seine Korrekturmöglichkeit.
+- **Fortschritt wird vollständig gezählt:** Bei Besuchen und Scans war die Zählung auf die ersten Einträge begrenzt, wodurch der Fortschritt ab einem bestimmten Punkt stehen blieb.
+
+### Neu (Sofort-Benachrichtigungen)
+- **Push direkt nach dem Check-in:** Wer eincheckt, bekommt sofort eine Nachricht mit den gutgeschriebenen Punkten — inklusive mitgenommener Teile. Läuft eine Serie (ab zwei Wochen), steht sie mit in der Nachricht.
+- **Push bei Freigabe eines gebrachten Teils:** Wird ein eingereichtes Teil freigegeben, erfährt die einreichende Person das jetzt mit den erhaltenen Punkten. Vorher blieb die Freigabe unbemerkt.
+
+### Geändert (Team & Laden)
+- **Offene Freigaben sind nicht mehr zu übersehen:** Warten eingereichte Teile, färbt sich die Freigabe-Kachel auf der Startseite und trägt einen Zähler — statt wie bisher unverändert auszusehen, egal ob null oder zwölf Teile offen sind.
+- **„Beim Besitzer" heißt jetzt „extern":** Die Formulierung ging von einem Geschlecht aus. Im Laden, in den Filtern und in der Detailansicht steht jetzt durchgehend „extern gelagert".
+- **Aktionen zeigen alle erhöhten Punkte:** Bislang stand im Aushang nur ein einziger Faktor. Erhöht eine Aktion Vorbeikommen ×3, Mitnehmen ×1,5 und Bringen ×2, werden jetzt alle drei genannt.
+- **Zurück führt zurück:** Ein Teil aus dem Laden zu öffnen und wieder zu schließen landete auf der Startseite statt in der Liste, aus der man kam. Gilt ebenso für Schaufenster, Inventar und die Freigabe-Liste.
+
 ### Neu (App-Symbol)
-- **Neues App-Symbol:** Ein Kleiderbügel, dessen unterer Balken zur Welle wird — Kleidung und Nordsee in einem Zeichen, weiß auf dem Marken-Verlauf (Teal → Mint → Sky). Löst das bisherige „P²" ab, das bei Symbolgröße schlecht lesbar war.
+- **Neues App-Symbol:** Ein Stapel gefalteter Kleidung im Kreislauf-Ring — weiß auf dem Marken-Verlauf (Teal → Mint → Sky). Löst das bisherige „P²" ab, das bei Symbolgröße schlecht lesbar war.
 - **Android-Symbol mitgezogen:** Vordergrund, Monochrom-Fassung (für eingefärbte Startbildschirme) und Hintergrund neu erzeugt. Der Hintergrund trägt jetzt den Marken-Verlauf statt des bisherigen Hellgraus, auf dem ein weißes Motiv unsichtbar gewesen wäre.
 
 ### Geändert (Eingereichte Teile & Laden)

@@ -18,6 +18,31 @@ onRecordBeforeCreateRequest((e) => {
   r.set('push_other_enabled', false);
 }, 'users');
 
+// Score fields are server-owned. PocketBase auth collections let a user PATCH
+// their own record, which would otherwise allow setting points_total or
+// streak_weeks by hand — and badge awarding trusts those values. Any client
+// request that tries to change them is reverted to the stored value; server-side
+// code writes via dao().saveRecord() and never passes through this hook.
+onRecordBeforeUpdateRequest((e) => {
+  const r = e.record;
+  let stored;
+  try {
+    stored = $app.dao().findRecordById('users', r.id);
+  } catch (_) {
+    return;
+  }
+  // Admins keep manual correction rights (e.g. fixing a miscount): both the
+  // PocketBase superuser and an app admin editing someone else's record.
+  const superuser = e.httpContext && e.httpContext.get('admin');
+  if (superuser) return;
+  const auth = e.httpContext && e.httpContext.get('authRecord');
+  if (auth && `${auth.get('role')}` === 'admin' && auth.id !== r.id) return;
+
+  for (const f of ['points_total', 'streak_weeks', 'streak_last_visit', 'role']) {
+    r.set(f, stored.get(f));
+  }
+}, 'users');
+
 onRecordBeforeCreateRequest((e) => {
   const r = e.record;
   // Readable SKU: PP-0001 ... derived from the highest existing number (not the
@@ -112,6 +137,23 @@ onRecordAfterUpdateRequest((e) => {
   }
 
   lib.checkBadges(submitter);
+
+  // Tell the submitter their item went through — approval happens later, so
+  // without this they'd never learn the points landed.
+  try {
+    const push = require(`${__hooks}/lib/push.js`);
+    // 'badge' category: on by default, and this is a personal reward message —
+    // 'other' defaults to off, so the confirmation would never arrive.
+    const targets = push.tokensForUser(submitter, 'badge');
+    if (targets.length) {
+      push.send(
+        targets,
+        'Dein Teil ist freigegeben',
+        `„${r.get('title')}" ist jetzt im Laden — ${pts} Punkte für dich.`,
+        '/(visitor)/points'
+      );
+    }
+  } catch (_) {}
 
   // Flag so re-approval doesn't pay twice. Update via dao to avoid re-triggering.
   r.set('brought_awarded', true);

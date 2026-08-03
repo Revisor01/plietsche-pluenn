@@ -12,6 +12,7 @@ import {
   initials,
   tierColor,
   campaignBonusLabel,
+  campaignFactors,
   motivationFor,
   accentGradient,
   normalizeHex,
@@ -42,6 +43,7 @@ export default function Home() {
   const { data: campaigns } = useActiveCampaigns();
   const { data: points } = usePointsLog(3);
   const { data: pending } = usePendingItems();
+  const openCount = pending?.length ?? 0;
   const { data: recentItems } = useRecentItems(6);
   const { data: needs } = useActiveNeeds();
   const { data: store } = useStore();
@@ -136,7 +138,9 @@ export default function Home() {
           <View style={{ paddingHorizontal: 20, gap: 10 }}>
             {/* Laufende Aktionen (Doppelpunkte) — hervorgehoben. */}
             {campaigns?.map((c) => {
-              const bonus = campaignBonusLabel(c.multiplier);
+              // Every boosted type gets its own badge — an action can raise
+              // coming, taking and bringing by different factors.
+              const factors = campaignFactors(c);
               return (
                 <GradientCard key={c.id} pad={16} radius={20} colors={accentGradient(c.color)}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -152,23 +156,28 @@ export default function Home() {
                       )}
                     </View>
                   </View>
-                  {/* Was es dem User bringt — gut sichtbar. */}
-                  {!!bonus && (
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                        alignSelf: 'flex-start',
-                        marginTop: 12,
-                        paddingVertical: 6,
-                        paddingHorizontal: 12,
-                        borderRadius: 999,
-                        backgroundColor: 'rgba(255,255,255,0.22)',
-                      }}
-                    >
-                      <Icon name="flame" size={13} color="#fff" />
-                      <PPText weight="bold" size={PP.fontSizes.sm} color="#fff">{bonus}</PPText>
+                  {/* Was es dem User bringt — jeder erhöhte Typ einzeln. */}
+                  {!!factors.length && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+                      {factors.map((f) => (
+                        <View
+                          key={f.label}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 6,
+                            paddingVertical: 6,
+                            paddingHorizontal: 12,
+                            borderRadius: 999,
+                            backgroundColor: 'rgba(255,255,255,0.22)',
+                          }}
+                        >
+                          <Icon name="flame" size={13} color="#fff" />
+                          <PPText weight="bold" size={PP.fontSizes.sm} color="#fff">
+                            {f.label} ×{f.factor.toLocaleString('de-DE')}
+                          </PPText>
+                        </View>
+                      ))}
                     </View>
                   )}
                 </GradientCard>
@@ -220,24 +229,58 @@ export default function Home() {
 
         {isStaff && (
           <Pressable style={{ flex: 1 }} onPress={() => router.push('/(visitor)/items/review')}>
-            <Card pad={14} style={{ alignItems: 'flex-start', gap: 8 }}>
-              <View
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  backgroundColor: 'rgba(232,169,59,0.14)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name="check" size={18} color={PP.warn} />
+            {/* Offene Freigaben sind eine Aufgabe, keine Statuszeile: bei
+                Wartenden färbt sich die ganze Karte und trägt einen Zähler. */}
+            <Card
+              pad={14}
+              style={{
+                alignItems: 'flex-start',
+                gap: 8,
+                ...(openCount
+                  ? { backgroundColor: 'rgba(232,169,59,0.12)', borderWidth: 1, borderColor: 'rgba(232,169,59,0.45)' }
+                  : null),
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch' }}>
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    backgroundColor: openCount ? PP.warn : 'rgba(232,169,59,0.14)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name={openCount ? 'bell' : 'check'} size={18} color={openCount ? '#fff' : PP.warn} />
+                </View>
+                {!!openCount && (
+                  <View
+                    style={{
+                      marginLeft: 'auto',
+                      minWidth: 24,
+                      paddingHorizontal: 7,
+                      paddingVertical: 2,
+                      borderRadius: 999,
+                      backgroundColor: PP.warn,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <PPText weight="bold" size={PP.fontSizes.sm} color="#fff">{openCount}</PPText>
+                  </View>
+                )}
               </View>
               <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>
                 Freigaben
               </PPText>
-              <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-                {pending?.length ? `${pending.length} warten` : 'Nichts offen'}
+              <PPText
+                weight={openCount ? 'semibold' : 'regular'}
+                size={PP.fontSizes.sm}
+                color={openCount ? PP.warn : PP.ink2}
+              >
+                {openCount
+                  ? `${openCount} ${openCount === 1 ? 'Teil wartet' : 'Teile warten'}`
+                  : 'Nichts offen'}
               </PPText>
             </Card>
           </Pressable>
@@ -261,7 +304,7 @@ export default function Home() {
               <ShowcaseCard
                 key={item.id}
                 item={item}
-                onPress={() => router.push(`/(visitor)/items/${item.id}`)}
+                onPress={() => router.push(`/(visitor)/items/${item.id}?from=/(visitor)`)}
               />
             ))}
           </ScrollView>
@@ -284,7 +327,7 @@ export default function Home() {
               <ShowcaseCard
                 key={it.id}
                 item={it}
-                onPress={() => router.push(`/(visitor)/items/${it.id}`)}
+                onPress={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)`)}
               />
             ))}
           </ScrollView>

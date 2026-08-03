@@ -55,7 +55,7 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
           >
             <Icon name="map-pin" size={11} color={PP.warn} />
             <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink}>
-              beim Besitzer
+              extern gelagert
             </PPText>
           </View>
         )}
@@ -127,7 +127,7 @@ export default function Store() {
   const [group, setGroup] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
   const [size, setSize] = useState<string | null>(null);
-  // Aufbewahrung: im Laden vs. verbleibt beim Besitzer (große Teile).
+  // Aufbewahrung: im Laden vs. extern gelagert (große Teile bleiben bei der einreichenden Person).
   const [loc, setLoc] = useState<string | null>(null);
 
   const onRefresh = useCallback(async () => {
@@ -202,7 +202,7 @@ export default function Store() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
             {filtered.map((it) => (
               <View key={it.id} style={{ width: '47%', flexGrow: 1 }}>
-                <StoreCard item={it} onOpen={() => router.push(`/(visitor)/items/${it.id}`)} />
+                <StoreCard item={it} onOpen={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)/store`)} />
               </View>
             ))}
             {filtered.length % 2 === 1 && <View style={{ width: '47%', flexGrow: 1 }} />}
@@ -264,7 +264,7 @@ export default function Store() {
               title="Aufbewahrung"
               options={[
                 { key: 'store', label: 'Im Laden' },
-                { key: 'external', label: 'Beim Besitzer' },
+                { key: 'external', label: 'Extern' },
               ]}
               value={loc}
               onSelect={setLoc}

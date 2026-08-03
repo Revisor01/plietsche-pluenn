@@ -172,6 +172,42 @@ export function campaignBonusLabel(multiplier?: number) {
   return '';
 }
 
+// Per-type factors of a campaign, listing every type that differs from ×1.
+// A campaign can boost coming by ×3, taking by ×1,5 and bringing by ×2 — showing
+// only the leading multiplier would hide two thirds of that.
+// Falls back to the legacy single `multiplier` for campaigns created before the
+// per-type fields existed.
+export function campaignFactors(c?: {
+  mult_visit?: number;
+  mult_take?: number;
+  mult_bring?: number;
+  multiplier?: number;
+}): { label: string; factor: number }[] {
+  if (!c) return [];
+  const { mult_visit: v, mult_take: t, mult_bring: b } = c;
+  if (v == null && t == null && b == null) {
+    const m = c.multiplier ?? 1;
+    return m > 1 ? [{ label: 'Punkte', factor: m }] : [];
+  }
+  const out: { label: string; factor: number }[] = [];
+  if ((v ?? 1) > 1) out.push({ label: 'Vorbeikommen', factor: v! });
+  if ((t ?? 1) > 1) out.push({ label: 'Mitnehmen', factor: t! });
+  if ((b ?? 1) > 1) out.push({ label: 'Bringen', factor: b! });
+  return out;
+}
+
+// "Vorbeikommen ×3 · Mitnehmen ×1,5 · Bringen ×2" — empty when nothing is boosted.
+export function campaignFactorsLabel(c?: {
+  mult_visit?: number;
+  mult_take?: number;
+  mult_bring?: number;
+  multiplier?: number;
+}): string {
+  return campaignFactors(c)
+    .map((f) => `${f.label} ×${f.factor.toLocaleString('de-DE')}`)
+    .join(' · ');
+}
+
 // Colour for a rank/tier name (case-insensitive). No rank yet ("—") is neutral.
 export function tierColor(name?: string) {
   switch ((name ?? '').toLowerCase()) {

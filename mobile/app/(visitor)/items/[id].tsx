@@ -23,7 +23,16 @@ const CATEGORIES = [
 export default function ItemDetail() {
   const router = useRouter();
   const qc = useQueryClient();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+
+  // These screens live inside the tab navigator, so router.back() would pop to
+  // the first tab (home) instead of the list we came from. Callers pass ?from=,
+  // and we navigate there explicitly.
+  const goBack = () => {
+    if (from) router.replace(from as any);
+    else if (router.canGoBack()) router.back();
+    else router.replace('/(visitor)');
+  };
   const { data: item, refetch } = useItem(id);
   const { data: me } = useCurrentUser();
   const isStaff = me?.role === 'volunteer' || me?.role === 'admin';
@@ -53,7 +62,7 @@ export default function ItemDetail() {
   if (!item) {
     return (
       <Screen padBottom={120}>
-        <PPHeader subtitle="Teil" title="…" leading={<IconButton icon="chevron-left" onPress={() => router.back()} />} />
+        <PPHeader subtitle="Teil" title="…" leading={<IconButton icon="chevron-left" onPress={goBack} />} />
       </Screen>
     );
   }
@@ -67,7 +76,7 @@ export default function ItemDetail() {
         <PPHeader
           subtitle={item.sku}
           title={item.title}
-          leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+          leading={<IconButton icon="chevron-left" onPress={goBack} />}
         />
         <View style={{ paddingHorizontal: 20 }}>
           <View style={{ height: 280, borderRadius: 18, overflow: 'hidden', backgroundColor: 'rgba(39,176,146,0.08)', alignItems: 'center', justifyContent: 'center' }}>
@@ -122,7 +131,7 @@ export default function ItemDetail() {
           </Card>
           {item.stays_external ? (
             <Hint icon="map-pin" tone="info">
-              Dieses Teil lagert beim Besitzer — sprich uns im Laden an, wir stellen den Kontakt her.
+              Dieses Teil lagert extern — sprich uns im Laden an, wir stellen den Kontakt her.
             </Hint>
           ) : (
             <Hint icon="qr-scan" tone="info">
@@ -195,7 +204,7 @@ export default function ItemDetail() {
   const doArchive = () => {
     Alert.alert('Archivieren?', `"${item.title}" archivieren?`, [
       { text: 'Abbrechen', style: 'cancel' },
-      { text: 'Archivieren', style: 'destructive', onPress: async () => { await archiveItem(item.id); await done(); router.back(); } },
+      { text: 'Archivieren', style: 'destructive', onPress: async () => { await archiveItem(item.id); await done(); goBack(); } },
     ]);
   };
 
@@ -204,7 +213,7 @@ export default function ItemDetail() {
       <PPHeader
         subtitle={item.sku}
         title="Teil bearbeiten"
-        leading={<IconButton icon="chevron-left" onPress={() => router.back()} />}
+        leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
       <SectionTitle title="Foto" />
@@ -259,7 +268,7 @@ export default function ItemDetail() {
         </Card>
         <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Verbleibt beim Besitzer</PPText>
+            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Wird extern gelagert</PPText>
           </View>
           <Toggle value={staysExternal} onChange={setStaysExternal} />
         </Card>
