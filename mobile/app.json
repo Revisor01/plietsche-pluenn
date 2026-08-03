@@ -20,7 +20,7 @@
     "android": {
       "package": "de.godsapp.plietschepluenn",
       "adaptiveIcon": {
-        "backgroundColor": "#F4F7F4",
+        "backgroundColor": "#27b092",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
