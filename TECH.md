@@ -55,15 +55,20 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 
 36 direkte Abhängigkeiten.
 
-**Expo-Module (18):** router · camera · location · notifications · secure-store ·
+**Expo-Module (20):** router · camera · location · notifications · secure-store ·
 image-picker · constants · device · font · splash-screen · status-bar · system-ui ·
-linking · blur · glass-effect · linear-gradient · haptics
+linking · blur · glass-effect · linear-gradient · haptics · print · sharing
 
 **Weitere Bibliotheken:** react-native-reanimated · react-native-worklets ·
 react-native-gesture-handler · react-native-screens · react-native-safe-area-context ·
-react-native-svg · react-native-qrcode-svg · @react-native-community/datetimepicker ·
+react-native-svg · react-native-qrcode-svg · qrcode · @react-native-community/datetimepicker ·
 @expo/vector-icons (Font Awesome 6) · @expo-google-fonts/work-sans · pocketbase-js-sdk ·
 @tanstack/react-query · zustand
+
+> `expo-print` + `expo-sharing` + `qrcode` tragen den QR-Etikettenbogen
+> (`lib/qrsheet.ts`): HTML → PDF → Teilen-Dialog. `qrcode` erzeugt die Codes als
+> data:-URI, damit der Bogen ohne Netz vollständig ist; `react-native-qrcode-svg`
+> bleibt für die Anzeige einzelner Codes im Screen.
 
 **Schrift:** Work Sans (400/500/600/700), lokal gebündelt
 

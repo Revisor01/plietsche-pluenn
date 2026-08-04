@@ -407,7 +407,7 @@ export function withAlpha(hex: string, alpha: number): string {
 }
 
 /** Hex um `amount` aufhellen (0..1) — erzeugt das helle Ende des Verlaufs. */
-function lighten(hex: string, amount: number): string {
+export function lighten(hex: string, amount: number): string {
   const h = normalizeHex(hex) ?? '#000000';
   const mix = (c: number) => Math.round(c + (255 - c) * amount);
   const r = mix(parseInt(h.slice(1, 3), 16));

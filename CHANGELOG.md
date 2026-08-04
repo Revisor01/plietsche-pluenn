@@ -6,6 +6,16 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Neu (Etiketten & Abzeichen-Details)
+- **QR-Etiketten zum Ausdrucken:** In der Teile-Übersicht erzeugt „QR-Etiketten drucken" einen A4-Bogen als PDF — vier Etiketten pro Reihe, je mit QR-Code, Name, Größe, Kategorie, Zustand, Nummer und Punktwert. Über den Teilen-Dialog geht er direkt an den Drucker oder per Mail weiter. Gedruckt wird immer die gerade gewählte Auswahl; bereits mitgenommene Teile bleiben außen vor. Die Codes stecken vollständig im Dokument, es braucht zum Drucken also kein Netz.
+- **Abzeichen antippen zeigt die Beschreibung:** Beim Umbau auf das Raster hatte die Beschreibung keinen Platz mehr. Ein Tippen öffnet sie jetzt zusammen mit allen Stufen und dem Stand je Stufe. Geheime Abzeichen bleiben dabei verdeckt.
+- **Eigene Farbe für Einzel-Abzeichen:** Ein besonderes Abzeichen kann eine eigene Farbe bekommen, statt immer im Gold der obersten Stufe zu leuchten. Gestufte Abzeichen behalten ihre Stufenfarben.
+
+### Geändert
+- **Teilnahme zählt, worauf es Bonus gibt:** Bisher zählte für Aktions-Abzeichen ausschließlich das Bringen — auch dann, wenn die Aktion darauf gar keinen Bonus gab, während Holen mit ×3 unberücksichtigt blieb. Jetzt zählt genau das, was die Aktion hervorhebt: Steht Bringen auf ×2, zählt jedes gebrachte Teil; steht Holen auf ×1, zählt Holen nicht.
+- **Einzel-Abzeichen ohne Schwellenfeld:** Bei „Teilnahme" stand ein Feld „ab (Schwelle)", das der Server gar nicht auswertet — die Vergabe läuft über die Aktion selbst. Es ist entfernt.
+- **Einzel-Abzeichen zeigen „Noch offen" statt eines Zählerstands** — „0/1 bis Gold" ergab dort keinen Sinn.
+
 ### Geändert (Abzeichen & Symbole)
 - **Abzeichen-Stufen kommen aus „Punkte & Ränge":** Wie viele Stufen ein Abzeichen hat und wie sie heißen, richtet sich nach den dort gepflegten Rängen. Wer sie „Strandgut, Priel, Deich" nennt, sieht diese Namen auch am Abzeichen; pro Abzeichen trägst du nur noch das Ziel und den Bonus ein. Bis zu fünf Stufen — so viele hält ein Abzeichen vor.
 - **Warum manche Abzeichen Diamant hatten und andere nicht:** Das lag nie an einer Einstellung, sondern an einem leeren Feld — bei „Bringer" war die fünfte Stufe gefüllt, bei den übrigen nicht. Jetzt ist sichtbar, welche Stufen es gibt, und leere entfallen bewusst.

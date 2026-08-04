@@ -136,6 +136,35 @@ module.exports = {
     }
   },
 
+  // Teilnahme an einer Aktion mitzählen — Grundlage für Aktions-Abzeichen.
+  //
+  // Gezählt wird, worauf die Aktion tatsächlich einen Bonus gibt: Steht
+  // "Bringen" auf ×2, zählt jedes gebrachte Teil; steht "Holen" auf ×1, zählt
+  // Holen nicht. So entscheidet die Aktion selbst, was Teilnahme bedeutet —
+  // vorher zählte immer nur Bringen, unabhängig von den gesetzten Faktoren.
+  //
+  // `amount` erlaubt mehrere Teile auf einmal (Stepper beim Check-in).
+  bumpActionCount(user, camp, type, amount) {
+    if (!user || !camp) return;
+    if (this.campaignMult(camp, type) <= 1) return; // kein Bonus → keine Teilnahme
+    const n = Math.max(0, parseInt(amount == null ? 1 : amount, 10));
+    if (!n) return;
+    const dao = $app.dao();
+    try {
+      let cnt;
+      try {
+        cnt = dao.findFirstRecordByFilter('action_counts', `user = "${user.id}" && campaign = "${camp.id}"`);
+      } catch (_) {
+        cnt = new Record(dao.findCollectionByNameOrId('action_counts'));
+        cnt.set('user', user.id);
+        cnt.set('campaign', camp.id);
+        cnt.set('count', 0);
+      }
+      cnt.set('count', (cnt.get('count') || 0) + n);
+      dao.saveRecord(cnt);
+    } catch (_) {}
+  },
+
   // Create a visit + award check-in bonus + update streak. Returns awarded points.
   // Guards against a double check-in race (fast double-tap / retry): re-checks
   // hasVisitToday immediately before inserting the visit, so two concurrent
@@ -157,6 +186,8 @@ module.exports = {
       if (stepperOnly > 0) {
         this.awardPoints(user, stepperOnly, 'checkin', `${itemsCount} Teile mitgenommen`, null);
       }
+      // Der Besuch zählt hier nicht noch einmal — die Teile schon.
+      if (camp && itemsCount > 0) this.bumpActionCount(user, camp, 'take', itemsCount);
       return { points: stepperOnly, visitId: null, deduped: true };
     }
 
@@ -179,6 +210,12 @@ module.exports = {
     if (stepperPts > 0) {
       this.awardPoints(user, stepperPts, 'checkin', `${itemsCount} Teile mitgenommen`, visit.id);
     }
+    // Teilnahme zählen — je nachdem, worauf die Aktion Bonus gibt.
+    if (camp) {
+      this.bumpActionCount(user, camp, 'visit', 1);
+      if (itemsCount > 0) this.bumpActionCount(user, camp, 'take', itemsCount);
+    }
+
     this.updateStreak(user, now);
     this.pushCheckinConfirmation(user, checkinPts + stepperPts, itemsCount);
     return { points: checkinPts + stepperPts, visitId: visit.id };
