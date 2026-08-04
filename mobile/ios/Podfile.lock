@@ -98,10 +98,14 @@ PODS:
     - RNWorklets
   - ExpoNotifications (57.0.8):
     - ExpoModulesCore
+  - ExpoPrint (57.0.1):
+    - ExpoModulesCore
   - ExpoRouter (57.0.9):
     - ExpoModulesCore
     - RNScreens
   - ExpoSecureStore (57.0.1):
+    - ExpoModulesCore
+  - ExpoSharing (57.0.8):
     - ExpoModulesCore
   - ExpoSplashScreen (57.0.5):
     - ExpoModulesCore
@@ -2361,8 +2365,10 @@ DEPENDENCIES:
   - ExpoModulesWorklets (from `../node_modules/expo-modules-core/ExpoModulesWorklets.podspec`)
   - ExpoModulesWorkletsAdapter (from `../node_modules/expo-modules-core`)
   - ExpoNotifications (from `../node_modules/expo-notifications/ios`)
+  - ExpoPrint (from `../node_modules/expo-print/ios/ExpoPrint.podspec`)
   - ExpoRouter (from `../node_modules/expo-router/ios`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
+  - ExpoSharing (from `../node_modules/expo-sharing/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
@@ -2501,10 +2507,14 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-modules-core"
   ExpoNotifications:
     :path: "../node_modules/expo-notifications/ios"
+  ExpoPrint:
+    :podspec: "../node_modules/expo-print/ios/ExpoPrint.podspec"
   ExpoRouter:
     :path: "../node_modules/expo-router/ios"
   ExpoSecureStore:
     :path: "../node_modules/expo-secure-store/ios"
+  ExpoSharing:
+    :path: "../node_modules/expo-sharing/ios"
   ExpoSplashScreen:
     :path: "../node_modules/expo-splash-screen/ios"
   ExpoSymbols:
@@ -2706,8 +2716,10 @@ SPEC CHECKSUMS:
   ExpoModulesWorklets: 6b240031daa3de4df791588fc78236637ff602f6
   ExpoModulesWorkletsAdapter: a350b48bad355963e8eb9f6a284de873fc3d6762
   ExpoNotifications: 0f253ad90f108c1c4045b541294164865c6aadc8
+  ExpoPrint: 7e7a9bc7c12b9b336f34c4458d0c9ba14f243759
   ExpoRouter: 224087330cc8f5a39700e6f4d7a55f55ecb2f90d
   ExpoSecureStore: 94793113049a2d7478dfe1a13aa15081e9f61755
+  ExpoSharing: dcf5cb459c99f344aabf126b171eb61d2e49276f
   ExpoSplashScreen: 247464c0fe484f766892db0d66c3fe54f92a624e
   ExpoSymbols: 7c7c7bd3c52f0b6dcbba6e8af4088b0dc1ea7d29
   ExpoSystemUI: ff3142b323ae7b4d11dc0b1dc4acfa30d92be7dc

@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 import QRCode from 'qrcode';
 
 import type { Item } from './types';
-import { categoryLabel, conditionLabel } from './format';
+import { categoryLabel } from './format';
 
 /**
  * Druckbogen mit QR-Etiketten — zum Ausschneiden und an die Kleidung heften.
@@ -37,19 +37,18 @@ async function qrDataUri(text: string): Promise<string> {
   });
 }
 
+// Bewusst ohne Punktwert und Zustand: Beides kann sich ändern, ohne dass das
+// Teil ein neues Etikett bekommt — gedruckt gehört nur, was dauerhaft gilt.
 function label(item: Item, qr: string): string {
-  const bits = [categoryLabel(item.category), conditionLabel(item.condition)].filter(Boolean);
+  const cat = categoryLabel(item.category);
   return `
     <div class="tag">
       <img class="qr" src="${qr}" alt="${esc(item.sku)}" />
       <div class="info">
         <div class="title">${esc(item.title)}</div>
         ${item.size ? `<div class="size">Größe ${esc(item.size)}</div>` : ''}
-        ${bits.length ? `<div class="meta">${esc(bits.join(' · '))}</div>` : ''}
-        <div class="foot">
-          <span class="sku">${esc(item.sku)}</span>
-          <span class="pts">${item.points ?? 0} P</span>
-        </div>
+        ${cat ? `<div class="meta">${esc(cat)}</div>` : ''}
+        <div class="foot"><span class="sku">${esc(item.sku)}</span></div>
       </div>
     </div>`;
 }
@@ -82,10 +81,8 @@ export async function printQrSheet(items: Item[], title = 'QR-Etiketten'): Promi
            -webkit-box-orient: vertical; }
   .size { font-size: 8.5pt; font-weight: 600; margin-top: 0.6mm; }
   .meta { font-size: 7pt; color: #5A6B6A; margin-top: 0.6mm; line-height: 1.2; }
-  .foot { display: flex; justify-content: space-between; align-items: baseline;
-          margin-top: 1.2mm; }
+  .foot { margin-top: 1.2mm; }
   .sku { font-size: 7.5pt; font-weight: 700; color: #27b092; letter-spacing: 0.2pt; }
-  .pts { font-size: 7pt; color: #5A6B6A; }
 </style></head>
 <body>
   <h1>Plietsche Plünn — ${esc(title)}</h1>
