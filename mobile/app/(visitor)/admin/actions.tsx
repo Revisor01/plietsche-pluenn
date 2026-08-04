@@ -5,10 +5,10 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { useCampaigns, useAllBadges } from '../../../lib/hooks/useData';
+import { useCampaigns } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint, ColorPicker } from '../../../components/ui';
-import type { Campaign, Badge } from '../../../lib/types';
+import type { Campaign } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 const FACTORS = [1, 2, 3]; // 1 = kein Bonus. Ganze Zahlen: schnell zu erfassen,
@@ -59,7 +59,7 @@ function dayEndIso(d: Date): string {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).toISOString();
 }
 
-function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; badges: Badge[]; onSaved: () => void }) {
+function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: () => void }) {
   const [name, setName] = useState(campaign?.name ?? '');
   const [description, setDescription] = useState(campaign?.description ?? '');
   const [multVisit, setMultVisit] = useState(campaign?.mult_visit ?? 1);
@@ -67,12 +67,12 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
   const [multBring, setMultBring] = useState(campaign?.mult_bring ?? 1);
   const [start, setStart] = useState<Date | null>(parseDate(campaign?.starts_at));
   const [end, setEnd] = useState<Date | null>(parseDate(campaign?.ends_at));
-  const [badgeId, setBadgeId] = useState(campaign?.badge ?? '');
+  // Nur mitgeführt, damit Speichern die Verknüpfung nicht löscht — gepflegt
+  // wird sie im Abzeichen-Editor („Aktions-Teilnahme" → gekoppelte Aktion).
+  const badgeId = campaign?.badge ?? '';
   const [color, setColor] = useState(campaign?.color ?? '');
   const [busy, setBusy] = useState(false);
 
-  // Only single, action-participation badges make sense to link.
-  const actionBadges = badges.filter((b) => b.trigger_type === 'action_participation');
 
   const save = async () => {
     if (!name.trim() || !start || !end) {
@@ -162,31 +162,6 @@ function CampaignEditor({ campaign, badges, onSaved }: { campaign?: Campaign; ba
         <Hint icon="info" tone="info">×1 = kein Bonus. Du kannst mehrere Typen gleichzeitig erhöhen.</Hint>
       </View>
 
-      <View>
-        <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>TEILNAHME-BADGE (optional)</PPText>
-        {actionBadges.length > 0 ? (
-          <>
-            <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginBottom: 6 }}>
-              Wer während der Aktion aktiv ist, bekommt nach Aktionsende dieses Badge.
-            </PPText>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              <Pressable onPress={() => setBadgeId('')}>
-                <Pill bg={!badgeId ? PP.teal : 'rgba(26,46,44,0.06)'} color={!badgeId ? '#fff' : PP.ink2}>keins</Pill>
-              </Pressable>
-              {actionBadges.map((b) => (
-                <Pressable key={b.id} onPress={() => setBadgeId(b.id)}>
-                  <Pill bg={badgeId === b.id ? PP.teal : 'rgba(26,46,44,0.06)'} color={badgeId === b.id ? '#fff' : PP.ink2}>{b.name}</Pill>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : (
-          <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-            Noch kein passendes Badge. Lege zuerst unter „Badges" ein Einzel-Abzeichen mit Auslöser „Aktions-Teilnahme" an — dann kannst du es hier verknüpfen.
-          </PPText>
-        )}
-      </View>
-
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{campaign ? 'Speichern' : 'Anlegen'}</PPButton></View>
         {campaign && <PPButton size="m" variant="ghost" fullWidth={false} onPress={remove}>Löschen</PPButton>}
@@ -200,7 +175,6 @@ export default function ActionsAdmin() {
   const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: campaigns, refetch } = useCampaigns();
-  const { data: badges } = useAllBadges();
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -234,7 +208,7 @@ export default function ActionsAdmin() {
         <>
           <SectionTitle title="Neue Aktion" />
           <View style={{ paddingHorizontal: 20 }}>
-            <CampaignEditor badges={badges ?? []} onSaved={onSaved} />
+            <CampaignEditor onSaved={onSaved} />
           </View>
         </>
       )}
@@ -270,7 +244,7 @@ export default function ActionsAdmin() {
               </Pressable>
               {openId === c.id && (
                 <View style={{ marginTop: 8 }}>
-                  <CampaignEditor campaign={c} badges={badges ?? []} onSaved={onSaved} />
+                  <CampaignEditor campaign={c} onSaved={onSaved} />
                 </View>
               )}
             </View>

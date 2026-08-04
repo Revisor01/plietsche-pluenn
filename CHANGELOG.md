@@ -6,6 +6,17 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Geändert (Abzeichen & Symbole)
+- **Abzeichen-Stufen kommen aus „Punkte & Ränge":** Wie viele Stufen ein Abzeichen hat und wie sie heißen, richtet sich nach den dort gepflegten Rängen. Wer sie „Strandgut, Priel, Deich" nennt, sieht diese Namen auch am Abzeichen; pro Abzeichen trägst du nur noch das Ziel und den Bonus ein. Bis zu fünf Stufen — so viele hält ein Abzeichen vor.
+- **Warum manche Abzeichen Diamant hatten und andere nicht:** Das lag nie an einer Einstellung, sondern an einem leeren Feld — bei „Bringer" war die fünfte Stufe gefüllt, bei den übrigen nicht. Jetzt ist sichtbar, welche Stufen es gibt, und leere entfallen bewusst.
+- **Aktionsbadge klarer:** Bei Auslöser „Aktions-Teilnahme" heißt die Wahl jetzt „Teilnahme" (einmal im Zeitraum dabei) oder „Stufen" (nach Anzahl der Beiträge) statt „Einzel-Abzeichen / Gestuft".
+- **Verknüpfung nur noch an einer Stelle:** Aktionsbadges werden im Abzeichen-Editor mit ihrer Aktion gekoppelt. Die zweite Auswahl in der Aktion ist entfallen — sie pflegte ein zweites Feld, das leicht auseinanderlief.
+- **Symbole mit mehr Gefühl:** Der Vorrat für Abzeichen und Aktionen führte technische Zeichen (Diagramm, Lupe, Regler). Jetzt sind es 64 Symbole aus Auszeichnung, Jahreslauf, Küste, Miteinander, Gefühl und Laden — Krone, Muschel, helfende Hand, Anker, Kleeblatt statt Messinstrumente.
+
+### Behoben
+- **Aktionsbadges konnten stumm ausfallen:** Die Kopplung zwischen Aktion und Abzeichen steht in zwei Feldern — eines steuert den Fortschritt, das andere die Vergabe. Wurde nur eines gepflegt, zählte das Abzeichen mit, wurde aber nie vergeben (oder umgekehrt). Beide werden jetzt gemeinsam gesetzt.
+- **Server vergab Stufen, die die App nicht zeigt:** Wer einen Rang entfernte, sah eine Stufe weniger — im Hintergrund wurde sie weiter verliehen. Die Vergabe hält sich jetzt an dieselbe Anzahl.
+
 ### Neu
 - **Geheime Abzeichen:** Ein Abzeichen lässt sich als geheim markieren. Es steht dann grau und namenlos in der Sammlung — man sieht, dass es etwas zu holen gibt, aber nicht was. Mit der ersten Stufe klappt es auf. Auch nach Ende einer Aktion bleibt die Kachel stehen: Wer nicht dabei war, behält eine Leerstelle.
 - **Abzeichen als Raster:** Die Sammlung steht in zwei Spalten statt untereinander — bei einem Abzeichen pro Aktion wurde die Liste zu lang zum Überblicken.

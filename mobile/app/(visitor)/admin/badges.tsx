@@ -5,9 +5,10 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { useAllBadges, useCampaigns } from '../../../lib/hooks/useData';
+import { useAllBadges, useCampaigns, useStore } from '../../../lib/hooks/useData';
+import { badgeTierSlots, type TierStep } from '../../../lib/format';
 import type { Campaign } from '../../../lib/types';
-import { createBadge, updateBadge, deleteBadge, type BadgeInput } from '../../../lib/api';
+import { createBadge, updateBadge, deleteBadge, updateCampaign, type BadgeInput } from '../../../lib/api';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
@@ -21,13 +22,15 @@ const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
   { key: 'action_participation', label: 'Aktions-Teilnahme', kinds: ['single', 'tiered'] },
 ];
 
-const TIERS = [
-  { key: 'bronze', label: 'Bronze', color: PP.bronze },
-  { key: 'silber', label: 'Silber', color: PP.silver },
-  { key: 'gold', label: 'Gold', color: PP.gold },
-  { key: 'platin', label: 'Platin', color: PP.platin },
-  { key: 'diamant', label: 'Diamant', color: PP.diamant },
-] as const;
+// Farbe je Stufen-Slot. Die Namen kommen aus den Rängen, die Farben bleiben
+// an der Stufe — daran hängen auch die Medaillons in der Sammlung.
+const TIER_COLOR: Record<string, string> = {
+  bronze: PP.bronze,
+  silber: PP.silver,
+  gold: PP.gold,
+  platin: PP.platin,
+  diamant: PP.diamant,
+};
 
 type Draft = {
   name: string;
@@ -107,9 +110,14 @@ function draftToInput(d: Draft): BadgeInput {
   return base as BadgeInput;
 }
 
-function BadgeEditor({ badge, campaigns, onSaved }: { badge?: Badge; campaigns: Campaign[]; onSaved: () => void }) {
+function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; campaigns: Campaign[]; ranks?: TierStep[]; onSaved: () => void }) {
   const [draft, setDraft] = useState<Draft>(toDraft(badge));
   const [busy, setBusy] = useState(false);
+
+  // Stufen kommen aus den Rängen unter „Punkte & Ränge" — Anzahl und Namen.
+  const slots = badgeTierSlots(ranks);
+  const slotNames = slots.map((s) => s.name).join('→');
+  const isAction = draft.trigger_type === 'action_participation';
 
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
   const setTier = (tier: string, v: string) => setDraft((d) => ({ ...d, tiers: { ...d.tiers, [tier]: v } }));
@@ -120,10 +128,24 @@ function BadgeEditor({ badge, campaigns, onSaved }: { badge?: Badge; campaigns: 
       Alert.alert('Fehlt noch', 'Bitte gib dem Badge einen Namen.');
       return;
     }
+    if (isAction && !draft.campaign) {
+      Alert.alert('Aktion fehlt', 'Bitte wähle die Aktion, zu der dieses Abzeichen gehört.');
+      return;
+    }
     setBusy(true);
     try {
-      if (badge) await updateBadge(badge.id, draftToInput(draft));
-      else await createBadge(draftToInput(draft));
+      const saved = badge
+        ? await updateBadge(badge.id, draftToInput(draft))
+        : await createBadge(draftToInput(draft));
+      // Die Kopplung steht in zwei Feldern: badges.campaign (Fortschritt) und
+      // campaigns.badge (Vergabe-Cron). Nur eins zu pflegen ließ Abzeichen
+      // stumm ausfallen — deshalb wird die Gegenseite hier mitgesetzt.
+      if (isAction && draft.campaign) {
+        const camp = campaigns.find((c) => c.id === draft.campaign);
+        if (camp && camp.badge !== saved.id) {
+          await updateCampaign(camp.id, { badge: saved.id });
+        }
+      }
       onSaved();
     } catch (e: any) {
       Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
@@ -157,23 +179,31 @@ function BadgeEditor({ badge, campaigns, onSaved }: { badge?: Badge; campaigns: 
       <Field label="Beschreibung" value={draft.description} onChangeText={(v) => set({ description: v })} placeholder="Kurzer Text" />
       <IconPicker value={draft.icon} onChange={(ic) => set({ icon: ic })} />
 
-      {/* Art: Tier-Badge (Bronze→Platin) oder einfaches Abzeichen */}
+      {/* Art: gestuft oder einmalig. Bei Aktionsbadges anders benannt — dort
+          ist „Teilnahme" der geläufige Fall, nicht „Einzel-Abzeichen". */}
       <View>
         <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>
           ART
         </PPText>
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Pressable onPress={() => set({ kind: 'tiered', trigger_type: 'visits' })}>
+          <Pressable onPress={() => set({ kind: 'tiered', trigger_type: isAction ? 'action_participation' : 'visits' })}>
             <Pill bg={draft.kind === 'tiered' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'tiered' ? '#fff' : PP.ink2}>
-              Stufen (Bronze→Platin)
+              {isAction ? 'Stufen' : `Stufen (${slotNames})`}
             </Pill>
           </Pressable>
           <Pressable onPress={() => set({ kind: 'single' })}>
             <Pill bg={draft.kind === 'single' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'single' ? '#fff' : PP.ink2}>
-              Einzel-Abzeichen
+              {isAction ? 'Teilnahme' : 'Einzel-Abzeichen'}
             </Pill>
           </Pressable>
         </View>
+        <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 6 }}>
+          {isAction
+            ? draft.kind === 'single'
+              ? 'Einmal im Aktionszeitraum dabei gewesen — fertig.'
+              : 'Nach Anzahl der Beiträge zur Aktion. Ziele unten eintragen.'
+            : 'Stufen zählen hoch; ein Einzel-Abzeichen gibt es genau einmal.'}
+        </PPText>
       </View>
 
       <View>
@@ -235,19 +265,23 @@ function BadgeEditor({ badge, campaigns, onSaved }: { badge?: Badge; campaigns: 
       ) : (
         <View style={{ gap: 8 }}>
           <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
-            STUFEN — „ab" = ab wie vielen, Punkte = einmaliger Bonus
+            STUFEN — „ab" = ab wie vielen, Bonus = einmalige Punkte
           </PPText>
-          {TIERS.map((t) => (
-            <View key={t.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 64, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.color }} />
-                <PPText size={PP.fontSizes.sm} color={PP.ink}>{t.label}</PPText>
+          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: -2 }}>
+            Stufen und Namen kommen aus „Punkte & Ränge". Leer lassen heißt: Die
+            Stufe gibt es bei diesem Abzeichen nicht.
+          </PPText>
+          {slots.map((s) => (
+            <View key={s.tier} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 78, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: TIER_COLOR[s.tier] }} />
+                <PPText size={PP.fontSizes.sm} color={PP.ink} numberOfLines={1}>{s.name}</PPText>
               </View>
               <View style={{ flex: 1 }}>
-                <Field label="ab" value={draft.tiers[t.key]} onChangeText={(v) => setTier(t.key, v)} keyboardType="number-pad" placeholder="0" />
+                <Field label="ab" value={draft.tiers[s.tier]} onChangeText={(v) => setTier(s.tier, v)} keyboardType="number-pad" placeholder="0" />
               </View>
               <View style={{ flex: 1 }}>
-                <Field label="Bonus" value={draft.rewards[t.key]} onChangeText={(v) => setReward(t.key, v)} keyboardType="number-pad" placeholder="0" />
+                <Field label="Bonus" value={draft.rewards[s.tier]} onChangeText={(v) => setReward(s.tier, v)} keyboardType="number-pad" placeholder="0" />
               </View>
             </View>
           ))}
@@ -293,6 +327,8 @@ export default function BadgeAdmin() {
   const qc = useQueryClient();
   const { data: badges, refetch } = useAllBadges();
   const { data: campaigns } = useCampaigns();
+  const { data: store } = useStore();
+  const ranks = (store as any)?.tiers_json as TierStep[] | undefined;
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -322,7 +358,7 @@ export default function BadgeAdmin() {
         <>
           <SectionTitle title="Neues Badge" />
           <View style={{ paddingHorizontal: 20 }}>
-            <BadgeEditor campaigns={campaigns ?? []} onSaved={onSaved} />
+            <BadgeEditor campaigns={campaigns ?? []} ranks={ranks} onSaved={onSaved} />
           </View>
         </>
       )}
@@ -350,7 +386,7 @@ export default function BadgeAdmin() {
               </Pressable>
               {openId === b.id && (
                 <View style={{ marginTop: 8 }}>
-                  <BadgeEditor badge={b} campaigns={campaigns ?? []} onSaved={onSaved} />
+                  <BadgeEditor badge={b} campaigns={campaigns ?? []} ranks={ranks} onSaved={onSaved} />
                 </View>
               )}
             </View>
