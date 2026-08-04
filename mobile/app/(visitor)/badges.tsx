@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../lib/theme';
-import { useBadges, useUserBadges } from '../../lib/hooks/useData';
+import { useBadges, useUserBadges, useStore } from '../../lib/hooks/useData';
 import { badgeTierInfo } from '../../lib/format';
 import { Screen, PPHeader, PPText, BadgeMedallion, TIER_COLORS, GradientRing, Card } from '../../components/ui';
 import type { IconName } from '../../lib/icons';
@@ -12,6 +12,9 @@ export default function Badges() {
   const qc = useQueryClient();
   const { data: badges } = useBadges();
   const { data: userBadges } = useUserBadges();
+  const { data: store } = useStore();
+  // Stufennamen kommen aus den Rängen unter „Punkte & Ränge".
+  const ranks = (store as any)?.tiers_json as { name: string; at: number }[] | undefined;
   const [refreshing, setRefreshing] = useState(false);
   const { width } = useWindowDimensions();
 
@@ -40,7 +43,7 @@ export default function Badges() {
         {(badges ?? []).map((b) => {
           const ub = ubMap.get(b.id);
           const progress = ub?.progress ?? 0;
-          const info = badgeTierInfo(b, progress);
+          const info = badgeTierInfo(b, progress, ranks);
           const earned = info.current !== 'none';
           // Ungelöste Badges bleiben sichtbar und grau — auch nach Aktionsende,
           // dann eben als Leerstelle in der Sammlung.

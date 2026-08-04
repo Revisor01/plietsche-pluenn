@@ -62,7 +62,58 @@ export type IconName =
   | 'gift'
   | 'menu'
   | 'more'
-  | 'gauge';
+  | 'gauge'
+  // Abzeichen-Symbole: Auszeichnung, Küste/Natur, Miteinander, Gefühl.
+  | 'crown'
+  | 'gem'
+  | 'award'
+  | 'ribbon'
+  | 'certificate'
+  | 'cake'
+  | 'seedling'
+  | 'tree'
+  | 'clover'
+  | 'sun'
+  | 'moon'
+  | 'snowflake'
+  | 'rainbow'
+  | 'water'
+  | 'anchor'
+  | 'sailboat'
+  | 'ship'
+  | 'beach'
+  | 'feather'
+  | 'dove'
+  | 'paw'
+  | 'fish'
+  | 'shrimp'
+  | 'handshake'
+  | 'helping-hand'
+  | 'hands-holding'
+  | 'people'
+  | 'clapping'
+  | 'thumbs-up'
+  | 'smile'
+  | 'grin-stars'
+  | 'laugh'
+  | 'magic'
+  | 'hand-sparkles'
+  | 'bolt'
+  | 'lightbulb'
+  | 'key'
+  | 'puzzle'
+  | 'music'
+  | 'palette'
+  | 'map'
+  | 'basket'
+  | 'bag'
+  | 'recycle'
+  | 'earth'
+  | 'spa'
+  | 'mug'
+  | 'cookie'
+  | 'walking'
+  | 'footprints';
 
 // Mapping: app-internal name → FA6 icon name
 const FA6: Record<IconName, string> = {
@@ -124,6 +175,56 @@ const FA6: Record<IconName, string> = {
   menu: 'bars',
   more: 'ellipsis',
   gauge: 'gauge-high',
+  crown: 'crown',
+  gem: 'gem',
+  award: 'award',
+  ribbon: 'ribbon',
+  certificate: 'certificate',
+  cake: 'cake-candles',
+  seedling: 'seedling',
+  tree: 'tree',
+  clover: 'clover',
+  sun: 'sun',
+  moon: 'moon',
+  snowflake: 'snowflake',
+  rainbow: 'rainbow',
+  water: 'water',
+  anchor: 'anchor',
+  sailboat: 'sailboat',
+  ship: 'ship',
+  beach: 'umbrella-beach',
+  feather: 'feather',
+  dove: 'dove',
+  paw: 'paw',
+  fish: 'fish',
+  shrimp: 'shrimp',
+  handshake: 'handshake',
+  'helping-hand': 'hand-holding-heart',
+  'hands-holding': 'hands-holding',
+  people: 'people-group',
+  clapping: 'hands-clapping',
+  'thumbs-up': 'thumbs-up',
+  smile: 'face-smile',
+  'grin-stars': 'face-grin-stars',
+  laugh: 'face-laugh-beam',
+  magic: 'wand-magic-sparkles',
+  'hand-sparkles': 'hand-sparkles',
+  bolt: 'bolt',
+  lightbulb: 'lightbulb',
+  key: 'key',
+  puzzle: 'puzzle-piece',
+  music: 'music',
+  palette: 'palette',
+  map: 'map',
+  basket: 'basket-shopping',
+  bag: 'bag-shopping',
+  recycle: 'recycle',
+  earth: 'earth-europe',
+  spa: 'spa',
+  mug: 'mug-hot',
+  cookie: 'cookie-bite',
+  walking: 'person-walking',
+  footprints: 'shoe-prints',
 };
 
 interface IconProps {
@@ -138,11 +239,23 @@ export function Icon({ name, size = 22, color = PP.ink, style }: IconProps) {
   return <FontAwesome6 name={fa as any} size={size} color={color} iconStyle="solid" style={style} />;
 }
 
-// All selectable icon names — used by the badge icon picker. Curated to the
-// ones that read well as a badge symbol.
+// Symbole für Abzeichen und Aktionen. Bewusst ohne Werkzeug-Zeichen (Diagramm,
+// Lupe, Regler): Ein Abzeichen ist eine Auszeichnung, kein Bedienelement.
+// Gruppiert nach Auszeichnung, Jahreslauf, Küste, Miteinander, Gefühl, Laden.
 export const BADGE_ICONS: IconName[] = [
-  'medal', 'trophy', 'star', 'heart', 'flame', 'sparkles', 'gift', 'leaf',
-  'shirt', 'tag', 'coins', 'compass', 'bookmark', 'calendar', 'clock', 'door',
-  'house', 'user', 'users', 'camera', 'image', 'megaphone', 'gauge', 'chart',
-  'map-pin', 'bell', 'search', 'check',
+  // Auszeichnung
+  'medal', 'trophy', 'crown', 'gem', 'award', 'ribbon', 'certificate', 'star',
+  // Jahreslauf & Natur
+  'seedling', 'leaf', 'tree', 'clover', 'sun', 'moon', 'snowflake', 'rainbow',
+  // Küste
+  'anchor', 'sailboat', 'ship', 'water', 'beach', 'fish', 'shrimp', 'dove',
+  // Miteinander
+  'helping-hand', 'handshake', 'hands-holding', 'people', 'clapping', 'thumbs-up', 'heart', 'users',
+  // Gefühl & Moment
+  'smile', 'grin-stars', 'laugh', 'magic', 'hand-sparkles', 'sparkles', 'flame', 'bolt',
+  // Laden & Alltag
+  'shirt', 'basket', 'bag', 'gift', 'recycle', 'earth', 'coins', 'house',
+  // Sonstiges mit Charakter
+  'feather', 'paw', 'cake', 'mug', 'cookie', 'music', 'palette', 'puzzle',
+  'lightbulb', 'key', 'map', 'compass', 'spa', 'walking', 'footprints', 'door',
 ];

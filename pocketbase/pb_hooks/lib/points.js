@@ -285,7 +285,22 @@ module.exports = {
     $app.dao().saveRecord(user);
   },
 
-  // Tier thresholds + rewards for a badge, ordered bronze→platin.
+  // Wie viele Stufen es überhaupt gibt — so viele Ränge unter „Punkte & Ränge"
+  // gepflegt sind (höchstens fünf, denn so viele Spalten hat ein Abzeichen).
+  // Ohne diese Grenze vergäbe der Server eine Stufe weiter, die die App nach
+  // dem Entfernen eines Rangs nicht mehr anzeigt.
+  tierSlotCount() {
+    try {
+      const s = $app.dao().findFirstRecordByFilter('store', '1=1');
+      const t = s ? s.get('tiers_json') : null;
+      const n = t && t.length ? t.length : 5;
+      return Math.max(1, Math.min(5, n));
+    } catch (_) {
+      return 5;
+    }
+  },
+
+  // Tier thresholds + rewards for a badge, ordered bronze→diamant.
   badgeTiers(badge) {
     return [
       { tier: 'bronze', at: badge.get('tier_bronze') || 0, reward: badge.get('reward_bronze') || 0 },
@@ -293,7 +308,9 @@ module.exports = {
       { tier: 'gold', at: badge.get('tier_gold') || 0, reward: badge.get('reward_gold') || 0 },
       { tier: 'platin', at: badge.get('tier_platin') || 0, reward: badge.get('reward_platin') || 0 },
       { tier: 'diamant', at: badge.get('tier_diamant') || 0, reward: badge.get('reward_diamant') || 0 },
-    ].filter((t) => t.at > 0);
+    ]
+      .slice(0, this.tierSlotCount())
+      .filter((t) => t.at > 0);
   },
 
   // Highest tier reached for a given raw progress value.

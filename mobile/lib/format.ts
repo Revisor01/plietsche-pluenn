@@ -77,14 +77,42 @@ const TIER_NAMES: Record<Tier, string> = {
   diamant: 'Diamant',
 };
 
-export function badgeTierInfo(badge: Badge, progress: number) {
-  const steps = ([
-    { tier: 'bronze', at: badge.tier_bronze },
-    { tier: 'silber', at: badge.tier_silber },
-    { tier: 'gold', at: badge.tier_gold },
-    { tier: 'platin', at: badge.tier_platin },
-    { tier: 'diamant', at: badge.tier_diamant ?? 0 },
-  ] as { tier: Tier; at: number }[]).filter((s) => s.at > 0);
+/**
+ * Die fünf Abzeichen-Stufen in fester Reihenfolge. Namen und Anzahl kommen aus
+ * den Rängen unter „Punkte & Ränge" (store.tiers_json): Wer dort vier Ränge
+ * pflegt, sieht an jedem Abzeichen vier Stufen — mit den dort vergebenen Namen.
+ *
+ * Intern bleiben es die Spalten bronze…diamant: An ihnen hängen Vergabelogik,
+ * current_tier bei jedem Nutzer und die Medaillon-Farben. Ränge ab dem sechsten
+ * haben deshalb keine Entsprechung und bleiben für Abzeichen außen vor.
+ */
+export function badgeTierSlots(ranks?: TierStep[] | null): { tier: Exclude<Tier, 'none'>; name: string }[] {
+  const order: Exclude<Tier, 'none'>[] = ['bronze', 'silber', 'gold', 'platin', 'diamant'];
+  const named = (ranks ?? []).slice().sort((a, b) => a.at - b.at);
+  const count = named.length ? Math.min(named.length, order.length) : order.length;
+  return order.slice(0, count).map((tier, i) => ({
+    tier,
+    name: named[i]?.name?.trim() || TIER_NAMES[tier],
+  }));
+}
+
+export function badgeTierInfo(badge: Badge, progress: number, ranks?: TierStep[] | null) {
+  const slots = badgeTierSlots(ranks);
+  const names: Partial<Record<Tier, string>> = {};
+  for (const s of slots) names[s.tier] = s.name;
+  const label = (t: Tier) => names[t] ?? TIER_NAMES[t];
+
+  const values: Record<string, number> = {
+    bronze: badge.tier_bronze,
+    silber: badge.tier_silber,
+    gold: badge.tier_gold,
+    platin: badge.tier_platin,
+    diamant: badge.tier_diamant ?? 0,
+  };
+  // Nur Stufen, die es als Rang gibt UND für die ein Ziel eingetragen ist.
+  const steps = slots
+    .map((s) => ({ tier: s.tier as Tier, at: values[s.tier] ?? 0 }))
+    .filter((s) => s.at > 0);
 
   let current: Tier = 'none';
   let currentAt = 0;
@@ -99,7 +127,7 @@ export function badgeTierInfo(badge: Badge, progress: number) {
   if (!next) {
     return {
       current,
-      currentName: TIER_NAMES[current],
+      currentName: label(current),
       maxed: true,
       nextName: null as string | null,
       remaining: 0,
@@ -111,9 +139,9 @@ export function badgeTierInfo(badge: Badge, progress: number) {
   const barProgress = span > 0 ? (progress - currentAt) / span : 0;
   return {
     current,
-    currentName: TIER_NAMES[current],
+    currentName: label(current),
     maxed: false,
-    nextName: TIER_NAMES[next.tier],
+    nextName: label(next.tier),
     remaining: next.at - progress,
     barProgress: Math.max(0, Math.min(1, barProgress)),
     target: next.at,
