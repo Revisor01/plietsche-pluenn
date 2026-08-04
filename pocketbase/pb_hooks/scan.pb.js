@@ -121,6 +121,10 @@ routerAdd('POST', '/api/pp/scan', (c) => {
   const label = size ? `${item.get('title')}, ${size}` : item.get('title');
   lib.awardPoints(user, itemPts, 'scan', label, null);
 
+  // Ein gescanntes Teil ist ein "Holen" — zählt als Teilnahme, wenn die Aktion
+  // darauf Bonus gibt. doCheckin lief hier mit itemsCount 0, sonst fiele es aus.
+  if (camp) lib.bumpActionCount(user, camp, 'take', 1);
+
   // Mark item taken WITHOUT user reference.
   item.set('taken_at', now.toISOString());
   $app.dao().saveRecord(item);

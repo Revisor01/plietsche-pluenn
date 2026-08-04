@@ -9,7 +9,7 @@ import { useAllBadges, useCampaigns, useStore } from '../../../lib/hooks/useData
 import { badgeTierSlots, type TierStep } from '../../../lib/format';
 import type { Campaign } from '../../../lib/types';
 import { createBadge, updateBadge, deleteBadge, updateCampaign, type BadgeInput } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint, ColorPicker } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 
@@ -43,6 +43,7 @@ type Draft = {
   campaign: string; // action_participation: linked campaign id
   is_visible: boolean;
   is_secret: boolean;
+  color: string;
   tiers: Record<string, string>; // threshold per tier
   rewards: Record<string, string>; // reward per tier
 };
@@ -59,6 +60,7 @@ function toDraft(b?: Badge): Draft {
     campaign: b?.campaign ?? '',
     is_visible: b?.is_visible ?? true,
     is_secret: b?.is_secret ?? false,
+    color: b?.color ?? '',
     tiers: {
       bronze: String(b?.tier_bronze ?? ''),
       silber: String(b?.tier_silber ?? ''),
@@ -88,6 +90,7 @@ function draftToInput(d: Draft): BadgeInput {
     campaign: d.trigger_type === 'action_participation' ? (d.campaign || null) : null,
     is_visible: d.is_visible,
     is_secret: d.is_secret,
+    color: d.kind === 'single' ? d.color : '',
   };
   if (d.kind === 'single') {
     base.trigger_value = num(d.trigger_value || '1') || 1;
@@ -188,12 +191,12 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <Pressable onPress={() => set({ kind: 'tiered', trigger_type: isAction ? 'action_participation' : 'visits' })}>
             <Pill bg={draft.kind === 'tiered' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'tiered' ? '#fff' : PP.ink2}>
-              {isAction ? 'Stufen' : `Stufen (${slotNames})`}
+              Stufen
             </Pill>
           </Pressable>
           <Pressable onPress={() => set({ kind: 'single' })}>
             <Pill bg={draft.kind === 'single' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'single' ? '#fff' : PP.ink2}>
-              {isAction ? 'Teilnahme' : 'Einzel-Abzeichen'}
+              Einzel
             </Pill>
           </Pressable>
         </View>
@@ -202,7 +205,9 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             ? draft.kind === 'single'
               ? 'Einmal im Aktionszeitraum dabei gewesen — fertig.'
               : 'Nach Anzahl der Beiträge zur Aktion. Ziele unten eintragen.'
-            : 'Stufen zählen hoch; ein Einzel-Abzeichen gibt es genau einmal.'}
+            : draft.kind === 'single'
+              ? 'Gibt es genau einmal.'
+              : `Zählt hoch: ${slotNames}.`}
         </PPText>
       </View>
 
@@ -236,7 +241,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             <PPText size={PP.fontSizes.sm} color={PP.ink2}>Lege zuerst eine Aktion an, dann kannst du sie hier koppeln.</PPText>
           )}
           <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 6 }}>
-            Beim Freigeben markiert der Helfer, ob ein Teil zu dieser Aktion zählt. Bei „Stufen" gibt es Bronze/Silber/… ab den unten gesetzten Schwellen.
+            Beim Freigeben markiert der Helfer, ob ein Teil zu dieser Aktion zählt. Bei „Stufen" steigt das Abzeichen ab den unten gesetzten Zielen.
           </PPText>
         </View>
       )}
@@ -248,19 +253,27 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
               Wird am 31.12. rückwirkend vergeben — nur wenn im Jahr aktiv. „ab" = ab welchem aktiven Jahr (1 = erstes Jahr).
             </PPText>
           )}
-          {draft.trigger_type === 'action_participation' && (
+          {isAction && (
             <PPText size={PP.fontSizes.sm} color={PP.ink2}>
-              Wird vergeben, wer während der gekoppelten Aktion aktiv war. Verknüpfe das Badge in der Aktion.
+              Wer während der Aktion dabei war, bekommt es — einmal, ohne Schwelle.
             </PPText>
           )}
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <Field label="ab (Schwelle)" value={draft.trigger_value} onChangeText={(v) => set({ trigger_value: v })} keyboardType="number-pad" placeholder="1" />
-            </View>
+            {/* Bei Teilnahme wertet der Server keine Schwelle aus (die Vergabe
+                läuft über die Aktion selbst). Das Feld hier zu zeigen, hätte
+                eine Einstellung vorgetäuscht, die es nicht gibt. */}
+            {!isAction && (
+              <View style={{ flex: 1 }}>
+                <Field label="ab (Schwelle)" value={draft.trigger_value} onChangeText={(v) => set({ trigger_value: v })} keyboardType="number-pad" placeholder="1" />
+              </View>
+            )}
             <View style={{ flex: 1 }}>
               <Field label="Bonus-Punkte" value={draft.points_reward} onChangeText={(v) => set({ points_reward: v })} keyboardType="number-pad" placeholder="0" />
             </View>
           </View>
+          {/* Eigene Farbe nur bei Einzel-Abzeichen: Gestufte tragen die Farbe
+              der erreichten Stufe, da wäre eine zweite Farbe irreführend. */}
+          <ColorPicker value={draft.color} onChange={(hex) => set({ color: hex })} label="FARBE, WENN ERREICHT" />
         </View>
       ) : (
         <View style={{ gap: 8 }}>
@@ -350,7 +363,7 @@ export default function BadgeAdmin() {
 
       <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
         <Hint icon="info" tone="info">
-          Badges belohnen Aktivität. „Stufen" (Bronze→Diamant) vergeben bei jeder Schwelle einen Bonus; „Einzel-Abzeichen" sind einmalig (z.B. Jahres-Treue oder Aktions-Teilnahme). „ab" = wie oft, „Bonus" = einmalige Punkte beim Erreichen.
+          Abzeichen belohnen Aktivität. „Stufen" steigen mit jedem Ziel und geben dabei einen Bonus; „Einzel" gibt es genau einmal — etwa für Jahres-Treue oder die Teilnahme an einer Aktion. Die Stufen kommen aus „Punkte & Ränge".
         </Hint>
       </View>
 

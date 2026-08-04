@@ -118,21 +118,11 @@ onRecordAfterUpdateRequest((e) => {
       : `Teil gebracht: ${r.get('title')}`;
   lib.awardPoints(submitter, pts, 'bring', label, r.id);
 
-  // Bump the submitter's contribution count for that campaign (drives
-  // action_participation badges).
+  // Teilnahme mitzählen — nur wenn die Aktion aufs Bringen auch Bonus gibt
+  // (siehe lib.bumpActionCount). Treibt die Aktions-Abzeichen.
   if (campId) {
     try {
-      let cnt;
-      try {
-        cnt = dao.findFirstRecordByFilter('action_counts', `user = "${submitter.id}" && campaign = "${campId}"`);
-      } catch (_) {
-        cnt = new Record(dao.findCollectionByNameOrId('action_counts'));
-        cnt.set('user', submitter.id);
-        cnt.set('campaign', campId);
-        cnt.set('count', 0);
-      }
-      cnt.set('count', (cnt.get('count') || 0) + 1);
-      dao.saveRecord(cnt);
+      lib.bumpActionCount(submitter, dao.findRecordById('campaigns', campId), 'bring', 1);
     } catch (_) {}
   }
 

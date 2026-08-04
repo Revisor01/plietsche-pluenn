@@ -9,6 +9,7 @@ import { Icon } from '../../../lib/icons';
 import { useAllItems } from '../../../lib/hooks/useData';
 import { setShowcase, archiveItem, approveItem } from '../../../lib/api';
 import { itemThumb } from '../../../lib/format';
+import { printQrSheet } from '../../../lib/qrsheet';
 import { Screen, PPHeader, PPText, Card, Pill, IconButton, PPButton } from '../../../components/ui';
 import type { Item } from '../../../lib/types';
 
@@ -131,6 +132,7 @@ export default function ItemsInventory() {
   const { data: items, refetch } = useAllItems();
   const [filter, setFilter] = useState<Filter>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -160,6 +162,25 @@ export default function ItemsInventory() {
     }
   }, [items, filter]);
 
+  // Etiketten für die gerade gefilterte Auswahl — sonst wären es bei „Alle"
+  // schnell hunderte Seiten. Bereits mitgenommene Teile brauchen kein Etikett.
+  const printSheet = useCallback(async () => {
+    const list = filtered.filter((i) => !i.taken_at);
+    if (!list.length) {
+      Alert.alert('Nichts zu drucken', 'In dieser Auswahl gibt es keine Teile, die ein Etikett brauchen.');
+      return;
+    }
+    setPrinting(true);
+    try {
+      const name = FILTERS.find((f) => f.key === filter)?.label ?? 'Teile';
+      await printQrSheet(list, `${name} (${list.length})`);
+    } catch (e: any) {
+      Alert.alert('Fehler', e?.message ?? 'Der Bogen konnte nicht erzeugt werden.');
+    } finally {
+      setPrinting(false);
+    }
+  }, [filtered, filter]);
+
   return (
     <Screen padBottom={120} refreshing={refreshing} onRefresh={onRefresh}>
       <PPHeader
@@ -177,6 +198,16 @@ export default function ItemsInventory() {
           </Pressable>
         ))}
       </ScrollView>
+
+      {/* Etiketten zum Anheften — das PDF geht in den Teilen-Dialog und von
+          dort an den Drucker. */}
+      {filtered.some((i) => !i.taken_at) && (
+        <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
+          <PPButton size="s" variant="secondary" icon="tag" loading={printing} onPress={printSheet}>
+            QR-Etiketten drucken
+          </PPButton>
+        </View>
+      )}
 
       <View style={{ paddingHorizontal: 20, gap: 10 }}>
         {filtered.length ? (

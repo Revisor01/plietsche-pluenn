@@ -94,6 +94,8 @@ export interface Badge {
   is_visible: boolean;
   /** Geheim: Name und Fortschritt erst sichtbar, wenn verdient. */
   is_secret?: boolean;
+  /** Eigene Farbe (#RRGGBB) — bei Einzel-Abzeichen statt der Stufenfarbe. */
+  color?: string;
 }
 
 export interface UserBadge {

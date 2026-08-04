@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PP } from '../../lib/theme';
+import { lighten } from '../../lib/format';
 import { Icon, type IconName } from '../../lib/icons';
 import type { Tier } from '../../lib/types';
 
@@ -9,6 +10,8 @@ interface BadgeMedallionProps {
   tier?: Tier;
   earned?: boolean;
   size?: number;
+  /** Eigene Farbe statt der Stufenfarbe — für Einzel-Abzeichen. */
+  color?: string;
 }
 
 export const TIER_COLORS: Record<Exclude<Tier, 'none'>, { base: string; light: string }> = {
@@ -19,7 +22,7 @@ export const TIER_COLORS: Record<Exclude<Tier, 'none'>, { base: string; light: s
   diamant: { base: PP.diamant, light: '#B6ECF6' },
 };
 
-export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 56 }: BadgeMedallionProps) {
+export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 56, color }: BadgeMedallionProps) {
   if (!earned || tier === 'none') {
     return (
       <View
@@ -39,7 +42,9 @@ export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 5
     );
   }
 
-  const c = TIER_COLORS[tier];
+  // Eigene Farbe schlägt die Stufenfarbe. Der helle Ton wird daraus gemischt,
+  // damit der Verlauf dieselbe Anmutung behält wie bei den Stufen.
+  const c = color ? { base: color, light: lighten(color, 0.25) } : TIER_COLORS[tier];
   return (
     <LinearGradient
       colors={[c.base, c.light]}
