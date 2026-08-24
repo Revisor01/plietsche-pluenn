@@ -4,12 +4,12 @@
     <stop offset="0" stop-color="#27b092"/><stop offset="0.5" stop-color="#79c4b0"/><stop offset="1" stop-color="#80b4e2"/>
   </linearGradient>
   <g id="pp2" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="1024.0" cy="1024.0" r="782" stroke-width="92"/>
-    <path d="M 745.2 1409.0 L 745.2 709.0 L 876.3 709.0 A 182.0 182.0 0 0 1 876.3 1073.0 L 745.2 1073.0" stroke-width="118"/>
-    <path d="M 1162.8 657.2 A 97.4 97.4 0 1 1 1349.1 674.8 L 1171.3 845.4 L 1357.5 845.4 " stroke-width="101.5"/>
+    <circle cx="1024.0" cy="1024.0" r="700" stroke-width="54"/>
+    <path d="M 799.7 1326.4 L 799.7 766.4 L 900.5 766.4 A 140.0 140.0 0 0 1 900.5 1046.4 L 799.7 1046.4" stroke-width="66"/>
+    <path d="M 1133.9 721.6 A 72.1 72.1 0 1 1 1271.9 735.0 L 1140.2 865.0 L 1278.2 865.0 " stroke-width="58.1"/>
   </g>
 </defs>
 
 
-<use href="#pp2"/>
+<g transform="translate(0.0,0.0) scale(1.0)"><use href="#pp2"/></g>
 </svg>

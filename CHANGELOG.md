@@ -7,7 +7,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Geändert (Erscheinungsbild)
-- **Neues App-Symbol:** Auf dem Startbildschirm steht jetzt ein P² im Kreis — schlicht, in den Farben der App. Auch bei kleiner Darstellung bleibt es gut zu erkennen.
+- **Neues App-Symbol:** Auf dem Startbildschirm steht jetzt ein P² im Kreis — schlicht, in den Farben der App. Die Linien sind schmal gehalten und das Zeichen steht mit Luft im Feld, damit es ruhig wirkt.
 
 ### Neu (Etiketten & Abzeichen-Details)
 - **QR-Etiketten zum Ausdrucken:** In der Teile-Übersicht erzeugt „QR-Etiketten drucken" einen A4-Bogen als PDF — vier Etiketten pro Reihe, je mit QR-Code, Name, Größe, Kategorie, Zustand, Nummer und Punktwert. Über den Teilen-Dialog geht er direkt an den Drucker oder per Mail weiter. Gedruckt wird immer die gerade gewählte Auswahl; bereits mitgenommene Teile bleiben außen vor. Die Codes stecken vollständig im Dokument, es braucht zum Drucken also kein Netz.

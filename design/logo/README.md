@@ -23,9 +23,15 @@ per `<use>`, statt ihn zu kopieren.
 
 Seit Build 30 trägt die App das P² im Kreis: ein schlichtes, geometrisch
 konstruiertes P mit hochgestellter 2, kein Marken-P. Ring, Stamm, Bogen und
-Ziffer sind Strichzüge mit runden Enden — Ring 92, P 118, Ziffer 101
-Einheiten stark. Der lange Schatten ist gegenüber `icon.svg` zurückgenommen
-(26 Stufen, 13 % Deckkraft), damit die Form auch klein vorn bleibt.
+Ziffer sind Strichzüge mit runden Enden — Ring 54, P 66, Ziffer 58 Einheiten
+stark, der Ring mit Radius 700 bei 2048 Kantenlänge. Der lange Schatten ist
+gegenüber `icon.svg` deutlich zurückgenommen (14 Stufen, 10 % Deckkraft):
+bei dieser Strichstärke ist er eine leise Kante, kein Effekt.
+
+Die Striche sind bewusst schmal. Ab etwa 56 px wird das grenzwertig — auf
+dem Homescreen (120 px) spielt das keine Rolle, in Einstellungen und Suche
+schon. Wer das ändert, ändert `RING_W` und `SW` gemeinsam, sonst kippt das
+Verhältnis von Ring zu Zeichen.
 
 | Datei | Verwendung |
 |---|---|
