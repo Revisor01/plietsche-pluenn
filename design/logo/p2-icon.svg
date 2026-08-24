@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" width="2048" height="2048">
+<defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#27b092"/><stop offset="0.5" stop-color="#79c4b0"/><stop offset="1" stop-color="#80b4e2"/>
+  </linearGradient>
+  <g id="pp2" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="1024.0" cy="1024.0" r="782" stroke-width="92"/>
+    <path d="M 745.2 1409.0 L 745.2 709.0 L 876.3 709.0 A 182.0 182.0 0 0 1 876.3 1073.0 L 745.2 1073.0" stroke-width="118"/>
+    <path d="M 1162.8 657.2 A 97.4 97.4 0 1 1 1349.1 674.8 L 1171.3 845.4 L 1357.5 845.4 " stroke-width="101.5"/>
+  </g>
+</defs>
+<rect width="2048" height="2048" fill="url(#g)"/>
+<g opacity="0.13" stroke="#0f3d36" fill="none"><g transform="translate(1,1)"><use href="#pp2"/></g>
+<g transform="translate(2,2)"><use href="#pp2"/></g>
+<g transform="translate(3,3)"><use href="#pp2"/></g>
+<g transform="translate(4,4)"><use href="#pp2"/></g>
+<g transform="translate(5,5)"><use href="#pp2"/></g>
+<g transform="translate(6,6)"><use href="#pp2"/></g>
+<g transform="translate(7,7)"><use href="#pp2"/></g>
+<g transform="translate(8,8)"><use href="#pp2"/></g>
+<g transform="translate(9,9)"><use href="#pp2"/></g>
+<g transform="translate(10,10)"><use href="#pp2"/></g>
+<g transform="translate(11,11)"><use href="#pp2"/></g>
+<g transform="translate(12,12)"><use href="#pp2"/></g>
+<g transform="translate(13,13)"><use href="#pp2"/></g>
+<g transform="translate(14,14)"><use href="#pp2"/></g>
+<g transform="translate(15,15)"><use href="#pp2"/></g>
+<g transform="translate(16,16)"><use href="#pp2"/></g>
+<g transform="translate(17,17)"><use href="#pp2"/></g>
+<g transform="translate(18,18)"><use href="#pp2"/></g>
+<g transform="translate(19,19)"><use href="#pp2"/></g>
+<g transform="translate(20,20)"><use href="#pp2"/></g>
+<g transform="translate(21,21)"><use href="#pp2"/></g>
+<g transform="translate(22,22)"><use href="#pp2"/></g>
+<g transform="translate(23,23)"><use href="#pp2"/></g>
+<g transform="translate(24,24)"><use href="#pp2"/></g>
+<g transform="translate(25,25)"><use href="#pp2"/></g>
+<g transform="translate(26,26)"><use href="#pp2"/></g></g>
+<use href="#pp2"/>
+</svg>

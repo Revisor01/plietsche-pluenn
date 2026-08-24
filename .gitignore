@@ -56,3 +56,4 @@ test-qrcodes.html
 
 # Backup der alten App-Icons (lokal, nicht im Repo)
 mobile/assets/.icon-backup/
+mobile/assets/.icon-backup-p2/
