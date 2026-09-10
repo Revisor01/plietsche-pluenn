@@ -134,14 +134,15 @@ jobs:
         # werden hier eingehaengt, statt sie ins Repo zu schreiben — die
         # Zugangsdaten sollen nirgends im Quelltext stehen.
         run: |
-          {
-            echo "PP_KEYSTORE_PATH=/tmp/release.jks"
-            echo "PP_KEYSTORE_PASSWORD=$KS_PASS"
-            echo "PP_KEY_ALIAS=$KEY_ALIAS"
-            echo "PP_KEY_PASSWORD=$KEY_PASS"
-          } >> gradle.properties
           python3 "$GITHUB_WORKSPACE/.github/scripts/android-signing.py"
-          ./gradlew bundleRelease --no-daemon
+          # Die Werte als Aufrufparameter statt ueber gradle.properties: So
+          # stehen sie sicher am :app-Projekt an und landen nirgends in einer
+          # Datei, die im Arbeitsverzeichnis liegen bleibt.
+          ./gradlew bundleRelease --no-daemon \
+            "-PPP_KEYSTORE_PATH=/tmp/release.jks" \
+            "-PPP_KEYSTORE_PASSWORD=$KS_PASS" \
+            "-PPP_KEY_ALIAS=$KEY_ALIAS" \
+            "-PPP_KEY_PASSWORD=$KEY_PASS"
           ls -la app/build/outputs/bundle/release/
 
       - name: Testhinweise zusammenstellen
