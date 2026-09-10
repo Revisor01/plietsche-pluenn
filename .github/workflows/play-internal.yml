@@ -33,8 +33,7 @@ on:
         default: false
 
 permissions:
-  # Schreibend, weil der Lauf am Ende ein Tag setzt.
-  contents: write
+  contents: read
 
 concurrency:
   group: play
@@ -145,10 +144,25 @@ jobs:
             "-PPP_KEY_PASSWORD=$KEY_PASS"
           ls -la app/build/outputs/bundle/release/
 
+      - name: Letzten gebauten Stand ermitteln
+        id: vorher
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Der Commit des letzten erfolgreichen Laufs dieses Workflows. Ein
+        # Git-Tag scheidet aus: Der eingebaute Token darf keine Referenz
+        # setzen, die auf Workflow-Dateien zeigt.
+        run: |
+          SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/play-internal.yml/runs?status=success&per_page=1" \
+            | python3 -c "import json,sys; r=json.load(sys.stdin).get('workflow_runs') or [{}]; print(r[0].get('head_sha',''))")
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Letzter erfolgreicher Stand: ${SHA:-keiner}"
+
       - name: Testhinweise zusammenstellen
         id: hinweise
         env:
           VORGABE: ${{ inputs.hinweis }}
+          SEIT_COMMIT: ${{ steps.vorher.outputs.sha }}
         run: |
           python3 .github/scripts/release-notes.py play > /tmp/notes.txt
           {
@@ -169,16 +183,6 @@ jobs:
           python3 .github/scripts/upload-play.py /tmp/gplay-sa.json "$AAB" \
             /tmp/notes.txt "$SPUR" \
             "$([ "$PROBELAUF" = "true" ] && echo validate || echo commit)"
-
-      - name: Stand als Tag festhalten
-        if: ${{ inputs.probelauf != true }}
-        env:
-          VERSION_CODE: ${{ steps.version.outputs.code }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f "play-${VERSION_CODE}"
-          git push origin "play-${VERSION_CODE}"
 
       - name: Zusammenfassung
         if: always()

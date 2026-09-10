@@ -25,8 +25,7 @@ on:
         default: ''
 
 permissions:
-  # Schreibend, weil der Lauf am Ende ein Tag setzt.
-  contents: write
+  contents: read
 
 concurrency:
   group: testflight
@@ -256,10 +255,25 @@ jobs:
           xcrun altool --upload-app -f "$IPA" -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 
+      - name: Letzten gebauten Stand ermitteln
+        id: vorher
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Der Commit des letzten erfolgreichen Laufs dieses Workflows. Ein
+        # Git-Tag scheidet aus: Der eingebaute Token darf keine Referenz
+        # setzen, die auf Workflow-Dateien zeigt.
+        run: |
+          SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/testflight.yml/runs?status=success&per_page=1" \
+            | python3 -c "import json,sys; r=json.load(sys.stdin).get('workflow_runs') or [{}]; print(r[0].get('head_sha',''))")
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Letzter erfolgreicher Stand: ${SHA:-keiner}"
+
       - name: Testhinweise zusammenstellen
         id: hinweise
         env:
           VORGABE: ${{ inputs.hinweis }}
+          SEIT_COMMIT: ${{ steps.vorher.outputs.sha }}
         # Aus den Commits seit dem letzten Upload. Dasselbe Skript bedient den
         # Google-Play-Workflow, nur mit anderer Laengengrenze.
         run: |
@@ -371,17 +385,6 @@ jobs:
           print('---')
           print(hinweise)
           PY
-
-      - name: Stand als Tag festhalten
-        env:
-          BUILD_NUMMER: ${{ steps.version.outputs.build }}
-        # Markiert, was zuletzt in TestFlight ging. Der naechste Lauf sammelt
-        # die Testhinweise ab genau diesem Punkt.
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f "testflight-${BUILD_NUMMER}"
-          git push origin "testflight-${BUILD_NUMMER}"
 
       - name: Zusammenfassung
         if: always()
