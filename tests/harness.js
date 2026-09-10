@@ -1,0 +1,327 @@
+// Testumgebung für PocketBase-Hooks.
+//
+// PocketBase führt die Hooks in einer eigenen JavaScript-Umgebung aus (Goja,
+// kein Node). Globale Funktionen wie routerAdd, cronAdd, $app, $apis, ApiError
+// oder Record stellt die Laufzeit bereit — in einem Node-Test gibt es sie nicht.
+//
+// Dieser Harness baut sie nach: ein DAO im Speicher mit den Sammlungen, die die
+// Hooks lesen, dazu die Globals. Die Hook-Datei wird über das vm-Modul in diese
+// Umgebung geladen; die dabei registrierten Routen und Cronjobs landen in einer
+// Liste und lassen sich einzeln aufrufen. Ohne laufende Instanz, ohne Docker.
+
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const HOOKS_DIR = path.join(__dirname, '..', 'pocketbase', 'pb_hooks');
+
+// ── Datensatz ──────────────────────────────────────────────────
+// Bildet die Record-Schnittstelle nach, die die Hooks tatsächlich benutzen:
+// get(feld), set(feld, wert) und id.
+let idCounter = 0;
+function nextId(prefix) {
+  idCounter += 1;
+  return `${prefix}${String(idCounter).padStart(12, '0')}`;
+}
+
+class FakeRecord {
+  constructor(collection, data) {
+    this.collectionName = collection;
+    this._data = Object.assign({}, data);
+    this.id = this._data.id || nextId('rec');
+    delete this._data.id;
+  }
+
+  get(field) {
+    const v = this._data[field];
+    return v === undefined ? '' : v;
+  }
+
+  set(field, value) {
+    this._data[field] = value;
+  }
+
+  // Momentaufnahme für Assertions.
+  data() {
+    return Object.assign({ id: this.id }, this._data);
+  }
+}
+
+// ── Filter ─────────────────────────────────────────────────────
+// Die Hooks bauen PocketBase-Filter als Zeichenkette zusammen. Für die Tests
+// reicht eine Auswertung der tatsächlich vorkommenden Formen:
+//   feld = "wert"   feld != ""   feld > 0   feld >= "…"   feld <= "…"   1=1
+// verknüpft mit &&. Alles andere lässt der Harness bewusst scheitern, statt
+// still ein falsches Ergebnis zu liefern.
+function matchesFilter(record, filter) {
+  const expr = `${filter || ''}`.trim();
+  if (expr === '' || expr === '1=1') return true;
+
+  return expr.split('&&').every((partRaw) => {
+    const part = partRaw.trim();
+    const m = part.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*(>=|<=|!=|=|>|<)\s*(.+)$/);
+    if (!m) throw new Error(`Harness: Filter nicht unterstützt: ${part}`);
+
+    const [, field, op, rawValue] = m;
+    const value = rawValue.trim().replace(/^"(.*)"$/, '$1');
+    const actual = record.get(field);
+
+    switch (op) {
+      case '=':
+        return `${actual}` === value;
+      case '!=':
+        return `${actual}` !== value;
+      case '>':
+        return Number(actual) > Number(value);
+      case '<':
+        return Number(actual) < Number(value);
+      // Vergleiche auf Zeitstempel laufen in PocketBase als Zeichenketten —
+      // ISO-Formate sortieren dabei korrekt.
+      case '>=':
+        return isNaN(Number(value)) ? `${actual}` >= value : Number(actual) >= Number(value);
+      case '<=':
+        return isNaN(Number(value)) ? `${actual}` <= value : Number(actual) <= Number(value);
+      default:
+        throw new Error(`Harness: Operator nicht unterstützt: ${op}`);
+    }
+  });
+}
+
+function applySort(rows, sort) {
+  const s = `${sort || ''}`.trim();
+  if (!s) return rows;
+  const desc = s.startsWith('-');
+  const field = desc ? s.slice(1) : s;
+  const sorted = rows.slice().sort((a, b) => {
+    const av = a.get(field);
+    const bv = b.get(field);
+    if (av === bv) return 0;
+    return av > bv ? 1 : -1;
+  });
+  return desc ? sorted.reverse() : sorted;
+}
+
+// ── DAO ────────────────────────────────────────────────────────
+class FakeDao {
+  constructor(store) {
+    this.store = store; // { sammlung: [FakeRecord, …] }
+    this.saved = [];    // Reihenfolge der Schreibvorgänge, für Assertions
+    this.deleted = [];
+  }
+
+  _rows(collection) {
+    if (!this.store[collection]) this.store[collection] = [];
+    return this.store[collection];
+  }
+
+  findCollectionByNameOrId(name) {
+    return { name, id: `col_${name}` };
+  }
+
+  findRecordById(collection, id) {
+    const hit = this._rows(collection).find((r) => r.id === `${id}`);
+    // PocketBase wirft, wenn nichts gefunden wird — die Hooks verlassen sich
+    // darauf und fangen den Fehler ab.
+    if (!hit) throw new Error(`Kein Datensatz ${collection}/${id}`);
+    return hit;
+  }
+
+  findFirstRecordByFilter(collection, filter) {
+    const hit = this._rows(collection).find((r) => matchesFilter(r, filter));
+    if (!hit) throw new Error(`Kein Datensatz in ${collection} für ${filter}`);
+    return hit;
+  }
+
+  findFirstRecordByData(collection, field, value) {
+    const hit = this._rows(collection).find((r) => `${r.get(field)}` === `${value}`);
+    if (!hit) throw new Error(`Kein Datensatz in ${collection} mit ${field}=${value}`);
+    return hit;
+  }
+
+  findRecordsByFilter(collection, filter, sort, limit) {
+    const rows = applySort(
+      this._rows(collection).filter((r) => matchesFilter(r, filter)),
+      sort
+    );
+    return limit && limit > 0 ? rows.slice(0, limit) : rows;
+  }
+
+  saveRecord(record) {
+    const rows = this._rows(record.collectionName);
+    if (!rows.includes(record)) rows.push(record);
+    this.saved.push(record);
+    return record;
+  }
+
+  deleteRecord(record) {
+    const rows = this._rows(record.collectionName);
+    const i = rows.indexOf(record);
+    if (i >= 0) rows.splice(i, 1);
+    this.deleted.push(record);
+  }
+}
+
+// ── Umgebung aufbauen und Hook laden ───────────────────────────
+//
+// store: { sammlung: [ {feld: wert}, … ] } — die Datensätze, die es geben soll.
+// Rückgabe: { routes, crons, dao, records, call, runCron, ApiError }
+function loadHook(hookFile, store = {}) {
+  const records = {};
+  const seeded = {};
+  for (const [collection, rows] of Object.entries(store)) {
+    seeded[collection] = rows.map((row) => {
+      const rec = new FakeRecord(collection, row);
+      // Zugriff über den Namen, wenn einer vergeben wurde: records.store, …
+      if (row.__name) records[row.__name] = rec;
+      return rec;
+    });
+  }
+
+  const dao = new FakeDao(seeded);
+  const routes = {};
+  const crons = {};
+  const pushed = [];
+  const libCache = {};
+
+  class ApiError extends Error {
+    constructor(status, message) {
+      super(message);
+      this.status = status;
+      this.message = message;
+    }
+  }
+
+  const sandbox = {
+    console,
+    Date,
+    Math,
+    JSON,
+    parseInt,
+    parseFloat,
+    isNaN,
+    Number,
+    String,
+    Object,
+    Array,
+    Error,
+
+    __hooks: HOOKS_DIR,
+    ApiError,
+
+    // Record-Konstruktor: new Record(collection) — die Hooks setzen die Felder
+    // danach einzeln per set().
+    Record: function Record(collection) {
+      return new FakeRecord(collection.name, {});
+    },
+
+    $app: {
+      dao: () => dao,
+    },
+
+    $apis: {
+      // Wird pro Aufruf über den Kontext gefüllt (siehe call()).
+      requestInfo: (c) => ({ data: c.__body || {} }),
+    },
+
+    routerAdd: (method, pathSpec, handler) => {
+      routes[`${method} ${pathSpec}`] = handler;
+    },
+
+    cronAdd: (name, expr, handler) => {
+      crons[name] = { expr, handler };
+    },
+
+    onRecordBeforeCreateRequest: () => {},
+    onRecordBeforeUpdateRequest: () => {},
+    onRecordAfterUpdateRequest: () => {},
+
+    require: (spec) => {
+      // Die Hooks laden ihre Bibliotheken über require(`${__hooks}/lib/…`).
+      // Der Push-Versand wird ersetzt: Ein Test darf keine Nachrichten senden.
+      if (spec.endsWith('/lib/push.js')) {
+        return {
+          tokensForUser: () => [],
+          collectTokens: () => [],
+          send: (targets, title, body, link) => {
+            pushed.push({ targets, title, body, link });
+          },
+        };
+      }
+      // Zwischenspeichern: Hook und Test müssen dieselbe Instanz benutzen,
+      // sonst arbeiten sie auf verschiedenen Zuständen.
+      if (!libCache[spec]) libCache[spec] = loadLib(spec, sandbox);
+      return libCache[spec];
+    },
+  };
+  sandbox.globalThis = sandbox;
+
+  const context = vm.createContext(sandbox);
+  const file = path.join(HOOKS_DIR, hookFile);
+  vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
+
+  return {
+    dao,
+    // Die Fachlogik-Bibliothek in derselben Umgebung — für Tests der reinen
+    // Rechenlogik. Als Objekt zurückgegeben, damit die this-Bindung der
+    // Methoden erhalten bleibt (points.js ruft sich intern über this auf).
+    lib: sandbox.require(`${HOOKS_DIR}/lib/points.js`),
+    records,
+    routes,
+    crons,
+    pushed,
+    ApiError,
+    store: seeded,
+
+    // Route aufrufen. Gibt { status, body } zurück; ein ApiError wird
+    // durchgereicht, damit der Test ihn mit expect(...).toThrow prüfen kann.
+    call(routeKey, { body = {}, authRecord = null, admin = null } = {}) {
+      const handler = routes[routeKey];
+      if (!handler) throw new Error(`Harness: Route ${routeKey} nicht registriert`);
+
+      let result;
+      const c = {
+        __body: body,
+        get: (key) => {
+          if (key === 'authRecord') return authRecord;
+          if (key === 'admin') return admin;
+          return null;
+        },
+        json: (status, payload) => {
+          result = { status, body: payload };
+          return result;
+        },
+      };
+      handler(c);
+      return result;
+    },
+
+    runCron(name) {
+      const job = crons[name];
+      if (!job) throw new Error(`Harness: Cronjob ${name} nicht registriert`);
+      return job.handler();
+    },
+
+    // Alle Datensätze einer Sammlung als einfache Objekte.
+    rows(collection) {
+      return (seeded[collection] || []).map((r) => r.data());
+    },
+  };
+}
+
+// Bibliotheken (lib/points.js) laufen in derselben Umgebung wie der Hook: Sie
+// benutzen dieselben Globals ($app, Record, __hooks) und exportieren über
+// module.exports.
+function loadLib(spec, sandbox) {
+  const file = spec.startsWith(HOOKS_DIR) ? spec : path.join(HOOKS_DIR, spec);
+  const moduleObj = { exports: {} };
+  const libSandbox = Object.assign(Object.create(null), sandbox, {
+    module: moduleObj,
+    exports: moduleObj.exports,
+  });
+  libSandbox.globalThis = libSandbox;
+  const context = vm.createContext(libSandbox);
+  vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
+  return moduleObj.exports;
+}
+
+module.exports = { loadHook, FakeRecord, matchesFilter, HOOKS_DIR };
