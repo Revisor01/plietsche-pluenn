@@ -43,6 +43,24 @@ updates:
       # React-Typen folgen der React-Version aus dem SDK.
       - dependency-name: "@types/react"
 
+  # ── Testwerkzeug im Repo-Root (npm) ─────────────────────────────────────
+  # Getrennt von /mobile: Hier liegt nur Vitest für die Backend-Hooks, das
+  # nichts mit dem Expo-SDK zu tun hat und deshalb frei aktualisiert werden
+  # darf.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore"
+      include: scope
+    labels:
+      - dependencies
+
   # ── GitHub Actions ──────────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: /

@@ -1,0 +1,61 @@
+name: Tests
+
+# Prüft bei jedem Push und jedem Pull Request auf main, ob die Backend-Logik
+# noch tut, was sie soll, und ob die App typprüft. Ohne diesen Lauf würden die
+# Tests nur greifen, wenn jemand sie von Hand startet.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Ein laufender Durchgang für denselben Branch wird abgebrochen, wenn ein
+# neuer Push kommt — der ältere sagt dann ohnehin nichts mehr aus.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend-Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      # Die Tagesgrenze in hasVisitToday() wird aus der lokalen Zeitzone
+      # abgeleitet; die Vitest-Konfiguration setzt sie deshalb fest.
+      - name: Tests
+        run: npm test
+
+  app:
+    name: App-Typprüfung
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # Die Peer-Abhängigkeiten des Expo-SDK lassen sich mit npm 10 nicht
+      # strikt auflösen; lokal wird ebenso installiert.
+      - run: npm ci --legacy-peer-deps
+        working-directory: mobile
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+        working-directory: mobile
