@@ -19,9 +19,18 @@ GRENZE = 480 if ZIEL == 'play' else 3900
 # Lieber ein paar Punkte zu viel als eine leere Liste.
 RUECKFALL = '-20'
 
-# Reine Interna interessieren Tester:innen nicht.
-INTERN = re.compile(r'^(chore|ci|test|docs|refactor|style|build)(\(.+\))?:')
+# Reine Interna interessieren Tester:innen nicht — weder am Typ erkennbar
+# (`chore: …`) noch am Bereich (`fix(ci): …`). Der Bereich muss mitgeprueft
+# werden: Ein Commit wie `fix(ci): Keystore-Angaben an Gradle uebergeben`
+# traegt den Typ `fix` und stuende sonst in den Hinweisen.
+INTERN_TYP = re.compile(r'^(chore|ci|test|docs|refactor|style|build)(\(.+?\))?:')
+INTERN_BEREICH = re.compile(r'^\w+\((ci|deps|deps-dev|build|test|tests)\):')
 VORSILBE = re.compile(r'^\w+(\(.+?\))?:\s*')
+
+
+def intern(betreff):
+    """Ob der Commit reine Innenarbeit beschreibt."""
+    return bool(INTERN_TYP.match(betreff) or INTERN_BEREICH.match(betreff))
 
 
 def commits():
@@ -47,7 +56,7 @@ def commits():
 def zeilen():
     ergebnis = []
     for betreff in commits():
-        if INTERN.match(betreff):
+        if intern(betreff):
             continue
         text = VORSILBE.sub('', betreff).strip()
         if text and text not in ergebnis:

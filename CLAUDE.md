@@ -94,6 +94,18 @@ Die Datensätze im Speicher bilden die PocketBase-Schnittstelle nach, die die
 Hooks tatsächlich benutzen: `get(feld)`, `set(feld, wert)` und `id`. Wer eine
 neue Hook-Datei testet, ergänzt im Harness nur die Sammlungen, die sie liest.
 
+### Die Skripte der Auslieferung
+
+Unter `tests/` liegen auch Tests für die Python-Skripte in `.github/scripts/`.
+Sie brauchen den Harness nicht, sondern rufen das Skript als Prozess auf. Was
+`git log` liest, bekommt dafür ein Wegwerf-Repo mit gestellten Commits — sonst
+hinge das Ergebnis an der Projekt-Historie und änderte sich mit jedem Commit.
+
+Diese Skripte verdienen Tests, obwohl sie nichts mit der App zu tun haben:
+Ihr Ergebnis landet ungeprüft in TestFlight und in der Produktionsspur bei
+Google Play. Ein Fehler darin ist erst zu sehen, wenn die Nutzer:innen ihn
+schon lesen.
+
 ### Regeln
 
 Jede Verhaltensänderung bekommt Tests im selben Commit.

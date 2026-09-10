@@ -7,6 +7,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Behoben
+- **In „Was gibt es Neues" standen interne Notizen:** Die Hinweise für Tester:innen und im Store entstanden aus den letzten Änderungen — darunter auch solche, die nur den Bauvorgang betreffen. Wer die App bekam, las Sätze über Signaturschlüssel statt über die App. Jetzt steht dort nur noch, was tatsächlich an der App anders ist.
 - **Neue Teile standen mit 0 Punkten im Bestand:** Wer ein Teil ohne Punktwert anlegte, sah in der Teile-Übersicht eine 0 — beim Mitnehmen gab es trotzdem 30 Punkte. Die beiden Angaben widersprachen sich, jetzt steht von Anfang an der Wert dort, der auch gutgeschrieben wird.
 
 ### Geändert (Erscheinungsbild)
