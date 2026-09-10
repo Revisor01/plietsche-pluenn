@@ -86,61 +86,10 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_APP_ID: ${{ env.ASC_APP_ID }}
-        # Die Nummer kommt aus App Store Connect, nicht aus dem Repo: Sie muss
-        # dort eindeutig aufsteigen, und ein Zaehler im Git liefe frueher oder
-        # spaeter auseinander.
-        run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json, os, time, subprocess, urllib.request, base64, hashlib
-
-          key_id = os.environ['ASC_KEY_ID']
-          issuer = os.environ['ASC_ISSUER_ID']
-          key_path = os.path.expanduser(f'~/.appstoreconnect/private_keys/AuthKey_{key_id}.p8')
-
-          def b64url(raw):
-              return base64.urlsafe_b64encode(raw).rstrip(b'=').decode()
-
-          now = int(time.time())
-          header = b64url(json.dumps({'alg': 'ES256', 'kid': key_id, 'typ': 'JWT'},
-                                     separators=(',', ':')).encode())
-          payload = b64url(json.dumps({'iss': issuer, 'iat': now, 'exp': now + 900,
-                                       'aud': 'appstoreconnect-v1'},
-                                      separators=(',', ':')).encode())
-          signing_input = f'{header}.{payload}'
-
-          der = subprocess.run(
-              ['openssl', 'dgst', '-sha256', '-sign', key_path],
-              input=signing_input.encode(), capture_output=True, check=True).stdout
-
-          # DER (SEQUENCE aus zwei INTEGERn) in das rohe r||s der JWS-Signatur wandeln.
-          def entpacke(der):
-              i = 2 if der[1] < 0x80 else 3 + (der[1] & 0x7F) - 1
-              werte = []
-              pos = i
-              for _ in range(2):
-                  laenge = der[pos + 1]
-                  werte.append(int.from_bytes(der[pos + 2:pos + 2 + laenge], 'big'))
-                  pos += 2 + laenge
-              return b''.join(w.to_bytes(32, 'big') for w in werte)
-
-          jwt = f'{signing_input}.{b64url(entpacke(der))}'
-
-          app_id = os.environ.get('ASC_APP_ID') or '6784690448'
-          url = (f'https://api.appstoreconnect.apple.com/v1/builds'
-                 f'?filter%5Bapp%5D={app_id}&limit=200&sort=-version')
-          req = urllib.request.Request(url, headers={'Authorization': f'Bearer {jwt}'})
-          with urllib.request.urlopen(req) as antwort:
-              daten = json.load(antwort)
-
-          nummern = []
-          for b in daten.get('data', []):
-              try:
-                  nummern.append(int(b['attributes'].get('version') or 0))
-              except ValueError:
-                  pass
-          naechste = (max(nummern) if nummern else 0) + 1
-          print(f'build={naechste}')
-          PY
+        # Die Nummer kommt aus App Store Connect, nicht aus dem Repo — dort
+        # muss sie eindeutig aufsteigen. Dasselbe Skript nutzt der
+        # Veroeffentlichungs-Workflow.
+        run: python3 .github/scripts/asc-build-number.py >> "$GITHUB_OUTPUT"
 
       - name: Version und Build-Nummer eintragen
         working-directory: mobile
