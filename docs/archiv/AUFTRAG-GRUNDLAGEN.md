@@ -1,3 +1,14 @@
+> **Erledigt am 10.09.2026.** Dieser Auftrag ist abgearbeitet und liegt hier
+> nur noch zur Nachvollziehbarkeit. Die Ergebnisse stehen in `CLAUDE.md`
+> (Projektregeln), `tests/` (86 Tests für die Backend-Hooks) und
+> `docs/openapi.yaml` (API-Dokumentation). Die Sicherheitseinschätzung ist in
+> die Aktualisierung der Abhängigkeiten eingeflossen; offene Dependabot-PRs
+> gibt es keine mehr.
+>
+> Eine Sache ist bewusst offen geblieben: Der Standardwert von 30 Punkten für
+> ein neues Teil greift nicht, weil die Prüfung auf `== null` bei einem
+> Zahlenfeld nicht anschlägt.
+
 # Auftrag: Plietsche Plünn projektreif machen
 
 Du arbeitest im Repo `Revisor01/plietsche-pluenn` (**privat**). Ziel dieser Sitzung:
