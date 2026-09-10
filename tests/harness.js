@@ -24,6 +24,46 @@ function nextId(prefix) {
   return `${prefix}${String(idCounter).padStart(12, '0')}`;
 }
 
+// Zahlenfelder: PocketBase liefert für ein nicht gesetztes Zahlenfeld den
+// Nullwert des Typs (0), nicht den Leerstring. Die Hooks prüfen mit `== null`
+// auf „nicht gesetzt", was bei '' nicht anschlägt — der Harness muss diesen
+// Unterschied abbilden, sonst greifen Standardwerte im Test nie.
+const NUMBER_FIELDS = new Set([
+  'points',
+  'points_total',
+  'streak_weeks',
+  'points_awarded',
+  'items_count',
+  'count',
+  'progress',
+  'trigger_value',
+  'points_reward',
+  'multiplier',
+  'mult_visit',
+  'mult_take',
+  'mult_bring',
+  'pts_checkin',
+  'pts_take',
+  'pts_bring',
+  'max_items_take',
+  'geofence_radius_m',
+  'gps_lat',
+  'gps_lng',
+  'gps_distance_m',
+  'lat',
+  'lng',
+  'tier_bronze',
+  'tier_silber',
+  'tier_gold',
+  'tier_platin',
+  'tier_diamant',
+  'reward_bronze',
+  'reward_silber',
+  'reward_gold',
+  'reward_platin',
+  'reward_diamant',
+]);
+
 class FakeRecord {
   constructor(collection, data) {
     this.collectionName = collection;
@@ -34,7 +74,8 @@ class FakeRecord {
 
   get(field) {
     const v = this._data[field];
-    return v === undefined ? '' : v;
+    if (v !== undefined) return v;
+    return NUMBER_FIELDS.has(field) ? 0 : '';
   }
 
   set(field, value) {
@@ -182,6 +223,7 @@ function loadHook(hookFile, store = {}) {
   const crons = {};
   const pushed = [];
   const libCache = {};
+  const recordHooks = { beforeCreate: [], beforeUpdate: [], afterUpdate: [] };
 
   class ApiError extends Error {
     constructor(status, message) {
@@ -231,9 +273,17 @@ function loadHook(hookFile, store = {}) {
       crons[name] = { expr, handler };
     },
 
-    onRecordBeforeCreateRequest: () => {},
-    onRecordBeforeUpdateRequest: () => {},
-    onRecordAfterUpdateRequest: () => {},
+    // Record-Hooks werden nach Sammlung gesammelt und im Test einzeln mit
+    // einem Ereignis aufgerufen (siehe fireRecordHook).
+    onRecordBeforeCreateRequest: (handler, collection) => {
+      recordHooks.beforeCreate.push({ collection, handler });
+    },
+    onRecordBeforeUpdateRequest: (handler, collection) => {
+      recordHooks.beforeUpdate.push({ collection, handler });
+    },
+    onRecordAfterUpdateRequest: (handler, collection) => {
+      recordHooks.afterUpdate.push({ collection, handler });
+    },
 
     require: (spec) => {
       // Die Hooks laden ihre Bibliotheken über require(`${__hooks}/lib/…`).
@@ -293,6 +343,30 @@ function loadHook(hookFile, store = {}) {
       };
       handler(c);
       return result;
+    },
+
+    // Record-Hook aufrufen: die fuer die Sammlung registrierten Handler in
+    // Reihenfolge, mit einem nachgebauten Ereignis.
+    fireRecordHook(phase, collection, record, { authRecord = null, admin = null } = {}) {
+      const event = {
+        record,
+        httpContext: {
+          get: (key) => {
+            if (key === 'authRecord') return authRecord;
+            if (key === 'admin') return admin;
+            return null;
+          },
+        },
+      };
+      for (const hook of recordHooks[phase]) {
+        if (hook.collection === collection) hook.handler(event);
+      }
+      return record;
+    },
+
+    // Neuen Datensatz erzeugen, wie ihn PocketBase vor dem Anlegen reicht.
+    newRecord(collection, data = {}) {
+      return new FakeRecord(collection, data);
     },
 
     runCron(name) {
