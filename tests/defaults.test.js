@@ -194,14 +194,20 @@ describe('Neues Teil', () => {
     expect(neuesTeil(h, { title: 'Jacke', points: 45 }).get('points')).toBe(45);
   });
 
-  it('bleibt ohne Angabe bei 0 — den Standardwert setzt erst der Scanner', () => {
-    // Der Hook will hier 30 setzen, prueft dafuer aber auf `== null`. Ein
-    // Zahlenfeld ohne Wert ist in PocketBase 0, nicht null — die Bedingung
-    // greift also nie. Folgenlos bleibt es nur, weil scan.pb.js beim
-    // Mitnehmen `|| 30` rechnet; in der Teileliste steht aber 0.
-    // Festgehalten als tatsaechliches Verhalten, nicht als gewuenschtes.
+  it('bekommt ohne Angabe 30 Punkte', () => {
+    // Ohne diesen Standardwert stuende in der Teileliste 0, obwohl das Teil
+    // beim Mitnehmen 30 Punkte bringt — der Scanner faengt es mit `|| 30` ab.
     const h = setup();
-    expect(neuesTeil(h, { title: 'Jacke' }).get('points')).toBe(0);
+    expect(neuesTeil(h, { title: 'Jacke' }).get('points')).toBe(30);
+  });
+
+  it('wertet auch eine mitgeschickte 0 als "nicht gesetzt"', () => {
+    // Bewusst so: Ein Zahlenfeld ohne Wert und eine ausdrueckliche 0 sind im
+    // Hook nicht zu unterscheiden. Ein Teil mit 0 Punkten waere die seltene
+    // Ausnahme und laesst sich nachtragen — ein Teil, das versehentlich mit 0
+    // im Bestand landet, faellt dagegen erst beim Mitnehmen auf.
+    const h = setup();
+    expect(neuesTeil(h, { title: 'Gruss', points: 0 }).get('points')).toBe(30);
   });
 
   it('gilt als eingereicht, wenn es von einer Besucherin kommt', () => {
