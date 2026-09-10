@@ -134,34 +134,13 @@ jobs:
         # werden hier eingehaengt, statt sie ins Repo zu schreiben — die
         # Zugangsdaten sollen nirgends im Quelltext stehen.
         run: |
-          cat >> gradle.properties <<EOF
-          PP_KEYSTORE_PATH=/tmp/release.jks
-          PP_KEYSTORE_PASSWORD=$KS_PASS
-          PP_KEY_ALIAS=$KEY_ALIAS
-          PP_KEY_PASSWORD=$KEY_PASS
-          EOF
-          python3 - <<'PY'
-          import pathlib, re
-          p = pathlib.Path('app/build.gradle')
-          s = p.read_text()
-          if 'ppRelease' not in s:
-              signing = """
-    signingConfigs {
-        ppRelease {
-            storeFile file(project.property('PP_KEYSTORE_PATH'))
-            storePassword project.property('PP_KEYSTORE_PASSWORD')
-            keyAlias project.property('PP_KEY_ALIAS')
-            keyPassword project.property('PP_KEY_PASSWORD')
-        }
-    }
-"""
-              s = s.replace('android {', 'android {' + signing, 1)
-              # Der Release-Block signiert sonst mit dem Debug-Schluessel.
-              s = re.sub(r'(release\s*\{[^}]*?)signingConfig signingConfigs\.\w+',
-                         r'\1signingConfig signingConfigs.ppRelease', s, count=1)
-              p.write_text(s)
-              print('Signaturkonfiguration eingehaengt.')
-          PY
+          {
+            echo "PP_KEYSTORE_PATH=/tmp/release.jks"
+            echo "PP_KEYSTORE_PASSWORD=$KS_PASS"
+            echo "PP_KEY_ALIAS=$KEY_ALIAS"
+            echo "PP_KEY_PASSWORD=$KEY_PASS"
+          } >> gradle.properties
+          python3 "$GITHUB_WORKSPACE/.github/scripts/android-signing.py"
           ./gradlew bundleRelease --no-daemon
           ls -la app/build/outputs/bundle/release/
 
