@@ -1,0 +1,384 @@
+openapi: 3.1.0
+
+info:
+  title: Plietsche Plünn — eigene Backend-Routen
+  version: 1.0.0
+  license:
+    name: AGPL-3.0-or-later
+    identifier: AGPL-3.0-or-later
+  description: |
+    Die selbstgebauten Routen des Backends. Sie liegen als JavaScript-Hooks in
+    `pocketbase/pb_hooks/` und ergänzen die generischen CRUD-Routen, die
+    PocketBase für jede Sammlung selbst bereitstellt.
+
+    **Nicht hier dokumentiert:** die CRUD-Routen unter `/api/collections/…`
+    (Teile, Besuche, Punkte-Verlauf, Abzeichen, Aktionen) und die
+    Anmeldung unter `/api/collections/users/auth-with-password`. Für sie gilt
+    die [offizielle PocketBase-Dokumentation](https://pocketbase.io/docs/api-records/);
+    welche Sammlung wer lesen und schreiben darf, steht in den Regeln der
+    jeweiligen Sammlung (`pocketbase/pb_migrations/`).
+
+    **Antwortformen sind ein Vertrag.** Sobald eine App-Version im Store ist,
+    liest sie diese Routen und lässt sich nicht mitdeployen. Felder dürfen
+    hinzukommen, aber nicht verschwinden, umbenannt werden oder den Typ
+    wechseln. Wer die Form ändern muss, legt eine neue, versionierte Route an.
+
+servers:
+  - url: https://pb.xn--plietsche-plnn-rsb.de
+    description: |
+      Produktion. Der Hostname ist die Punycode-Schreibweise von
+      `pb.plietsche-plünn.de`.
+
+tags:
+  - name: Scannen
+    description: Der universelle Scanner für Check-in und Teile.
+  - name: Push
+    description: An- und Abmeldung der Geräte für Benachrichtigungen.
+
+security:
+  - PocketBaseAuth: []
+
+paths:
+  /api/pp/scan:
+    post:
+      tags: [Scannen]
+      summary: QR-Code scannen — Check-in oder Teil mitnehmen
+      operationId: scan
+      description: |
+        Die Route erkennt selbst, worum es sich handelt:
+
+        - **Türcode** (`store.checkin_qr_secret`) → Check-in mit Besuchsbonus
+          und Serie, einmal je Tag. Optional lässt sich die Zahl der ohne Code
+          mitgenommenen Teile nachtragen.
+        - **Code eines Teils** (`items.qr_code`) → Teil mitnehmen. Ist es der
+          erste Scan des Tages, wird zugleich eingecheckt.
+
+        **Standort:** Die Angabe ist freiwillig. Wird sie mitgeschickt, muss
+        sie innerhalb von `store.geofence_radius_m` um den Laden liegen
+        (Standardwert 150 m), sonst wird der Scan abgelehnt. Ohne Angabe trägt
+        der Code im Laden die Prüfung allein.
+
+        **Datenschutz:** Ein mitgenommenes Teil bekommt einen Zeitstempel, aber
+        keinen Verweis auf die Person, die es geholt hat.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qr_code]
+              properties:
+                qr_code:
+                  type: string
+                  description: Der gescannte Code — Türgeheimnis oder Code eines Teils.
+                  example: PP-0042
+                gps_lat:
+                  type: number
+                  format: double
+                  description: Breitengrad des Geräts. Nur zusammen mit `gps_lng` ausgewertet.
+                  example: 54.1333
+                gps_lng:
+                  type: number
+                  format: double
+                  description: Längengrad des Geräts.
+                  example: 8.8567
+                items_count:
+                  type: integer
+                  minimum: 0
+                  description: |
+                    Zahl der ohne eigenen Code mitgenommenen Teile. Wird nur beim
+                    Check-in über den Türcode ausgewertet und ist auf
+                    `store.max_items_take` begrenzt (Standardwert 7).
+                  example: 3
+            examples:
+              checkin:
+                summary: Check-in mit Standort
+                value: { qr_code: 'tuer-geheimnis', gps_lat: 54.1333, gps_lng: 8.8567 }
+              checkinMitTeilen:
+                summary: Check-in und drei Teile nachtragen
+                value: { qr_code: 'tuer-geheimnis', items_count: 3 }
+              teil:
+                summary: Teil scannen
+                value: { qr_code: 'PP-0042' }
+      responses:
+        '200':
+          description: |
+            Erfolg. Die Antwort hat je nach erkanntem Code eine von zwei Formen,
+            unterscheidbar am Feld `type`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/CheckinResult'
+                  - $ref: '#/components/schemas/ItemResult'
+              examples:
+                checkin:
+                  summary: Check-in
+                  value:
+                    type: checkin
+                    already_checked_in: false
+                    points: 10
+                    points_total: 310
+                    streak_weeks: 4
+                zweiterBesuch:
+                  summary: Zweiter Scan am selben Tag — kein zweiter Bonus
+                  value:
+                    type: checkin
+                    already_checked_in: true
+                    points: 0
+                    points_total: 310
+                    streak_weeks: 4
+                teil:
+                  summary: Teil mitgenommen, erster Scan des Tages
+                  value:
+                    type: item
+                    label: 'Jacke, M'
+                    points: 40
+                    item_points: 30
+                    checkin_points: 10
+                    did_checkin: true
+                    points_total: 350
+        '400':
+          description: |
+            Fehlerhafte Anfrage. Tritt auf bei fehlendem Code
+            („Kein QR-Code"), außerhalb des Geofence („Du bist nicht im Laden")
+            oder zu vielen nachgetragenen Teilen („Höchstens N Teile pro
+            Besuch.").
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+              examples:
+                ausserhalb:
+                  value: { status: 400, message: 'Du bist nicht im Laden' }
+        '401':
+          description: Nicht angemeldet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+              examples:
+                nichtAngemeldet:
+                  value: { status: 401, message: 'Nicht angemeldet' }
+        '404':
+          description: Der Code gehört weder zur Tür noch zu einem Teil im Bestand.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+              examples:
+                unbekannt:
+                  value: { status: 404, message: 'Unbekannter QR-Code' }
+        '409':
+          description: |
+            Das Teil ist nicht (mehr) zu haben: Es wurde bereits mitgenommen
+            („Schon mitgenommen") oder ist noch nicht vom Team freigegeben
+            („Noch nicht freigegeben").
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+              examples:
+                schonWeg:
+                  value: { status: 409, message: 'Schon mitgenommen' }
+                nichtFrei:
+                  value: { status: 409, message: 'Noch nicht freigegeben' }
+        '410':
+          description: Das Teil ist archiviert und steht dauerhaft nicht mehr zur Verfügung.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+              examples:
+                archiviert:
+                  value: { status: 410, message: 'Nicht mehr verfügbar' }
+        '500':
+          description: Der Laden ist nicht eingerichtet — es gibt keinen `store`-Datensatz.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+              examples:
+                keinLaden:
+                  value: { status: 500, message: 'Laden nicht konfiguriert' }
+
+  /api/pp/push/register:
+    post:
+      tags: [Push]
+      summary: Gerät für Benachrichtigungen anmelden
+      operationId: pushRegister
+      description: |
+        Hinterlegt den Expo-Push-Token des Geräts für die angemeldete Person.
+        Ein Token gehört immer genau einer Person: Ist er bereits bekannt, wird
+        er auf die anmeldende Person umgeschrieben, statt ein zweites Mal
+        angelegt zu werden. So bekommt nach einem Gerätewechsel nicht die
+        vorherige Besitzerin die Nachrichten.
+
+        Welche Nachrichten tatsächlich ankommen, steuern die vier Schalter am
+        Benutzerdatensatz (`push_streak_enabled`, `push_campaign_enabled`,
+        `push_badge_enabled`, `push_other_enabled`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expo_token]
+              properties:
+                expo_token:
+                  type: string
+                  description: Der Push-Token aus Expo.
+                  example: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
+                platform:
+                  type: string
+                  enum: [ios, android]
+                  default: ios
+                  description: |
+                    Plattform des Geräts. Alles außer `android` wird als `ios`
+                    gewertet.
+      responses:
+        '200':
+          description: Der Token ist hinterlegt.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '400':
+          description: Kein Token übergeben.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+              examples:
+                keinToken:
+                  value: { status: 400, message: 'Kein Token' }
+        '401':
+          description: Nicht angemeldet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+
+  /api/pp/push/unregister:
+    post:
+      tags: [Push]
+      summary: Gerät von Benachrichtigungen abmelden
+      operationId: pushUnregister
+      description: |
+        Entfernt den Token wieder — der Widerruf der Einwilligung. Gelöscht
+        wird ausschließlich ein Token, der der angemeldeten Person gehört;
+        fremde Token bleiben unangetastet.
+
+        Die Route meldet auch dann Erfolg, wenn gar kein Token hinterlegt war:
+        Die App soll sich abmelden können, ohne zu wissen, ob je einer ankam.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expo_token]
+              properties:
+                expo_token:
+                  type: string
+                  example: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
+      responses:
+        '200':
+          description: |
+            Der Token ist entfernt — oder war nicht hinterlegt. Beides führt zu
+            derselben Antwort.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '400':
+          description: Kein Token übergeben.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+        '401':
+          description: Nicht angemeldet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fehler' }
+
+components:
+  securitySchemes:
+    PocketBaseAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Das Auth-Token aus der PocketBase-Anmeldung
+        (`POST /api/collections/users/auth-with-password`), gesendet als
+        `Authorization`-Header. Alle hier dokumentierten Routen setzen eine
+        angemeldete Person voraus und antworten sonst mit 401.
+
+  schemas:
+    CheckinResult:
+      type: object
+      description: Antwort auf einen Check-in über den Türcode.
+      required: [type, already_checked_in, points, points_total, streak_weeks]
+      properties:
+        type:
+          type: string
+          const: checkin
+        already_checked_in:
+          type: boolean
+          description: |
+            `true`, wenn heute bereits ein Besuch gezählt wurde. Dann gibt es
+            keinen zweiten Besuchsbonus; nachgetragene Teile zählen trotzdem.
+        points:
+          type: integer
+          description: Punkte aus diesem Scan (Besuchsbonus und nachgetragene Teile).
+        points_total:
+          type: integer
+          description: Punktestand nach dem Scan.
+        streak_weeks:
+          type: integer
+          description: Wochen in Folge nach dem Scan.
+
+    ItemResult:
+      type: object
+      description: Antwort auf das Scannen eines Teils.
+      required:
+        [type, label, points, item_points, checkin_points, did_checkin, points_total]
+      properties:
+        type:
+          type: string
+          const: item
+        label:
+          type: string
+          description: |
+            Bezeichnung des Teils für den Verlauf — Titel, bei hinterlegter
+            Größe ergänzt um diese („Jacke, M").
+        points:
+          type: integer
+          description: Summe aus `item_points` und `checkin_points`.
+        item_points:
+          type: integer
+          description: |
+            Punkte für das Teil selbst. Grundlage ist `items.points`
+            (Rückfallwert 30), multipliziert mit dem Faktor einer laufenden
+            Aktion aufs Mitnehmen.
+        checkin_points:
+          type: integer
+          description: |
+            Besuchsbonus, falls dieser Scan der erste des Tages war —
+            sonst 0.
+        did_checkin:
+          type: boolean
+          description: Ob dieser Scan zugleich als Besuch gezählt wurde.
+        points_total:
+          type: integer
+          description: Punktestand nach dem Scan.
+
+    Ok:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          const: true
+
+    Fehler:
+      type: object
+      description: Die Fehlerform von PocketBase.
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+          description: Der Text ist für die Anzeige in der App gedacht und auf Deutsch.
+        data:
+          type: object
+          description: Feldbezogene Angaben; bei diesen Routen leer.
