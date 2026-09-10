@@ -60,6 +60,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Gradle-Zwischenspeicher
+        uses: actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
       - name: Node einrichten
         uses: actions/setup-node@v7
         with:
@@ -137,7 +142,11 @@ jobs:
           # Die Werte als Aufrufparameter statt ueber gradle.properties: So
           # stehen sie sicher am :app-Projekt an und landen nirgends in einer
           # Datei, die im Arbeitsverzeichnis liegen bleibt.
-          ./gradlew bundleRelease --no-daemon \
+          # Ohne diese Angaben laeuft der Build auf dem Runner in eine
+          # zaehe Einzelspur — der erste Versuch stand nach 40 Minuten
+          # immer noch beim Uebersetzen.
+          export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+          ./gradlew bundleRelease --no-daemon --build-cache \
             "-PPP_KEYSTORE_PATH=/tmp/release.jks" \
             "-PPP_KEYSTORE_PASSWORD=$KS_PASS" \
             "-PPP_KEY_ALIAS=$KEY_ALIAS" \
