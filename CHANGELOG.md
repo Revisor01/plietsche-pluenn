@@ -10,6 +10,9 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **In „Was gibt es Neues" standen interne Notizen:** Die Hinweise für Tester:innen und im Store entstanden aus den letzten Änderungen — darunter auch solche, die nur den Bauvorgang betreffen. Wer die App bekam, las Sätze über Signaturschlüssel statt über die App. Jetzt steht dort nur noch, was tatsächlich an der App anders ist.
 - **Neue Teile standen mit 0 Punkten im Bestand:** Wer ein Teil ohne Punktwert anlegte, sah in der Teile-Übersicht eine 0 — beim Mitnehmen gab es trotzdem 30 Punkte. Die beiden Angaben widersprachen sich, jetzt steht von Anfang an der Wert dort, der auch gutgeschrieben wird.
 
+### Sonstiges
+- Gemeldete Sicherheitslücken in den verwendeten Bibliotheken geschlossen.
+
 ### Geändert (Erscheinungsbild)
 - **Neues App-Symbol:** Auf dem Startbildschirm steht jetzt ein P² im Kreis — schlicht, in den Farben der App. Die Linien sind schmal gehalten und das Zeichen steht mit Luft im Feld, damit es ruhig wirkt.
 
