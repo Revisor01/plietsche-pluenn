@@ -314,9 +314,13 @@ jobs:
         id: vorher
         env:
           GH_TOKEN: ${{ github.token }}
+        # Der Commit der letzten Veroeffentlichung, als Vergleichspunkt fuer
+        # die Aenderungshinweise. Der Branch gehoert in die Abfrage: Ohne ihn
+        # zaehlt auch ein Lauf von einem Nebenzweig, und in der Produktionsspur
+        # stuenden Hinweise aus einem fremden Bereich.
         run: |
           SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/runs?status=success&per_page=1" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=1" \
             | python3 -c "import json,sys; r=json.load(sys.stdin).get('workflow_runs') or [{}]; print(r[0].get('head_sha',''))")
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
