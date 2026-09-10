@@ -1,0 +1,431 @@
+name: TestFlight
+
+# Baut den aktuellen Stand von main als iOS-Version und laedt sie zu
+# TestFlight hoch. Gedacht fuer den Alltag am Windows-Rechner: Ein Klick auf
+# "Run workflow", und die Tester:innen haben die Fassung mit den letzten
+# Aenderungen — ohne Mac.
+#
+# Die Testhinweise entstehen aus den Commits seit dem letzten Lauf und stehen
+# danach in TestFlight unter "Was gibt es Neues zu testen".
+#
+# Hintergrund zum Xcode-Schritt: Builds von Beta-macOS werden von Apple mit
+# ITMS-90111 abgelehnt (Beta-Stempel im Binary). Deshalb waehlt der Workflow
+# ausdruecklich die neueste stabile Installation.
+
+on:
+  workflow_dispatch:
+    inputs:
+      hinweis:
+        description: 'Was soll getestet werden? (leer = aus den Commits erzeugt)'
+        required: false
+        default: ''
+      backend:
+        description: 'Backend-Adresse (leer = Produktion)'
+        required: false
+        default: ''
+
+permissions:
+  # Schreibend, weil der Lauf am Ende ein Tag setzt.
+  contents: write
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+env:
+  TEAM_ID: J459G9CJT5
+  BUNDLE_ID: de.godsapp.plietschepluenn
+  ASC_APP_ID: '6784690448'
+
+jobs:
+  build:
+    name: Bauen und hochladen
+    runs-on: macos-26
+    timeout-minutes: 90
+
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v7
+        with:
+          # Die ganze Historie, damit die Testhinweise aus den Commits seit
+          # dem letzten hochgeladenen Stand entstehen koennen.
+          fetch-depth: 0
+
+      - name: Neuestes stabiles Xcode waehlen
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -iv beta | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then XCODE=/Applications/Xcode.app; fi
+          echo "Verwende: $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Node einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Abhaengigkeiten installieren
+        working-directory: mobile
+        # Die Peer-Abhaengigkeiten des Expo-SDK loesen sich mit npm 10 nicht
+        # strikt auf; lokal wird ebenso installiert.
+        run: npm ci --legacy-peer-deps
+
+      - name: ASC-API-Key ablegen
+        env:
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+
+      - name: Naechste Build-Nummer ermitteln
+        id: version
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_APP_ID: ${{ env.ASC_APP_ID }}
+        # Die Nummer kommt aus App Store Connect, nicht aus dem Repo: Sie muss
+        # dort eindeutig aufsteigen, und ein Zaehler im Git liefe frueher oder
+        # spaeter auseinander.
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, time, subprocess, urllib.request, base64, hashlib
+
+          key_id = os.environ['ASC_KEY_ID']
+          issuer = os.environ['ASC_ISSUER_ID']
+          key_path = os.path.expanduser(f'~/.appstoreconnect/private_keys/AuthKey_{key_id}.p8')
+
+          def b64url(raw):
+              return base64.urlsafe_b64encode(raw).rstrip(b'=').decode()
+
+          now = int(time.time())
+          header = b64url(json.dumps({'alg': 'ES256', 'kid': key_id, 'typ': 'JWT'},
+                                     separators=(',', ':')).encode())
+          payload = b64url(json.dumps({'iss': issuer, 'iat': now, 'exp': now + 900,
+                                       'aud': 'appstoreconnect-v1'},
+                                      separators=(',', ':')).encode())
+          signing_input = f'{header}.{payload}'
+
+          der = subprocess.run(
+              ['openssl', 'dgst', '-sha256', '-sign', key_path],
+              input=signing_input.encode(), capture_output=True, check=True).stdout
+
+          # DER (SEQUENCE aus zwei INTEGERn) in das rohe r||s der JWS-Signatur wandeln.
+          def entpacke(der):
+              i = 2 if der[1] < 0x80 else 3 + (der[1] & 0x7F) - 1
+              werte = []
+              pos = i
+              for _ in range(2):
+                  laenge = der[pos + 1]
+                  werte.append(int.from_bytes(der[pos + 2:pos + 2 + laenge], 'big'))
+                  pos += 2 + laenge
+              return b''.join(w.to_bytes(32, 'big') for w in werte)
+
+          jwt = f'{signing_input}.{b64url(entpacke(der))}'
+
+          app_id = os.environ.get('ASC_APP_ID') or '6784690448'
+          url = (f'https://api.appstoreconnect.apple.com/v1/builds'
+                 f'?filter%5Bapp%5D={app_id}&limit=200&sort=-version')
+          req = urllib.request.Request(url, headers={'Authorization': f'Bearer {jwt}'})
+          with urllib.request.urlopen(req) as antwort:
+              daten = json.load(antwort)
+
+          nummern = []
+          for b in daten.get('data', []):
+              try:
+                  nummern.append(int(b['attributes'].get('version') or 0))
+              except ValueError:
+                  pass
+          naechste = (max(nummern) if nummern else 0) + 1
+          print(f'build={naechste}')
+          PY
+
+      - name: Version und Build-Nummer eintragen
+        working-directory: mobile
+        env:
+          BUILD_NUMMER: ${{ steps.version.outputs.build }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path('app.json')
+          d = json.loads(p.read_text(encoding='utf-8'))
+          nummer = os.environ['BUILD_NUMMER']
+          d['expo'].setdefault('ios', {})['buildNumber'] = nummer
+          p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          print(f"Version {d['expo']['version']} ({nummer})")
+          PY
+
+      - name: Natives Projekt erzeugen
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_PB_URL: ${{ inputs.backend }}
+        run: |
+          # ios/ liegt nicht im Repo — Expo erzeugt es aus app.json.
+          # Ohne Angabe gilt die Produktionsadresse aus .env.example.
+          if [ -z "$EXPO_PUBLIC_PB_URL" ]; then
+            export EXPO_PUBLIC_PB_URL="https://pb.xn--plietsche-plnn-rsb.de"
+          fi
+          echo "Backend: $EXPO_PUBLIC_PB_URL"
+          echo "EXPO_PUBLIC_PB_URL=$EXPO_PUBLIC_PB_URL" >> .env
+          npx expo prebuild --platform ios --clean --no-install
+
+      - name: CocoaPods installieren
+        working-directory: mobile/ios
+        run: pod install
+
+      - name: Signing-Keychain einrichten
+        env:
+          P12_BASE64: ${{ secrets.IOS_DIST_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+        run: |
+          echo "$P12_BASE64" | base64 --decode > dist.p12
+          security create-keychain -p ci-build build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ci-build build.keychain
+          security set-keychain-settings -t 3600 build.keychain
+          security import dist.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k ci-build build.keychain >/dev/null
+          rm dist.p12
+
+      - name: Archiv bauen
+        working-directory: mobile/ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          # Der App-Name traegt einen Umlaut; wie Expo daraus den Projektnamen
+          # bildet, wird nicht geraten, sondern aus dem Verzeichnis gelesen.
+          SCHEME=$(ls -d *.xcworkspace | head -1 | sed 's/\.xcworkspace$//')
+          if [ -z "$SCHEME" ]; then echo "Kein Xcode-Workspace gefunden"; exit 1; fi
+          echo "Schema: $SCHEME"
+          xcodebuild -workspace "$SCHEME.xcworkspace" -scheme "$SCHEME" \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/App.xcarchive archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -40
+
+      - name: IPA exportieren
+        working-directory: mobile/ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          cat > ExportOptions-ci.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>destination</key><string>export</string>
+            <key>method</key><string>app-store-connect</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>stripSwiftSymbols</key><true/>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive -archivePath build/App.xcarchive \
+            -exportPath build/export -exportOptionsPlist ExportOptions-ci.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -10
+
+      - name: Zu App Store Connect hochladen
+        working-directory: mobile/ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          IPA=$(ls build/export/*.ipa | head -1)
+          echo "Lade hoch: $IPA"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Testhinweise zusammenstellen
+        id: hinweise
+        env:
+          VORGABE: ${{ inputs.hinweis }}
+        # Aus den Commits seit dem zuletzt gebauten Stand. Der Text landet in
+        # TestFlight und ist bewusst knapp — Tester:innen lesen keine Romane.
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os, re, subprocess
+
+          vorgabe = os.environ.get('VORGABE', '').strip()
+          if vorgabe:
+              text = vorgabe
+          else:
+              # Bis zum vorigen TestFlight-Stand zurueck, sonst die letzten 20.
+              try:
+                  vorher = subprocess.run(
+                      ['git', 'describe', '--tags', '--match', 'testflight-*', '--abbrev=0'],
+                      capture_output=True, text=True, check=True).stdout.strip()
+                  bereich = f'{vorher}..HEAD'
+              except subprocess.CalledProcessError:
+                  bereich = '-20'
+
+              roh = subprocess.run(['git', 'log', '--format=%s', bereich],
+                                   capture_output=True, text=True).stdout.strip().split('\n')
+
+              zeilen = []
+              for z in roh:
+                  z = z.strip()
+                  if not z:
+                      continue
+                  # Reine Interna interessieren Tester:innen nicht.
+                  if re.match(r'^(chore|ci|test|docs|refactor|style)(\(.+\))?:', z):
+                      continue
+                  # "feat(scope): Text" -> "Text"
+                  z = re.sub(r'^\w+(\(.+?\))?:\s*', '', z)
+                  if z and z not in zeilen:
+                      zeilen.append(z[:120])
+
+              if zeilen:
+                  text = '\n'.join(f'- {z}' for z in zeilen[:8])
+              else:
+                  text = 'Kleinere Verbesserungen unter der Haube.'
+
+          # Apple begrenzt das Feld auf 4000 Zeichen.
+          text = text[:3900]
+          print('text<<HINWEIS_ENDE')
+          print(text)
+          print('HINWEIS_ENDE')
+          PY
+
+      - name: Testhinweise in TestFlight eintragen
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          BUILD_NUMMER: ${{ steps.version.outputs.build }}
+          HINWEISE: ${{ steps.hinweise.outputs.text }}
+          ASC_APP_ID: ${{ env.ASC_APP_ID }}
+        # Der Upload dauert; bis der Build in ASC auftaucht, vergehen Minuten.
+        # Deshalb mit Geduld nachfassen statt sofort aufzugeben.
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, subprocess, time, urllib.request, urllib.error
+
+          key_id = os.environ['ASC_KEY_ID']
+          issuer = os.environ['ASC_ISSUER_ID']
+          app_id = os.environ.get('ASC_APP_ID') or '6784690448'
+          nummer = os.environ['BUILD_NUMMER']
+          hinweise = os.environ['HINWEISE']
+          key_path = os.path.expanduser(f'~/.appstoreconnect/private_keys/AuthKey_{key_id}.p8')
+
+          def b64url(raw):
+              return base64.urlsafe_b64encode(raw).rstrip(b'=').decode()
+
+          def entpacke(der):
+              i = 2 if der[1] < 0x80 else 3 + (der[1] & 0x7F) - 1
+              werte, pos = [], i
+              for _ in range(2):
+                  laenge = der[pos + 1]
+                  werte.append(int.from_bytes(der[pos + 2:pos + 2 + laenge], 'big'))
+                  pos += 2 + laenge
+              return b''.join(w.to_bytes(32, 'big') for w in werte)
+
+          def token():
+              now = int(time.time())
+              h = b64url(json.dumps({'alg': 'ES256', 'kid': key_id, 'typ': 'JWT'},
+                                    separators=(',', ':')).encode())
+              p = b64url(json.dumps({'iss': issuer, 'iat': now, 'exp': now + 900,
+                                     'aud': 'appstoreconnect-v1'},
+                                    separators=(',', ':')).encode())
+              si = f'{h}.{p}'
+              der = subprocess.run(['openssl', 'dgst', '-sha256', '-sign', key_path],
+                                   input=si.encode(), capture_output=True, check=True).stdout
+              return f'{si}.{b64url(entpacke(der))}'
+
+          def anfrage(pfad, methode='GET', koerper=None):
+              url = f'https://api.appstoreconnect.apple.com{pfad}'
+              daten = json.dumps(koerper).encode() if koerper else None
+              req = urllib.request.Request(url, data=daten, method=methode, headers={
+                  'Authorization': f'Bearer {token()}',
+                  'Content-Type': 'application/json',
+              })
+              try:
+                  with urllib.request.urlopen(req) as a:
+                      roh = a.read()
+                      return json.loads(roh) if roh else {}
+              except urllib.error.HTTPError as e:
+                  print(f'  HTTP {e.code}: {e.read().decode()[:300]}')
+                  return None
+
+          # Auf den frisch hochgeladenen Build warten.
+          build_id = None
+          for versuch in range(20):
+              d = anfrage(f'/v1/builds?filter%5Bapp%5D={app_id}'
+                          f'&filter%5Bversion%5D={nummer}&limit=1')
+              if d and d.get('data'):
+                  build_id = d['data'][0]['id']
+                  print(f'Build {nummer} gefunden: {build_id}')
+                  break
+              print(f'  Build {nummer} noch nicht sichtbar ({versuch + 1}/20) …')
+              time.sleep(30)
+
+          if not build_id:
+              print('Build nicht rechtzeitig aufgetaucht — die Hinweise bitte '
+                    'in App Store Connect von Hand eintragen.')
+              raise SystemExit(0)
+
+          # Vorhandene Lokalisierung suchen, sonst anlegen.
+          vorhanden = anfrage(f'/v1/builds/{build_id}/betaBuildLocalizations')
+          eintrag = None
+          for l in (vorhanden or {}).get('data', []):
+              if l['attributes'].get('locale') == 'de-DE':
+                  eintrag = l['id']
+                  break
+
+          if eintrag:
+              anfrage(f'/v1/betaBuildLocalizations/{eintrag}', 'PATCH', {
+                  'data': {'type': 'betaBuildLocalizations', 'id': eintrag,
+                           'attributes': {'whatsNew': hinweise}}})
+              print('Testhinweise aktualisiert.')
+          else:
+              anfrage('/v1/betaBuildLocalizations', 'POST', {
+                  'data': {'type': 'betaBuildLocalizations',
+                           'attributes': {'locale': 'de-DE', 'whatsNew': hinweise},
+                           'relationships': {'build': {'data': {'type': 'builds',
+                                                                'id': build_id}}}}})
+              print('Testhinweise eingetragen.')
+          print('---')
+          print(hinweise)
+          PY
+
+      - name: Stand als Tag festhalten
+        env:
+          BUILD_NUMMER: ${{ steps.version.outputs.build }}
+        # Markiert, was zuletzt in TestFlight ging. Der naechste Lauf sammelt
+        # die Testhinweise ab genau diesem Punkt.
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "testflight-${BUILD_NUMMER}"
+          git push origin "testflight-${BUILD_NUMMER}"
+
+      - name: Zusammenfassung
+        if: always()
+        env:
+          BUILD_NUMMER: ${{ steps.version.outputs.build }}
+          HINWEISE: ${{ steps.hinweise.outputs.text }}
+        run: |
+          {
+            echo "## TestFlight"
+            echo ""
+            echo "**Build ${BUILD_NUMMER}** aus \`${GITHUB_SHA:0:7}\`"
+            echo ""
+            echo "### Zu testen"
+            echo ""
+            echo "${HINWEISE:-–}"
+            echo ""
+            echo "Die Verarbeitung bei Apple dauert nach dem Hochladen noch einige Minuten."
+          } >> "$GITHUB_STEP_SUMMARY"
