@@ -62,7 +62,11 @@ onRecordBeforeCreateRequest((e) => {
   if (!r.get('qr_code')) {
     r.set('qr_code', r.get('sku'));
   }
-  if (r.get('points') == null) r.set('points', 30);
+  // Ein Zahlenfeld ohne Wert liefert 0, nicht null — eine Prüfung auf
+  // `== null` griffe hier also nie, und in der Teileliste stünde 0, obwohl
+  // das Teil beim Mitnehmen 30 Punkte bringt (scan.pb.js rechnet `|| 30`).
+  // Wer ein Teil bewusst mit 0 Punkten anlegen will, trägt es danach ein.
+  if (!r.get('points')) r.set('points', 30);
   if (r.get('is_showcase') == null) r.set('is_showcase', false);
 
   // Track who created the item.

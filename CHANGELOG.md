@@ -6,6 +6,9 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Behoben
+- **Neue Teile standen mit 0 Punkten im Bestand:** Wer ein Teil ohne Punktwert anlegte, sah in der Teile-Übersicht eine 0 — beim Mitnehmen gab es trotzdem 30 Punkte. Die beiden Angaben widersprachen sich, jetzt steht von Anfang an der Wert dort, der auch gutgeschrieben wird.
+
 ### Geändert (Erscheinungsbild)
 - **Neues App-Symbol:** Auf dem Startbildschirm steht jetzt ein P² im Kreis — schlicht, in den Farben der App. Die Linien sind schmal gehalten und das Zeichen steht mit Luft im Feld, damit es ruhig wirkt.
 
