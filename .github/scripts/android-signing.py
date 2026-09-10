@@ -4,20 +4,22 @@
 #   android-signing.py
 #
 # Warum hier und nicht im Repo: android/ entsteht bei jedem Lauf neu, und die
-# Zugangsdaten zum Keystore sollen nirgends im Quelltext stehen. Sie kommen
-# als Gradle-Eigenschaften aus gradle.properties, die der Workflow aus den
-# hinterlegten Geheimnissen schreibt.
+# Zugangsdaten zum Keystore sollen nirgends im Quelltext stehen. Sie reicht der
+# Workflow beim Aufruf als -P-Parameter herein.
 import pathlib
 import re
 import sys
 
+# findProperty statt property: property() wirft, sobald ein Wert fehlt — und
+# zwar schon beim Auswerten der Datei, also auch bei Aufgaben, die mit dem
+# Signieren nichts zu tun haben. Die Werte kommen ueber -P vom Workflow.
 SIGNATUR_BLOCK = """
     signingConfigs {
         ppRelease {
-            storeFile file(project.property('PP_KEYSTORE_PATH'))
-            storePassword project.property('PP_KEYSTORE_PASSWORD')
-            keyAlias project.property('PP_KEY_ALIAS')
-            keyPassword project.property('PP_KEY_PASSWORD')
+            storeFile file(project.findProperty('PP_KEYSTORE_PATH') ?: 'nicht-gesetzt.jks')
+            storePassword project.findProperty('PP_KEYSTORE_PASSWORD') ?: ''
+            keyAlias project.findProperty('PP_KEY_ALIAS') ?: ''
+            keyPassword project.findProperty('PP_KEY_PASSWORD') ?: ''
         }
     }
 """
