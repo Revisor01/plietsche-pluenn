@@ -1,0 +1,223 @@
+name: Google Play
+
+# Baut den aktuellen Stand von main als signiertes Android-Paket und laedt es
+# in eine Testspur bei Google Play. Gegenstueck zum TestFlight-Workflow, nur
+# ohne Mac — Android baut auf einem gewoehnlichen Linux-Runner.
+#
+# Der Dry-Run laeuft komplett durch (Bauen, Hochladen, Spur setzen, pruefen),
+# verwirft am Ende aber die Play-Bearbeitung. Nichts wird veroeffentlicht, und
+# die Versionsnummer bleibt unverbraucht — zum gefahrlosen Ausprobieren.
+
+on:
+  workflow_dispatch:
+    inputs:
+      spur:
+        description: 'Ziel-Spur bei Google Play'
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+        default: internal
+      hinweis:
+        description: 'Was soll getestet werden? (leer = aus den Commits erzeugt)'
+        required: false
+        default: ''
+      backend:
+        description: 'Backend-Adresse (leer = Produktion)'
+        required: false
+        default: ''
+      probelauf:
+        description: 'Probelauf: alles bauen und pruefen, aber nichts veroeffentlichen'
+        type: boolean
+        default: false
+
+permissions:
+  # Schreibend, weil der Lauf am Ende ein Tag setzt.
+  contents: write
+
+concurrency:
+  group: play
+  cancel-in-progress: false
+
+env:
+  PACKAGE: de.godsapp.plietschepluenn
+
+jobs:
+  build:
+    name: Bauen und hochladen
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: JDK einrichten
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Node einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Abhaengigkeiten installieren
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps
+
+      - name: Naechste Versionsnummer ermitteln
+        id: version
+        env:
+          GPLAY_SA_JSON_BASE64: ${{ secrets.GPLAY_SA_JSON_BASE64 }}
+          PROBELAUF: ${{ inputs.probelauf }}
+        # Die Nummer kommt aus Google Play, nicht aus dem Repo — dort muss sie
+        # eindeutig aufsteigen. Im Probelauf wird sie kuenstlich hochgesetzt,
+        # damit der Upload nicht an einer schon vergebenen Nummer scheitert;
+        # verbraucht wird sie nicht, die Bearbeitung wird ja verworfen.
+        run: |
+          echo "$GPLAY_SA_JSON_BASE64" | base64 --decode > /tmp/gplay-sa.json
+          python3 .github/scripts/play-version.py /tmp/gplay-sa.json "$PACKAGE" \
+            >> "$GITHUB_OUTPUT"
+
+      - name: Version und Nummer eintragen
+        working-directory: mobile
+        env:
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+          PROBELAUF: ${{ inputs.probelauf }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path('app.json')
+          d = json.loads(p.read_text(encoding='utf-8'))
+          code = int(os.environ['VERSION_CODE'])
+          if os.environ.get('PROBELAUF') == 'true':
+              # Weit nach oben, damit der Upload nicht an einer bereits
+              # vergebenen Nummer scheitert. Wird nie veroeffentlicht.
+              code += 10000
+          d['expo'].setdefault('android', {})['versionCode'] = code
+          p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          print(f"Version {d['expo']['version']} (versionCode {code})")
+          PY
+
+      - name: Natives Projekt erzeugen
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_PB_URL: ${{ inputs.backend }}
+        run: |
+          # android/ liegt nicht im Repo — Expo erzeugt es aus app.json.
+          if [ -z "$EXPO_PUBLIC_PB_URL" ]; then
+            export EXPO_PUBLIC_PB_URL="https://pb.xn--plietsche-plnn-rsb.de"
+          fi
+          echo "Backend: $EXPO_PUBLIC_PB_URL"
+          echo "EXPO_PUBLIC_PB_URL=$EXPO_PUBLIC_PB_URL" >> .env
+          npx expo prebuild --platform android --clean --no-install
+
+      - name: Keystore ablegen
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.jks
+
+      - name: Signiertes Paket bauen
+        working-directory: mobile/android
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        # Expo erzeugt eine Gradle-Konfiguration ohne Signaturangaben. Sie
+        # werden hier eingehaengt, statt sie ins Repo zu schreiben — die
+        # Zugangsdaten sollen nirgends im Quelltext stehen.
+        run: |
+          cat >> gradle.properties <<EOF
+          PP_KEYSTORE_PATH=/tmp/release.jks
+          PP_KEYSTORE_PASSWORD=$KS_PASS
+          PP_KEY_ALIAS=$KEY_ALIAS
+          PP_KEY_PASSWORD=$KEY_PASS
+          EOF
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path('app/build.gradle')
+          s = p.read_text()
+          if 'ppRelease' not in s:
+              signing = """
+    signingConfigs {
+        ppRelease {
+            storeFile file(project.property('PP_KEYSTORE_PATH'))
+            storePassword project.property('PP_KEYSTORE_PASSWORD')
+            keyAlias project.property('PP_KEY_ALIAS')
+            keyPassword project.property('PP_KEY_PASSWORD')
+        }
+    }
+"""
+              s = s.replace('android {', 'android {' + signing, 1)
+              # Der Release-Block signiert sonst mit dem Debug-Schluessel.
+              s = re.sub(r'(release\s*\{[^}]*?)signingConfig signingConfigs\.\w+',
+                         r'\1signingConfig signingConfigs.ppRelease', s, count=1)
+              p.write_text(s)
+              print('Signaturkonfiguration eingehaengt.')
+          PY
+          ./gradlew bundleRelease --no-daemon
+          ls -la app/build/outputs/bundle/release/
+
+      - name: Testhinweise zusammenstellen
+        id: hinweise
+        env:
+          VORGABE: ${{ inputs.hinweis }}
+        run: |
+          python3 .github/scripts/release-notes.py play > /tmp/notes.txt
+          {
+            echo 'text<<HINWEIS_ENDE'
+            cat /tmp/notes.txt
+            echo 'HINWEIS_ENDE'
+          } >> "$GITHUB_OUTPUT"
+          echo "--- Testhinweise ---"
+          cat /tmp/notes.txt
+
+      - name: Zu Google Play hochladen
+        env:
+          SPUR: ${{ inputs.spur }}
+          PROBELAUF: ${{ inputs.probelauf }}
+        run: |
+          AAB=$(ls mobile/android/app/build/outputs/bundle/release/*.aab | head -1)
+          echo "Paket: $AAB"
+          python3 .github/scripts/upload-play.py /tmp/gplay-sa.json "$AAB" \
+            /tmp/notes.txt "$SPUR" \
+            "$([ "$PROBELAUF" = "true" ] && echo validate || echo commit)"
+
+      - name: Stand als Tag festhalten
+        if: ${{ inputs.probelauf != true }}
+        env:
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "play-${VERSION_CODE}"
+          git push origin "play-${VERSION_CODE}"
+
+      - name: Zusammenfassung
+        if: always()
+        env:
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+          HINWEISE: ${{ steps.hinweise.outputs.text }}
+          SPUR: ${{ inputs.spur }}
+          PROBELAUF: ${{ inputs.probelauf }}
+        run: |
+          {
+            echo "## Google Play"
+            echo ""
+            if [ "$PROBELAUF" = "true" ]; then
+              echo "**Probelauf** — nichts veroeffentlicht, Nummer unverbraucht."
+            else
+              echo "**versionCode ${VERSION_CODE}** in Spur \`${SPUR}\`, aus \`${GITHUB_SHA:0:7}\`"
+            fi
+            echo ""
+            echo "### Zu testen"
+            echo ""
+            echo "${HINWEISE:-–}"
+          } >> "$GITHUB_STEP_SUMMARY"

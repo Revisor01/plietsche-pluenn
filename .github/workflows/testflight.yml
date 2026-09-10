@@ -195,6 +195,7 @@ jobs:
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM_ID: ${{ env.TEAM_ID }}
         run: |
           set -o pipefail
           # Der App-Name traegt einen Umlaut; wie Expo daraus den Projektnamen
@@ -202,9 +203,14 @@ jobs:
           SCHEME=$(ls -d *.xcworkspace | head -1 | sed 's/\.xcworkspace$//')
           if [ -z "$SCHEME" ]; then echo "Kein Xcode-Workspace gefunden"; exit 1; fi
           echo "Schema: $SCHEME"
+          # DEVELOPMENT_TEAM und der Signaturstil muessen mitgegeben werden:
+          # expo prebuild erzeugt das Projekt ohne Team, und ohne die Angabe
+          # bricht das Archiv mit "requires a development team" ab.
           xcodebuild -workspace "$SCHEME.xcworkspace" -scheme "$SCHEME" \
             -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/App.xcarchive archive \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
             -authenticationKeyID "$ASC_KEY_ID" \
@@ -254,52 +260,17 @@ jobs:
         id: hinweise
         env:
           VORGABE: ${{ inputs.hinweis }}
-        # Aus den Commits seit dem zuletzt gebauten Stand. Der Text landet in
-        # TestFlight und ist bewusst knapp — Tester:innen lesen keine Romane.
+        # Aus den Commits seit dem letzten Upload. Dasselbe Skript bedient den
+        # Google-Play-Workflow, nur mit anderer Laengengrenze.
         run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import os, re, subprocess
-
-          vorgabe = os.environ.get('VORGABE', '').strip()
-          if vorgabe:
-              text = vorgabe
-          else:
-              # Bis zum vorigen TestFlight-Stand zurueck, sonst die letzten 20.
-              try:
-                  vorher = subprocess.run(
-                      ['git', 'describe', '--tags', '--match', 'testflight-*', '--abbrev=0'],
-                      capture_output=True, text=True, check=True).stdout.strip()
-                  bereich = f'{vorher}..HEAD'
-              except subprocess.CalledProcessError:
-                  bereich = '-20'
-
-              roh = subprocess.run(['git', 'log', '--format=%s', bereich],
-                                   capture_output=True, text=True).stdout.strip().split('\n')
-
-              zeilen = []
-              for z in roh:
-                  z = z.strip()
-                  if not z:
-                      continue
-                  # Reine Interna interessieren Tester:innen nicht.
-                  if re.match(r'^(chore|ci|test|docs|refactor|style)(\(.+\))?:', z):
-                      continue
-                  # "feat(scope): Text" -> "Text"
-                  z = re.sub(r'^\w+(\(.+?\))?:\s*', '', z)
-                  if z and z not in zeilen:
-                      zeilen.append(z[:120])
-
-              if zeilen:
-                  text = '\n'.join(f'- {z}' for z in zeilen[:8])
-              else:
-                  text = 'Kleinere Verbesserungen unter der Haube.'
-
-          # Apple begrenzt das Feld auf 4000 Zeichen.
-          text = text[:3900]
-          print('text<<HINWEIS_ENDE')
-          print(text)
-          print('HINWEIS_ENDE')
-          PY
+          python3 .github/scripts/release-notes.py testflight > /tmp/notes.txt
+          {
+            echo 'text<<HINWEIS_ENDE'
+            cat /tmp/notes.txt
+            echo 'HINWEIS_ENDE'
+          } >> "$GITHUB_OUTPUT"
+          echo "--- Testhinweise ---"
+          cat /tmp/notes.txt
 
       - name: Testhinweise in TestFlight eintragen
         env:
