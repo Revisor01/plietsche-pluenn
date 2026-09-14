@@ -12,6 +12,10 @@ const POINTS = {
 
 const DEFAULT_MAX_ITEMS_TAKE = 7; // internal rule: max items taken per visit
 
+// Rückfall-Radius des Geofence in Metern, wenn auf dem store-Datensatz nichts
+// gepflegt ist. Wie die Punktwerte gehört auch dieser Standard an eine Stelle.
+const DEFAULT_GEOFENCE_RADIUS_M = 150;
+
 const TIER_ORDER = ['none', 'bronze', 'silber', 'gold', 'platin', 'diamant'];
 
 // ── Ladenzeitzone ────────────────────────────────────────────────
@@ -55,6 +59,7 @@ module.exports = {
   POINTS,
   TIER_ORDER,
   DEFAULT_MAX_ITEMS_TAKE,
+  DEFAULT_GEOFENCE_RADIUS_M,
   DEFAULT_STORE_TZ,
 
   // Zeitzone des Ladens. Konfigurierbar auf dem store-Datensatz, damit ein
@@ -620,5 +625,22 @@ module.exports = {
     const a =
       Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  },
+
+  // Prüfen, ob eine Position im Laden liegt — und die Entfernung zurückgeben.
+  //
+  // Ohne Standort (lat/lng nicht gesetzt) gibt es nichts zu prüfen: Dann trägt
+  // der Code im Laden die Prüfung, wie beim Check-in an der Tür. Rückgabe ist
+  // dann null, sonst die gemessene Entfernung in Metern — der Tür-Zweig
+  // schreibt sie als gps_distance_m in den Besuch.
+  //
+  // Der Text „Du bist nicht im Laden" ist in docs/openapi.yaml als 400er
+  // zugesagt und erscheint wörtlich so in der App: nicht ändern.
+  assertInGeofence(store, lat, lng) {
+    if (lat == null || lng == null) return null;
+    const distance = this.distanceM(lat, lng, store.get('lat'), store.get('lng'));
+    const radius = store.get('geofence_radius_m') || DEFAULT_GEOFENCE_RADIUS_M;
+    if (distance > radius) throw new ApiError(400, 'Du bist nicht im Laden');
+    return distance;
   },
 };

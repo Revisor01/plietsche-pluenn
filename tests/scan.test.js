@@ -181,8 +181,111 @@ describe('Geofence', () => {
       err = e;
     }
     expect(err.status).toBe(400);
+    // Wortgleich derselbe Hinweis wie beim Tuercode — so steht er in der
+    // API-Beschreibung und so erscheint er in der App.
+    expect(err.message).toBe('Du bist nicht im Laden');
     // Das Teil darf dabei nicht als mitgenommen markiert werden.
     expect(h.rows('items')[0].taken_at).toBeUndefined();
+    expect(h.records.user.get('points_total')).toBe(0);
+  });
+
+  it('nutzt den eingestellten Radius auch beim Scannen eines Teils', () => {
+    // Dieselbe Position, die bei 150 m abgelehnt wird, geht bei 500 m durch.
+    const h = setup({
+      store: { geofence_radius_m: 500 },
+      items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
+    });
+    const res = h.call(ROUTE, {
+      body: { qr_code: 'PP-0001', gps_lat: STORE_LAT + 0.003, gps_lng: STORE_LNG },
+      authRecord: auth(h),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.type).toBe('item');
+  });
+
+  it('laesst einen Teile-Scan ohne GPS zu', () => {
+    const h = setup({
+      items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
+    });
+    const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    expect(res.status).toBe(200);
+    expect(res.body.type).toBe('item');
+  });
+
+  it('haelt die Grenze auf den Meter genau ein', () => {
+    // Genau auf dem Rand zaehlt als drinnen, einen Schritt weiter nicht mehr.
+    // Ohne diese Probe koennte der Rueckfallwert 150 unbemerkt verrutschen.
+    const h = setup();
+    const grenze = h.lib.distanceM(STORE_LAT, STORE_LNG, STORE_LAT + 0.0013, STORE_LNG);
+    expect(Math.round(grenze)).toBe(145);
+
+    const drinnen = h.call(ROUTE, {
+      body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.0013, gps_lng: STORE_LNG },
+      authRecord: auth(h),
+    });
+    expect(drinnen.status).toBe(200);
+
+    const h2 = setup();
+    const draussen = h2.lib.distanceM(STORE_LAT, STORE_LNG, STORE_LAT + 0.0014, STORE_LNG);
+    expect(Math.round(draussen)).toBe(156);
+    let err;
+    try {
+      h2.call(ROUTE, {
+        body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.0014, gps_lng: STORE_LNG },
+        authRecord: auth(h2),
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Du bist nicht im Laden');
+  });
+
+  it('gibt die Entfernung zurueck und wirft ausserhalb — assertInGeofence', () => {
+    // Die gemeinsame Pruefung, die beide Zweige der Route benutzen.
+    const h = setup();
+    const laden = h.records.store;
+
+    // Ohne Standort gibt es nichts zu pruefen.
+    expect(h.lib.assertInGeofence(laden, null, null)).toBe(null);
+    expect(h.lib.assertInGeofence(laden, undefined, undefined)).toBe(null);
+
+    // Innerhalb: Entfernung in Metern.
+    expect(Math.round(h.lib.assertInGeofence(laden, STORE_LAT + 0.00054, STORE_LNG))).toBe(60);
+
+    // Ausserhalb: 400 mit dem zugesagten Wortlaut.
+    let err;
+    try {
+      h.lib.assertInGeofence(laden, STORE_LAT + 0.01, STORE_LNG);
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Du bist nicht im Laden');
+  });
+
+  it('nimmt ohne gepflegten Radius 150 Meter', () => {
+    // Der Rueckfallwert steht nur noch an einer Stelle in lib/points.js.
+    const h = setup();
+    expect(h.lib.DEFAULT_GEOFENCE_RADIUS_M).toBe(150);
+    expect(h.records.store.get('geofence_radius_m')).toBe(0); // nichts gepflegt
+    expect(Math.round(h.lib.assertInGeofence(h.records.store, STORE_LAT + 0.0013, STORE_LNG))).toBe(145);
+    expect(() => h.lib.assertInGeofence(h.records.store, STORE_LAT + 0.0014, STORE_LNG)).toThrow(
+      'Du bist nicht im Laden'
+    );
+  });
+
+  it('haelt die Entfernung im Besuch fest', () => {
+    // Der Tuer-Zweig behaelt die gemessene Distanz und schreibt sie in den
+    // Besuch — beim Zusammenfuehren der Pruefung darf das nicht wegfallen.
+    const h = setup();
+    h.call(ROUTE, {
+      body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.00054, gps_lng: STORE_LNG },
+      authRecord: auth(h),
+    });
+    const besuch = h.rows('visits')[0];
+    expect(besuch.gps_distance_m).toBe(60);
+    expect(besuch.gps_lat).toBe(STORE_LAT + 0.00054);
   });
 });
 
