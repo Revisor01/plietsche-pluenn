@@ -9,6 +9,7 @@ import { Icon, type IconName } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
+import { errorText } from '../../../lib/errors';
 import {
   Screen,
   PPHeader,
@@ -123,7 +124,7 @@ export default function Account() {
       await refetch();
       Alert.alert('Gespeichert', 'Dein Name wurde aktualisiert.');
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Name konnte nicht gespeichert werden.');
+      Alert.alert('Fehler', errorText(e, 'Name konnte nicht gespeichert werden.'));
     } finally {
       setBusy(null);
     }
@@ -145,7 +146,7 @@ export default function Account() {
         `Wir haben eine E-Mail an ${next} geschickt. Bestätige den Link, um die Adresse zu ändern.`,
       );
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'E-Mail konnte nicht geändert werden.');
+      Alert.alert('Fehler', errorText(e, 'E-Mail konnte nicht geändert werden.'));
     } finally {
       setBusy(null);
     }

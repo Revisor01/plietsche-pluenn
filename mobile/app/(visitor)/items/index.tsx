@@ -10,6 +10,8 @@ import { useAllItems } from '../../../lib/hooks/useData';
 import { setShowcase, archiveItem, approveItem } from '../../../lib/api';
 import { itemThumb } from '../../../lib/format';
 import { printQrSheet } from '../../../lib/qrsheet';
+import { errorText } from '../../../lib/errors';
+import { invalidateItems } from '../../../lib/queryClient';
 import { Screen, PPHeader, PPText, Card, Pill, IconButton, PPButton } from '../../../components/ui';
 import type { Item } from '../../../lib/types';
 
@@ -43,7 +45,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
       await fn();
       onChange();
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Aktion fehlgeschlagen.');
+      Alert.alert('Fehler', errorText(e, 'Aktion fehlgeschlagen.'));
     } finally {
       setBusy(false);
     }
@@ -142,8 +144,7 @@ export default function ItemsInventory() {
 
   const onChange = useCallback(async () => {
     await refetch();
-    await qc.invalidateQueries({ queryKey: ['showcase'] });
-    await qc.invalidateQueries({ queryKey: ['pending_items'] });
+    await invalidateItems(qc);
   }, [refetch, qc]);
 
   const filtered = useMemo(() => {
@@ -175,7 +176,7 @@ export default function ItemsInventory() {
       const name = FILTERS.find((f) => f.key === filter)?.label ?? 'Teile';
       await printQrSheet(list, `${name} (${list.length})`);
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Der Bogen konnte nicht erzeugt werden.');
+      Alert.alert('Fehler', errorText(e, 'Der Bogen konnte nicht erzeugt werden.'));
     } finally {
       setPrinting(false);
     }

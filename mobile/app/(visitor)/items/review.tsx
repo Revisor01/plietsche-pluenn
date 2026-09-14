@@ -10,6 +10,8 @@ import { usePendingItems, useActiveCampaigns } from '../../../lib/hooks/useData'
 import type { Campaign } from '../../../lib/types';
 import { approveItem, archiveItem } from '../../../lib/api';
 import { itemThumb } from '../../../lib/format';
+import { errorText } from '../../../lib/errors';
+import { invalidateItems } from '../../../lib/queryClient';
 import {
   Screen,
   PPHeader,
@@ -33,7 +35,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
       await approveItem(item.id, showcase, campaignId);
       onDone();
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte nicht freigeben.');
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht freigeben.'));
     } finally {
       setBusy(null);
     }
@@ -58,7 +60,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
       await archiveItem(item.id);
       onDone();
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte nicht ablehnen.');
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht ablehnen.'));
     } finally {
       setBusy(null);
     }
@@ -144,7 +146,7 @@ export default function ReviewItems() {
 
   const onDone = async () => {
     await refetch();
-    await qc.invalidateQueries({ queryKey: ['showcase'] });
+    await invalidateItems(qc);
   };
 
   return (

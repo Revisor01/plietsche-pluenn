@@ -10,6 +10,8 @@ import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint, ColorPicker } from '../../../components/ui';
 import type { Campaign } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
+import { errorText } from '../../../lib/errors';
+import { invalidateCampaigns } from '../../../lib/queryClient';
 
 const FACTORS = [1, 2, 3]; // 1 = kein Bonus. Ganze Zahlen: schnell zu erfassen,
 // ×1,5 war in der Praxis weder nötig noch auf einen Blick lesbar.
@@ -101,7 +103,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
       else await createCampaign(payload);
       onSaved();
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht speichern.'));
     } finally {
       setBusy(false);
     }
@@ -181,7 +183,9 @@ export default function ActionsAdmin() {
   const onSaved = async () => {
     setOpenId(null); setCreating(false);
     await refetch();
-    await qc.invalidateQueries({ queryKey: ['campaign', 'active'] });
+    // Der Aushang auf der Startseite liest ['campaigns','active-list'] — ein
+    // anderer Schlüssel als die Einzel-Aktion ['campaign','active'].
+    await invalidateCampaigns(qc);
   };
 
   const isActive = (c: Campaign) => {

@@ -10,6 +10,7 @@ import { createNeed, updateNeed, deleteNeed, sendPushNow } from '../../../lib/ap
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill, ColorPicker, Hint } from '../../../components/ui';
 import type { Need } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
+import { errorText } from '../../../lib/errors';
 
 // Quick-action templates — one tap pre-fills the editor with a common notice.
 const TEMPLATES: { icon: IconName; title: string; detail: string }[] = [
@@ -49,12 +50,15 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         try {
           await sendPushNow(title.trim(), detail.trim() || 'Neuer Aushang im Laden');
         } catch (e: any) {
-          Alert.alert('Aushang gespeichert', 'Die Push konnte nicht gesendet werden: ' + (e?.message ?? 'Fehler'));
+          Alert.alert(
+            'Aushang gespeichert',
+            'Die Push konnte nicht gesendet werden: ' + errorText(e, 'Unbekannter Fehler.'),
+          );
         }
       }
       onSaved();
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht speichern.'));
     } finally {
       setBusy(false);
     }
