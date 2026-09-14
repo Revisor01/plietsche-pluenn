@@ -141,3 +141,52 @@ describe('Harness: Sortierung wirkt auf die Auswahl der Aktion', () => {
     expect(c && c.id).toBe('erste');
   });
 });
+
+describe('Harness: Nullwerte der Feldtypen', () => {
+  // Dieselbe Falle wie bei den Zahlenfeldern, eine Ebene weiter: PocketBase
+  // liefert für ein nicht gesetztes Feld den Nullwert seines TYPS. Gibt der
+  // Harness stattdessen überall den Leerstring, prüft ein Test etwas anderes
+  // als die Produktion — und zwar unauffällig, weil nichts scheitert.
+  const h = loadHook('scan.pb.js', {
+    store: [{ pts_checkin: 10 }],
+    users: [],
+    items: [],
+    visits: [],
+    points_log: [],
+    badges: [],
+    user_badges: [],
+    campaigns: [],
+    action_counts: [],
+  });
+
+  it('liefert fuer ein nicht gesetztes Zahlenfeld 0', () => {
+    const r = h.newRecord('items', { title: 'Jacke' });
+    expect(r.get('points')).toBe(0);
+  });
+
+  it('liefert fuer ein nicht gesetztes Wahrheitsfeld false', () => {
+    const r = h.newRecord('items', { title: 'Jacke' });
+    expect(r.get('is_showcase')).toBe(false);
+    expect(r.get('stays_external')).toBe(false);
+    expect(r.get('brought_awarded')).toBe(false);
+  });
+
+  it('liefert fuer ein nicht gesetztes Textfeld den Leerstring', () => {
+    const r = h.newRecord('items', { title: 'Jacke' });
+    expect(r.get('size')).toBe('');
+    expect(r.get('status')).toBe('');
+  });
+
+  it('gibt einen gesetzten Wert unveraendert zurueck', () => {
+    // Die Gegenprobe: Der Nullwert greift nur, wenn nichts gesetzt ist.
+    const r = h.newRecord('items', { points: 30, is_showcase: true, size: 'M' });
+    expect(r.get('points')).toBe(30);
+    expect(r.get('is_showcase')).toBe(true);
+    expect(r.get('size')).toBe('M');
+  });
+
+  it('gibt ein ausdruecklich auf false gesetztes Wahrheitsfeld als false zurueck', () => {
+    const r = h.newRecord('items', { is_showcase: false });
+    expect(r.get('is_showcase')).toBe(false);
+  });
+});

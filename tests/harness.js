@@ -65,6 +65,28 @@ const NUMBER_FIELDS = new Set([
   'reward_diamant',
 ]);
 
+// Wahrheitswerte: dieselbe Falle wie bei den Zahlen, eine Ebene weiter.
+// PocketBase liefert für ein nicht gesetztes bool-Feld `false`, nicht den
+// Leerstring. Die Hooks prüfen an einer Stelle mit `== null` auf „nicht
+// gesetzt" (defaults.pb.js: `if (r.get('is_showcase') == null)`) — bei `false`
+// greift das nicht, bei `''` ebenso wenig, aber das ERGEBNIS unterscheidet
+// sich: In der Produktion steht danach `false` im Feld, im Harness stand `''`.
+// Ein Test auf `toBe(false)` wäre deshalb rot gewesen, obwohl die Produktion
+// stimmt — genau der Fall, für den die Zahlenliste oben schon existiert.
+const BOOLEAN_FIELDS = new Set([
+  'onboarding_complete',
+  'push_streak_enabled',
+  'push_campaign_enabled',
+  'push_badge_enabled',
+  'push_other_enabled',
+  'is_showcase',
+  'is_visible',
+  'is_secret',
+  'is_active',
+  'stays_external',
+  'brought_awarded',
+]);
+
 class FakeRecord {
   constructor(collection, data) {
     this.collectionName = collection;
@@ -76,7 +98,9 @@ class FakeRecord {
   get(field) {
     const v = this._data[field];
     if (v !== undefined) return v;
-    return NUMBER_FIELDS.has(field) ? 0 : '';
+    if (NUMBER_FIELDS.has(field)) return 0;
+    if (BOOLEAN_FIELDS.has(field)) return false;
+    return '';
   }
 
   set(field, value) {
