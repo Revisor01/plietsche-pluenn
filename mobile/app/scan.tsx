@@ -112,7 +112,7 @@ export default function Scan() {
 
         <View style={[styles.topBar, { top: insets.top + 8 }]}>
           <View>
-            <PPText weight="semibold" size="sm" color="PP.onBrandFaint" style={{ letterSpacing: PP.tracking.caps }}>
+            <PPText weight="semibold" size="sm" color={PP.onBrandFaint} style={{ letterSpacing: PP.tracking.caps }}>
               SCANNEN
             </PPText>
             <PPText weight="bold" size="xl" color={PP.onBrand} style={{ marginTop: 2, letterSpacing: PP.tracking.title }}>
@@ -129,7 +129,7 @@ export default function Scan() {
             {busy ? (
               <ActivityIndicator color={PP.onBrand} />
             ) : (
-              <PPText size="base" color="PP.onBrandFaint" style={{ textAlign: 'center' }}>
+              <PPText size="base" color={PP.onBrandFaint} style={{ textAlign: 'center' }}>
                 Halt die Kamera auf den Tür-Code oder das Etikett eines Teils.
               </PPText>
             )}
@@ -172,7 +172,7 @@ export default function Scan() {
                       <PPText weight="semibold" size="md" color={PP.onBrand}>
                         {result.label}
                       </PPText>
-                      <PPText size="base" color="PP.onBrandMuted" style={{ marginTop: 2 }}>
+                      <PPText size="base" color={PP.onBrandMuted} style={{ marginTop: 2 }}>
                         +{result.points} Punkte{result.did_checkin ? ' · inkl. Check-In' : ''}
                       </PPText>
                     </View>
@@ -202,7 +202,7 @@ export default function Scan() {
                       <PPText weight="semibold" size="md" color={PP.onBrand}>
                         {result.already_checked_in ? 'Schon eingecheckt' : 'Eingecheckt!'}
                       </PPText>
-                      <PPText size="base" color="PP.onBrandMuted" style={{ marginTop: 2 }}>
+                      <PPText size="base" color={PP.onBrandMuted} style={{ marginTop: 2 }}>
                         {result.already_checked_in
                           ? 'Du warst heute schon da.'
                           : `+${result.points} Punkte · ${result.streak_weeks} Wochen Streak`}

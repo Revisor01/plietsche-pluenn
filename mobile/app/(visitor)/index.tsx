@@ -179,7 +179,7 @@ export default function Home() {
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <PPText weight="semibold" size="md" color={PP.onBrand}>{c.name}</PPText>
                       {!!c.description && (
-                        <PPText size="sm" color="PP.onBrandMuted" style={{ marginTop: 1 }}>
+                        <PPText size="sm" color={PP.onBrandMuted} style={{ marginTop: 1 }}>
                           {c.description}
                         </PPText>
                       )}
