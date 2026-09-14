@@ -76,7 +76,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
     <Card pad={14} style={{ gap: 12 }}>
       {!need && (
         <View>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>
             SCHNELL-VORLAGEN
           </PPText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -97,7 +97,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           im Aushang steht (einmal als Aktion, einmal als Ankündigung). */}
       {!!campaigns?.length && (
         <View>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 8, letterSpacing: 0.3 }}>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 8, letterSpacing: PP.tracking.label }}>
             GEHÖRT ZU AKTION
           </PPText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -124,7 +124,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           {!!campaign && (
             <View style={{ marginTop: 8 }}>
               <Hint icon="bell" tone="warn">
-                Diese Ankündigung wird dadurch <PPText weight="bold" size={PP.fontSizes.sm} color={PP.warn}>nicht angezeigt</PPText>,
+                Diese Ankündigung wird dadurch <PPText weight="bold" size="sm" color={PP.warn}>nicht angezeigt</PPText>,
                 solange die Aktion läuft — die Aktions-Karte deckt das Thema bereits ab. Erst nach Ende der
                 Aktion erscheint sie eigenständig im Aushang. Soll sie sofort sichtbar sein, wähle
                 „Eigenständig".
@@ -135,15 +135,15 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
       )}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ flex: 1 }}><PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Aktiv anzeigen</PPText></View>
+        <View style={{ flex: 1 }}><PPText weight="semibold" size="base" color={PP.ink}>Aktiv anzeigen</PPText></View>
         <Toggle value={active} onChange={setActive} />
       </View>
       {!need && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(128,180,226,0.10)', borderRadius: PP.rField, padding: 12 }}>
-          <Icon name="bell" size={18} color={PP.sky} />
+          <Icon name="bell" size={PP.iconSizes.md} color={PP.sky} />
           <View style={{ flex: 1 }}>
-            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Als Push senden</PPText>
-            <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+            <PPText weight="semibold" size="base" color={PP.ink}>Als Push senden</PPText>
+            <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
               Alle Nutzer bekommen eine Mitteilung (kommt in ~1 Min an).
             </PPText>
           </View>
@@ -206,21 +206,21 @@ export default function NeedsAdmin() {
               <Pressable onPress={() => setOpenId(openId === n.id ? null : n.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(128,180,226,0.16)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="megaphone" size={20} color={PP.sky} />
+                    <Icon name="megaphone" size={PP.iconSizes.lg} color={PP.sky} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{n.title}</PPText>
-                    {!!n.detail && <PPText size={PP.fontSizes.sm} color={PP.ink2} numberOfLines={1}>{n.detail}</PPText>}
+                    <PPText weight="semibold" size="md" color={PP.ink}>{n.title}</PPText>
+                    {!!n.detail && <PPText size="sm" color={PP.ink2} numberOfLines={1}>{n.detail}</PPText>}
                   </View>
-                  {!n.is_active && <PPText size={PP.fontSizes.xs} color={PP.ink3}>inaktiv</PPText>}
-                  <Icon name={openId === n.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />
+                  {!n.is_active && <PPText size="xs" color={PP.ink3}>inaktiv</PPText>}
+                  <Icon name={openId === n.id ? 'chevron-down' : 'chevron-right'} size={PP.iconSizes.md} color={PP.ink3} />
                 </Card>
               </Pressable>
               {openId === n.id && <View style={{ marginTop: 8 }}><NeedEditor need={n} onSaved={onSaved} /></View>}
             </View>
           ))
         ) : (
-          <Card pad={16}><PPText size={PP.fontSizes.base} color={PP.ink2}>Noch keine Ankündigung.</PPText></Card>
+          <Card pad={16}><PPText size="base" color={PP.ink2}>Noch keine Ankündigung.</PPText></Card>
         )}
       </View>
     </Screen>

@@ -7,7 +7,7 @@ import { PPText } from './Text';
 export function IconPicker({ value, onChange }: { value: string; onChange: (icon: IconName) => void }) {
   return (
     <View>
-      <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 8, letterSpacing: 0.3 }}>
+      <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 8, letterSpacing: PP.tracking.label }}>
         ICON
       </PPText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -28,7 +28,7 @@ export function IconPicker({ value, onChange }: { value: string; onChange: (icon
                 borderColor: PP.hairline,
               }}
             >
-              <Icon name={name} size={20} color={active ? '#fff' : PP.ink2} />
+              <Icon name={name} size={PP.iconSizes.lg} color={active ? '#fff' : PP.ink2} />
             </Pressable>
           );
         })}

@@ -83,14 +83,14 @@ export function Toast({ visible, title, subtitle, icon = 'medal', onHide, durati
             justifyContent: 'center',
           }}
         >
-          <Icon name={icon} size={22} color="#fff" />
+          <Icon name={icon} size={PP.iconSizes.lg} color="#fff" />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <PPText weight="semibold" size={13} color="#fff">
+          <PPText weight="semibold" size="base" color="#fff">
             {title}
           </PPText>
           {subtitle && (
-            <PPText size={11.5} color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
+            <PPText size="sm" color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
               {subtitle}
             </PPText>
           )}

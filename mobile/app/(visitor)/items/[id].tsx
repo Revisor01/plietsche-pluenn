@@ -78,7 +78,7 @@ export default function ItemDetail() {
             {uri ? (
               <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             ) : (
-              <Icon name="shirt" size={48} color="rgba(39,176,146,0.5)" />
+              <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(39,176,146,0.5)" />
             )}
           </View>
         </View>
@@ -87,7 +87,7 @@ export default function ItemDetail() {
           <Card pad={16} style={{ gap: 14 }}>
             {/* Titel + Punkte */}
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-              <PPText weight="bold" size={PP.fontSizes.lg} color={PP.ink} style={{ flex: 1 }}>{item.title}</PPText>
+              <PPText weight="bold" size="lg" color={PP.ink} style={{ flex: 1 }}>{item.title}</PPText>
               <Pill color={PP.teal} bg="rgba(39,176,146,0.12)">{item.points ?? 0} Punkte</Pill>
             </View>
 
@@ -112,8 +112,8 @@ export default function ItemDetail() {
                       backgroundColor: i % 2 === 0 ? 'rgba(26,46,44,0.035)' : 'transparent',
                     }}
                   >
-                    <PPText size={PP.fontSizes.sm} color={PP.ink3}>{r.label}</PPText>
-                    <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{r.value}</PPText>
+                    <PPText size="sm" color={PP.ink3}>{r.label}</PPText>
+                    <PPText weight="semibold" size="base" color={PP.ink}>{r.value}</PPText>
                   </View>
                 ))}
             </View>
@@ -121,7 +121,7 @@ export default function ItemDetail() {
             {/* WICHTIG: item.location (Regal/Lagerplatz) ist INTERN und wird einem
                 normalen Nutzer NIE gezeigt. Nur das Team sieht ihn im Editor. */}
             {!!item.note && (
-              <PPText size={PP.fontSizes.sm} color={PP.ink2}>{item.note}</PPText>
+              <PPText size="sm" color={PP.ink2}>{item.note}</PPText>
             )}
           </Card>
           {item.stays_external ? (
@@ -216,7 +216,7 @@ export default function ItemDetail() {
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             ) : (
-              <Icon name="camera" size={32} color={PP.teal} />
+              <Icon name="camera" size={PP.iconSizes.xl} color={PP.teal} />
             )}
           </View>
         </Pressable>
@@ -226,7 +226,7 @@ export default function ItemDetail() {
         <View style={{ paddingHorizontal: 20, marginTop: 12 }}>
           <View style={{ backgroundColor: 'rgba(232,169,59,0.12)', borderRadius: PP.rField, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Noch nicht freigegeben</PPText>
+              <PPText weight="semibold" size="base" color={PP.ink}>Noch nicht freigegeben</PPText>
             </View>
             <PPButton size="s" fullWidth={false} onPress={async () => { await approveItem(item.id, false); await done(); }}>Freigeben</PPButton>
           </View>
@@ -255,13 +255,13 @@ export default function ItemDetail() {
       <View style={{ paddingHorizontal: 20, marginTop: 16, gap: 12 }}>
         <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Im Schaufenster</PPText>
+            <PPText weight="semibold" size="base" color={PP.ink}>Im Schaufenster</PPText>
           </View>
           <Toggle value={showcase} onChange={toggleShowcase} />
         </Card>
         <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Wird extern gelagert</PPText>
+            <PPText weight="semibold" size="base" color={PP.ink}>Wird extern gelagert</PPText>
           </View>
           <Toggle value={staysExternal} onChange={setStaysExternal} />
         </Card>
@@ -273,7 +273,7 @@ export default function ItemDetail() {
           <View style={{ padding: 12, backgroundColor: '#fff', borderRadius: 12 }}>
             <QRCode value={item.qr_code || item.sku} size={160} color={PP.ink} backgroundColor="#fff" />
           </View>
-          <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{item.qr_code || item.sku}</PPText>
+          <PPText weight="semibold" size="md" color={PP.ink}>{item.qr_code || item.sku}</PPText>
         </Card>
       </View>
 

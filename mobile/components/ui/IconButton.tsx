@@ -34,7 +34,7 @@ export function IconButton({ icon, badge, dark = false, tint, bg, loading, onPre
         ...(dark || isAndroid || bg ? {} : PP.shadowCard),
       })}
     >
-      {loading ? <ActivityIndicator size="small" color={iconColor} /> : <Icon name={icon} size={20} color={iconColor} />}
+      {loading ? <ActivityIndicator size="small" color={iconColor} /> : <Icon name={icon} size={PP.iconSizes.lg} color={iconColor} />}
       {badge && (
         <View
           style={{

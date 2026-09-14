@@ -108,9 +108,9 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
               style={styles.md3Item}
             >
               <View style={styles.md3IndicatorWrap}>
-                <Icon name={slot.icon} size={22} color={color} />
+                <Icon name={slot.icon} size={PP.iconSizes.lg} color={color} />
               </View>
-              <PPText weight={isActive ? 'semibold' : 'medium'} size={10} color={color} style={{ letterSpacing: 0.4 }}>
+              <PPText weight={isActive ? 'semibold' : 'medium'} size="xs" color={color} style={{ letterSpacing: PP.tracking.caps }}>
                 {slot.label}
               </PPText>
             </Pressable>
@@ -132,9 +132,9 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
         style={({ pressed }) => [styles.item, { opacity: pressed ? 0.7 : 1 }]}
       >
         <View style={styles.iconWrap}>
-          <Icon name={slot.icon} size={22} color={color} />
+          <Icon name={slot.icon} size={PP.iconSizes.lg} color={color} />
         </View>
-        <PPText weight={isActive ? 'semibold' : 'medium'} size={10} color={color} style={{ letterSpacing: 0.1 }}>
+        <PPText weight={isActive ? 'semibold' : 'medium'} size="xs" color={color} style={{ letterSpacing: PP.tracking.label }}>
           {slot.label}
         </PPText>
       </Pressable>

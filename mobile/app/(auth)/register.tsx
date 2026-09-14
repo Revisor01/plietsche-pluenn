@@ -43,15 +43,15 @@ export default function Register() {
     >
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 8 }}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={{ marginBottom: 8 }}>
-          <Icon name="chevron-left" size={26} color={PP.ink} />
+          <Icon name="chevron-left" size={PP.iconSizes.xl} color={PP.ink} />
         </Pressable>
 
         <View style={{ alignItems: 'center', marginTop: 4, marginBottom: 24 }}>
           <BrandMark size={56} radius={18} />
-          <PPText weight="bold" size={22} style={{ marginTop: 14, letterSpacing: -0.4 }}>
+          <PPText weight="bold" size="xl" style={{ marginTop: 14, letterSpacing: PP.tracking.title }}>
             Willkommen an Bord
           </PPText>
-          <PPText size={13} color={PP.ink2} style={{ marginTop: 4 }}>
+          <PPText size="base" color={PP.ink2} style={{ marginTop: 4 }}>
             Ein Konto, dann sammelst du los.
           </PPText>
         </View>
@@ -98,8 +98,8 @@ export default function Register() {
 
         <View style={{ alignItems: 'center', marginTop: 18 }}>
           <Pressable onPress={() => router.replace('/(auth)/login')} hitSlop={8}>
-            <PPText size={13} color={PP.ink2}>
-              Schon dabei? <PPText weight="semibold" size={13} color={PP.teal}>Anmelden</PPText>
+            <PPText size="base" color={PP.ink2}>
+              Schon dabei? <PPText weight="semibold" size="base" color={PP.teal}>Anmelden</PPText>
             </PPText>
           </Pressable>
         </View>

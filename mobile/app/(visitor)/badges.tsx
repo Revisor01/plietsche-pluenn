@@ -76,11 +76,11 @@ function BadgeSheet({
               />
             </GradientRing>
 
-            <PPText weight="bold" size={19} color={PP.ink} style={{ marginTop: 14, textAlign: 'center' }}>
+            <PPText weight="bold" size="lg" color={PP.ink} style={{ marginTop: 14, textAlign: 'center' }}>
               {veiled ? 'Geheimes Abzeichen' : badge.name}
             </PPText>
 
-            <PPText size={13.5} color={PP.ink2} style={{ marginTop: 6, textAlign: 'center', lineHeight: 19 }}>
+            <PPText size="base" color={PP.ink2} style={{ marginTop: 6, textAlign: 'center', lineHeight: PP.fontSizes.base * PP.leading.normal }}>
               {veiled
                 ? 'Was es dafür gibt, verraten wir noch nicht. Es taucht auf, sobald du es dir verdient hast.'
                 : badge.description || 'Keine Beschreibung hinterlegt.'}
@@ -99,7 +99,7 @@ function BadgeSheet({
                         : 'rgba(26,46,44,0.05)',
                     }}
                   >
-                    <PPText weight="semibold" size={13} color={earned ? (accent ?? PP.teal) : PP.ink2}>
+                    <PPText weight="semibold" size="base" color={earned ? (accent ?? PP.teal) : PP.ink2}>
                       {earned ? 'Geschafft' : 'Noch offen'}
                     </PPText>
                   </View>
@@ -130,21 +130,21 @@ function BadgeSheet({
                               }}
                             />
                             <PPText
-                              size={13}
+                              size="base"
                               weight={done ? 'semibold' : 'regular'}
                               color={done ? PP.ink : PP.ink2}
                               style={{ flex: 1 }}
                             >
                               {s.name}
                             </PPText>
-                            <PPText size={12.5} color={done ? PP.ink2 : PP.ink3}>
+                            <PPText size="sm" color={done ? PP.ink2 : PP.ink3}>
                               {Math.min(progress, at)}/{at}
                             </PPText>
                           </View>
                         );
                       })}
                     {info.maxed && (
-                      <PPText size={12.5} color={PP.ink2} style={{ marginTop: 6, textAlign: 'center' }}>
+                      <PPText size="sm" color={PP.ink2} style={{ marginTop: 6, textAlign: 'center' }}>
                         Alle Stufen geschafft.
                       </PPText>
                     )}
@@ -241,7 +241,7 @@ export default function Badges() {
 
               <PPText
                 weight="semibold"
-                size={13}
+                size="base"
                 color={earned ? PP.ink : PP.ink2}
                 numberOfLines={1}
                 style={{ marginTop: 10, textAlign: 'center' }}
@@ -250,25 +250,25 @@ export default function Badges() {
               </PPText>
 
               {veiled ? (
-                <PPText size={10.5} color={PP.ink3} style={{ marginTop: 3, textAlign: 'center' }}>
+                <PPText size="xs" color={PP.ink3} style={{ marginTop: 3, textAlign: 'center' }}>
                   Noch nicht entdeckt
                 </PPText>
               ) : single ? (
                 // Offen oder geschafft — dazwischen gibt es bei Einzeln nichts.
                 <PPText
                   weight={earned ? 'semibold' : 'regular'}
-                  size={10.5}
+                  size="xs"
                   color={earned ? PP.ink3 : PP.ink2}
                   style={{ marginTop: 3, textAlign: 'center', letterSpacing: earned ? 0.4 : 0 }}
                 >
                   {earned ? 'GESCHAFFT' : 'Noch offen'}
                 </PPText>
               ) : info.maxed ? (
-                <PPText weight="semibold" size={10} color={PP.ink3} style={{ marginTop: 3, letterSpacing: 0.4 }}>
+                <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginTop: 3, letterSpacing: PP.tracking.caps }}>
                   {info.currentName.toUpperCase()}
                 </PPText>
               ) : (
-                <PPText size={10.5} color={PP.ink2} style={{ marginTop: 3, textAlign: 'center' }}>
+                <PPText size="xs" color={PP.ink2} style={{ marginTop: 3, textAlign: 'center' }}>
                   {progress}/{info.target} bis {info.nextName}
                 </PPText>
               )}

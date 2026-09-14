@@ -59,11 +59,11 @@ export function CameraGate({
   if (!granted) {
     return (
       <View style={styles.permWrap}>
-        <Icon name="camera" size={48} color="#fff" />
-        <PPText weight="semibold" size={18} color="#fff" style={{ marginTop: 16, textAlign: 'center' }}>
+        <Icon name="camera" size={PP.iconSizes.hero} color="#fff" />
+        <PPText weight="semibold" size="lg" color="#fff" style={{ marginTop: 16, textAlign: 'center' }}>
           Kamera-Zugriff nötig
         </PPText>
-        <PPText size={13} color="rgba(255,255,255,0.7)" style={{ marginTop: 6, textAlign: 'center', maxWidth: 280 }}>
+        <PPText size="base" color="rgba(255,255,255,0.7)" style={{ marginTop: 6, textAlign: 'center', maxWidth: 280 }}>
           Zum Scannen von QR-Codes brauchen wir kurz deine Kamera.
         </PPText>
         <View style={{ marginTop: 24, width: 220 }}>

@@ -59,7 +59,7 @@ export default function StoreInfo() {
             justifyContent: 'center',
           }}
         >
-          <Icon name="shirt" size={48} color="rgba(138,109,58,0.5)" />
+          <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(138,109,58,0.5)" />
         </View>
       </View>
 
@@ -81,10 +81,10 @@ export default function StoreInfo() {
                   borderTopColor: PP.hairline,
                 }}
               >
-                <PPText weight={open ? 'semibold' : 'medium'} size={13.5} color={PP.ink}>
+                <PPText weight={open ? 'semibold' : 'medium'} size="base" color={PP.ink}>
                   {d.label}
                 </PPText>
-                <PPText weight={open ? 'semibold' : 'regular'} size={13} color={open ? PP.teal : PP.ink2}>
+                <PPText weight={open ? 'semibold' : 'regular'} size="base" color={open ? PP.teal : PP.ink2}>
                   {fmtHours(h)}
                 </PPText>
               </View>
@@ -106,13 +106,13 @@ export default function StoreInfo() {
               justifyContent: 'center',
             }}
           >
-            <Icon name="map-pin" size={20} color={PP.teal} />
+            <Icon name="map-pin" size={PP.iconSizes.lg} color={PP.teal} />
           </View>
           <View style={{ flex: 1 }}>
-            <PPText weight="semibold" size={14} color={PP.ink}>
+            <PPText weight="semibold" size="base" color={PP.ink}>
               {store?.name ?? 'Plietsche Plünn'}
             </PPText>
-            <PPText size={12.5} color={PP.ink2}>
+            <PPText size="sm" color={PP.ink2}>
               {store?.address ?? ''}
             </PPText>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>

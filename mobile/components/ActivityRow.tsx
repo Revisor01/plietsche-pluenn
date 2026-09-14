@@ -45,14 +45,14 @@ export function ActivityRow({ icon, tone = 'teal', title, subtitle, imageUri }: 
             justifyContent: 'center',
           }}
         >
-          <Icon name={icon} size={20} color={c} />
+          <Icon name={icon} size={PP.iconSizes.lg} color={c} />
         </View>
       )}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <PPText weight="semibold" size={13.5} color={PP.ink} numberOfLines={1}>
+        <PPText weight="semibold" size="base" color={PP.ink} numberOfLines={1}>
           {title}
         </PPText>
-        <PPText size={11.5} color={PP.ink2} style={{ marginTop: 1 }}>
+        <PPText size="sm" color={PP.ink2} style={{ marginTop: 1 }}>
           {subtitle}
         </PPText>
       </View>

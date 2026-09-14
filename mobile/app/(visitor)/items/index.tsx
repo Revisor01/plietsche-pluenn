@@ -68,14 +68,14 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
           {uri ? (
             <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
-            <Icon name="shirt" size={26} color="rgba(39,176,146,0.5)" />
+            <Icon name="shirt" size={PP.iconSizes.xl} color="rgba(39,176,146,0.5)" />
           )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink} numberOfLines={1}>
+          <PPText weight="semibold" size="md" color={PP.ink} numberOfLines={1}>
             {item.title}
           </PPText>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+          <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
             {item.sku}{item.size ? ` · Gr. ${item.size}` : ''} · {item.points ?? 0} P
           </PPText>
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
@@ -85,7 +85,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
             )}
           </View>
           {!!item.location && (
-            <PPText size={PP.fontSizes.xs} color={PP.ink3} style={{ marginTop: 4 }}>
+            <PPText size="xs" color={PP.ink3} style={{ marginTop: 4 }}>
               {item.location}{submitter ? ` · von ${submitter}` : ''}
             </PPText>
           )}
@@ -94,7 +94,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
           <View style={{ padding: 5, backgroundColor: '#fff', borderRadius: 7 }}>
             <QRCode value={item.qr_code || item.sku} size={48} color={PP.ink} backgroundColor="#fff" />
           </View>
-          <Icon name="chevron-right" size={16} color={PP.ink3} />
+          <Icon name="chevron-right" size={PP.iconSizes.sm} color={PP.ink3} />
         </View>
       </Pressable>
 
@@ -217,7 +217,7 @@ export default function ItemsInventory() {
           ))
         ) : (
           <Card pad={16}>
-            <PPText size={PP.fontSizes.base} color={PP.ink2}>
+            <PPText size="base" color={PP.ink2}>
               Keine Teile in dieser Ansicht.
             </PPText>
           </Card>

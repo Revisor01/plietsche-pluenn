@@ -186,7 +186,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       {/* Art: gestuft oder einmalig. Bei Aktionsbadges anders benannt — dort
           ist „Teilnahme" der geläufige Fall, nicht „Einzel-Abzeichen". */}
       <View>
-        <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>
+        <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>
           ART
         </PPText>
         <View style={{ flexDirection: 'row', gap: 6 }}>
@@ -201,7 +201,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             </Pill>
           </Pressable>
         </View>
-        <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 6 }}>
+        <PPText size="sm" color={PP.ink2} style={{ marginTop: 6 }}>
           {isAction
             ? draft.kind === 'single'
               ? 'Einmal im Aktionszeitraum dabei gewesen — fertig.'
@@ -213,7 +213,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       </View>
 
       <View>
-        <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>
+        <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>
           AUSLÖSER — WOFÜR ES VERGEBEN WIRD
         </PPText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -229,7 +229,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
 
       {draft.trigger_type === 'action_participation' && (
         <View>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 6, letterSpacing: 0.3 }}>GEKOPPELTE AKTION</PPText>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>GEKOPPELTE AKTION</PPText>
           {campaigns.length ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {campaigns.map((c) => (
@@ -239,9 +239,9 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
               ))}
             </View>
           ) : (
-            <PPText size={PP.fontSizes.sm} color={PP.ink2}>Lege zuerst eine Aktion an, dann kannst du sie hier koppeln.</PPText>
+            <PPText size="sm" color={PP.ink2}>Lege zuerst eine Aktion an, dann kannst du sie hier koppeln.</PPText>
           )}
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 6 }}>
+          <PPText size="sm" color={PP.ink2} style={{ marginTop: 6 }}>
             Beim Freigeben markiert der Helfer, ob ein Teil zu dieser Aktion zählt. Bei „Stufen" steigt das Abzeichen ab den unten gesetzten Zielen.
           </PPText>
         </View>
@@ -250,12 +250,12 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       {draft.kind === 'single' ? (
         <View style={{ gap: 8 }}>
           {draft.trigger_type === 'years_active' && (
-            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+            <PPText size="sm" color={PP.ink2}>
               Wird am 31.12. rückwirkend vergeben — nur wenn im Jahr aktiv. „ab" = ab welchem aktiven Jahr (1 = erstes Jahr).
             </PPText>
           )}
           {isAction && (
-            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+            <PPText size="sm" color={PP.ink2}>
               Wer während der Aktion dabei war, bekommt es — einmal, ohne Schwelle.
             </PPText>
           )}
@@ -278,10 +278,10 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         </View>
       ) : (
         <View style={{ gap: 8 }}>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.label }}>
             STUFEN — „ab" = ab wie vielen, Bonus = einmalige Punkte
           </PPText>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: -2 }}>
+          <PPText size="sm" color={PP.ink2} style={{ marginTop: -2 }}>
             Stufen und Namen kommen aus „Punkte & Ränge". Leer lassen heißt: Die
             Stufe gibt es bei diesem Abzeichen nicht.
           </PPText>
@@ -289,7 +289,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             <View key={s.tier} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 78, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: TIER_COLOR[s.tier] }} />
-                <PPText size={PP.fontSizes.sm} color={PP.ink} numberOfLines={1}>{s.name}</PPText>
+                <PPText size="sm" color={PP.ink} numberOfLines={1}>{s.name}</PPText>
               </View>
               <View style={{ flex: 1 }}>
                 <Field label="ab" value={draft.tiers[s.tier]} onChangeText={(v) => setTier(s.tier, v)} keyboardType="number-pad" placeholder="0" />
@@ -304,8 +304,8 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}>
-          <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Sichtbar für Nutzer</PPText>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+          <PPText weight="semibold" size="base" color={PP.ink}>Sichtbar für Nutzer</PPText>
+          <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
             Aus: Das Badge ist komplett aus der App genommen.
           </PPText>
         </View>
@@ -314,8 +314,8 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1 }}>
-          <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>Geheim</PPText>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+          <PPText weight="semibold" size="base" color={PP.ink}>Geheim</PPText>
+          <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
             Steht grau als „Geheim" in der Sammlung — Name und Fortschritt
             erscheinen erst mit der ersten Stufe.
           </PPText>
@@ -389,17 +389,17 @@ export default function BadgeAdmin() {
               <Pressable onPress={() => setOpenId(openId === b.id ? null : b.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(232,185,35,0.14)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="medal" size={20} color={PP.gold} />
+                    <Icon name="medal" size={PP.iconSizes.lg} color={PP.gold} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{b.name}</PPText>
-                    <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+                    <PPText weight="semibold" size="md" color={PP.ink}>{b.name}</PPText>
+                    <PPText size="sm" color={PP.ink2}>
                       {TRIGGERS.find((t) => t.key === b.trigger_type)?.label ?? b.trigger_type} · {b.tier_bronze}/{b.tier_silber}/{b.tier_gold}/{b.tier_platin}
                     </PPText>
                   </View>
                   {b.is_secret && <Pill size="s" icon="lock" color={PP.ink2} bg="rgba(26,46,44,0.08)">geheim</Pill>}
                   {!b.is_visible && <Pill size="s" color={PP.ink2} bg="rgba(26,46,44,0.08)">versteckt</Pill>}
-                  <Icon name={openId === b.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />
+                  <Icon name={openId === b.id ? 'chevron-down' : 'chevron-right'} size={PP.iconSizes.md} color={PP.ink3} />
                 </Card>
               </Pressable>
               {openId === b.id && (
@@ -410,7 +410,7 @@ export default function BadgeAdmin() {
             </View>
           ))
         ) : (
-          <Card pad={16}><PPText size={PP.fontSizes.base} color={PP.ink2}>Noch keine Badges.</PPText></Card>
+          <Card pad={16}><PPText size="base" color={PP.ink2}>Noch keine Badges.</PPText></Card>
         )}
       </View>
     </Screen>

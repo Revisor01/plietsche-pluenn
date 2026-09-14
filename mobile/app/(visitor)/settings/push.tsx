@@ -85,13 +85,13 @@ export default function PushSettings() {
                   justifyContent: 'center',
                 }}
               >
-                <Icon name={row.icon} size={20} color={PP.teal} />
+                <Icon name={row.icon} size={PP.iconSizes.lg} color={PP.teal} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <PPText weight="semibold" size={14} color={PP.ink}>
+                <PPText weight="semibold" size="base" color={PP.ink}>
                   {row.title}
                 </PPText>
-                <PPText size={11.5} color={PP.ink2} style={{ marginTop: 2, lineHeight: 16 }}>
+                <PPText size="sm" color={PP.ink2} style={{ marginTop: 2, lineHeight: PP.fontSizes.sm * PP.leading.normal }}>
                   {row.sub}
                 </PPText>
               </View>
@@ -99,7 +99,7 @@ export default function PushSettings() {
             </View>
           ))}
         </Card>
-        <PPText size={11.5} color={PP.ink2} style={{ paddingHorizontal: 6, lineHeight: 17 }}>
+        <PPText size="sm" color={PP.ink2} style={{ paddingHorizontal: 6, lineHeight: PP.fontSizes.sm * PP.leading.normal }}>
           Wir benachrichtigen so wenig wie möglich. Versprochen. Watt zu viel ist, ist zu viel.
         </PPText>
       </View>

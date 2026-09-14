@@ -55,14 +55,14 @@ export function DateField({
           borderColor: 'rgba(26,46,44,0.06)',
         }}
       >
-        <Icon name="calendar" size={18} color={PP.ink3} />
+        <Icon name="calendar" size={PP.iconSizes.md} color={PP.ink3} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.label }}>
             {label.toUpperCase()}
           </PPText>
           <PPText
             weight="medium"
-            size={PP.fontSizes.md}
+            size="md"
             color={value ? PP.ink : PP.ink3}
             numberOfLines={1}
             style={{ marginTop: 1 }}
@@ -114,11 +114,11 @@ export function DateField({
                 }}
               >
                 <Pressable onPress={() => setOpen(false)} hitSlop={8}>
-                  <PPText weight="medium" size={PP.fontSizes.md} color={PP.ink2}>
+                  <PPText weight="medium" size="md" color={PP.ink2}>
                     Abbrechen
                   </PPText>
                 </Pressable>
-                <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>
+                <PPText weight="semibold" size="md" color={PP.ink}>
                   {label}
                 </PPText>
                 <Pressable
@@ -128,7 +128,7 @@ export function DateField({
                   }}
                   hitSlop={8}
                 >
-                  <PPText weight="semibold" size={PP.fontSizes.md} color={PP.teal}>
+                  <PPText weight="semibold" size="md" color={PP.teal}>
                     Fertig
                   </PPText>
                 </Pressable>

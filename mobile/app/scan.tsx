@@ -112,15 +112,15 @@ export default function Scan() {
 
         <View style={[styles.topBar, { top: insets.top + 8 }]}>
           <View>
-            <PPText weight="semibold" size={12} color="rgba(255,255,255,0.7)" style={{ letterSpacing: 0.4 }}>
+            <PPText weight="semibold" size="sm" color="rgba(255,255,255,0.7)" style={{ letterSpacing: PP.tracking.caps }}>
               SCANNEN
             </PPText>
-            <PPText weight="bold" size={22} color="#fff" style={{ marginTop: 2, letterSpacing: -0.4 }}>
+            <PPText weight="bold" size="xl" color="#fff" style={{ marginTop: 2, letterSpacing: PP.tracking.title }}>
               Tür oder Teil
             </PPText>
           </View>
           <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
-            <Icon name="x" size={20} color="#fff" />
+            <Icon name="x" size={PP.iconSizes.lg} color="#fff" />
           </Pressable>
         </View>
 
@@ -129,7 +129,7 @@ export default function Scan() {
             {busy ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <PPText size={13} color="rgba(255,255,255,0.75)" style={{ textAlign: 'center' }}>
+              <PPText size="base" color="rgba(255,255,255,0.75)" style={{ textAlign: 'center' }}>
                 Halt die Kamera auf den Tür-Code oder das Etikett eines Teils.
               </PPText>
             )}
@@ -144,13 +144,13 @@ export default function Scan() {
               <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <View style={styles.errIcon}>
-                    <Icon name="info" size={24} color={PP.err} />
+                    <Icon name="info" size={PP.iconSizes.xl} color={PP.err} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <PPText weight="semibold" size={15} color={PP.ink}>
+                    <PPText weight="semibold" size="md" color={PP.ink}>
                       {error}
                     </PPText>
-                    <PPText size={12.5} color={PP.ink2} style={{ marginTop: 2 }}>
+                    <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
                       Versuch's nochmal.
                     </PPText>
                   </View>
@@ -166,13 +166,13 @@ export default function Scan() {
                 <GradientCard pad={18} radius={20}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                     <View style={styles.okIcon}>
-                      <Icon name="check" size={26} color="#fff" />
+                      <Icon name="check" size={PP.iconSizes.xl} color="#fff" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <PPText weight="semibold" size={16} color="#fff">
+                      <PPText weight="semibold" size="md" color="#fff">
                         {result.label}
                       </PPText>
-                      <PPText size={13} color="rgba(255,255,255,0.85)" style={{ marginTop: 2 }}>
+                      <PPText size="base" color="rgba(255,255,255,0.85)" style={{ marginTop: 2 }}>
                         +{result.points} Punkte{result.did_checkin ? ' · inkl. Check-In' : ''}
                       </PPText>
                     </View>
@@ -196,13 +196,13 @@ export default function Scan() {
                 <GradientCard pad={18} radius={20}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                     <View style={styles.okIcon}>
-                      <Icon name={result.already_checked_in ? 'info' : 'check'} size={26} color="#fff" />
+                      <Icon name={result.already_checked_in ? 'info' : 'check'} size={PP.iconSizes.xl} color="#fff" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <PPText weight="semibold" size={16} color="#fff">
+                      <PPText weight="semibold" size="md" color="#fff">
                         {result.already_checked_in ? 'Schon eingecheckt' : 'Eingecheckt!'}
                       </PPText>
-                      <PPText size={13} color="rgba(255,255,255,0.85)" style={{ marginTop: 2 }}>
+                      <PPText size="base" color="rgba(255,255,255,0.85)" style={{ marginTop: 2 }}>
                         {result.already_checked_in
                           ? 'Du warst heute schon da.'
                           : `+${result.points} Punkte · ${result.streak_weeks} Wochen Streak`}
@@ -213,13 +213,13 @@ export default function Scan() {
 
                 {doorSecret && (
                   <View style={{ marginTop: 16 }}>
-                    <PPText weight="semibold" size={11} color={PP.ink2} style={{ letterSpacing: 0.3 }}>
+                    <PPText weight="semibold" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label }}>
                       TEILE OHNE QR MITGENOMMEN?
                     </PPText>
                     <View style={{ alignItems: 'center', marginTop: 12 }}>
                       <Stepper value={extraItems} onChange={setExtraItems} max={maxItems} />
                     </View>
-                    <PPText size={11} color={PP.ink3} style={{ textAlign: 'center', marginTop: 6 }}>
+                    <PPText size="xs" color={PP.ink3} style={{ textAlign: 'center', marginTop: 6 }}>
                       Höchstens {maxItems} Teile pro Besuch.
                     </PPText>
                     {extraItems > 0 && (

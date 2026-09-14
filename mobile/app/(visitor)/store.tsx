@@ -36,7 +36,7 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
         {uri ? (
           <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
-          <Icon name="shirt" size={44} color="rgba(39,176,146,0.5)" />
+          <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(39,176,146,0.5)" />
         )}
         {item.stays_external && (
           <View
@@ -53,17 +53,17 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
               backgroundColor: 'rgba(255,255,255,0.92)',
             }}
           >
-            <Icon name="map-pin" size={11} color={PP.warn} />
-            <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink}>
+            <Icon name="map-pin" size={PP.iconSizes.xs} color={PP.warn} />
+            <PPText weight="semibold" size="xs" color={PP.ink}>
               extern gelagert
             </PPText>
           </View>
         )}
       </View>
-      <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>
+      <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>
         {item.title}
       </PPText>
-      <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 1 }}>
+      <PPText size="sm" color={PP.ink2} style={{ marginTop: 1 }}>
         {item.size ? `Gr. ${item.size} · ` : ''}{item.points ?? 0} P
       </PPText>
     </Pressable>
@@ -84,7 +84,7 @@ function FilterRow({
 }) {
   return (
     <View style={{ gap: 8 }}>
-      <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ letterSpacing: 0.3 }}>
+      <PPText weight="semibold" size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.label }}>
         {title.toUpperCase()}
       </PPText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -110,7 +110,7 @@ function SelectChip({ label, active, onPress }: { label: string; active: boolean
         borderColor: active ? PP.teal : 'rgba(26,46,44,0.08)',
       }}
     >
-      <PPText weight={active ? 'semibold' : 'medium'} size={PP.fontSizes.base} color={active ? '#fff' : PP.ink}>
+      <PPText weight={active ? 'semibold' : 'medium'} size="base" color={active ? '#fff' : PP.ink}>
         {label}
       </PPText>
     </Pressable>
@@ -189,8 +189,8 @@ export default function Store() {
               backgroundColor: activeCount > 0 ? PP.teal : 'rgba(26,46,44,0.05)',
             }}
           >
-            <Icon name="filter" size={15} color={activeCount > 0 ? '#fff' : PP.ink2} />
-            <PPText weight="semibold" size={PP.fontSizes.sm} color={activeCount > 0 ? '#fff' : PP.ink2}>
+            <Icon name="filter" size={PP.iconSizes.sm} color={activeCount > 0 ? '#fff' : PP.ink2} />
+            <PPText weight="semibold" size="sm" color={activeCount > 0 ? '#fff' : PP.ink2}>
               Filter{activeCount > 0 ? ` (${activeCount})` : ''}
             </PPText>
           </Pressable>
@@ -209,7 +209,7 @@ export default function Store() {
           </View>
         ) : (
           <Card pad={16}>
-            <PPText size={PP.fontSizes.base} color={PP.ink2}>
+            <PPText size="base" color={PP.ink2}>
               Keine Teile in dieser Ansicht.
             </PPText>
           </Card>
@@ -238,7 +238,7 @@ export default function Store() {
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <PPText weight="bold" size={PP.fontSizes.xl} color={PP.ink} style={{ letterSpacing: -0.3 }}>
+              <PPText weight="bold" size="xl" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
                 Filter
               </PPText>
               <Pressable
@@ -246,7 +246,7 @@ export default function Store() {
                 hitSlop={10}
                 style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(26,46,44,0.05)', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Icon name="x" size={16} color={PP.ink2} />
+                <Icon name="x" size={PP.iconSizes.sm} color={PP.ink2} />
               </Pressable>
             </View>
 
