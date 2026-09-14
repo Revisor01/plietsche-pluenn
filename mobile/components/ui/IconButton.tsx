@@ -4,6 +4,11 @@ import { Icon, type IconName } from '../../lib/icons';
 
 interface IconButtonProps {
   icon: IconName;
+  // Pflicht: ein reiner Icon-Knopf hat keinen sichtbaren Text, den ein
+  // Screenreader vorlesen könnte. Der Compiler fordert das Label ein, damit
+  // es beim Anlegen neuer Knöpfe nicht vergessen wird.
+  accessibilityLabel: string;
+  accessibilityHint?: string;
   badge?: boolean;
   dark?: boolean;
   // Getönte Aktions-Variante (z.B. rotes Ablehnen): eigene Fläche + Icon-Farbe
@@ -14,11 +19,25 @@ interface IconButtonProps {
   onPress?: () => void;
 }
 
-export function IconButton({ icon, badge, dark = false, tint, bg, loading, onPress }: IconButtonProps) {
+export function IconButton({
+  icon,
+  accessibilityLabel,
+  accessibilityHint,
+  badge,
+  dark = false,
+  tint,
+  bg,
+  loading,
+  onPress,
+}: IconButtonProps) {
   const iconColor = tint ?? (dark ? PP.onBrand : PP.ink);
   return (
     <Pressable
       onPress={loading ? undefined : onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: !!loading || !onPress, busy: !!loading }}
       hitSlop={8}
       android_ripple={ripple(tint ?? (dark ? PP.onBrand : PP.ink), true)}
       style={({ pressed }) => ({

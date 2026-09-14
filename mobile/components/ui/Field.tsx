@@ -8,27 +8,51 @@ interface FieldProps extends Omit<TextInputProps, 'style'> {
   icon?: IconName;
   label: string;
   secure?: boolean;
+  // Fehlermeldung zum Feld. Sie wird an die Ansage des Eingabefelds gehängt,
+  // damit sie nicht nur sichtbar, sondern auch hörbar beim Feld landet.
+  error?: string;
 }
 
-export function Field({ icon, label, secure, ...inputProps }: FieldProps) {
+export function Field({ icon, label, secure, error, ...inputProps }: FieldProps) {
   const [hidden, setHidden] = useState(!!secure);
 
   return (
     <View style={styles.wrap}>
       {icon && <Icon name={icon} size={PP.iconSizes.md} color={PP.ink3} />}
       <View style={{ flex: 1 }}>
-        <PPText weight="semibold" size="xs" color={PP.ink3} style={styles.label}>
+        {/* Sichtbares Label; für den Screenreader trägt es das Eingabefeld
+            selbst, sonst würde es zweimal vorgelesen. */}
+        <PPText
+          weight="semibold"
+          size="xs"
+          color={PP.ink3}
+          style={styles.label}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
           {label.toUpperCase()}
         </PPText>
         <TextInput
+          accessibilityLabel={label}
+          accessibilityHint={error}
           {...inputProps}
           secureTextEntry={hidden}
           placeholderTextColor={PP.ink3}
           style={styles.input}
         />
+        {!!error && (
+          <PPText size="xs" color={PP.err} style={{ marginTop: 2 }}>
+            {error}
+          </PPText>
+        )}
       </View>
       {secure && (
-        <Pressable onPress={() => setHidden((h) => !h)} hitSlop={10}>
+        <Pressable
+          onPress={() => setHidden((h) => !h)}
+          accessibilityRole="button"
+          accessibilityLabel={hidden ? 'Passwort anzeigen' : 'Passwort verbergen'}
+          hitSlop={10}
+        >
           <Icon name={hidden ? 'eye-off' : 'eye'} size={PP.iconSizes.md} color={PP.ink3} />
         </Pressable>
       )}
