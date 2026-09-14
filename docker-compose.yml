@@ -35,6 +35,16 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    # Dieselben Grenzen wie in docker-compose.portainer.yml — sonst beschriebe
+    # diese Datei einen Aufbau, den es so nicht gibt. Ohne max-size waechst die
+    # Protokolldatei unbegrenzt weiter, bis die Platte voll ist.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 512m
+    cpus: 1.0
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.plietsche-pb.rule=Host(`pb.xn--plietsche-plnn-rsb.de`)"

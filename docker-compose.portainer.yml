@@ -54,6 +54,24 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    # Grenzen, damit dieser Stack die Maschine nicht mitreisst. Auf demselben
+    # Host laufen Authentik, Nextcloud, Traefik und Portainer.
+    #
+    # Das Protokoll ist der praktisch wichtigere Teil: Ohne max-size waechst
+    # die JSON-Datei unbegrenzt, bis die Platte voll ist — und dann steht
+    # nicht nur PocketBase. Zwei Dateien a 10 MB reichen fuer die Diagnose der
+    # letzten Tage und decken die Groesse.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Gemessen am 14.09.2026 auf der laufenden Instanz: 19,6 MB belegt, bisher
+    # ohne Grenze (der Container sah die vollen 24 GB des Hosts). 512 MB sind
+    # das 26-fache des Bedarfs — die Grenze faengt ein Weglaufen ab und
+    # beschneidet den Normalbetrieb nicht.
+    mem_limit: 512m
+    cpus: 1.0
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.plietsche-pb.rule=Host(`pb.xn--plietsche-plnn-rsb.de`)"
