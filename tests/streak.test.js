@@ -4,7 +4,7 @@
 // Grenzfälle wie der Jahreswechsel leicht durchrutschen. Laut CHANGELOG hing
 // die Serie einmal an einem Zählerfeld statt an den tatsächlichen Besuchen.
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createRequire } from 'node:module';
 
 const { loadHook } = createRequire(import.meta.url)('./harness.js');
@@ -75,20 +75,65 @@ describe('isWeekAdjacent — folgen zwei Wochen aufeinander?', () => {
 
   it('traegt ueber den Jahreswechsel', () => {
     // KW 53/2026 -> KW 1/2027: ohne Sonderfall waere die Differenz 48.
+    // 2026 hat 53 Wochen, KW 53 ist also die letzte Woche des Jahres.
     expect(h.lib.isWeekAdjacent(202653, 202701)).toBe(true);
-    // Auch aus einem Jahr mit 52 Wochen heraus.
-    expect(h.lib.isWeekAdjacent(202052, 202101)).toBe(true);
+    // Auch aus einem Jahr mit 52 Wochen heraus: 2025 endet mit KW 52.
+    expect(h.lib.isWeekAdjacent(202552, 202601)).toBe(true);
+    // 2020 hatte 53 Wochen, 2021 beginnt danach.
+    expect(h.lib.isWeekAdjacent(202053, 202101)).toBe(true);
   });
 
   it('verneint einen Sprung ueber zwei Jahreswechsel', () => {
     expect(h.lib.isWeekAdjacent(202553, 202701)).toBe(false);
   });
 
-  it('ist am Jahreswechsel eine Woche nachsichtig', () => {
-    // 2026 hat 53 Wochen: Zwischen KW 52/2026 und KW 1/2027 liegt KW 53,
-    // die Serie bleibt hier trotzdem bestehen. Festgehalten als tatsaechliches
-    // Verhalten — die Nachsicht faellt zugunsten der Nutzer:innen aus.
-    expect(h.lib.isWeekAdjacent(202652, 202701)).toBe(true);
+  it('reisst, wenn die 53. Woche uebersprungen wurde', () => {
+    // 2026 hat 53 Kalenderwochen. Zwischen KW 52/2026 und KW 1/2027 liegt
+    // KW 53 — eine echte Lucke, die Serie darf hier nicht weiterlaufen.
+    expect(h.lib.isWeekAdjacent(202652, 202701)).toBe(false);
+    // Dasselbe fuer 2020, ebenfalls ein 53-Wochen-Jahr.
+    expect(h.lib.isWeekAdjacent(202052, 202101)).toBe(false);
+  });
+
+  it('kennt die Laenge des jeweiligen Jahres', () => {
+    // 2025 hat 52 Wochen: eine KW 53/2025 gibt es nicht, sie kann also auch
+    // nicht Vorgaengerin von KW 1/2026 sein.
+    expect(h.lib.isWeekAdjacent(202553, 202601)).toBe(false);
+    // 2032 hat wieder 53 Wochen (Schaltjahr, beginnt an einem Donnerstag).
+    expect(h.lib.isWeekAdjacent(203253, 203301)).toBe(true);
+    expect(h.lib.isWeekAdjacent(203252, 203301)).toBe(false);
+    // 2015 hatte 53 Wochen, 2014 nur 52.
+    expect(h.lib.isWeekAdjacent(201452, 201501)).toBe(true);
+    expect(h.lib.isWeekAdjacent(201553, 201601)).toBe(true);
+    expect(h.lib.isWeekAdjacent(201552, 201601)).toBe(false);
+  });
+});
+
+describe('isoWeeksInYear — wie viele Kalenderwochen ein Jahr hat', () => {
+  const h = setup();
+
+  it('gibt 53 fuer die Jahre, die eine 53. Woche haben', () => {
+    // ISO 8601: 53 Wochen, wenn der 1. Januar ein Donnerstag ist oder ein
+    // Schaltjahr an einem Mittwoch beginnt.
+    expect(h.lib.isoWeeksInYear(2015)).toBe(53);
+    expect(h.lib.isoWeeksInYear(2020)).toBe(53);
+    expect(h.lib.isoWeeksInYear(2026)).toBe(53);
+    expect(h.lib.isoWeeksInYear(2032)).toBe(53);
+  });
+
+  it('gibt 52 fuer die uebrigen Jahre', () => {
+    expect(h.lib.isoWeeksInYear(2024)).toBe(52);
+    expect(h.lib.isoWeeksInYear(2025)).toBe(52);
+    expect(h.lib.isoWeeksInYear(2027)).toBe(52);
+    expect(h.lib.isoWeeksInYear(2028)).toBe(52);
+  });
+
+  it('stimmt mit der Woche des 28. Dezember ueberein', () => {
+    // Der 28.12. liegt nach ISO 8601 immer in der letzten Woche des Jahres.
+    for (let jahr = 2015; jahr <= 2040; jahr++) {
+      const letzte = h.lib.isoWeek(new Date(Date.UTC(jahr, 11, 28, 12, 0, 0))) % 100;
+      expect(h.lib.isoWeeksInYear(jahr)).toBe(letzte);
+    }
   });
 });
 
@@ -163,6 +208,66 @@ describe('streakFromVisits — Serie aus den Besuchen', () => {
   });
 });
 
+describe('streakFromVisits — Jahreswechsel mit 53 Kalenderwochen', () => {
+  // Die Serie wird gegen die laufende Woche gerechnet. Fuer den Jahreswechsel
+  // braucht es deshalb einen festen Zeitpunkt, sonst waere der Fall nur an
+  // wenigen Tagen im Jahr pruefbar.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function amTag(iso) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(iso));
+  }
+
+  function besuchAm(id, iso) {
+    return { id, user: 'u1', checkin_at: new Date(iso).toISOString() };
+  }
+
+  it('zaehlt die 53. Woche als Bindeglied mit', () => {
+    // 2026 hat KW 53 (28.12.2026 bis 3.1.2027). Wer in KW 51, 52, 53 und
+    // KW 1/2027 da war, hat vier Wochen in Folge.
+    amTag('2027-01-06T12:00:00.000Z'); // KW 1/2027
+    const h = setup({
+      visits: [
+        besuchAm('v1', '2026-12-15T12:00:00.000Z'), // KW 51
+        besuchAm('v2', '2026-12-22T12:00:00.000Z'), // KW 52
+        besuchAm('v3', '2026-12-29T12:00:00.000Z'), // KW 53
+        besuchAm('v4', '2027-01-05T12:00:00.000Z'), // KW 1/2027
+      ],
+    });
+    expect(h.lib.streakFromVisits(h.records.user)).toBe(4);
+  });
+
+  it('bricht ab, wenn die 53. Woche fehlt', () => {
+    // Dieselben Wochen ohne KW 53: Die Serie beginnt mit KW 1/2027 neu.
+    amTag('2027-01-06T12:00:00.000Z');
+    const h = setup({
+      visits: [
+        besuchAm('v1', '2026-12-15T12:00:00.000Z'), // KW 51
+        besuchAm('v2', '2026-12-22T12:00:00.000Z'), // KW 52
+        besuchAm('v4', '2027-01-05T12:00:00.000Z'), // KW 1/2027
+      ],
+    });
+    expect(h.lib.streakFromVisits(h.records.user)).toBe(1);
+  });
+
+  it('traegt ueber ein Jahr mit nur 52 Wochen', () => {
+    // 2025 endet mit KW 52; KW 1/2026 folgt unmittelbar darauf.
+    amTag('2026-01-07T12:00:00.000Z'); // KW 2/2026
+    const h = setup({
+      visits: [
+        besuchAm('v1', '2025-12-15T12:00:00.000Z'), // KW 51
+        besuchAm('v2', '2025-12-22T12:00:00.000Z'), // KW 52
+        besuchAm('v3', '2025-12-30T12:00:00.000Z'), // KW 1/2026
+        besuchAm('v4', '2026-01-06T12:00:00.000Z'), // KW 2/2026
+      ],
+    });
+    expect(h.lib.streakFromVisits(h.records.user)).toBe(4);
+  });
+});
+
 describe('updateStreak — Serie beim Check-in fortschreiben', () => {
   it('startet bei 1, wenn es noch keinen Besuch gab', () => {
     const h = setup();
@@ -187,11 +292,33 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
   });
 
   it('zaehlt ueber den Jahreswechsel hoch', () => {
+    // 31.12.2026 liegt in KW 53/2026, dem letzten der 53 Wochen dieses Jahres.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', streak_weeks: 8, streak_last_visit: '2026-12-31T10:00:00.000Z' }],
     });
     h.lib.updateStreak(h.records.user, new Date('2027-01-04'));
     expect(h.records.user.get('streak_weeks')).toBe(9);
+  });
+
+  it('zaehlt auch aus einem Jahr mit 52 Wochen heraus hoch', () => {
+    // 2025 endet mit KW 52 (29.12.2025 liegt schon in KW 1/2026 — deshalb
+    // der 22.12.), danach folgt unmittelbar KW 1/2026.
+    const h = setup({
+      users: [{ __name: 'user', id: 'u1', streak_weeks: 4, streak_last_visit: '2025-12-22T10:00:00.000Z' }],
+    });
+    h.lib.updateStreak(h.records.user, new Date('2026-01-02T10:00:00.000Z'));
+    expect(h.records.user.get('streak_weeks')).toBe(5);
+  });
+
+  it('faengt wieder bei 1 an, wenn die 53. Woche ausgelassen wurde', () => {
+    // 2026 hat 53 Kalenderwochen. Letzter Besuch am 21.12.2026 (KW 52), die
+    // Woche vom 28.12. bis 3.1. (KW 53) ausgelassen, am 4.1.2027 (KW 1) wieder
+    // da: dazwischen fehlt eine ganze Woche, die Serie beginnt neu.
+    const h = setup({
+      users: [{ __name: 'user', id: 'u1', streak_weeks: 5, streak_last_visit: '2026-12-21T10:00:00.000Z' }],
+    });
+    h.lib.updateStreak(h.records.user, new Date('2027-01-04T10:00:00.000Z'));
+    expect(h.records.user.get('streak_weeks')).toBe(1);
   });
 
   it('faengt nach einer Luecke wieder bei 1 an', () => {
@@ -202,19 +329,16 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
     expect(h.records.user.get('streak_weeks')).toBe(1);
   });
 
-  it('setzt eine Serie ueber eine Luecke von zwei Jahren fort', () => {
-    // BEFUND, nicht gewuenschtes Verhalten: updateStreak wiederholt die
-    // Bedingung aus isWeekAdjacent, laesst dabei aber die Pruefung weg, dass
-    // genau ein Jahr dazwischenliegt. Wer Ende 2025 zuletzt da war und Anfang
-    // 2027 wiederkommt, behaelt seine Serie und zaehlt sogar hoch.
-    // isWeekAdjacent(202552, 202701) sagt korrekt false; streakFromVisits
-    // wuerde fuer dieselbe Person 1 liefern. Die beiden widersprechen sich.
+  it('faengt nach einer Luecke von zwei Jahren wieder bei 1 an', () => {
+    // Wer Ende 2025 zuletzt da war und erst Anfang 2027 wiederkommt, hat ein
+    // ganzes Jahr ausgelassen — auch wenn die Wochennummern (52 -> 1) auf den
+    // ersten Blick aufeinanderzufolgen scheinen.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', streak_weeks: 7, streak_last_visit: '2025-12-26T10:00:00.000Z' }],
     });
     h.lib.updateStreak(h.records.user, new Date('2027-01-04T10:00:00.000Z'));
-    expect(h.records.user.get('streak_weeks')).toBe(8);
-    // Zum Vergleich die Funktion, die es richtig macht:
+    expect(h.records.user.get('streak_weeks')).toBe(1);
+    // Dieselbe Auskunft gibt die gemeinsame Pruefung:
     expect(h.lib.isWeekAdjacent(202552, 202701)).toBe(false);
   });
 
@@ -224,6 +348,52 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
     h.lib.updateStreak(h.records.user, wann);
     expect(h.records.user.get('streak_last_visit')).toBe(wann.toISOString());
   });
+});
+
+describe('Jahreswechsel: alle drei Aufrufstellen urteilen gleich', () => {
+  // Die Regel „welche Woche folgt auf welche" wurde frueher an drei Stellen
+  // getrennt nachgebaut: in isWeekAdjacent, in updateStreak und im
+  // Reset-Cron. Dieser Block haelt fest, dass sie jetzt dasselbe sagen.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const faelle = [
+    // [Beschreibung, letzter Besuch, neuer Besuch, zusammenhaengend?]
+    ['KW 53/2026 -> KW 1/2027', '2026-12-29T12:00:00.000Z', '2027-01-05T12:00:00.000Z', true],
+    ['KW 52/2026 -> KW 1/2027 (KW 53 fehlt)', '2026-12-21T12:00:00.000Z', '2027-01-05T12:00:00.000Z', false],
+    ['KW 52/2025 -> KW 1/2026', '2025-12-22T12:00:00.000Z', '2025-12-30T12:00:00.000Z', true],
+    ['KW 52/2025 -> KW 1/2027 (ein Jahr Luecke)', '2025-12-22T12:00:00.000Z', '2027-01-05T12:00:00.000Z', false],
+  ];
+
+  for (const [was, letzter, neuer, zusammen] of faelle) {
+    it(`${was}: ${zusammen ? 'zusammenhaengend' : 'Luecke'}`, () => {
+      const letzteWoche = setup().lib.isoWeek(new Date(letzter));
+      const neueWoche = setup().lib.isoWeek(new Date(neuer));
+
+      // 1. Die gemeinsame Pruefung selbst.
+      expect(setup().lib.isWeekAdjacent(letzteWoche, neueWoche)).toBe(zusammen);
+
+      // 2. updateStreak: zaehlt hoch oder faengt bei 1 an.
+      const hu = setup({
+        users: [{ __name: 'user', id: 'u1', streak_weeks: 5, streak_last_visit: letzter }],
+      });
+      hu.lib.updateStreak(hu.records.user, new Date(neuer));
+      expect(hu.records.user.get('streak_weeks')).toBe(zusammen ? 6 : 1);
+
+      // 3. streakFromVisits: zaehlt beide Wochen oder nur die neue.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(neuer));
+      const hv = setup({
+        visits: [
+          { id: 'v1', user: 'u1', checkin_at: new Date(letzter).toISOString() },
+          { id: 'v2', user: 'u1', checkin_at: new Date(neuer).toISOString() },
+        ],
+      });
+      expect(hv.lib.streakFromVisits(hv.records.user)).toBe(zusammen ? 2 : 1);
+      vi.useRealTimers();
+    });
+  }
 });
 
 describe('campaignMult — Faktoren einer Aktion', () => {

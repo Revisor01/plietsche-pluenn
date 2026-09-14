@@ -56,7 +56,10 @@ cronAdd('streak-reset', '5 3 * * *', () => {
     }
     const lastWeek = lib.isoWeek(new Date(last));
     // Allow current week and the immediately preceding week (grace).
-    if (thisWeek - lastWeek > 1 && !(thisWeek % 100 === 1 && lastWeek % 100 >= 52)) {
+    // „Vorwoche" beantwortet lib.isWeekAdjacent — dieselbe Prüfung, die auch
+    // updateStreak und streakFromVisits benutzen. Sie kennt die Länge des
+    // Vorjahres, sodass eine ausgelassene 53. Woche als Lücke gilt.
+    if (thisWeek !== lastWeek && !lib.isWeekAdjacent(lastWeek, thisWeek)) {
       u.set('streak_weeks', 0);
       dao.saveRecord(u);
       try { lib.checkBadges(u); } catch (_) {}
