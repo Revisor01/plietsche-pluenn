@@ -53,6 +53,29 @@ prüfbar wurde.
 
 ---
 
+## Nachtrag vom 14.09.2026 — gegen die Produktion gemessen
+
+Die Zahlen oben und die Zustände in allen Tabellen beschreiben den **Code-Stand
+im Repo**. Nach der Abnahme sind vier Befunde des Abschnitts „Zugriffsregeln"
+gegen die laufende Instanz gemessen worden. Was sich dadurch geändert hat:
+
+- **Z-1 (`users`) ist entwarnt.** Die Instanz trägt die sicheren
+  PocketBase-Standardregeln; kein Konto sieht fremde E-Mail-Adressen. Die
+  Regeln bleiben unverändert.
+- **Z-2, Z-3 und Z-4 sind bestätigt und behoben** — je mit einer Messung vorab,
+  einer additiven Migration (`1782710000_tighten_read_rules.js`), Tests für den
+  verbotenen und den erlaubten Fall und Mutationsproben. Damit erledigt sich
+  auch Befund 7 aus `app.md` an der Wurzel.
+- **Neu gefunden: Die Produktion hinkt dem Repo um zwei Migrationen hinterher.**
+  Der als BEHOBEN geführte KRITISCH-Befund 1 (Türgeheimnis) steht dort in
+  vollem Umfang offen. Siehe „Empfohlene nächste Schritte", Punkt 1 — es ist
+  jetzt der dringendste Punkt der ganzen Liste.
+
+**Testsuite nach diesem Nachtrag:** 276 Tests in 12 Dateien, alle grün
+(+24 gegenüber der Abnahme).
+
+---
+
 ## Bericht 1: `backend.md` — Backend-Fachlogik
 
 | # | Befund | Schwere | Zustand | Beleg |
@@ -91,7 +114,7 @@ keine Testinfrastruktur (siehe Gesamtbild).
 | 4 | Englische SDK-Fehlermeldungen in deutschen Dialogen | HOCH | **BEHOBEN, UNGETESTET** | `lib/errors.ts` (`errorText`, 100 Zeilen, mit Begründung); an allen 14 Stellen eingesetzt — `grep` findet keinen rohen `e?.message`-Durchgriff mehr |
 | 5 | `syncTotal` schreibt in ein Feld, das der Ring nicht liest | MITTEL | **OFFEN** | `scan.tsx:20` unverändert vorhanden, aufgerufen in `:69` und `:88` |
 | 6 | Aktionen ändern aktualisiert den Aushang nicht | MITTEL | **BEHOBEN, UNGETESTET** | `queryClient.ts:39-45` (`invalidateCampaigns`, deckt `['campaigns']`, `['campaign','active']` und `['needs','active']` ab), benutzt in `actions.tsx:175` |
-| 7 | Besucher lädt alle offenen Freigaben inkl. fremder Namen | MITTEL | **OFFEN** | `useData.ts:107-119`: `enabled: pb.authStore.isValid` unverändert, kein `isStaff`-Parameter. Ursache im Backend ebenfalls offen — siehe „Erstmals geprüft", Befund Z-3 |
+| 7 | Besucher lädt alle offenen Freigaben inkl. fremder Namen | MITTEL | **AN DER WURZEL BEHOBEN** (14.09.2026) | `useData.ts:107-119` ist unverändert — die Abfrage läuft weiterhin für alle Konten. Sie bekommt aber nichts Fremdes mehr: `items.listRule` gibt Besucher:innen nur noch freigegebene Teile und die eigenen Einreichungen (`1782710000_tighten_read_rules.js`, Befund Z-3). Fremde Namen kamen ohnehin nie an, weil `users.viewRule` den Expand blockt (Z-1). Der `isStaff`-Parameter wäre jetzt nur noch Sparsamkeit, keine Absicherung |
 | 8 | Scanner verwirft ersten Code bei langsamem Standort | MITTEL | **OFFEN** | `scan.tsx:46-58`: `getCoords` unverändert ohne Zeitgrenze; `QRScanner.tsx:18-24`: Sperre weiterhin an festem 1500-ms-Timer statt an `active` |
 | 9 | „undefined Wochen Streak" im Erfolgs-Sheet | NIEDRIG | **OFFEN** | `scan.tsx:208`: `${result.streak_weeks}` unverändert ohne `?? 0` |
 | 10 | Erfolgs-Hinweis bei Ankündigung wird überlagert | NIEDRIG | **OFFEN** | `needs.tsx:51-57`: `onSaved()` läuft unverändert direkt nach `Alert.alert`, nicht im `onPress` |
@@ -218,7 +241,45 @@ sind durch `1782690000_store_secret_collection.js:87-88` auf
 `@request.auth.id != ""` gehoben. Der gefährlichste Fehlertyp ist damit
 repoweit ausgeräumt.
 
-#### Z-1 [KRITISCH] `users` hat nie explizite Regeln bekommen
+#### Z-1 [KRITISCH → ENTWARNT am 14.09.2026] `users` hat nie explizite Regeln bekommen
+
+**Gemessen, nicht vermutet.** Der Befund war ausdrücklich als der einzige
+gekennzeichnet, der sich nicht aus dem Repo entscheiden lässt. Er ist am
+14.09.2026 gegen die laufende Instanz gemessen worden — lesend, als Superuser
+über `GET /api/collections` und gegengeprüft mit einem gewöhnlichen
+Besucherkonto:
+
+```
+users.listRule   = 'id = @request.auth.id'
+users.viewRule   = 'id = @request.auth.id'
+users.createRule = ''          (Registrierung)
+users.updateRule = 'id = @request.auth.id'
+users.deleteRule = 'id = @request.auth.id'
+```
+
+Gegenprobe als `role=visitor`: `GET /api/collections/users/records` liefert
+`totalItems: 1` — das eigene Konto, mit der eigenen E-Mail. Keine fremde
+Adresse, kein fremder Name.
+
+**Von den beiden im Befund genannten Möglichkeiten liegt die sichere vor.**
+PocketBase hat für die Auth-Sammlung seine sicheren Standardregeln gesetzt,
+auch ohne Migration. Der befürchtete Abfluss von Klarnamen und
+E-Mail-Adressen findet nicht statt.
+
+**Die andere Hälfte des Befunds trägt dagegen.** Ebenfalls gemessen:
+`expand=created_by` löst nur für das eigene Konto auf, bei fremden Teilen
+steht `expand: null`. Die Freigabe-Liste des Teams steht damit tatsächlich
+ohne Namen da — ein Funktionsfehler, wie im Befund vorhergesagt, aber kein
+Datenschutzproblem. Er bleibt offen und ist getrennt zu entscheiden: Eine
+Lockerung der `viewRule` für `volunteer`/`admin` wäre die Behebung, und die
+gehört dem Betreiber, nicht einem Sicherheitsfix.
+
+**Die Regeln bleiben unverändert.** Weil der gemessene Stand der richtige ist,
+wäre eine Migration hier nur Formalisierung, kein Fix — und sie birgt das
+Risiko, den guten Stand versehentlich zu verschlechtern. Die Empfehlung, ihn
+zu versionieren, bleibt als eigener Punkt bestehen.
+
+**Der ursprüngliche Befundtext:**
 
 Keine einzige Migration setzt `users.listRule`, `viewRule`, `createRule`,
 `updateRule` oder `deleteRule` — geprüft mit
@@ -241,7 +302,26 @@ welcher Fall vorliegt.
 **Das ist der einzige Befund, der sich nicht aus dem Repo entscheiden lässt.**
 Er gehört gegen die laufende Instanz gemessen, bevor daraus eine Änderung wird.
 
-#### Z-2 [HOCH] `visits.createRule` erlaubt selbstgebaute Besuche — Abzeichen erschleichbar
+#### Z-2 [HOCH → BESTÄTIGT UND BEHOBEN am 14.09.2026] `visits.createRule` erlaubt selbstgebaute Besuche — Abzeichen erschleichbar
+
+**Gemessen.** Als gewöhnlicher Besucher (`role=visitor`) angemeldet:
+
+```
+POST /api/collections/visits/records  {"user":"<eigene id>","checkin_at":"2026-09-14 08:00:00.000Z"}
+→ HTTP 200, Datensatz angelegt, Besuchszähler 2 → 3
+```
+
+Der Testdatensatz wurde als Superuser wieder gelöscht (Stand zurück auf 2).
+
+**Behoben** mit `1782710000_tighten_read_rules.js`: `visits.createRule = null`.
+Die übrigen vier Regeln bleiben, wie sie waren. Belegt durch
+`tests/read-rules-migration.test.js` (verbotener Fall: kein Konto, auch kein
+Admin, darf anlegen) und `tests/scan.test.js`, Abschnitt „Besuche entstehen
+serverseitig" (erlaubter Fall: der Check-in über `POST /api/pp/scan` legt den
+Besuch weiterhin an, und der Fortschritt für „Stammgast" zählt ihn).
+Mutationsprobe: Die Regel zurück auf den alten Stand gesetzt → 1 Test rot.
+
+**Der ursprüngliche Befundtext:**
 
 `1700000000_init_schema.js:140`: `createRule: 'user = @request.auth.id'`.
 
@@ -271,7 +351,49 @@ braucht. Gegenprobe: Kein App-Code legt `visits` direkt an
 (`grep -rn "collection('visits')" mobile/` → kein Treffer). **Eine alte
 App-Version bricht dadurch nicht** — sie ruft die Route nicht.
 
-#### Z-3 [HOCH] `items.listRule` gibt jedem Konto den Bestand samt Einreichenden und Standort
+#### Z-3 [HOCH → BESTÄTIGT UND BEHOBEN am 14.09.2026] `items.listRule` gibt jedem Konto den Bestand samt Einreichenden und Standort
+
+**Gemessen.** Als gewöhnlicher Besucher: `GET /api/collections/items/records`
+liefert alle 30 Datensätze, darunter die fremde `pending`-Einreichung. Der
+Einzelabruf eines fremden, extern gelagerten Teils gibt
+`location: "bei Fam. Petersen, Deichstr. 4"` heraus — die Privatadresse, genau
+wie im Befund beschrieben.
+
+**Behoben** mit `1782710000_tighten_read_rules.js`. Neue `listRule` und
+`viewRule` (gleichlautend, sonst wäre über den Einzelabruf zu bekommen, was
+die Liste verbirgt):
+
+```
+(@request.auth.id != "" && (status = "approved" || status = "" || created_by = @request.auth.id))
+  || @request.auth.role = "volunteer" || @request.auth.role = "admin"
+```
+
+Drei Punkte dazu:
+
+1. **Die Anmeldung steht geklammert vor dem Inhalt.** Ohne sie wäre
+   `status = "approved"` für sich genommen auch unangemeldet wahr, und aus
+   der Verschärfung würde eine Öffnung. Der erste Entwurf hatte genau diesen
+   Fehler; der Test „lässt niemanden unangemeldet an den Bestand" hat ihn
+   gefunden, bevor die Migration geschrieben war.
+2. **`status = ""` ist kein Versehen.** 15 der 30 Datensätze der Instanz
+   stammen aus der Zeit vor dem `status`-Feld (`1700000600`), einer davon
+   steht im Schaufenster. Ohne diesen Zweig verschwände Altbestand aus dem
+   Schaufenster — ein Funktionsfehler statt eines Gewinns.
+3. **Gegen die App abgeglichen**, wie es der Befund verlangt: `useShowcase`,
+   `useRecentItems`, `useStoreItems` (freigegeben + Altbestand),
+   `useMyItems` (`created_by`), `useAllItems`, `usePendingItems`, `useItem`
+   (Team). Die Antwortform bleibt gleich, nur die Treffermenge schrumpft —
+   und zwar um genau das, was die Oberfläche ohnehin nie zeigte.
+   `usePendingItems` läuft auf der Startseite für alle Konten, zeigt die Zahl
+   aber nur dem Team; Besucher:innen bekommen dort künftig nur noch eigene
+   Einreichungen gezählt, wo die Zahl ohnehin unsichtbar ist.
+
+Belegt durch `tests/read-rules-migration.test.js` (je vier verbotene und vier
+erlaubte Fälle, dazu der Wortlaut der Regel). Mutationsproben: Anmelde-Klammer
+entfernt → 2 Tests rot; Altbestands-Zweig entfernt → 2 Tests rot;
+`created_by`-Zweig entfernt → 2 Tests rot.
+
+**Der ursprüngliche Befundtext:**
 
 `1700000000_init_schema.js:46-47`: `@request.auth.id != ""`, seither
 unverändert. `items` trägt `created_by`, `location` (Freitext) und
@@ -293,7 +415,26 @@ Beim Verschärfen gilt die Regel zu ausgelieferten Apps: Eine engere
 Versionen im Store. Das ist vorher gegen die dort laufenden Abfragen
 (`useShowcase`, `useStoreItems`, `useData.ts:25,41,57`) abzugleichen.
 
-#### Z-4 [HOCH] `action_counts` gibt Teilnahmezahlen aller Personen an jedes Konto
+#### Z-4 [HOCH → BESTÄTIGT UND BEHOBEN am 14.09.2026] `action_counts` gibt Teilnahmezahlen aller Personen an jedes Konto
+
+**Gemessen.** Als gewöhnlicher Besucher:
+`GET /api/collections/action_counts/records` liefert beide Zeilen der Instanz,
+mit fremder Nutzer-ID, Aktions-ID und Anzahl.
+
+**Behoben** mit `1782710000_tighten_read_rules.js`: `listRule` und `viewRule`
+auf `user = @request.auth.id || @request.auth.role = "admin"` — dieselbe Regel
+wie bei `points_log` und `user_badges`, genau wie der Befund es vorschlägt.
+Die Schreibseite bleibt unverändert auf `null`.
+
+Gegenprobe zur App: `grep -rn "action_counts" mobile/app mobile/lib
+mobile/components` findet keinen Treffer. Kein Screen liest die Sammlung, die
+Abzeichen werden serverseitig gerechnet — keine App-Version bricht.
+
+Belegt durch `tests/read-rules-migration.test.js` (verbotener Fall: fremde
+Zeile für Besucher und Helfer; erlaubter Fall: eigene Zeile, und Admin sieht
+fremde). Mutationsprobe: Regel zurück auf `@request.auth.id != ""` → 1 Test rot.
+
+**Der ursprüngliche Befundtext:**
 
 `1700001000_action_counts.js:21-22`: `listRule`/`viewRule` =
 `@request.auth.id != ""`. Die Sammlung enthält `user`, `campaign` und `count`.
@@ -619,32 +760,64 @@ den Berichten in `docs/audit/`.
 
 Priorisiert nach Schaden mal Wahrscheinlichkeit, nicht nach Aufwand.
 
-### 1. `visits.createRule` auf `null` setzen (Z-2)
+### ~~1. `visits.createRule` auf `null` setzen (Z-2)~~ — **erledigt 14.09.2026**
+### ~~2. Den Regelstand von `users` gegen Produktion messen (Z-1)~~ — **erledigt 14.09.2026, Befund entwarnt**
+### ~~3. `action_counts` und `items` beim Lesen einschränken (Z-4, Z-3)~~ — **erledigt 14.09.2026**
 
-Der einzige neue Befund mit direkter Auswirkung auf Punkte. Abzeichen samt
-Belohnung sind ohne Ladenbesuch erschleichbar, und der Weg umgeht den
-bestehenden Schreibschutz. Die Behebung ist eine additive Migration, ein
-Einzeiler, und bricht keine App-Version — kein Client legt `visits` direkt an.
-Dazu ein Test für den verbotenen und einen für den erlaubten Fall, nach dem
-Muster von `store-secret-migration.test.js`.
+Alle drei mit `1782710000_tighten_read_rules.js` und
+`tests/read-rules-migration.test.js`. Siehe die Befunde oben. Die Regeln von
+`users` bleiben bewusst unverändert: Der gemessene Stand ist der richtige.
 
-### 2. Den tatsächlichen Regelstand von `users` gegen Produktion messen (Z-1)
+### 1. Die Migrationen auf der Produktion nachziehen
 
-Erst messen, dann entscheiden. Solange nicht feststeht, ob `users.listRule`
-offen steht, ist unklar, ob E-Mail-Adressen aller Konten abrufbar sind oder ob
-die Freigabe-Liste des Teams ohne Namen dasteht. Beides wäre ein Befund,
-beides verlangt eine andere Behebung. Danach: die Regeln in einer Migration
-festschreiben, damit der Stand versioniert und reproduzierbar ist.
+**Beim Messen nebenbei gefunden, und es ist der dringendste Punkt der Liste:**
+Die laufende Instanz steht nicht auf dem Stand des Repos. Gemessen am
+14.09.2026, lesend über die API. Der Schemastand wurde je Migration an einem
+Feld geprüft, das sie anlegt:
 
-### 3. `action_counts` und `items` beim Lesen einschränken (Z-4, Z-3)
+| Migration | Prüfmerkmal | auf der Instanz |
+|---|---|---|
+| … bis `1782680000_badge_color` | `badges.color` u. a. | vorhanden |
+| `1782690000_store_secret_collection` | Sammlung `store_secrets` | **fehlt** |
+| `1782700000_store_timezone` | `store.timezone` | **fehlt** |
 
-`action_counts` ist der einfachere Fall: Kein Client liest die Sammlung, die
-Regel kann sofort auf Besitzprüfung. Bei `items` ist vor der Verschärfung die
-Treffermenge gegen die Versionen im Store abzugleichen — die Antwortform
-bleibt gleich, die Menge nicht. Mit Z-3 erledigt sich zugleich der offene
-App-Befund 7 an der Wurzel.
+Alles davor ist angewandt; stichprobenweise gegengeprüft bis
+`1700000600_item_location_status`. (Eine erste Prüfung meldete zusätzlich
+`1700000800_diamant_tiers` als fehlend — das war ein Fehler der Prüfung, nicht
+der Instanz: `tier_diamant` liegt auf `badges`, nicht auf `store`. Auf
+`badges` ist es vorhanden. Notiert, weil es zeigt, wie leicht aus einer
+schiefen Stichprobe ein falscher Befund wird.)
 
-### 4. Die sechs String-Literale bei den Farben beheben (B-10)
+Die letzten beiden Migrationen sind also **nie ausgeführt worden**. Was das
+konkret heißt, ebenfalls gemessen — ein Aufruf **ganz ohne Anmeldung**:
+
+```
+GET /api/collections/store/records   → HTTP 200
+   checkin_qr_secret: <32 Zeichen, gesetzt>
+   lat/lng: 54.3025 / 9.226
+```
+
+**Befund 1 aus `backend.md` (KRITISCH, Türgeheimnis unangemeldet im Netz)
+steht auf der Produktion in vollem Umfang offen.** Er ist im Repo behoben,
+getestet und in der Tabelle oben als BEHOBEN geführt — die Zeile dort meint
+den Code-Stand, nicht den Server. Wer den Code kennt, kann sich weiterhin von
+überall einchecken.
+
+Ebenso ist die Tagesgrenze (Befund 2, KRITISCH) auf der Produktion nicht
+konfigurierbar, weil `store.timezone` fehlt — die Fachlogik fällt dort auf
+ihren Rückfallwert zurück.
+
+Das ist die allgemeinere Lehre aus diesem Durchgang, und sie wiegt schwerer
+als jeder Einzelbefund: **Eine Migration im Repo ist keine Migration auf dem
+Server, und grüne Tests sagen darüber nichts.** Der Abstand zwischen beidem
+gehört gemessen, nicht angenommen — genauso, wie die Projektregel es für die
+Apps auf den Geräten verlangt. Dort ist der Gedanke bereits verankert, für den
+Server bisher nicht.
+
+Beim Nachziehen laufen die drei ausstehenden Migrationen in der Reihenfolge
+ihrer Zeitstempel. Danach gehört derselbe lesende Abgleich wiederholt.
+
+### 2. Die sechs String-Literale bei den Farben beheben (B-10)
 
 Sechs Zeilen, ein echter Darstellungsfehler an sichtbarer Stelle, vermutlich
 schon heute im Scanner zu sehen. Der kleinste Aufwand im ganzen Bericht bei
