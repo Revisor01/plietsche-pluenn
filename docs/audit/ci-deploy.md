@@ -145,7 +145,20 @@ hat. Das ist bei `gradle/actions` (Dritt-Organisation) gewichtiger als bei
 dahinter. Dependabot ist bereits für `github-actions` eingerichtet
 (`.github/dependabot.yml:64-72`) und hebt auch SHA-Pins an.
 
-### H-3 — Ein erfolgreicher Probelauf verschiebt den Vergleichsstand und verschluckt die nächsten Release-Notes
+### H-3 — Ein erfolgreicher Probelauf verschiebt den Vergleichsstand und verschluckt die nächsten Release-Notes — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** Der Workflow trägt jetzt einen `run-name`, der
+> einen Probelauf mit `[Probelauf]` markiert; der Schritt „Letzten
+> veröffentlichten Stand ermitteln" liest 50 statt eines Laufs und überspringt
+> die markierten. Der Vergleichsstand ist damit der letzte Lauf, der
+> tatsächlich veröffentlicht hat. Gibt es nur Probeläufe, bleibt der Wert leer
+> und `release-notes.py` greift auf seinen Rückfall zurück.
+>
+> Abgesichert durch `tests/play-vergleichsstand.test.js` (8 Tests): Die
+> Auswahllogik wird aus der Workflow-Datei selbst gelesen und als Prozess
+> aufgerufen, damit ein entfernter Filter auffällt. Gegenprobe gelaufen —
+> ohne den Filter fallen 4 Tests, mit `per_page=1` bzw. ohne `run-name` je 1.
+
 
 **Fundstellen:** `play-internal.yml:156-172` (Schritt „Letzten gebauten Stand
 ermitteln") zusammen mit `play-internal.yml:30-33` (Eingabe `probelauf`).
