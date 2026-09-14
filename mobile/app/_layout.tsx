@@ -43,6 +43,8 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
     <View style={{ flex: 1, backgroundColor: PP.inkDeep, padding: PP.space.xxl, paddingTop: 80 }}>
       <Pressable
         onPress={retry}
+        accessibilityRole="button"
+        accessibilityLabel="Neu versuchen"
         style={{
           backgroundColor: PP.teal,
           paddingVertical: PP.space.md,

@@ -28,6 +28,9 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
         {/* Standard = keine eigene Farbe (Marken-Verlauf bzw. Sky). */}
         <Pressable
           onPress={() => onChange('')}
+          accessibilityRole="button"
+          accessibilityLabel="Standardfarbe"
+          accessibilityState={{ selected: !current }}
           style={{
             width: 46,
             height: 46,
@@ -50,6 +53,9 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
             <Pressable
               key={c.hex}
               onPress={() => onChange(c.hex)}
+              accessibilityRole="button"
+              accessibilityLabel={c.name}
+              accessibilityState={{ selected: active }}
               style={{
                 width: 46,
                 height: 46,

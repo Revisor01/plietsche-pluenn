@@ -55,6 +55,10 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Jahres-Treue-Badges** werden am 31.12. rückwirkend vergeben (für jedes aktive Jahr).
 - **Aktions-Teilnahme-Badges** werden nach Aktionsende an alle Teilnehmer vergeben.
 
+**Bedienung**
+- **Die App lässt sich jetzt mit VoiceOver und TalkBack bedienen.** Jeder Knopf, Schalter, Filter und jedes Eingabefeld hat eine Ansage, die sagt, was er tut — bisher las der Bildschirmvorleser nur „Knopf" und man musste raten. Bei Knöpfen, die etwas verwerfen, steht die Folge dabei („Einreichung ablehnen — das Teil wird nicht aufgenommen"). Schalter sagen an, ob sie an oder aus sind, ausgewählte Filter und der aktive Tab werden als ausgewählt angesagt, und der Schritt-Anzeiger beim ersten Start nennt „Schritt 2 von 3".
+- **Kleine Schaltflächen sind leichter zu treffen:** Route, Telefonnummer, Filter-Pillen und die Schalter reagieren jetzt auch, wenn man knapp danebentippt.
+
 **Im Netz**
 - **plietsche-plünn.de zeigt jetzt den Laden:** Wer die Adresse im Browser aufrief, bekam bisher eine Fehlermeldung zu sehen. Dort steht jetzt eine Seite mit Öffnungszeiten, Anschrift, Telefonnummer und einer kurzen Beschreibung — für alle, die keine App benutzen. Die Anschrift des Ladens war im Hintergrund noch mit einem Beispielwert hinterlegt und ist korrigiert; sie erscheint dadurch auch in der App richtig.
 

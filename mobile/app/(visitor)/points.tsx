@@ -111,7 +111,14 @@ export default function Points() {
         {FILTERS.map((f) => {
           const active = filter === f.key;
           return (
-            <Pressable key={f.key} onPress={() => setFilter(f.key)}>
+            <Pressable
+              key={f.key}
+              onPress={() => setFilter(f.key)}
+              accessibilityRole="button"
+              accessibilityLabel={f.label}
+              accessibilityState={{ selected: active }}
+              hitSlop={8}
+            >
               <Pill
                 bg={active ? PP.teal : alpha(PP.ink, "subtle")}
                 color={active ? PP.onBrand : PP.ink2}

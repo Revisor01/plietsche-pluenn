@@ -53,7 +53,12 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
 
   return (
     <Card pad={12} style={{ gap: PP.space.md }}>
-      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: PP.space.md }}>
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.title}, ${st.label}`}
+        style={{ flexDirection: 'row', gap: PP.space.md }}
+      >
         <View
           style={{
             width: 70,
@@ -121,7 +126,15 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
               </PPButton>
             </View>
           )}
-          <IconButton icon="trash" tint={PP.err} bg={alpha(PP.err, 'soft')} loading={busy} onPress={() => run(() => archiveItem(item.id))} />
+          <IconButton
+            icon="trash"
+            accessibilityLabel={`${item.title} archivieren`}
+            accessibilityHint="Das Teil verschwindet aus dem Bestand."
+            tint={PP.err}
+            bg={alpha(PP.err, 'soft')}
+            loading={busy}
+            onPress={() => run(() => archiveItem(item.id))}
+          />
         </View>
       )}
     </Card>
@@ -187,12 +200,19 @@ export default function ItemsInventory() {
       <PPHeader
         subtitle="Inventar"
         title="Teile"
-        trailing={<IconButton icon="plus" onPress={() => router.push('/(visitor)/items/new')} />}
+        trailing={<IconButton icon="plus" accessibilityLabel="Neues Teil anlegen" onPress={() => router.push('/(visitor)/items/new')} />}
       />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: PP.space.xl, gap: PP.space.sm, paddingBottom: PP.space.md }}>
         {FILTERS.map((f) => (
-          <Pressable key={f.key} onPress={() => setFilter(f.key)}>
+          <Pressable
+            key={f.key}
+            onPress={() => setFilter(f.key)}
+            accessibilityRole="button"
+            accessibilityLabel={f.label}
+            accessibilityState={{ selected: filter === f.key }}
+            hitSlop={8}
+          >
             <Pill bg={filter === f.key ? PP.teal : alpha(PP.ink, "subtle")} color={filter === f.key ? PP.onBrand : PP.ink2}>
               {f.label}
             </Pill>

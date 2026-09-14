@@ -24,7 +24,7 @@ export function SectionTitle({ title, action, onAction }: SectionTitleProps) {
         {title}
       </PPText>
       {action && (
-        <Pressable onPress={onAction} hitSlop={8}>
+        <Pressable onPress={onAction} accessibilityRole="button" accessibilityLabel={`${action}: ${title}`} hitSlop={8}>
           <PPText weight="medium" size="sm" color={PP.teal}>
             {action}
           </PPText>

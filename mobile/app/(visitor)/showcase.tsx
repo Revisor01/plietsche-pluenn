@@ -49,7 +49,7 @@ export default function Showcase() {
       <PPHeader
         subtitle="Im Laden"
         title="Schaufenster"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       <View

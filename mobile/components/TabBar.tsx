@@ -105,6 +105,11 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
               key={slot.name}
               onPress={press(slot, isActive)}
               android_ripple={ripple(PP.teal, false)}
+              accessibilityRole="tab"
+              accessibilityLabel={slot.label}
+              // Der aktive Tab wird sichtbar allein über die Farbe getragen —
+              // ohne diesen Zustand ist er im Screenreader nicht erkennbar.
+              accessibilityState={{ selected: isActive }}
               style={styles.md3Item}
             >
               <View style={styles.md3IndicatorWrap}>
@@ -129,6 +134,9 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
       <Pressable
         key={slot.name}
         onPress={press(slot, isActive)}
+        accessibilityRole="tab"
+        accessibilityLabel={slot.label}
+        accessibilityState={{ selected: isActive }}
         style={({ pressed }) => [styles.item, { opacity: pressed ? 0.7 : 1 }]}
       >
         <View style={styles.iconWrap}>

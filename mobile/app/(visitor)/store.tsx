@@ -21,7 +21,12 @@ import type { Item } from '../../lib/types';
 function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
   const uri = itemThumb(item);
   return (
-    <Pressable onPress={onOpen} style={{ flex: 1 }}>
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={item.title}
+      style={{ flex: 1 }}
+    >
       <View
         style={{
           width: '100%',
@@ -101,6 +106,9 @@ function SelectChip({ label, active, onPress }: { label: string; active: boolean
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
       style={{
         paddingVertical: PP.space.sm,
         paddingHorizontal: PP.space.lg,
@@ -179,6 +187,9 @@ export default function Store() {
         trailing={
           <Pressable
             onPress={() => setSheetOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={activeCount > 0 ? `Filter, ${activeCount} aktiv` : 'Filter'}
+            accessibilityHint="Öffnet die Filterauswahl."
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -219,7 +230,12 @@ export default function Store() {
       {/* Filter sheet */}
       <Modal visible={sheetOpen} animationType="slide" transparent onRequestClose={() => setSheetOpen(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <Pressable style={{ flex: 1, backgroundColor: alpha(PP.inkDeep, "veil") }} onPress={() => setSheetOpen(false)} />
+          <Pressable
+            style={{ flex: 1, backgroundColor: alpha(PP.inkDeep, "veil") }}
+            onPress={() => setSheetOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Filter schließen"
+          />
           <View
             style={{
               backgroundColor: PP.bg,
@@ -243,6 +259,8 @@ export default function Store() {
               </PPText>
               <Pressable
                 onPress={() => setSheetOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Filter schließen"
                 hitSlop={10}
                 style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: alpha(PP.ink, "ghost"), alignItems: 'center', justifyContent: 'center' }}
               >

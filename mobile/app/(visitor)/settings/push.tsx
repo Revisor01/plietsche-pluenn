@@ -55,7 +55,7 @@ export default function PushSettings() {
       <PPHeader
         subtitle="Einstellungen"
         title="Benachrichtigungen"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.lg }}>
@@ -82,7 +82,7 @@ export default function PushSettings() {
                   {row.sub}
                 </PPText>
               </View>
-              <Toggle value={prefs[row.key]} onChange={(v) => toggle(row.key, v)} />
+              <Toggle value={prefs[row.key]} onChange={(v) => toggle(row.key, v)} accessibilityLabel={row.title} />
             </View>
           ))}
         </Card>

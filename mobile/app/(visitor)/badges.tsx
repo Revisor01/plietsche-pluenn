@@ -55,10 +55,12 @@ function BadgeSheet({
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Abzeichen schließen"
         style={{ flex: 1, backgroundColor: alpha(PP.inkDeep, "veil"), justifyContent: 'center', padding: PP.space.xxl }}
       >
         {/* Klicks auf die Karte sollen sie nicht schließen. */}
-        <Pressable onPress={() => {}}>
+        <Pressable onPress={() => {}} importantForAccessibility="no">
           <Card pad={20} radius={24} style={{ alignItems: 'center' }}>
             <GradientRing
               size={112}
@@ -221,7 +223,13 @@ export default function Badges() {
                 : [alpha(PP.ink, "medium"), alpha(PP.ink, "soft"), alpha(PP.ink, "medium")];
 
           return (
-            <Pressable key={b.id} onPress={() => setOpen(b)} style={{ width: colWidth }}>
+            <Pressable
+              key={b.id}
+              onPress={() => setOpen(b)}
+              accessibilityRole="button"
+              accessibilityLabel={veiled ? 'Geheimes Abzeichen, noch nicht entdeckt' : `${b.name}${earned ? `, ${info.current}` : ', noch offen'}`}
+              style={{ width: colWidth }}
+            >
             <Card pad={14} radius={18} style={{ alignItems: 'center' }}>
               <GradientRing
                 size={ring}

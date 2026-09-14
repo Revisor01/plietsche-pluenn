@@ -83,16 +83,27 @@ export default function Home() {
         subtitle="Plietsche Plünn"
         title={`Moin, ${user?.name?.split(' ')[0] ?? 'du'}!`}
         leading={
-          <Pressable onPress={() => router.push('/(visitor)/settings/account?from=/(visitor)')} hitSlop={8}>
+          <Pressable
+            onPress={() => router.push('/(visitor)/settings/account?from=/(visitor)')}
+            accessibilityRole="button"
+            accessibilityLabel="Mein Konto"
+            hitSlop={8}
+          >
             <Avatar initials={initials(user?.name)} gradient />
           </Pressable>
         }
-        trailing={<IconButton icon="bell" badge onPress={() => router.push('/(visitor)/settings/push?from=/(visitor)')} />}
+        trailing={<IconButton icon="bell" badge accessibilityLabel="Benachrichtigungen" onPress={() => router.push('/(visitor)/settings/push?from=/(visitor)')} />}
       />
 
       {/* Die Fortschrittskarte führt in die Punkte-Übersicht — der Verlauf
           stand vorher doppelt als "Watt's neu" unter dem Dashboard. */}
-      <Pressable style={{ paddingHorizontal: PP.space.xl }} onPress={() => router.push('/(visitor)/points')}>
+      <Pressable
+        style={{ paddingHorizontal: PP.space.xl }}
+        onPress={() => router.push('/(visitor)/points')}
+        accessibilityRole="button"
+        accessibilityLabel={`${formatPoints(total)} Punkte, Rang ${tier.name}`}
+        accessibilityHint="Öffnet die Punkte-Übersicht."
+      >
         <Card pad={22} radius={26} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.lg }}>
           <GradientRing size={120} stroke={11} progress={tier.progress}>
             <PPText weight="medium" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label }}>
@@ -217,7 +228,12 @@ export default function Home() {
       )}
 
       <View style={{ paddingHorizontal: PP.space.xl, paddingTop: PP.space.lg, flexDirection: 'row', gap: PP.space.md }}>
-        <Pressable style={{ flex: 1 }} onPress={() => router.push('/(visitor)/items/new')}>
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={() => router.push('/(visitor)/items/new')}
+          accessibilityRole="button"
+          accessibilityLabel="Teil einstellen"
+        >
           <Card pad={14} style={{ alignItems: 'flex-start', gap: PP.space.sm }}>
             <View
               style={{
@@ -241,7 +257,12 @@ export default function Home() {
         </Pressable>
 
         {isStaff && (
-          <Pressable style={{ flex: 1 }} onPress={() => router.push('/(visitor)/items/review')}>
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={() => router.push('/(visitor)/items/review')}
+            accessibilityRole="button"
+            accessibilityLabel={openCount ? `Freigaben, ${openCount} offen` : 'Freigaben, nichts offen'}
+          >
             {/* Offene Freigaben sind eine Aufgabe, keine Statuszeile: bei
                 Wartenden färbt sich die ganze Karte und trägt einen Zähler. */}
             <Card

@@ -24,7 +24,7 @@ import {
 
 function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
       <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
         <IconTile icon={icon} size="s" />
         <PPText weight="semibold" size="base" color={PP.ink} style={{ flex: 1 }}>{label}</PPText>
@@ -174,7 +174,7 @@ export default function Account() {
       <PPHeader
         subtitle="Dein Konto"
         title="Profil"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       <SectionTitle title="Name" />
@@ -261,7 +261,7 @@ export default function Account() {
           die volle Signalwirkung eines Lösch-Buttons. Der vorherige Geister-
           Button mit Zurück-Pfeil las sich wie "eine Ebene zurück". */}
       <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.huge }}>
-        <Pressable onPress={logout}>
+        <Pressable onPress={logout} accessibilityRole="button" accessibilityLabel="Abmelden">
           <Card
             pad={14}
             style={{

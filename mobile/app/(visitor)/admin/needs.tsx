@@ -87,7 +87,13 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           </PPText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
             {TEMPLATES.map((t) => (
-              <Pressable key={t.title} onPress={() => { setTitle(t.title); setDetail(t.detail); }}>
+              <Pressable
+                key={t.title}
+                onPress={() => { setTitle(t.title); setDetail(t.detail); }}
+                accessibilityRole="button"
+                accessibilityLabel={`Vorlage ${t.title}`}
+                hitSlop={8}
+              >
                 <Pill icon={t.icon} bg={alpha(PP.teal, 'subtle')} color={PP.teal}>{t.title}</Pill>
               </Pressable>
             ))}
@@ -107,7 +113,13 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
             GEHÖRT ZU AKTION
           </PPText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
-            <Pressable onPress={() => setCampaign('')}>
+            <Pressable
+              onPress={() => setCampaign('')}
+              accessibilityRole="button"
+              accessibilityLabel="Eigenständig"
+              accessibilityState={{ selected: !campaign }}
+              hitSlop={8}
+            >
               <Pill
                 bg={!campaign ? alpha(PP.teal, "soft") : alpha(PP.ink, "ghost")}
                 color={!campaign ? PP.teal : PP.ink2}
@@ -116,7 +128,14 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
               </Pill>
             </Pressable>
             {campaigns.map((c) => (
-              <Pressable key={c.id} onPress={() => setCampaign(c.id)}>
+              <Pressable
+                key={c.id}
+                onPress={() => setCampaign(c.id)}
+                accessibilityRole="button"
+                accessibilityLabel={c.name}
+                accessibilityState={{ selected: campaign === c.id }}
+                hitSlop={8}
+              >
                 <Pill
                   icon="sparkles"
                   bg={campaign === c.id ? alpha(PP.teal, "soft") : alpha(PP.ink, "ghost")}
@@ -142,7 +161,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
         <View style={{ flex: 1 }}><PPText weight="semibold" size="base" color={PP.ink}>Aktiv anzeigen</PPText></View>
-        <Toggle value={active} onChange={setActive} />
+        <Toggle value={active} onChange={setActive} accessibilityLabel="Aktiv anzeigen" />
       </View>
       {canPush && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md, backgroundColor: alpha(PP.sky, "subtle"), borderRadius: PP.rField, padding: PP.space.md }}>
@@ -153,12 +172,16 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
               Alle Nutzer bekommen eine Mitteilung (kommt in ~1 Min an).
             </PPText>
           </View>
-          <Toggle value={push} onChange={setPush} />
+          <Toggle value={push} onChange={setPush} accessibilityLabel="Als Push senden" />
         </View>
       )}
       <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{need ? 'Speichern' : 'Anlegen'}</PPButton></View>
-        {need && <PPButton size="m" variant="ghost" fullWidth={false} onPress={remove}>Löschen</PPButton>}
+        {need && (
+          <PPButton size="m" variant="ghost" fullWidth={false} accessibilityLabel="Aushang löschen" onPress={remove}>
+            Löschen
+          </PPButton>
+        )}
       </View>
     </Card>
   );
@@ -182,8 +205,8 @@ export default function NeedsAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Aushang"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
-        trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
+        trailing={<IconButton icon="plus" accessibilityLabel="Neuen Aushang anlegen" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
       <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.lg }}>
@@ -208,7 +231,13 @@ export default function NeedsAdmin() {
         {needs?.length ? (
           needs.map((n) => (
             <View key={n.id}>
-              <Pressable onPress={() => setOpenId(openId === n.id ? null : n.id)}>
+              <Pressable
+                onPress={() => setOpenId(openId === n.id ? null : n.id)}
+                accessibilityRole="button"
+                accessibilityLabel={n.title}
+                accessibilityHint={openId === n.id ? 'Bearbeiten schließen' : 'Aushang bearbeiten'}
+                accessibilityState={{ expanded: openId === n.id }}
+              >
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
                   <IconTile icon="megaphone" tint={PP.sky} tone="medium" size="s" />
                   <View style={{ flex: 1, minWidth: 0 }}>

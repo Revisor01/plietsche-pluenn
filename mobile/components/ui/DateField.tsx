@@ -43,6 +43,10 @@ export function DateField({
     <View>
       <Pressable
         onPress={openPicker}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityValue={{ text: value ? formatDE(value) : 'kein Datum gewählt' }}
+        accessibilityHint="Öffnet die Datumsauswahl."
         style={{
           backgroundColor: PP.surface,
           borderRadius: PP.rField,
@@ -91,11 +95,16 @@ export function DateField({
         <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
           <Pressable
             onPress={() => setOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Datumsauswahl schließen"
             style={{ flex: 1, backgroundColor: alpha(PP.ink, "strong"), justifyContent: 'flex-end' }}
           >
             {/* Tippen im Sheet darf es nicht schließen. */}
             <Pressable
               onPress={() => {}}
+              // Reiner Auffänger, damit ein Tipp im Sheet es nicht schließt —
+              // selbst kein Bedienelement, die Kinder bleiben erreichbar.
+              importantForAccessibility="no"
               style={{
                 backgroundColor: PP.surface,
                 borderTopLeftRadius: PP.rCard,
@@ -113,7 +122,7 @@ export function DateField({
                   paddingVertical: PP.space.sm,
                 }}
               >
-                <Pressable onPress={() => setOpen(false)} hitSlop={8}>
+                <Pressable onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Abbrechen" hitSlop={8}>
                   <PPText weight="medium" size="md" color={PP.ink2}>
                     Abbrechen
                   </PPText>
@@ -126,6 +135,8 @@ export function DateField({
                     if (draft) onChange(draft);
                     setOpen(false);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fertig"
                   hitSlop={8}
                 >
                   <PPText weight="semibold" size="md" color={PP.teal}>
