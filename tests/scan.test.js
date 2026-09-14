@@ -629,3 +629,55 @@ describe('Antwortform', () => {
     );
   });
 });
+
+describe('Besuche entstehen serverseitig', () => {
+  // Seit 1782710000_tighten_read_rules.js steht visits.createRule auf null:
+  // Kein Konto kann sich mehr Besuche über die REST-API anlegen. Die Regel
+  // darf den regulären Weg nicht mit zumachen — doCheckin schreibt über
+  // $app.dao(), und der Admin-DAO geht an den Regeln vorbei. Diese Tests
+  // sind der erlaubte Fall zum verbotenen in read-rules-migration.test.js.
+
+  // Ein Abzeichen mit dem Auslöser „visits" — genau das, was über den
+  // offenen Schreibweg erschleichbar war.
+  const STAMMGAST = { id: 'b_stammgast', trigger_type: 'visits' };
+
+  it('legt beim Türcode einen vollständigen Besuch an', () => {
+    const h = setup({ badges: [STAMMGAST] });
+    const res = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+
+    expect(res.status).toBe(200);
+    expect(h.rows('visits')).toHaveLength(1);
+    const besuch = h.rows('visits')[0];
+    expect(besuch.user).toBe('user1');
+    expect(besuch.items_count).toBe(0);
+    expect(besuch.points_awarded).toBe(10);
+    // Der Besuch zählt für das Abzeichen „Stammgast" — genau dafür war der
+    // offene Schreibweg missbrauchbar.
+    expect(h.lib.computeProgress(h.records.user, h.store.badges[0])).toBe(1);
+  });
+
+  it('legt auch beim Scannen eines Teils den fehlenden Besuch an', () => {
+    // Wer ein Teil scannt, ohne vorher eingecheckt zu haben, bekommt den
+    // Check-in mitgeliefert. Auch dieser Weg läuft über den Admin-DAO.
+    const h = setup({
+      items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
+    });
+    const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+
+    expect(res.body.did_checkin).toBe(true);
+    expect(h.rows('visits')).toHaveLength(1);
+    expect(h.rows('visits')[0].user).toBe('user1');
+  });
+
+  it('zählt am selben Tag keinen zweiten Besuch', () => {
+    // Gegenprobe: Der Schreibweg ist offen, aber nicht beliebig. Zwei Scans
+    // am selben Tag ergeben einen Besuch, nicht zwei.
+    const h = setup({ badges: [STAMMGAST] });
+    h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+    const zweiter = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+
+    expect(zweiter.body.already_checked_in).toBe(true);
+    expect(h.rows('visits')).toHaveLength(1);
+    expect(h.lib.computeProgress(h.records.user, h.store.badges[0])).toBe(1);
+  });
+});
