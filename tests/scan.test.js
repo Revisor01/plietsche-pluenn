@@ -612,12 +612,35 @@ describe('Tuergeheimnis liegt getrennt vom Laden', () => {
 
 describe('Antwortform', () => {
   // Die Felder sind ein Vertrag gegenueber den Apps auf den Geraeten.
+  //
+  // Der Vertrag lautet: Kein Feld verschwindet, keins wechselt den Typ. Ein
+  // zusaetzliches Feld ist ausdruecklich erlaubt — eine alte App-Version liest
+  // es schlicht nicht. Geprueft wird deshalb, dass jedes vereinbarte Feld da
+  // ist und was drinsteht; die Liste als geschlossene Menge zu pruefen wuerde
+  // eine erlaubte Ergaenzung als Fehler melden.
+  const CHECKIN_FELDER = ['already_checked_in', 'points', 'points_total', 'streak_weeks', 'type'];
+  const TEIL_FELDER = [
+    'checkin_points',
+    'did_checkin',
+    'item_points',
+    'label',
+    'points',
+    'points_total',
+    'type',
+  ];
+
   it('liefert beim Check-in die vereinbarten Felder', () => {
     const h = setup();
     const res = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
-    expect(Object.keys(res.body).sort()).toEqual(
-      ['already_checked_in', 'points', 'points_total', 'streak_weeks', 'type'].sort()
-    );
+    for (const feld of CHECKIN_FELDER) {
+      expect(Object.keys(res.body)).toContain(feld);
+    }
+    // Und die Typen, die die App erwartet.
+    expect(res.body.type).toBe('checkin');
+    expect(res.body.already_checked_in).toBe(false);
+    expect(res.body.points).toBe(10);
+    expect(res.body.points_total).toBe(10);
+    expect(res.body.streak_weeks).toBe(1);
   });
 
   it('liefert beim Teil die vereinbarten Felder', () => {
@@ -625,17 +648,16 @@ describe('Antwortform', () => {
       items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
     });
     const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
-    expect(Object.keys(res.body).sort()).toEqual(
-      [
-        'checkin_points',
-        'did_checkin',
-        'item_points',
-        'label',
-        'points',
-        'points_total',
-        'type',
-      ].sort()
-    );
+    for (const feld of TEIL_FELDER) {
+      expect(Object.keys(res.body)).toContain(feld);
+    }
+    expect(res.body.type).toBe('item');
+    expect(res.body.label).toBe('Jacke');
+    expect(res.body.points).toBe(40);
+    expect(res.body.item_points).toBe(30);
+    expect(res.body.checkin_points).toBe(10);
+    expect(res.body.did_checkin).toBe(true);
+    expect(res.body.points_total).toBe(40);
   });
 });
 
@@ -688,5 +710,121 @@ describe('Besuche entstehen serverseitig', () => {
     expect(zweiter.body.already_checked_in).toBe(true);
     expect(h.rows('visits')).toHaveLength(1);
     expect(h.lib.computeProgress(h.records.user, h.store.badges[0])).toBe(1);
+  });
+});
+
+// Beim ersten Besuch schaltet oft gleich ein Abzeichen frei. Die Punkte
+// dafuer vergibt checkBadges NACH doCheckin — points_total enthaelt sie,
+// `points` nicht. Die App meldete „+10 Punkte", der Kontostand sprang um 510.
+//
+// `points` bleibt, was es ist: die Regel „ausgelieferte Apps nie brechen"
+// gilt, Build 33 liest genau dieses Feld und zeigt es an. Ergaenzt wird ein
+// ZUSAETZLICHES Feld `bonus_points`, das eine kuenftige Version addieren kann.
+describe('Punkte aus Abzeichen in der Antwort', () => {
+  // Ein Abzeichen, das beim ersten Besuch sofort Bronze erreicht.
+  const ERSTER_BESUCH = {
+    id: 'b1',
+    name: 'Erster Besuch',
+    kind: 'tiered',
+    trigger_type: 'visits',
+    tier_bronze: 1,
+    reward_bronze: 500,
+  };
+
+  it('weist die Abzeichen-Punkte beim Check-in getrennt aus', () => {
+    const h = setup({ badges: [ERSTER_BESUCH] });
+    const res = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+
+    // Unveraendert: das Feld, das die ausgelieferte App liest.
+    expect(res.body.points).toBe(10);
+    // Neu: der Bonus, der sonst nur im Kontostand auftauchte.
+    expect(res.body.bonus_points).toBe(500);
+    // Und die Probe, dass beides zusammen den Kontostand ergibt.
+    expect(res.body.points_total).toBe(510);
+    expect(res.body.points + res.body.bonus_points).toBe(res.body.points_total);
+  });
+
+  it('meldet ohne freigeschaltetes Abzeichen einen Bonus von 0', () => {
+    const h = setup();
+    const res = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+    expect(res.body.points).toBe(10);
+    expect(res.body.bonus_points).toBe(0);
+    expect(res.body.points_total).toBe(10);
+  });
+
+  it('weist die Abzeichen-Punkte auch beim Scannen eines Teils aus', () => {
+    const h = setup({
+      badges: [ERSTER_BESUCH],
+      items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
+    });
+    const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+
+    // Teil (30) + mitgelieferter Check-in (10) — unveraendert.
+    expect(res.body.points).toBe(40);
+    expect(res.body.item_points).toBe(30);
+    expect(res.body.checkin_points).toBe(10);
+    expect(res.body.bonus_points).toBe(500);
+    expect(res.body.points_total).toBe(540);
+  });
+
+  it('weist den Bonus auch beim zweiten Check-in am selben Tag aus', () => {
+    // Zweiter Zweig der Route: kein neuer Besuchsbonus, aber Stepper-Punkte —
+    // und die koennen ebenfalls ein Abzeichen ausloesen.
+    const SAMMLER = {
+      id: 'b2',
+      name: 'Sammler',
+      kind: 'tiered',
+      trigger_type: 'scans',
+      tier_bronze: 1,
+      reward_bronze: 100,
+    };
+    const h = setup({
+      badges: [SAMMLER],
+      items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
+    });
+    // Erster Scan: legt den Besuch an und loest das Abzeichen aus.
+    h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    // Zweiter Aufruf am selben Tag ueber die Tuer, mit Stepper.
+    const res = h.call(ROUTE, { body: { qr_code: DOOR, items_count: 2 }, authRecord: auth(h) });
+
+    expect(res.body.already_checked_in).toBe(true);
+    expect(res.body.points).toBe(10); // 2 Teile à 5
+    // Das Abzeichen war schon vergeben, es kommt nichts mehr dazu.
+    expect(res.body.bonus_points).toBe(0);
+  });
+
+  it('laesst die uebrigen Felder der Antwort unveraendert', () => {
+    // Die Antwortform ist ein Vertrag: Es darf nur etwas dazukommen.
+    const h = setup({ badges: [ERSTER_BESUCH] });
+    const res = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+    expect(Object.keys(res.body).sort()).toEqual([
+      'already_checked_in',
+      'bonus_points',
+      'points',
+      'points_total',
+      'streak_weeks',
+      'type',
+    ]);
+    expect(res.body.type).toBe('checkin');
+    expect(res.body.already_checked_in).toBe(false);
+    expect(res.body.streak_weeks).toBe(1);
+  });
+
+  it('laesst die Felder der Teil-Antwort unveraendert', () => {
+    const h = setup({
+      items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', size: 'M', points: 30, status: 'approved' }],
+    });
+    const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    expect(Object.keys(res.body).sort()).toEqual([
+      'bonus_points',
+      'checkin_points',
+      'did_checkin',
+      'item_points',
+      'label',
+      'points',
+      'points_total',
+      'type',
+    ]);
+    expect(res.body.label).toBe('Jacke, M');
   });
 });

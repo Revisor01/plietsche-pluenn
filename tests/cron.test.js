@@ -799,6 +799,51 @@ describe('action-badges: gestufte Abzeichen', () => {
     expect(h.records.u.get('points_total')).toBe(0);
   });
 
+  // Die Teilnahme an einer Aktion zaehlt das, worauf die Aktion Bonus gibt
+  // (CHANGELOG: „Teilnahme zaehlt, worauf es Bonus gibt"). Eine Besuchsaktion
+  // hat mult_visit > 1, doCheckin zaehlt den Besuch damit in action_counts —
+  // der gestufte Zweig erreicht diese Person also sehr wohl. Ein Audit-Befund
+  // hatte das Gegenteil angenommen, weil er den Fall ohne action_counts-Zeile
+  // betrachtete. Diese beiden Tests halten fest, was tatsaechlich gilt.
+  it('erreicht auch jemanden, der bei einer Besuchsaktion nur da war', () => {
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      campaigns: [
+        {
+          id: 'c1',
+          badge: 'b1',
+          starts_at: '2026-01-01T00:00:00.000Z',
+          ends_at: '2026-12-31T23:59:59.000Z',
+          mult_visit: 2,
+        },
+      ],
+      badges: [
+        {
+          id: 'b1',
+          name: 'Dabei gewesen',
+          kind: 'tiered',
+          trigger_type: 'action_participation',
+          campaign: 'c1',
+          tier_bronze: 1,
+          tier_silber: 3,
+          reward_bronze: 10,
+          reward_silber: 25,
+        },
+      ],
+      // Der Besuch hat beim Check-in gezaehlt, weil die Aktion Bonus aufs
+      // Vorbeikommen gibt — genau so legt doCheckin die Zeile an.
+      action_counts: [{ id: 'ac1', user: 'u1', campaign: 'c1', count: 1 }],
+      visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-06-01T12:00:00.000Z' }],
+    });
+    h.runCron('action-badges');
+
+    const vergeben = h.rows('user_badges');
+    expect(vergeben).toHaveLength(1);
+    expect(vergeben[0].current_tier).toBe('bronze');
+    expect(vergeben[0].progress).toBe(1);
+    // Genau der Bronze-Bonus, Silber verlangt drei.
+    expect(h.records.u.get('points_total')).toBe(10);
+  });
+
   it('fasst jemanden ohne Beitrag zur Aktion nicht an', () => {
     // Der gestufte Zweig laeuft nur ueber action_counts mit count > 0 — anders
     // als der einfache, der auch reine Besuche mitnimmt.
@@ -823,6 +868,52 @@ describe('action-badges: gestufte Abzeichen', () => {
         },
       ],
       action_counts: [{ id: 'ac1', user: 'u1', campaign: 'c1', count: 0 }],
+      visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-06-01T12:00:00.000Z' }],
+    });
+    h.runCron('action-badges');
+    expect(h.rows('user_badges')).toHaveLength(0);
+    expect(h.records.u.get('points_total')).toBe(0);
+  });
+
+  // FESTGEHALTENE GRENZE, kein gewuenschtes Verhalten:
+  //
+  // Der Kommentar ueber dem Job nennt als zweiten Fall „Aktion/Badge erst
+  // nachtraeglich verknuepft, Beitraege lagen schon vor". Fuer EINSTUFIGE
+  // Abzeichen faengt Abschnitt b) das ab (Test „vergibt auch an jemanden, der
+  // nur im Aktionszeitraum da war"). Der gestufte Zweig steigt davor mit
+  // `continue` aus und laeuft ausschliesslich ueber action_counts — dort steht
+  // nichts, weil beim Besuch noch keine Verknuepfung bestand.
+  //
+  // Das nachzuholen hiesse, Besuche im Zeitraum rueckwirkend als Teilnahme zu
+  // zaehlen. Das widerspraeche der gepflegten Regel „Teilnahme zaehlt, worauf
+  // es Bonus gibt" und ist eine fachliche Entscheidung des Betreibers, keine
+  // Fehlerbehebung. Bis sie gefallen ist, haelt dieser Test den Ist-Stand
+  // fest — wird er rot, ist die Entscheidung umgesetzt worden.
+  it('holt ein nachtraeglich verknuepftes gestuftes Abzeichen NICHT nach', () => {
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      campaigns: [
+        {
+          id: 'c1',
+          badge: 'b1',
+          starts_at: '2026-01-01T00:00:00.000Z',
+          ends_at: '2026-12-31T23:59:59.000Z',
+          mult_visit: 2,
+        },
+      ],
+      badges: [
+        {
+          id: 'b1',
+          name: 'Sammlerin',
+          kind: 'tiered',
+          trigger_type: 'action_participation',
+          campaign: 'c1',
+          tier_bronze: 1,
+          reward_bronze: 10,
+        },
+      ],
+      // Der Besuch liegt im Zeitraum, aber es gibt keine action_counts-Zeile:
+      // Beim Check-in war das Abzeichen noch nicht mit der Aktion verknuepft.
+      action_counts: [],
       visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-06-01T12:00:00.000Z' }],
     });
     h.runCron('action-badges');

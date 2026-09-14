@@ -177,14 +177,25 @@ paths:
                     type: checkin
                     already_checked_in: false
                     points: 10
+                    bonus_points: 0
                     points_total: 310
                     streak_weeks: 4
+                checkinMitAbzeichen:
+                  summary: Check-in, der ein Abzeichen freischaltet
+                  value:
+                    type: checkin
+                    already_checked_in: false
+                    points: 10
+                    bonus_points: 500
+                    points_total: 510
+                    streak_weeks: 1
                 zweiterBesuch:
                   summary: Zweiter Scan am selben Tag — kein zweiter Bonus
                   value:
                     type: checkin
                     already_checked_in: true
                     points: 0
+                    bonus_points: 0
                     points_total: 310
                     streak_weeks: 4
                 teil:
@@ -195,6 +206,7 @@ paths:
                     points: 40
                     item_points: 30
                     checkin_points: 10
+                    bonus_points: 0
                     did_checkin: true
                     points_total: 350
         '400':
@@ -379,7 +391,8 @@ components:
     CheckinResult:
       type: object
       description: Antwort auf einen Check-in über den Türcode.
-      required: [type, already_checked_in, points, points_total, streak_weeks]
+      required:
+        [type, already_checked_in, points, bonus_points, points_total, streak_weeks]
       properties:
         type:
           type: string
@@ -400,12 +413,25 @@ components:
         streak_weeks:
           type: integer
           description: Wochen in Folge nach dem Scan.
+        bonus_points:
+          type: integer
+          description: |
+            Punkte aus Abzeichen, die dieser Scan freigeschaltet hat — 0, wenn
+            keines aufging. Sie stecken bereits in `points_total`, aber **nicht**
+            in `points`: Dort steht weiterhin nur, was der Scan selbst bringt.
+            Ohne dieses Feld meldete die App beim ersten Besuch „+10 Punkte",
+            während der Kontostand um 510 sprang.
+
+            Nachträglich ergänzt; App-Versionen, die es nicht kennen, verhalten
+            sich unverändert. Wer beides zeigen will, rechnet
+            `points + bonus_points`.
 
     ItemResult:
       type: object
       description: Antwort auf das Scannen eines Teils.
       required:
-        [type, label, points, item_points, checkin_points, did_checkin, points_total]
+        [type, label, points, item_points, checkin_points, bonus_points,
+         did_checkin, points_total]
       properties:
         type:
           type: string
@@ -429,6 +455,12 @@ components:
           description: |
             Besuchsbonus, falls dieser Scan der erste des Tages war —
             sonst 0.
+        bonus_points:
+          type: integer
+          description: |
+            Punkte aus Abzeichen, die dieser Scan freigeschaltet hat — 0, wenn
+            keines aufging. Siehe `CheckinResult.bonus_points`; sie stecken in
+            `points_total`, nicht in `points`.
         did_checkin:
           type: boolean
           description: Ob dieser Scan zugleich als Besuch gezählt wurde.
