@@ -193,17 +193,14 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -10
 
-      - name: Zu App Store Connect hochladen
-        working-directory: mobile/ios
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: |
-          IPA=$(ls build/export/*.ipa | head -1)
-          echo "Lade hoch: $IPA"
-          xcrun altool --upload-app -f "$IPA" -t ios \
-            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
-
+      # Die Hinweise entstehen VOR dem Upload. Scheiterten sie danach, waere
+      # der Build bei Apple schon angekommen und die Nummer verbraucht — er
+      # stuende dann ohne "Was gibt es Neues zu testen" in TestFlight, und die
+      # Nummer liesse sich nicht wiederverwenden.
+      #
+      # Das Vorziehen ist gefahrlos: Die Abfrage sucht den letzten
+      # ERFOLGREICHEN Lauf. Der gerade laufende zaehlt nicht dazu, egal an
+      # welcher Stelle sie steht. play-internal.yml haelt dieselbe Reihenfolge.
       - name: Letzten gebauten Stand ermitteln
         id: vorher
         env:
@@ -238,6 +235,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "--- Testhinweise ---"
           cat /tmp/notes.txt
+
+      - name: Zu App Store Connect hochladen
+        working-directory: mobile/ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          IPA=$(ls build/export/*.ipa | head -1)
+          echo "Lade hoch: $IPA"
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 
       - name: Testhinweise in TestFlight eintragen
         env:
