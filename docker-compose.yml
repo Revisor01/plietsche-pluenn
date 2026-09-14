@@ -12,6 +12,12 @@ services:
       - "--http=0.0.0.0:8090"
     environment:
       PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY}
+      # Nur für die Uhrzeiten der nächtlichen Aufgaben und für Logzeilen.
+      # Tagesgrenze, Kalenderwoche und Jahreszahl hängen NICHT hieran — die
+      # rechnet die Fachlogik aus der gepflegten Ladenzeitzone (store.timezone).
+      # Geht diese Zeile auf einem anders eingerichteten Host verloren, bleiben
+      # Punkte, Serien und Abzeichen deshalb trotzdem richtig.
+      TZ: Europe/Berlin
     volumes:
       - ./pb_data:/pb_data
       - ./pb_hooks:/pb_hooks

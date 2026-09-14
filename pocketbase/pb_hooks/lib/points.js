@@ -14,10 +14,108 @@ const DEFAULT_MAX_ITEMS_TAKE = 7; // internal rule: max items taken per visit
 
 const TIER_ORDER = ['none', 'bronze', 'silber', 'gold', 'platin', 'diamant'];
 
+// ── Ladenzeitzone ────────────────────────────────────────────────
+//
+// Tagesgrenze, Kalenderwoche und Jahreszahl sind fachliche Größen: Sie richten
+// sich danach, wann es im Laden Mitternacht ist — nicht danach, wie der Rechner
+// konfiguriert ist, auf dem der Server gerade läuft. Der Container läuft in UTC;
+// würde die Logik `new Date(jahr, monat, tag)` benutzen, begänne der „Tag" im
+// Sommer um 02:00 Uhr Ortszeit, und wer um 00:30 eincheckt, bekäme vormittags
+// einen zweiten vollen Bonus.
+//
+// Deshalb wird der Versatz hier gerechnet und nicht geerbt. Intl/ECMA-402 gibt
+// es in der PocketBase-Laufzeit (Goja) nicht, also wird die europäische Regel
+// direkt abgebildet: Sommerzeit vom letzten Sonntag im März 01:00 UTC bis zum
+// letzten Sonntag im Oktober 01:00 UTC (UTC+2), sonst UTC+1.
+const DEFAULT_STORE_TZ = 'Europe/Berlin';
+
+// Puffer für die gelesene Zeitzone (siehe storeTimezone).
+const TZ_CACHE_MS = 30000;
+const tzCache = { value: null, at: 0 };
+
+// Letzter Sonntag eines Monats, als UTC-Millisekunden zur angegebenen Stunde.
+function lastSundayUtc(year, month, hourUtc) {
+  // Der 1. des Folgemonats, einen Tag zurück = letzter Tag des Monats.
+  const d = new Date(Date.UTC(year, month + 1, 0, hourUtc, 0, 0, 0));
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return d.getTime();
+}
+
+// Versatz der Ladenzeitzone gegenüber UTC, in Minuten, für diesen Zeitpunkt.
+function storeOffsetMinutes(ms, tz) {
+  if (tz === 'UTC') return 0;
+  // Nur Europe/Berlin wird gerechnet; andere Angaben fallen darauf zurück.
+  const year = new Date(ms).getUTCFullYear();
+  const dstStart = lastSundayUtc(year, 2, 1); // letzter Sonntag im März, 01:00 UTC
+  const dstEnd = lastSundayUtc(year, 9, 1); // letzter Sonntag im Oktober, 01:00 UTC
+  return ms >= dstStart && ms < dstEnd ? 120 : 60;
+}
+
 module.exports = {
   POINTS,
   TIER_ORDER,
   DEFAULT_MAX_ITEMS_TAKE,
+  DEFAULT_STORE_TZ,
+
+  // Zeitzone des Ladens. Konfigurierbar auf dem store-Datensatz, damit ein
+  // Umzug oder ein zweiter Standort keine Codeänderung braucht.
+  //
+  // Kurz zwischengespeichert: isoWeek() wird je Besuch einmal aufgerufen, und
+  // streakFromVisits() läuft über alle Besuche einer Person — ohne Puffer
+  // ergäbe das eine Datenbankabfrage pro Besuch. Die Haltezeit ist knapp
+  // bemessen, damit eine Änderung im Verwaltungsbereich zeitnah greift.
+  storeTimezone() {
+    const now = Date.now();
+    if (tzCache.value && now - tzCache.at < TZ_CACHE_MS) return tzCache.value;
+    let tz = DEFAULT_STORE_TZ;
+    try {
+      const s = $app.dao().findFirstRecordByFilter('store', '1=1');
+      tz = (s ? `${s.get('timezone') || ''}`.trim() : '') || DEFAULT_STORE_TZ;
+    } catch (_) {
+      tz = DEFAULT_STORE_TZ;
+    }
+    tzCache.value = tz;
+    tzCache.at = now;
+    return tz;
+  },
+
+  // Den Puffer verwerfen. Für Tests, die die Zeitzone im laufenden Betrieb
+  // umstellen — im Server nicht nötig, dort läuft der Puffer von selbst ab.
+  forgetStoreTimezone() {
+    tzCache.value = null;
+    tzCache.at = 0;
+  },
+
+  // Die Datumsteile eines Zeitpunkts in der Ladenzeitzone.
+  // Gibt { year, month (0-11), day, hour, minute, second, weekday (0=So) }.
+  storeParts(date) {
+    const ms = date.getTime();
+    const shifted = new Date(ms + storeOffsetMinutes(ms, this.storeTimezone()) * 60000);
+    return {
+      year: shifted.getUTCFullYear(),
+      month: shifted.getUTCMonth(),
+      day: shifted.getUTCDate(),
+      hour: shifted.getUTCHours(),
+      minute: shifted.getUTCMinutes(),
+      second: shifted.getUTCSeconds(),
+      weekday: shifted.getUTCDay(),
+    };
+  },
+
+  // Mitternacht Ortszeit des Tages, in dem dieser Zeitpunkt liegt — als echter
+  // UTC-Zeitpunkt. Damit lassen sich die in der Datenbank als UTC gespeicherten
+  // Zeitstempel unmittelbar vergleichen.
+  storeDayStart(date) {
+    const p = this.storeParts(date);
+    // Erst mit dem Versatz des Zeitpunkts selbst schätzen, dann mit dem Versatz
+    // der Schätzung nachziehen — so stimmt die Grenze auch in den beiden
+    // Nächten, in denen die Uhr umgestellt wird.
+    const naive = Date.UTC(p.year, p.month, p.day, 0, 0, 0, 0);
+    const tz = this.storeTimezone();
+    let ms = naive - storeOffsetMinutes(date.getTime(), tz) * 60000;
+    ms = naive - storeOffsetMinutes(ms, tz) * 60000;
+    return new Date(ms);
+  },
 
   // Read admin-configured point values + item cap from the store singleton,
   // falling back to POINTS defaults when a value isn't set.
@@ -124,7 +222,8 @@ module.exports = {
 
   // Has the user already created a visit today? (no double check-in bonus)
   hasVisitToday(userId, now) {
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    // Tagesgrenze ist Mitternacht im Laden, nicht Mitternacht des Servers.
+    const start = this.storeDayStart(now);
     const startIso = start.toISOString().replace('T', ' ');
     try {
       const rows = $app
@@ -249,8 +348,11 @@ module.exports = {
   },
 
   // ISO week number for streak comparison.
+  // Der Kalendertag wird in der Ladenzeitzone bestimmt: Ein Check-in Montag um
+  // 00:30 Ortszeit gehört zur neuen Woche, nicht zur alten.
   isoWeek(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const p = this.storeParts(date);
+    const d = new Date(Date.UTC(p.year, p.month, p.day));
     const day = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - day);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));

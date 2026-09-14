@@ -137,7 +137,9 @@ cronAdd('year-badges', '40 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
   const dao = $app.dao();
   const now = new Date();
-  if (now.getMonth() !== 11 || now.getDate() !== 31) return; // only Dec 31
+  // Datum in der Ladenzeitzone, nicht in der des Servers.
+  const heute = lib.storeParts(now);
+  if (heute.month !== 11 || heute.day !== 31) return; // only Dec 31
 
   let badges;
   try {
@@ -153,8 +155,10 @@ cronAdd('year-badges', '40 3 * * *', () => {
     try { visits = dao.findRecordsByFilter('visits', `user = "${u.id}"`, '', 0, 0); } catch (_) { continue; }
     const years = {};
     for (const v of visits) {
-      const y = new Date(`${v.get('checkin_at')}`).getFullYear();
-      if (!isNaN(y)) years[y] = true;
+      const d = new Date(`${v.get('checkin_at')}`);
+      if (isNaN(d.getTime())) continue;
+      // Ein Besuch am 1.1. um 00:30 Ortszeit gehört ins neue Jahr.
+      years[lib.storeParts(d).year] = true;
     }
     const activeYears = Object.keys(years).length;
     for (const badge of badges) {
