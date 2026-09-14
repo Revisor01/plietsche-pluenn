@@ -544,6 +544,79 @@ describe('findActiveCampaign — welche Aktion gerade laeuft', () => {
     expect(c && c.id).toBe('c2');
   });
 
+  // Zwei Aktionen duerfen sich ueberschneiden — das Schema verbietet es nicht,
+  // und die Auswahl laeuft ausdruecklich ueber mehrere Zeilen. Entscheidend ist
+  // dann, dass die Aktion gewinnt, die tatsaechlich mehr Punkte bringt, und
+  // nicht die mit dem hoechsten Wert im alten Sammelfeld.
+  describe('zwei Aktionen gleichzeitig', () => {
+    it('nimmt die Aktion mit dem hoeheren Holen-Faktor', () => {
+      const h = setup({
+        campaigns: [
+          { id: 'c1', name: 'klein', starts_at: gestern, ends_at: morgen, multiplier: 5, mult_take: 1 },
+          { id: 'c2', name: 'gross', starts_at: gestern, ends_at: morgen, multiplier: 1, mult_take: 10 },
+        ],
+      });
+      const c = h.lib.findActiveCampaign(jetzt, h.records.user);
+      expect(c && c.id).toBe('c2');
+      expect(h.lib.campaignMult(c, 'take')).toBe(10);
+    });
+
+    it('nimmt die Aktion mit dem hoeheren Bringen-Faktor', () => {
+      const h = setup({
+        campaigns: [
+          { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 4 },
+          { id: 'c2', starts_at: gestern, ends_at: morgen, mult_bring: 6 },
+        ],
+      });
+      const c = h.lib.findActiveCampaign(jetzt, h.records.user);
+      expect(c && c.id).toBe('c2');
+      expect(h.lib.campaignMult(c, 'bring')).toBe(6);
+    });
+
+    it('nimmt weiterhin den hoeheren alten Sammelfaktor, wenn keine neuen Felder gepflegt sind', () => {
+      const h = setup({
+        campaigns: [
+          { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 2 },
+          { id: 'c2', starts_at: gestern, ends_at: morgen, multiplier: 7 },
+        ],
+      });
+      expect(h.lib.findActiveCampaign(jetzt, h.records.user).id).toBe('c2');
+    });
+
+    it('ueberspringt die staerkere Aktion, wenn sie fuer diese Person nicht gilt', () => {
+      // Zielgruppe schlaegt Faktor: Eine Aktion nur fuer Serien ab zwei Wochen
+      // darf einer Neuen nicht zufallen, auch wenn sie mehr Punkte braechte.
+      const h = setup({
+        users: [{ __name: 'user', id: 'u1', role: 'visitor', streak_weeks: 0 }],
+        campaigns: [
+          { id: 'c1', starts_at: gestern, ends_at: morgen, mult_take: 9, target_segment: 'streak2plus' },
+          { id: 'c2', starts_at: gestern, ends_at: morgen, mult_take: 2, target_segment: 'all' },
+        ],
+      });
+      const c = h.lib.findActiveCampaign(jetzt, h.records.user);
+      expect(c && c.id).toBe('c2');
+      expect(h.lib.campaignMult(c, 'take')).toBe(2);
+    });
+
+    it('zaehlt die Teilnahme an der staerkeren Aktion mit', () => {
+      // Der Folgeschaden aus dem Befund: Gewinnt die schwaechere Aktion, liegt
+      // ihr Faktor bei 1, bumpActionCount zaehlt nicht — und das zugehoerige
+      // Aktions-Abzeichen bleibt aus.
+      const h = setup({
+        campaigns: [
+          { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 5, mult_take: 1 },
+          { id: 'c2', starts_at: gestern, ends_at: morgen, multiplier: 1, mult_take: 10 },
+        ],
+      });
+      const c = h.lib.findActiveCampaign(jetzt, h.records.user);
+      h.lib.bumpActionCount(h.records.user, c, 'take', 1);
+      const zeilen = h.rows('action_counts');
+      expect(zeilen).toHaveLength(1);
+      expect(zeilen[0].campaign).toBe('c2');
+      expect(zeilen[0].count).toBe(1);
+    });
+  });
+
   it('nimmt ohne Person die erste laufende Aktion', () => {
     const h = setup({
       campaigns: [
