@@ -60,13 +60,13 @@ export function CameraGate({
     return (
       <View style={styles.permWrap}>
         <Icon name="camera" size={PP.iconSizes.hero} color={PP.onBrand} />
-        <PPText weight="semibold" size="lg" color={PP.onBrand} style={{ marginTop: 16, textAlign: 'center' }}>
+        <PPText weight="semibold" size="lg" color={PP.onBrand} style={{ marginTop: PP.space.lg, textAlign: 'center' }}>
           Kamera-Zugriff nötig
         </PPText>
-        <PPText size="base" color="PP.onBrandFaint" style={{ marginTop: 6, textAlign: 'center', maxWidth: 280 }}>
+        <PPText size="base" color="PP.onBrandFaint" style={{ marginTop: PP.space.sm, textAlign: 'center', maxWidth: 280 }}>
           Zum Scannen von QR-Codes brauchen wir kurz deine Kamera.
         </PPText>
-        <View style={{ marginTop: 24, width: 220 }}>
+        <View style={{ marginTop: PP.space.xxl, width: 220 }}>
           <PPButton onPress={onRequest}>Kamera erlauben</PPButton>
         </View>
       </View>
@@ -98,5 +98,5 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   frame: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center' },
   corner: {},
-  permWrap: { flex: 1, backgroundColor: PP.inkDeep, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  permWrap: { flex: 1, backgroundColor: PP.inkDeep, alignItems: 'center', justifyContent: 'center', padding: PP.space.xxl },
 });

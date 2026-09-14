@@ -110,10 +110,10 @@ export default function TiersAdmin() {
 
       {/* ── SEKTION 1: Punkte pro Aktion ── */}
       <SectionTitle title="Punkte pro Aktion" />
-      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
         <Hint icon="info" tone="info">Wie viele Punkte es pro Aktion gibt. Wirkt sofort.</Hint>
       </View>
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         <Field
           label="Check-in im Laden"
           value={ptsCheckin}
@@ -149,17 +149,17 @@ export default function TiersAdmin() {
 
       {/* ── SEKTION 2: Ränge ── */}
       <SectionTitle title="Ränge" />
-      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
         <Hint icon="info" tone="info">
           Ab wie vielen Gesamtpunkten ein Rang gilt. Der Ring auf der Startseite richtet sich danach. Du kannst Ränge hinzufügen, umbenennen und entfernen.
         </Hint>
       </View>
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {ranks.map((r, i) => (
           // alignItems: 'stretch' — beide Felder gleich hoch, egal wie lang das
           // Label ist. Sonst springt die Zeile, sobald eins davon umbricht.
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'stretch', gap: 10 }}>
-            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: tierColor(r.name), alignSelf: 'center' }} />
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'stretch', gap: PP.space.md }}>
+            <View style={{ width: 12, height: 12, borderRadius: PP.rMicro, backgroundColor: tierColor(r.name), alignSelf: 'center' }} />
             <View style={{ flex: 1 }}>
               <Field
                 label="Name"
@@ -181,19 +181,19 @@ export default function TiersAdmin() {
             <Pressable
               onPress={() => removeRank(i)}
               hitSlop={8}
-              style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: alpha(PP.ink, "subtle"), alignSelf: 'center' }}
+              style={{ width: 36, height: 36, borderRadius: PP.rTile2, alignItems: 'center', justifyContent: 'center', backgroundColor: alpha(PP.ink, "subtle"), alignSelf: 'center' }}
             >
               <Icon name="trash" size={PP.iconSizes.sm} color={PP.ink3} />
             </Pressable>
           </View>
         ))}
 
-        <View style={{ marginTop: 4 }}>
+        <View style={{ marginTop: PP.space.xs }}>
           <PPButton variant="ghost" icon="plus" onPress={addRank}>Rang hinzufügen</PPButton>
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.xxl }}>
         <PPButton icon="check" loading={busy} onPress={save}>Speichern</PPButton>
       </View>
     </Screen>

@@ -28,7 +28,7 @@ export function Pill({ children, color = PP.teal, bg = alpha(PP.teal, "subtle"),
         {
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 6,
+          gap: PP.space.sm,
           paddingHorizontal: padH,
           paddingVertical: padV,
           minHeight,

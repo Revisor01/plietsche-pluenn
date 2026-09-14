@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PP, alpha } from '../../lib/theme';
+import { PP, alpha, glow } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -23,11 +23,11 @@ export function Toast({ visible, title, subtitle, icon = 'medal', onHide, durati
 
   useEffect(() => {
     if (visible) {
-      ty.value = withSpring(0, { damping: 16, stiffness: 160 });
-      opacity.value = withTiming(1, { duration: 200 });
+      ty.value = withSpring(0, PP.motion.spring);
+      opacity.value = withTiming(1, { duration: PP.motion.base });
       const t = setTimeout(() => {
-        ty.value = withTiming(-120, { duration: 240 });
-        opacity.value = withTiming(0, { duration: 240 }, (done) => {
+        ty.value = withTiming(-120, { duration: PP.motion.base });
+        opacity.value = withTiming(0, { duration: PP.motion.base }, (done) => {
           if (done && onHide) runOnJS(onHide)();
         });
       }, duration);
@@ -63,21 +63,17 @@ export function Toast({ visible, title, subtitle, icon = 'medal', onHide, durati
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 12,
-          padding: 14,
-          borderRadius: 18,
-          shadowColor: PP.teal,
-          shadowOpacity: 0.28,
-          shadowRadius: 30,
-          shadowOffset: { width: 0, height: 14 },
-          elevation: 8,
+          gap: PP.space.md,
+          padding: PP.space.lg,
+          borderRadius: PP.rTile,
+          ...glow(PP.teal),
         }}
       >
         <View
           style={{
             width: 40,
             height: 40,
-            borderRadius: 12,
+            borderRadius: PP.rTile2,
             backgroundColor: alpha(PP.onBrand, "medium"),
             alignItems: 'center',
             justifyContent: 'center',

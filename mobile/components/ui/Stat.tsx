@@ -12,7 +12,7 @@ interface StatProps {
 export function Stat({ value, label, delta, tone = 'ink' }: StatProps) {
   const color = tone === 'teal' ? PP.teal : PP.ink;
   return (
-    <View style={{ flex: 1, paddingVertical: 10 }}>
+    <View style={{ flex: 1, paddingVertical: PP.space.md }}>
       <PPText weight="bold" size="xl2" color={color} style={{ letterSpacing: PP.tracking.title, lineHeight: PP.fontSizes.xl2 * PP.leading.tight }}>
         {value}
       </PPText>

@@ -20,18 +20,18 @@ export function ActivityRow({ icon, tone = 'teal', title, subtitle, imageUri }: 
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
+        gap: PP.space.md,
+        paddingHorizontal: PP.space.lg,
+        paddingVertical: PP.space.md,
         backgroundColor: PP.surface,
-        borderRadius: 16,
+        borderRadius: PP.rBtn,
         ...PP.shadowCard,
       }}
     >
       {imageUri ? (
         <Image
           source={{ uri: imageUri }}
-          style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: `${c}1f` }}
+          style={{ width: 44, height: 44, borderRadius: PP.rTile2, backgroundColor: `${c}1f` }}
           resizeMode="cover"
         />
       ) : (
@@ -39,7 +39,7 @@ export function ActivityRow({ icon, tone = 'teal', title, subtitle, imageUri }: 
           style={{
             width: 38,
             height: 38,
-            borderRadius: 12,
+            borderRadius: PP.rTile2,
             backgroundColor: `${c}1f`,
             alignItems: 'center',
             justifyContent: 'center',

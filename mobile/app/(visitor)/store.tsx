@@ -26,7 +26,7 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
         style={{
           width: '100%',
           aspectRatio: 4 / 5,
-          borderRadius: 18,
+          borderRadius: PP.rTile,
           overflow: 'hidden',
           backgroundColor: alpha(PP.teal, "subtle"),
           alignItems: 'center',
@@ -46,10 +46,10 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
               left: 8,
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 4,
-              paddingVertical: 4,
-              paddingHorizontal: 8,
-              borderRadius: 10,
+              gap: PP.space.xs,
+              paddingVertical: PP.space.xs,
+              paddingHorizontal: PP.space.sm,
+              borderRadius: PP.rTile2,
               backgroundColor: PP.onBrandMuted,
             }}
           >
@@ -60,7 +60,7 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
           </View>
         )}
       </View>
-      <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>
+      <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: PP.space.sm }} numberOfLines={1}>
         {item.title}
       </PPText>
       <PPText size="sm" color={PP.ink2} style={{ marginTop: 1 }}>
@@ -83,11 +83,11 @@ function FilterRow({
   onSelect: (key: string | null) => void;
 }) {
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: PP.space.sm }}>
       <PPText weight="semibold" size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.label }}>
         {title.toUpperCase()}
       </PPText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
         <SelectChip label="Alle" active={value === null} onPress={() => onSelect(null)} />
         {options.map((o) => (
           <SelectChip key={o.key} label={o.label} active={value === o.key} onPress={() => onSelect(o.key)} />
@@ -102,9 +102,9 @@ function SelectChip({ label, active, onPress }: { label: string; active: boolean
     <Pressable
       onPress={onPress}
       style={{
-        paddingVertical: 9,
-        paddingHorizontal: 16,
-        borderRadius: 12,
+        paddingVertical: PP.space.sm,
+        paddingHorizontal: PP.space.lg,
+        borderRadius: PP.rTile2,
         backgroundColor: active ? PP.teal : alpha(PP.ink, "ghost"),
         borderWidth: 1,
         borderColor: active ? PP.teal : alpha(PP.ink, "subtle"),
@@ -182,10 +182,10 @@ export default function Store() {
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 6,
-              paddingVertical: 8,
-              paddingHorizontal: 14,
-              borderRadius: 12,
+              gap: PP.space.sm,
+              paddingVertical: PP.space.sm,
+              paddingHorizontal: PP.space.lg,
+              borderRadius: PP.rTile2,
               backgroundColor: activeCount > 0 ? PP.teal : alpha(PP.ink, "ghost"),
             }}
           >
@@ -197,9 +197,9 @@ export default function Store() {
         }
       />
 
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ paddingHorizontal: PP.space.xl }}>
         {filtered.length ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.lg }}>
             {filtered.map((it) => (
               <View key={it.id} style={{ width: '47%', flexGrow: 1 }}>
                 <StoreCard item={it} onOpen={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)/store`)} />
@@ -223,12 +223,12 @@ export default function Store() {
           <View
             style={{
               backgroundColor: PP.bg,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              paddingHorizontal: 22,
-              paddingTop: 10,
+              borderTopLeftRadius: PP.rSheet,
+              borderTopRightRadius: PP.rSheet,
+              paddingHorizontal: PP.space.xxl,
+              paddingTop: PP.space.md,
               paddingBottom: Math.max(insets.bottom, 16) + 12,
-              gap: 22,
+              gap: PP.space.xxl,
               ...PP.shadowCard,
             }}
           >
@@ -270,7 +270,7 @@ export default function Store() {
               onSelect={setLoc}
             />
 
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 2 }}>
+            <View style={{ flexDirection: 'row', gap: PP.space.md, marginTop: 2 }}>
               {activeCount > 0 && (
                 <PPButton
                   size="m"

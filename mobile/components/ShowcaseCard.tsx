@@ -13,7 +13,7 @@ export function ShowcaseCard({ item, onPress }: { item: Item; onPress?: () => vo
         style={{
           width: 132,
           height: 158,
-          borderRadius: 18,
+          borderRadius: PP.rTile,
           overflow: 'hidden',
           backgroundColor: alpha(PP.teal, "subtle"),
           alignItems: 'center',
@@ -26,7 +26,7 @@ export function ShowcaseCard({ item, onPress }: { item: Item; onPress?: () => vo
           <Icon name="shirt" size={PP.iconSizes.hero} color={alpha(PP.teal, 'veil')} />
         )}
       </View>
-      <PPText weight="semibold" size="sm" color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>
+      <PPText weight="semibold" size="sm" color={PP.ink} style={{ marginTop: PP.space.sm }} numberOfLines={1}>
         {item.title}
       </PPText>
       <PPText size="xs" color={PP.ink2} style={{ marginTop: 1 }}>

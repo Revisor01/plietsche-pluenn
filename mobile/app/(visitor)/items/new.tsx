@@ -128,7 +128,7 @@ export default function NewItem() {
       />
 
       {!isStaff && (
-        <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+        <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
           <Hint icon="info" tone="warn">
             Dein Vorschlag wird von einem Helfer geprüft und dann freigegeben.
           </Hint>
@@ -136,12 +136,12 @@ export default function NewItem() {
       )}
 
       <SectionTitle title="Foto" />
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ paddingHorizontal: PP.space.xl }}>
         <Pressable onPress={pickPhoto}>
           <View
             style={{
               height: 180,
-              borderRadius: 18,
+              borderRadius: PP.rTile,
               backgroundColor: alpha(PP.teal, "subtle"),
               borderWidth: 1.5,
               borderColor: alpha(PP.teal, "medium"),
@@ -156,7 +156,7 @@ export default function NewItem() {
             ) : (
               <>
                 <Icon name="camera" size={PP.iconSizes.xl} color={PP.teal} />
-                <PPText size="sm" color={PP.ink2} style={{ marginTop: 8 }}>
+                <PPText size="sm" color={PP.ink2} style={{ marginTop: PP.space.sm }}>
                   Foto auswählen
                 </PPText>
               </>
@@ -166,13 +166,13 @@ export default function NewItem() {
       </View>
 
       <SectionTitle title="Was ist es?" />
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         <Field icon="shirt" label="Bezeichnung" value={title} onChangeText={setTitle} placeholder="z.B. Blaue Jeansjacke" />
         <Field label="Größe (optional)" value={size} onChangeText={setSize} placeholder="z.B. M / 38 / 134" />
       </View>
 
       <SectionTitle title="Für wen" />
-      <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
         {CATEGORY_GROUPS.map((g) => (
           <Pressable
             key={g.key}
@@ -188,7 +188,7 @@ export default function NewItem() {
       {GROUPS_WITH_TYPE.includes(group) && (
         <>
           <SectionTitle title="Art" />
-          <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
             {CATEGORY_TYPES.map((t) => (
               <Pressable key={t.key} onPress={() => setType(t.key)}>
                 <Pill bg={type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={type === t.key ? PP.onBrand : PP.ink2}>
@@ -201,7 +201,7 @@ export default function NewItem() {
       )}
 
       <SectionTitle title="Zustand" />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: PP.space.xl, gap: PP.space.sm }}>
         {CONDITIONS.map((c) => (
           <Pressable key={c.key} onPress={() => setCondition(c.key)}>
             <Pill bg={condition === c.key ? PP.teal : alpha(PP.ink, "subtle")} color={condition === c.key ? PP.onBrand : PP.ink2}>
@@ -212,16 +212,16 @@ export default function NewItem() {
       </ScrollView>
 
       <SectionTitle title="Wohin kommt das Teil?" />
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
-        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'stretch' }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
+        <View style={{ flexDirection: 'row', gap: PP.space.md, alignItems: 'stretch' }}>
           <Pressable style={{ flex: 1 }} onPress={() => setDestination('store')}>
             <View
               style={{
                 minHeight: 112,
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 10,
-                paddingHorizontal: 12,
+                gap: PP.space.md,
+                paddingHorizontal: PP.space.md,
                 borderRadius: PP.rCard,
                 backgroundColor: destination === 'store' ? PP.teal : PP.surface,
                 ...PP.shadowCard,
@@ -245,8 +245,8 @@ export default function NewItem() {
                 minHeight: 112,
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 10,
-                paddingHorizontal: 12,
+                gap: PP.space.md,
+                paddingHorizontal: PP.space.md,
                 borderRadius: PP.rCard,
                 backgroundColor: destination === 'mine' ? PP.teal : PP.surface,
                 ...PP.shadowCard,
@@ -288,7 +288,7 @@ export default function NewItem() {
         )}
 
         {isStaff && (
-          <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
             <View style={{ flex: 1 }}>
               <PPText weight="semibold" size="base" color={PP.ink}>
                 Ins Schaufenster
@@ -303,11 +303,11 @@ export default function NewItem() {
       </View>
 
       <SectionTitle title="Notiz (optional)" />
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ paddingHorizontal: PP.space.xl }}>
         <Field label="Notiz" value={note} onChangeText={setNote} placeholder="Besonderheiten, Marke, …" />
       </View>
 
-      <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.huge }}>
         <PPButton icon="check" loading={busy} onPress={submit}>
           {isStaff ? 'Teil einstellen' : 'Vorschlag einreichen'}
         </PPButton>

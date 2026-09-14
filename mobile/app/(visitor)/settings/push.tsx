@@ -60,7 +60,7 @@ export default function PushSettings() {
         leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
-      <View style={{ paddingHorizontal: 20, gap: 16 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.lg }}>
         <Card pad={0} style={{ overflow: 'hidden' }}>
           {ROWS.map((row, i) => (
             <View
@@ -68,9 +68,9 @@ export default function PushSettings() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 14,
+                gap: PP.space.lg,
+                paddingHorizontal: PP.space.lg,
+                paddingVertical: PP.space.lg,
                 borderTopWidth: i === 0 ? 0 : 1,
                 borderTopColor: PP.hairline,
               }}
@@ -79,7 +79,7 @@ export default function PushSettings() {
                 style={{
                   width: 38,
                   height: 38,
-                  borderRadius: 12,
+                  borderRadius: PP.rTile2,
                   backgroundColor: alpha(PP.teal, "subtle"),
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -99,7 +99,7 @@ export default function PushSettings() {
             </View>
           ))}
         </Card>
-        <PPText size="sm" color={PP.ink2} style={{ paddingHorizontal: 6, lineHeight: PP.fontSizes.sm * PP.leading.normal }}>
+        <PPText size="sm" color={PP.ink2} style={{ paddingHorizontal: PP.space.sm, lineHeight: PP.fontSizes.sm * PP.leading.normal }}>
           Wir benachrichtigen so wenig wie möglich. Versprochen. Watt zu viel ist, ist zu viel.
         </PPText>
       </View>

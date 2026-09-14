@@ -43,7 +43,7 @@ export function IconButton({ icon, badge, dark = false, tint, bg, loading, onPre
             right: 11,
             width: 8,
             height: 8,
-            borderRadius: 4,
+            borderRadius: PP.rMicro,
             backgroundColor: PP.warn,
             borderWidth: 1.5,
             borderColor: PP.surface,

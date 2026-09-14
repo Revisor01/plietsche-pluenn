@@ -46,11 +46,11 @@ export function DateField({
         style={{
           backgroundColor: PP.surface,
           borderRadius: PP.rField,
-          paddingHorizontal: 14,
-          paddingVertical: 8,
+          paddingHorizontal: PP.space.lg,
+          paddingVertical: PP.space.sm,
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 12,
+          gap: PP.space.md,
           borderWidth: 1,
           borderColor: alpha(PP.ink, "subtle"),
         }}
@@ -98,11 +98,11 @@ export function DateField({
               onPress={() => {}}
               style={{
                 backgroundColor: PP.surface,
-                borderTopLeftRadius: 24,
-                borderTopRightRadius: 24,
-                paddingHorizontal: 16,
-                paddingTop: 8,
-                paddingBottom: 28,
+                borderTopLeftRadius: PP.rCard,
+                borderTopRightRadius: PP.rCard,
+                paddingHorizontal: PP.space.lg,
+                paddingTop: PP.space.sm,
+                paddingBottom: PP.space.huge,
               }}
             >
               <View
@@ -110,7 +110,7 @@ export function DateField({
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  paddingVertical: 8,
+                  paddingVertical: PP.space.sm,
                 }}
               >
                 <Pressable onPress={() => setOpen(false)} hitSlop={8}>

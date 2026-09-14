@@ -67,14 +67,14 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
   };
 
   return (
-    <Card pad={14} style={{ gap: 12 }}>
+    <Card pad={14} style={{ gap: PP.space.md }}>
       {/* Tippen öffnet die Detailansicht zum Prüfen/Bearbeiten vor der Freigabe. */}
-      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: 12 }}>
+      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: PP.space.md }}>
         <View
           style={{
             width: 76,
             height: 92,
-            borderRadius: 12,
+            borderRadius: PP.rTile2,
             overflow: 'hidden',
             backgroundColor: alpha(PP.teal, "subtle"),
             alignItems: 'center',
@@ -95,28 +95,28 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
             {item.size ? `Größe ${item.size} · ` : ''}{item.sku}
           </PPText>
           {!!item.location && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.xs, marginTop: PP.space.sm }}>
               <Icon name="map-pin" size={PP.iconSizes.xs} color={PP.ink2} />
               <PPText size="sm" color={PP.ink2}>{item.location}</PPText>
             </View>
           )}
           {item.stays_external && (
-            <Pill icon="map-pin" color={PP.warn} bg={alpha(PP.warn, 'soft')} size="s" style={{ marginTop: 6 }}>
+            <Pill icon="map-pin" color={PP.warn} bg={alpha(PP.warn, 'soft')} size="s" style={{ marginTop: PP.space.sm }}>
               verbleibt extern
             </Pill>
           )}
           {!!submitter && (
-            <PPText size="xs" color={PP.ink3} style={{ marginTop: 6 }}>
+            <PPText size="xs" color={PP.ink3} style={{ marginTop: PP.space.sm }}>
               von {submitter}
             </PPText>
           )}
         </View>
         {/* QR preview for the printable label. */}
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ padding: 6, backgroundColor: PP.surface, borderRadius: 8 }}>
+          <View style={{ padding: PP.space.sm, backgroundColor: PP.surface, borderRadius: PP.rMicro }}>
             <QRCode value={item.qr_code || item.sku} size={56} color={PP.ink} backgroundColor={PP.onBrand} />
           </View>
-          <PPText size="xs" color={PP.ink3} style={{ marginTop: 4 }}>
+          <PPText size="xs" color={PP.ink3} style={{ marginTop: PP.space.xs }}>
             {item.qr_code || item.sku}
           </PPText>
         </View>
@@ -124,7 +124,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
 
       {/* Nur die Hauptaktion trägt Text — Schaufenster und Ablehnen sind
           Icon-Buttons, damit auf schmalen Geräten nichts umbricht. */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.sm }}>
         <View style={{ flex: 1 }}>
           <PPButton size="s" icon="check" loading={busy === 'approve'} onPress={() => approve(false)}>
             Freigeben
@@ -157,7 +157,7 @@ export default function ReviewItems() {
         leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {items?.length ? (
           items.map((it) => (
             <PendingCard

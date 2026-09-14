@@ -142,7 +142,7 @@ export default function Scan() {
 
             {error && (
               <>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.lg }}>
                   <View style={styles.errIcon}>
                     <Icon name="info" size={PP.iconSizes.xl} color={PP.err} />
                   </View>
@@ -155,7 +155,7 @@ export default function Scan() {
                     </PPText>
                   </View>
                 </View>
-                <View style={{ marginTop: 16 }}>
+                <View style={{ marginTop: PP.space.lg }}>
                   <PPButton onPress={reset}>Nochmal scannen</PPButton>
                 </View>
               </>
@@ -164,7 +164,7 @@ export default function Scan() {
             {result?.type === 'item' && (
               <>
                 <GradientCard pad={18} radius={20}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.lg }}>
                     <View style={styles.okIcon}>
                       <Icon name="check" size={PP.iconSizes.xl} color={PP.onBrand} />
                     </View>
@@ -178,7 +178,7 @@ export default function Scan() {
                     </View>
                   </View>
                 </GradientCard>
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+                <View style={{ flexDirection: 'row', gap: PP.space.md, marginTop: PP.space.lg }}>
                   <View style={{ flex: 1 }}>
                     <PPButton variant="secondary" onPress={reset}>
                       Noch eins
@@ -194,7 +194,7 @@ export default function Scan() {
             {result?.type === 'checkin' && (
               <>
                 <GradientCard pad={18} radius={20}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.lg }}>
                     <View style={styles.okIcon}>
                       <Icon name={result.already_checked_in ? 'info' : 'check'} size={PP.iconSizes.xl} color={PP.onBrand} />
                     </View>
@@ -212,18 +212,18 @@ export default function Scan() {
                 </GradientCard>
 
                 {doorSecret && (
-                  <View style={{ marginTop: 16 }}>
+                  <View style={{ marginTop: PP.space.lg }}>
                     <PPText weight="semibold" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label }}>
                       TEILE OHNE QR MITGENOMMEN?
                     </PPText>
-                    <View style={{ alignItems: 'center', marginTop: 12 }}>
+                    <View style={{ alignItems: 'center', marginTop: PP.space.md }}>
                       <Stepper value={extraItems} onChange={setExtraItems} max={maxItems} />
                     </View>
-                    <PPText size="xs" color={PP.ink3} style={{ textAlign: 'center', marginTop: 6 }}>
+                    <PPText size="xs" color={PP.ink3} style={{ textAlign: 'center', marginTop: PP.space.sm }}>
                       Höchstens {maxItems} Teile pro Besuch.
                     </PPText>
                     {extraItems > 0 && (
-                      <View style={{ marginTop: 14 }}>
+                      <View style={{ marginTop: PP.space.lg }}>
                         <PPButton icon="plus" loading={extraBusy} onPress={addExtraItems}>
                           {extraItems} Teile gutschreiben
                         </PPButton>
@@ -232,7 +232,7 @@ export default function Scan() {
                   </View>
                 )}
 
-                <View style={{ marginTop: 14 }}>
+                <View style={{ marginTop: PP.space.lg }}>
                   <PPButton variant={doorSecret ? 'ghost' : 'primary'} onPress={() => router.back()}>
                     Fertig
                   </PPButton>
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: PP.space.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 40,
     height: 40,
-    borderRadius: 14,
+    borderRadius: PP.rField,
     backgroundColor: alpha(PP.onBrand, "medium"),
     alignItems: 'center',
     justifyContent: 'center',
@@ -271,10 +271,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: PP.bg,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    borderTopLeftRadius: PP.rSheet,
+    borderTopRightRadius: PP.rSheet,
+    paddingHorizontal: PP.space.xl,
+    paddingTop: PP.space.sm,
   },
   handle: {
     width: 40,
@@ -282,12 +282,12 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: alpha(PP.ink, "medium"),
     alignSelf: 'center',
-    marginBottom: 14,
+    marginBottom: PP.space.lg,
   },
   okIcon: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: PP.rField,
     backgroundColor: alpha(PP.onBrand, "medium"),
     alignItems: 'center',
     justifyContent: 'center',
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   errIcon: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: PP.rField,
     backgroundColor: alpha(PP.err, "soft"),
     alignItems: 'center',
     justifyContent: 'center',

@@ -30,7 +30,7 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: StepperProps) {
       style={{
         width: 44,
         height: 44,
-        borderRadius: 22,
+        borderRadius: PP.rCard,
         backgroundColor: disabled ? alpha(PP.ink, "ghost") : alpha(PP.teal, "subtle"),
         alignItems: 'center',
         justifyContent: 'center',
@@ -41,7 +41,7 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: StepperProps) {
   );
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, alignSelf: 'center' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.lg, alignSelf: 'center' }}>
       <Btn onPress={dec} disabled={value <= min} icon="minus" />
       <View style={{ minWidth: 60, alignItems: 'center' }}>
         <PPText weight="bold" size="hero" color={PP.ink}>

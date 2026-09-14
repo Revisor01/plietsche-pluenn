@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP, alpha } from '../../lib/theme';
+import { PP, alpha, glow } from '../../lib/theme';
 import { lighten } from '../../lib/format';
 import { Icon, type IconName } from '../../lib/icons';
 import type { Tier } from '../../lib/types';
@@ -50,11 +50,7 @@ export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 5
         borderRadius: size / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: c.base,
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 4,
+        ...glow(c.base, 's'),
       }}
     >
       <Icon name={icon} size={size * 0.46} color={PP.onBrand} />

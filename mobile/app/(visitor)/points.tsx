@@ -79,7 +79,7 @@ export default function Points() {
     <Screen padBottom={110} refreshing={refreshing} onRefresh={onRefresh}>
       <PPHeader subtitle="Historie" title="Deine Punkte" />
 
-      <View style={{ paddingHorizontal: 20, paddingBottom: 14 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, paddingBottom: PP.space.lg }}>
         <Card pad={16} radius={20}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <View>
@@ -94,7 +94,7 @@ export default function Points() {
               {weekTotal > 0 && (
                 <Pill icon="arrow-up">+{formatPoints(weekTotal)} diese Woche</Pill>
               )}
-              <PPText size="xs" color={PP.ink2} style={{ marginTop: 4 }}>
+              <PPText size="xs" color={PP.ink2} style={{ marginTop: PP.space.xs }}>
                 {tier.remaining > 0 ? `noch ${formatPoints(tier.remaining)} bis ${tier.name}` : `${tier.current} erreicht`}
               </PPText>
             </View>
@@ -106,7 +106,7 @@ export default function Points() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 6, paddingBottom: 10 }}
+        contentContainerStyle={{ paddingHorizontal: PP.space.xl, gap: PP.space.sm, paddingBottom: PP.space.md }}
       >
         {FILTERS.map((f) => {
           const active = filter === f.key;
@@ -123,7 +123,7 @@ export default function Points() {
         })}
       </ScrollView>
 
-      <View style={{ paddingHorizontal: 20, gap: 18 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.lg }}>
         {groups.length === 0 ? (
           <Card pad={16}>
             <PPText size="base" color={PP.ink2}>
@@ -133,7 +133,7 @@ export default function Points() {
         ) : (
           groups.map(([day, items]) => (
             <View key={day}>
-              <PPText weight="semibold" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label, marginBottom: 8 }}>
+              <PPText weight="semibold" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label, marginBottom: PP.space.sm }}>
                 {day.toUpperCase()}
               </PPText>
               <Card pad={0} style={{ overflow: 'hidden' }}>
@@ -146,9 +146,9 @@ export default function Points() {
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
-                        gap: 12,
-                        paddingHorizontal: 14,
-                        paddingVertical: 12,
+                        gap: PP.space.md,
+                        paddingHorizontal: PP.space.lg,
+                        paddingVertical: PP.space.md,
                         borderTopWidth: j === 0 ? 0 : 1,
                         borderTopColor: PP.hairline,
                       }}

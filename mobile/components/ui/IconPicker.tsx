@@ -7,10 +7,10 @@ import { PPText } from './Text';
 export function IconPicker({ value, onChange }: { value: string; onChange: (icon: IconName) => void }) {
   return (
     <View>
-      <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 8, letterSpacing: PP.tracking.label }}>
+      <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>
         ICON
       </PPText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
         {BADGE_ICONS.map((name) => {
           const active = value === name;
           return (
@@ -20,7 +20,7 @@ export function IconPicker({ value, onChange }: { value: string; onChange: (icon
               style={{
                 width: 46,
                 height: 46,
-                borderRadius: 12,
+                borderRadius: PP.rTile2,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: active ? PP.teal : alpha(PP.ink, "ghost"),

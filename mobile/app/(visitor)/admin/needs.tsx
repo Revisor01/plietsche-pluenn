@@ -73,13 +73,13 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
   };
 
   return (
-    <Card pad={14} style={{ gap: 12 }}>
+    <Card pad={14} style={{ gap: PP.space.md }}>
       {!need && (
         <View>
-          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>
             SCHNELL-VORLAGEN
           </PPText>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
             {TEMPLATES.map((t) => (
               <Pressable key={t.title} onPress={() => { setTitle(t.title); setDetail(t.detail); }}>
                 <Pill icon={t.icon} bg={alpha(PP.teal, 'subtle')} color={PP.teal}>{t.title}</Pill>
@@ -97,10 +97,10 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           im Aushang steht (einmal als Aktion, einmal als Ankündigung). */}
       {!!campaigns?.length && (
         <View>
-          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 8, letterSpacing: PP.tracking.label }}>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>
             GEHÖRT ZU AKTION
           </PPText>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
             <Pressable onPress={() => setCampaign('')}>
               <Pill
                 bg={!campaign ? alpha(PP.teal, "soft") : alpha(PP.ink, "ghost")}
@@ -122,7 +122,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
             ))}
           </View>
           {!!campaign && (
-            <View style={{ marginTop: 8 }}>
+            <View style={{ marginTop: PP.space.sm }}>
               <Hint icon="bell" tone="warn">
                 Diese Ankündigung wird dadurch <PPText weight="bold" size="sm" color={PP.warn}>nicht angezeigt</PPText>,
                 solange die Aktion läuft — die Aktions-Karte deckt das Thema bereits ab. Erst nach Ende der
@@ -134,12 +134,12 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
         <View style={{ flex: 1 }}><PPText weight="semibold" size="base" color={PP.ink}>Aktiv anzeigen</PPText></View>
         <Toggle value={active} onChange={setActive} />
       </View>
       {!need && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: alpha(PP.sky, "subtle"), borderRadius: PP.rField, padding: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md, backgroundColor: alpha(PP.sky, "subtle"), borderRadius: PP.rField, padding: PP.space.md }}>
           <Icon name="bell" size={PP.iconSizes.md} color={PP.sky} />
           <View style={{ flex: 1 }}>
             <PPText weight="semibold" size="base" color={PP.ink}>Als Push senden</PPText>
@@ -150,7 +150,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           <Toggle value={push} onChange={setPush} />
         </View>
       )}
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{need ? 'Speichern' : 'Anlegen'}</PPButton></View>
         {need && <PPButton size="m" variant="ghost" fullWidth={false} onPress={remove}>Löschen</PPButton>}
       </View>
@@ -181,7 +181,7 @@ export default function NeedsAdmin() {
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
-      <View style={{ paddingHorizontal: 20, marginBottom: 14 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.lg }}>
         <Hint icon="info" tone="info">
           Ankündigungen stehen auf der Startseite ganz oben — für Öffnungszeiten, Hinweise
           oder was gerade gebraucht wird. Wer eine Ankündigung einer laufenden Aktion
@@ -192,20 +192,20 @@ export default function NeedsAdmin() {
       {creating && (
         <>
           <SectionTitle title="Neue Ankündigung" />
-          <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ paddingHorizontal: PP.space.xl }}>
             <NeedEditor onSaved={onSaved} />
           </View>
         </>
       )}
 
       <SectionTitle title="Aushänge" />
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {needs?.length ? (
           needs.map((n) => (
             <View key={n.id}>
               <Pressable onPress={() => setOpenId(openId === n.id ? null : n.id)}>
-                <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(PP.sky, "medium"), alignItems: 'center', justifyContent: 'center' }}>
+                <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
+                  <View style={{ width: 40, height: 40, borderRadius: PP.rTile2, backgroundColor: alpha(PP.sky, "medium"), alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="megaphone" size={PP.iconSizes.lg} color={PP.sky} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -216,7 +216,7 @@ export default function NeedsAdmin() {
                   <Icon name={openId === n.id ? 'chevron-down' : 'chevron-right'} size={PP.iconSizes.md} color={PP.ink3} />
                 </Card>
               </Pressable>
-              {openId === n.id && <View style={{ marginTop: 8 }}><NeedEditor need={n} onSaved={onSaved} /></View>}
+              {openId === n.id && <View style={{ marginTop: PP.space.sm }}><NeedEditor need={n} onSaved={onSaved} /></View>}
             </View>
           ))
         ) : (
