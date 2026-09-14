@@ -63,7 +63,7 @@ export function CameraGate({
         <PPText weight="semibold" size="lg" color={PP.onBrand} style={{ marginTop: PP.space.lg, textAlign: 'center' }}>
           Kamera-Zugriff nötig
         </PPText>
-        <PPText size="base" color="PP.onBrandFaint" style={{ marginTop: PP.space.sm, textAlign: 'center', maxWidth: 280 }}>
+        <PPText size="base" color={PP.onBrandFaint} style={{ marginTop: PP.space.sm, textAlign: 'center', maxWidth: 280 }}>
           Zum Scannen von QR-Codes brauchen wir kurz deine Kamera.
         </PPText>
         <View style={{ marginTop: PP.space.xxl, width: 220 }}>

@@ -14,7 +14,28 @@ interface PPTextProps extends TextProps {
    * der Skala vorbeigearbeitet, weil ein Verhältnis gehalten wird, keine Größe.
    */
   rawSize?: number;
+  /**
+   * Fertiger Farbwert, kein Token-Name: `color={PP.ink}`, nicht `color="PP.ink"`.
+   * Der Typ kann das nicht erzwingen, weil hier auch `alpha(...)` und die vom
+   * Team gepflegten Aushang-Farben ankommen — beides sind gewöhnliche
+   * Zeichenketten. Die Prüfung unten fängt den Vertipper deshalb zur Laufzeit.
+   */
   color?: string;
+}
+
+// Beim Zusammenführen der Design-Werte sind sechs Stellen als `color="PP.ink3"`
+// stehengeblieben — als Zeichenkette statt als Wert. React Native kann damit
+// nichts anfangen und zeichnet den Text in der Standardfarbe; auf farbigem Grund
+// heißt das: unlesbar. `tsc` sieht das nicht, weil jede Zeichenkette zum Typ
+// passt. In der Entwicklung fällt es jetzt sofort auf.
+function warnIfTokenName(color: string) {
+  if (!__DEV__) return;
+  if (/^(PP|alpha)\./.test(color)) {
+    console.error(
+      `PPText: color="${color}" ist ein Token-Name als Text, kein Farbwert. ` +
+        `Gemeint war vermutlich color={${color}}.`
+    );
+  }
 }
 
 const fontFor: Record<Weight, string> = {
@@ -34,6 +55,8 @@ export function PPText({
   style,
   ...rest
 }: PPTextProps) {
+  warnIfTokenName(color);
+
   // Der globale Schriftfaktor wirkt auf jede Größe — auch auf die berechneten.
   const base = rawSize ?? PP.fontSizes[size ?? 'base'];
   const scaled = scale(base);
