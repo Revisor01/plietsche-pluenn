@@ -1,5 +1,10 @@
 # Audit: Auslieferungskette
 
+> **Abgenommen am 14.09.2026.** Der Stand jedes einzelnen Befunds — behoben,
+> bewusst offen, offen oder hinfällig — steht in [`ABNAHME.md`](ABNAHME.md),
+> jeweils am Code belegt. Behobene Befunde sind zusätzlich hier markiert;
+> gelöscht wurde nichts.
+
 Geprüft am 14.09.2026 gegen den Stand `a1fb5d3` (Branch `main`, Arbeitsverzeichnis sauber).
 
 Umfang: `.github/` (Workflows, Python-Skripte), `docker-compose.yml`, `mobile/app.json`,
@@ -28,7 +33,17 @@ Repo-Sichtbarkeit: **privat**
 
 ## KRITISCH
 
-### K-1 — Apple-Signaturschlüssel (.p8) liegt im lokalen Git-Stash
+### K-1 — Apple-Signaturschlüssel (.p8) liegt im lokalen Git-Stash — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026 — im Repo.** Der Stash ist verworfen und die
+> unerreichbaren Objekte sind eingesammelt: `git stash list` ist leer, und
+> `git log --all -S"BEGIN PRIVATE KEY"` findet nur noch den Commit, der diesen
+> Bericht ablegt (der den Wert bewusst nicht nennt).
+>
+> **Offen bleibt der Teil außerhalb des Repos:** Ob der Schlüssel
+> `7X8W499AAK` in App Store Connect noch aktiv ist, lässt sich von hier aus
+> grundsätzlich nicht feststellen. Das gehört dort nachgesehen und
+> gegebenenfalls widerrufen.
 
 **Fundstelle:** Stash-Commit `d07af46`, Datei `AuthKey_7X8W499AAK.p8` (6 Zeilen,
 PKCS#8-Block). Erreichbar über `refs/stash`, Eintrag

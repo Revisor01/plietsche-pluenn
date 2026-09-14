@@ -1,5 +1,10 @@
 # Audit der Testsuite
 
+> **Abgenommen am 14.09.2026.** Der Stand jedes einzelnen Befunds — behoben,
+> bewusst offen, offen oder hinfällig — steht in [`ABNAHME.md`](ABNAHME.md),
+> jeweils am Code belegt. Behobene Befunde sind zusätzlich hier markiert;
+> gelöscht wurde nichts.
+
 Stand: 14.09.2026 — geprüft gegen die Regeln in `CLAUDE.md`, Abschnitt „Tests".
 
 ## Testlauf
@@ -274,7 +279,20 @@ PocketBase-Verhalten korrekt nach.
 Es gibt trotzdem **fünf Stellen, an denen der Harness gutmütiger ist als
 PocketBase.** Die erste ist ein echter Fehler.
 
-### 4.1 Zeitstempel-Vergleich ist kaputt — Grenzfälle fallen falsch aus
+### 4.1 Zeitstempel-Vergleich ist kaputt — Grenzfälle fallen falsch aus — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `matchesFilter` im Harness vergleicht Zeitstempel
+> jetzt als Zeitpunkt statt als Zeichenkette — die Trennerformen (`T` gegen
+> Leerzeichen) fallen damit nicht mehr auseinander.
+>
+> Abgesichert durch `tests/harness-time.test.js` (15 Tests), u. a. „vergleicht
+> über die Trennerformen hinweg als Zeitpunkt, nicht als Text“, „trennt Tage
+> korrekt: gestern Abend zählt nicht zu heute“ und die Gegenproben, dass reine
+> Zahlen- und Textfelder weiterhin wie bisher verglichen werden.
+>
+> Damit war die Voraussetzung für die Tests an der Tagesgrenze geschaffen
+> (`tests/timezone.test.js`) — der Befund, den dieser Bericht als „die
+> lohnendste fehlende Prüfung“ benannt hatte.
 
 **Das ist der schwerwiegendste Befund des Audits.**
 

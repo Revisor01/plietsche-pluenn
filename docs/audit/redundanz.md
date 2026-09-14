@@ -1,5 +1,10 @@
 # Redundanz-Audit — überflüssiger, doppelter und toter Code
 
+> **Abgenommen am 14.09.2026.** Der Stand jedes einzelnen Befunds — behoben,
+> bewusst offen, offen oder hinfällig — steht in [`ABNAHME.md`](ABNAHME.md),
+> jeweils am Code belegt. Behobene Befunde sind zusätzlich hier markiert;
+> gelöscht wurde nichts.
+
 Stand: 14.09.2026 · Umfang: `mobile/app/`, `mobile/components/`, `mobile/lib/`,
 `pocketbase/pb_hooks/`, `docs/openapi.yaml`, Repo-Wurzel.
 Ausgenommen: `ios/`, `android/`, `node_modules`, `.git`.
@@ -29,7 +34,11 @@ erreichbaren Route.
 
 Kein Verwender im Repo, keine Route, kein Vertrag nach außen.
 
-### 1. Fünf Komponenten ohne jeden Verwender
+### 1. Fünf Komponenten ohne jeden Verwender — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** Alle fünf Dateien sind entfernt, samt der
+> Einträge im Barrel (`components/ui/index.ts`). Damit ist auch die tote,
+> unvollständige Tier-Farbtabelle in `ProgressBar.tsx` verschwunden.
 
 | Datei | Zeilen | Export |
 |---|---|---|
@@ -98,7 +107,12 @@ benutzt (2 Treffer in `mobile/app/(visitor)/index.tsx`) und nutzt beide Typen
 in seiner eigenen Signatur. Die Typen sind also nicht tot, sondern nur
 unnötig **exportiert**. Richtig ist, das `export` zu entfernen, nicht den Typ.
 
-### 4. Ungenutzte lokale Bezeichner (Compiler-Befund)
+### 4. Ungenutzte lokale Bezeichner (Compiler-Befund) — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `npx tsc --noEmit --noUnusedLocals
+> --noUnusedParameters -p tsconfig.json` meldet in `mobile/` keinen Fehler
+> mehr — alle 16 Bezeichner sind entfernt, darunter die neun toten
+> `const router`.
 
 Vollständige Liste aus `tsc --noUnusedLocals --noUnusedParameters`:
 
@@ -129,7 +143,11 @@ mehreren Dateien auch der Import `useRouter` weg.
 
 **Löschbar:** ja, alle. Reine Interna.
 
-### 5. Drei Abhängigkeiten ohne Import
+### 5. Drei Abhängigkeiten ohne Import — **TEILWEISE BEHOBEN 14.09.2026**
+
+> **Stand 14.09.2026.** `tar` und `zustand` sind aus `mobile/package.json`
+> entfernt. `expo-system-ui` bleibt — der Befund dazu ist im Nachtrag unten
+> zurückgezogen und hat sich als unzutreffend erwiesen.
 
 `mobile/package.json`
 
@@ -183,7 +201,14 @@ lassen — Metro zieht Pakete nur über Importe, ein Fehler fiele sofort auf.
 
 ## Wahrscheinlich löschbar, Prüfung nötig
 
-### 6. `unregisterPushToken` — tot im Code, aber das ist der eigentliche Fehler
+### 6. `unregisterPushToken` — tot im Code, aber das ist der eigentliche Fehler — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `logout` (`useAuth.ts:82-90`) ruft die Funktion
+> jetzt vor `authStore.clear()`. Die Route `/api/pp/push/unregister` bleibt
+> unverändert bestehen — wie im Befund gefordert.
+>
+> **Ungetestet:** Für `mobile/` gibt es keine Testinfrastruktur, obwohl der
+> Befund ausdrücklich einen Test im selben Commit verlangt hatte.
 
 `mobile/lib/push.ts:87–99`
 
@@ -360,7 +385,16 @@ wirklich „Kommen" statt „Vorbeikommen" stehen soll, ist das ein Parameter, k
 zweiter Funktionskörper. `campaignFactorsLabel` entweder für Zeile 236 benutzen
 oder mitlöschen. **Kein API-Bezug — reine Anzeige, keine alte App betroffen.**
 
-### 2. Geofence-Prüfung zweimal wörtlich in derselben Datei
+### 2. Geofence-Prüfung zweimal wörtlich in derselben Datei — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `lib.assertInGeofence(store, lat, lng)`
+> (`points.js:639-645`) gibt die Entfernung zurück oder wirft; beide Zweige
+> rufen sie (`scan.pb.js:62`, `:110`), der Tür-Zweig nutzt den Rückgabewert
+> weiter. Der Rückfallradius steht als `DEFAULT_GEOFENCE_RADIUS_M`
+> (`points.js:17`) an einer Stelle.
+>
+> Die Bedingung des Befunds ist eingehalten: Status **400** und der Text
+> „Du bist nicht im Laden“ sind Wort für Wort unverändert.
 
 `pocketbase/pb_hooks/scan.pb.js:51–53` und `:103–105`
 
@@ -394,7 +428,17 @@ Tür-Zweig nutzt den Rückgabewert weiter.
 Text „Du bist nicht im Laden" unverändert bleiben — beide stehen so in
 `openapi.yaml:141–152`. Der Umbau darf die Fehlermeldung nicht anfassen.
 
-### 3. Jahreswechsel der ISO-Woche an drei Stellen nachgebaut
+### 3. Jahreswechsel der ISO-Woche an drei Stellen nachgebaut — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `updateStreak` (`points.js:447`) und der
+> Reset-Cron rufen jetzt `isWeekAdjacent`; die beiden Nachbauten sind
+> verschwunden. Die Funktion selbst wurde dabei korrigiert (siehe
+> `backend.md`, Befund zur Woche 53).
+>
+> Die vom Befund geforderte Reihenfolge ist eingehalten — erst Tests, dann
+> Umbau: `tests/streak.test.js` enthält jetzt den Abschnitt „Jahreswechsel:
+> alle drei Aufrufstellen urteilen gleich“. Mutationsprobe gelaufen: Mit dem
+> alten Ausdruck fallen 6 Tests.
 
 | Fundstelle | Ausdruck |
 |---|---|

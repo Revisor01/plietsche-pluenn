@@ -1,5 +1,10 @@
 # Audit: Backend-Fachlogik
 
+> **Abgenommen am 14.09.2026.** Der Stand jedes einzelnen Befunds — behoben,
+> bewusst offen, offen oder hinfällig — steht in [`ABNAHME.md`](ABNAHME.md),
+> jeweils am Code belegt. Behobene Befunde sind zusätzlich hier markiert;
+> gelöscht wurde nichts.
+
 **Datum:** 14.09.2026
 **Prüfer:** Code-Audit gegen `CLAUDE.md` (Projektregeln) und die Testsuite in `tests/`
 
@@ -118,7 +123,19 @@ die Ortsprüfung stützt sich auf das Türgeheimnis, das nun wieder geschützt i
 
 ---
 
-### [KRITISCH] Der Tageswechsel liegt um 02:00 Uhr Ortszeit — zweiter Bonus möglich
+### [KRITISCH] Der Tageswechsel liegt um 02:00 Uhr Ortszeit — zweiter Bonus möglich — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** Tagesgrenze, Kalenderwoche und Jahreszahl werden
+> jetzt in der Ladenzeitzone gerechnet statt aus der Prozess-Umgebung geerbt:
+> `points.js:113-123` (`storeDayStart`), dazu `storeParts` und
+> `storeOffsetMinutes`. Die Zeitzone ist auf dem `store`-Datensatz pflegbar
+> (`store.timezone`, Rückfall `Europe/Berlin`). Die Suite läuft jetzt in UTC —
+> der Zeitzone des Containers —, nicht mehr in Europe/Berlin.
+>
+> Abgesichert durch `tests/timezone.test.js` (16 Tests), u. a. „gibt für 00:30
+> Ortszeit keinen zweiten Check-in-Bonus am Vormittag“ und „trifft die
+> Tagesgrenze in der Nacht der Zeitumstellung“. Mutationsprobe gelaufen: Mit
+> dem alten Stand fallen 7 Tests.
 
 **Fundstelle:** `pocketbase/pb_hooks/lib/points.js:126-137`
 
@@ -220,7 +237,14 @@ zwischen 22:00Z und 24:00Z prüft.
 
 ---
 
-### [HOCH] Ohne GPS wird der Geofence gar nicht geprüft
+### [HOCH] Ohne GPS wird der Geofence gar nicht geprüft — **BEWUSST OFFEN (14.09.2026)**
+
+> **Bewusst offen, 14.09.2026.** Der Befund hing ausdrücklich an Befund 1
+> („Diese Begründung trägt, solange das Geheimnis geheim ist“). Mit dessen
+> Behebung ist das Geheimnis wieder geschützt, und der GPS-freie Weg bleibt —
+> wie im Befund selbst vorgesehen — bestehen. Die Prüfung ist zugleich auf
+> eine Fassung zusammengeführt (`points.js:639-645`, `assertInGeofence`);
+> der Rückfallradius steht als `DEFAULT_GEOFENCE_RADIUS_M` an einer Stelle.
 
 **Fundstelle:** `pocketbase/pb_hooks/scan.pb.js:49-54` und `102-106`
 
@@ -264,7 +288,20 @@ Laden").
 
 ---
 
-### [HOCH] Serie zählt über eine übersprungene Woche 53 hinweg weiter
+### [HOCH] Serie zählt über eine übersprungene Woche 53 hinweg weiter — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `isoWeeksInYear(year)` (`points.js:416-420`)
+> bestimmt, ob ein Jahr 52 oder 53 Kalenderwochen hat; `isWeekAdjacent`
+> (`:427-435`) lässt nur noch die tatsächlich letzte Woche des Vorjahres als
+> Vorgängerin von KW 1 gelten. `updateStreak` und der Reset-Cron rufen jetzt
+> dieselbe Funktion, statt die Regel nachzubauen — damit ist zugleich der
+> Redundanz-Befund „ISO-Woche an drei Stellen“ erledigt.
+>
+> Abgesichert durch `tests/streak.test.js` („reisst, wenn die 53. Woche
+> uebersprungen wurde“, „kennt die Laenge des jeweiligen Jahres“) und
+> `tests/cron.test.js` („setzt zurueck, wenn die 53. Woche ausgelassen
+> wurde“). Mutationsprobe gelaufen: Mit dem alten Ausdruck fallen 6 Tests
+> über alle drei Aufrufstellen.
 
 **Fundstelle:** `pocketbase/pb_hooks/lib/points.js:300-303`
 

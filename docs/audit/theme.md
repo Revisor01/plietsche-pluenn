@@ -1,5 +1,10 @@
 # Bestandsaufnahme: Design-Werte in der App
 
+> **Abgenommen am 14.09.2026.** Der Stand jedes einzelnen Befunds — behoben,
+> bewusst offen, offen oder hinfällig — steht in [`ABNAHME.md`](ABNAHME.md),
+> jeweils am Code belegt. Behobene Befunde sind zusätzlich hier markiert;
+> gelöscht wurde nichts.
+
 Stand: 14.09.2026 · Umfang: `mobile/app/`, `mobile/components/`, `mobile/lib/`
 (ohne `ios/`, `android/`, `node_modules/`) · 51 Quelldateien, 8.544 Zeilen.
 

@@ -1,5 +1,10 @@
 # Audit: App (mobile/)
 
+> **Abgenommen am 14.09.2026.** Der Stand jedes einzelnen Befunds — behoben,
+> bewusst offen, offen oder hinfällig — steht in [`ABNAHME.md`](ABNAHME.md),
+> jeweils am Code belegt. Behobene Befunde sind zusätzlich hier markiert;
+> gelöscht wurde nichts.
+
 **Datum:** 14.09.2026
 **Umfang:** `mobile/app/` (Screens, 27 Dateien), `mobile/components/` (Komponenten inkl. `ui/`), `mobile/lib/` (Bibliothek, vollständig). Ausgenommen: `mobile/ios/`, `mobile/android/`, `node_modules`.
 **Grundlage:** `CLAUDE.md` (Projektregeln), Gegenprobe gegen `pocketbase/pb_migrations/` und `pocketbase/pb_hooks/`, wo ein Befund von Server-Berechtigungen abhängt.
@@ -9,7 +14,15 @@
 
 ## Befunde
 
-### [KRITISCH] Abmelden räumt weder den Query-Cache noch den Push-Token auf — das nächste Konto sieht fremde Daten
+### [KRITISCH] Abmelden räumt weder den Query-Cache noch den Push-Token auf — das nächste Konto sieht fremde Daten — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `logout` (`useAuth.ts:82-90`) ist jetzt async und
+> arbeitet in der empfohlenen Reihenfolge: `await unregisterPushToken()` in
+> `try/catch` (ein Gerät ohne Netz muss trotzdem herauskommen), dann
+> `pb.authStore.clear()`, dann `queryClient.clear()`. Damit hat
+> `unregisterPushToken` auch seinen ersten Aufrufer.
+>
+> **Ungetestet:** Für `mobile/` gibt es keine Testinfrastruktur.
 
 **Fundstelle:** `mobile/lib/hooks/useAuth.ts:68`, `mobile/app/(visitor)/settings/account.tsx:264`, `mobile/app/(visitor)/settings/store.tsx:137`, `mobile/lib/queryClient.ts:3-11`
 
@@ -38,7 +51,14 @@ mobile/lib/push.ts:87:export async function unregisterPushToken(): Promise<void>
 
 ---
 
-### [HOCH] Freigeben, Ablehnen und Archivieren aktualisieren die Startseite nicht — der Zähler „Teile warten" bleibt falsch stehen
+### [HOCH] Freigeben, Ablehnen und Archivieren aktualisieren die Startseite nicht — der Zähler „Teile warten" bleibt falsch stehen — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `invalidateItems(qc)` (`lib/queryClient.ts:21-33`)
+> invalidiert alle sechs abhängigen Schlüssel an einer Stelle; benutzt in
+> `items/review.tsx:149`, `items/index.tsx:147`, `items/[id].tsx:151` und
+> `items/new.tsx:105`.
+>
+> **Ungetestet:** Für `mobile/` gibt es keine Testinfrastruktur.
 
 **Fundstelle:** `mobile/app/(visitor)/items/review.tsx:145-148`, `mobile/app/(visitor)/index.tsx:42-43`, `mobile/lib/hooks/useData.ts:107-120`
 
@@ -106,7 +126,15 @@ Ein Volunteer darf `needs` anlegen, aber **nicht** `push_messages`. Der Schalter
 
 ---
 
-### [HOCH] Englische Fehlermeldungen aus dem SDK landen in deutschen Dialogen
+### [HOCH] Englische Fehlermeldungen aus dem SDK landen in deutschen Dialogen — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `errorText(e, fallback)` in `mobile/lib/errors.ts`
+> reicht deutsche Server-Meldungen durch, erkennt die SDK-Sätze und bildet
+> Netz-, Berechtigungs- und Validierungsfehler auf deutsche Texte ab. An allen
+> 14 Stellen eingesetzt; ein `grep` findet keinen rohen `e?.message`-Durchgriff
+> mehr.
+>
+> **Ungetestet:** Für `mobile/` gibt es keine Testinfrastruktur.
 
 **Fundstelle:** 14 Stellen, u.a. `mobile/app/(visitor)/items/new.tsx:113`, `items/[id].tsx:186`, `items/review.tsx:36,61`, `items/index.tsx:46`, `admin/badges.tsx:154,172`, `admin/actions.tsx:104`, `admin/needs.tsx:52,57`, `admin/tiers.tsx:96`, `settings/account.tsx:126,148`, `mobile/app/scan.tsx:73`
 
@@ -172,7 +200,14 @@ Der `syncTotal`-Pfad ist damit für den Ring wirkungslos. Was ihn tatsächlich a
 
 ---
 
-### [MITTEL] Aktionen anlegen oder ändern aktualisiert den Aushang auf der Startseite nicht
+### [MITTEL] Aktionen anlegen oder ändern aktualisiert den Aushang auf der Startseite nicht — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** `invalidateCampaigns(qc)`
+> (`lib/queryClient.ts:39-45`) deckt `['campaigns']` (Präfix, trifft beide
+> Listen), `['campaign','active']` und `['needs','active']` ab; benutzt in
+> `admin/actions.tsx:175`.
+>
+> **Ungetestet:** Für `mobile/` gibt es keine Testinfrastruktur.
 
 **Fundstelle:** `mobile/app/(visitor)/admin/actions.tsx:181-185`, `mobile/lib/hooks/useData.ts:152-164`, `mobile/app/(visitor)/index.tsx:41`
 
@@ -346,6 +381,17 @@ Zusätzlich weicht die harte Liste von der einzigen Quelle in `lib/format.ts:9-2
 **Deep Links aus Push-Nachrichten.** `lib/push.ts:51-73` behandelt die Nutzlast konsequent als fremde Eingabe: feste Erlaubnisliste, dazu ein eng gefasster regulärer Ausdruck für Teil-IDs (`^\/\(visitor\)\/items\/[A-Za-z0-9_-]+$`), alles andere öffnet nur die App. Zusätzlich wird geprüft, dass es ein echter Tipp war und keine Verwerfung (`actionIdentifier`, `push.ts:64-66`). Der Link wird erst ausgeführt, wenn Anmeldung und Onboarding durch sind (`_layout.tsx:105-113`) — mit Aufräumen des Timers.
 
 **Aufräumen von Listenern und Timern.** Durchgehend korrekt: Notification-Listener (`_layout.tsx:82-87`), Font-Timeout (`_layout.tsx:138-141`), Cold-Start-Deep-Link mit `cancelled`-Flag gegen Zustandsänderungen nach dem Unmount (`_layout.tsx:72-78`), Barrierefreiheits-Listener der Tab-Leiste mit `alive`-Flag und `sub?.remove()` (`TabBar.tsx:60-72`), Toast-Timer (`Toast.tsx:28-35`). Kein Listener ohne Gegenstück gefunden.
+
+> **Richtigstellung 14.09.2026 (Abnahme).** Der hier gelobte
+> „Barrierefreiheits-Listener der Tab-Leiste" ist
+> `AccessibilityInfo.isReduceTransparencyEnabled` und schaltet nur den
+> Glas-Effekt um — er ist **kosmetisch und trägt zur Bedienbarkeit mit
+> Screenreader nichts bei**. Das Aufräumen des Listeners ist korrekt, die
+> Einordnung unter Barrierefreiheit war es nicht. Die App hat in Wahrheit
+> **null** Barrierefreiheits-Auszeichnungen: kein `accessibilityLabel`,
+> `accessibilityRole`, `accessibilityHint` oder `accessibilityState` in 65
+> Dateien, bei 128 interaktiven Elementen. Siehe `ABNAHME.md`, Befunde B-1
+> bis B-11.
 
 **Absicherung der Punkte gegen Manipulation aus der App.** `points_total`, `streak_weeks`, `streak_last_visit` und `role` werden serverseitig auf den gespeicherten Wert zurückgesetzt, wenn ein Client sie zu ändern versucht (`pb_hooks/defaults.pb.js:26-44`). Die App versucht das an keiner Stelle. Die Rangleiter in `lib/format.ts:167-186` behandelt den Fall „noch kein Rang" korrekt (`current` ist `'—'`, der Fortschritt zählt von 0 zur ersten Schwelle) und klemmt den Fortschritt auf 0..1.
 
