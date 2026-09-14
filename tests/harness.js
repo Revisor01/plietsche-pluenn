@@ -94,6 +94,26 @@ class FakeRecord {
 //   feld = "wert"   feld != ""   feld > 0   feld >= "…"   feld <= "…"   1=1
 // verknüpft mit &&. Alles andere lässt der Harness bewusst scheitern, statt
 // still ein falsches Ergebnis zu liefern.
+// Erkennt die Datumsformen, die in diesem Projekt vorkommen, und gibt sie als
+// Millisekunden zurück — sonst null.
+//
+// Bewusst eng gefasst: Nur "JJJJ-MM-TT" mit optionaler Uhrzeit, getrennt durch
+// "T" oder Leerzeichen. Damit bleiben SKUs, Namen und andere Texte, die zufällig
+// mit einer Zahl beginnen, vom Datumsvergleich unberührt.
+const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?)?Z?$/;
+
+function asTimestamp(value) {
+  const s = `${value}`.trim();
+  if (!TIMESTAMP_RE.test(s)) return null;
+  // Trenner vereinheitlichen, damit beide Schreibweisen denselben Zeitpunkt
+  // ergeben. Ohne Zeitzonenangabe liest PocketBase UTC — "Z" ergänzen, sonst
+  // legt Node die lokale Zeitzone zugrunde und der Vergleich verschiebt sich.
+  let normalized = s.replace(' ', 'T');
+  if (!normalized.endsWith('Z')) normalized += 'Z';
+  const ms = Date.parse(normalized);
+  return isNaN(ms) ? null : ms;
+}
+
 function matchesFilter(record, filter) {
   const expr = `${filter || ''}`.trim();
   if (expr === '' || expr === '1=1') return true;
@@ -107,6 +127,36 @@ function matchesFilter(record, filter) {
     const value = rawValue.trim().replace(/^"(.*)"$/, '$1');
     const actual = record.get(field);
 
+    // Zeitstempel als Zeitpunkt vergleichen, nicht als Text.
+    //
+    // Die Hooks speichern mit `toISOString()` (Trenner "T"), bauen Filtergrenzen
+    // aber mit `.replace('T', ' ')` — so, wie PocketBase Datumsfelder schreibt.
+    // Als Zeichenketten verglichen gewinnt der gespeicherte Wert immer, sobald
+    // der Datumsteil gleich ist: "T" ist 0x54, das Leerzeichen 0x20. PocketBase
+    // vergleicht Datumsfelder als Datum und liegt damit richtig; der Harness
+    // muss das nachbilden, sonst ist ein Test an der Tagesgrenze rot, obwohl
+    // die Produktion stimmt.
+    const aTime = asTimestamp(actual);
+    const bTime = asTimestamp(value);
+    if (aTime !== null && bTime !== null) {
+      switch (op) {
+        case '=':
+          return aTime === bTime;
+        case '!=':
+          return aTime !== bTime;
+        case '>':
+          return aTime > bTime;
+        case '<':
+          return aTime < bTime;
+        case '>=':
+          return aTime >= bTime;
+        case '<=':
+          return aTime <= bTime;
+        default:
+          throw new Error(`Harness: Operator nicht unterstützt: ${op}`);
+      }
+    }
+
     switch (op) {
       case '=':
         return `${actual}` === value;
@@ -116,8 +166,6 @@ function matchesFilter(record, filter) {
         return Number(actual) > Number(value);
       case '<':
         return Number(actual) < Number(value);
-      // Vergleiche auf Zeitstempel laufen in PocketBase als Zeichenketten —
-      // ISO-Formate sortieren dabei korrekt.
       case '>=':
         return isNaN(Number(value)) ? `${actual}` >= value : Number(actual) >= Number(value);
       case '<=':
