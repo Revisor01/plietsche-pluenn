@@ -137,7 +137,7 @@ mehreren Dateien auch der Import `useRouter` weg.
 |---|---|---|
 | `tar` (`^7.5.22`) | 47 | kein Import, kein Peer |
 | `zustand` (`^5.0.15`) | 51 | kein Import, kein Peer |
-| `expo-system-ui` (`~57.0.2`) | 39 | kein Import, kein Peer, nicht in `app.json` |
+| ~~`expo-system-ui` (`~57.0.2`)~~ | 39 | **Befund zurückgezogen, 14.09.2026 — siehe unten** |
 
 ```bash
 grep -rnE "from ['\"]tar['\"]|require\(['\"]tar['\"]\)" \
@@ -152,6 +152,23 @@ Gegenprobe auf Peers über `package-lock.json`: für alle drei
 `required by: NOBODY`. Zum Vergleich: `react-native-screens`, `expo-linking`
 und `@expo/metro-runtime` haben ebenfalls keinen direkten Import, werden aber
 von `expo-router` verlangt — **die bleiben.**
+
+> **Nachtrag 14.09.2026 — `expo-system-ui` bleibt.**
+>
+> Der Befund hielt der Nachprüfung nicht stand. Weder Import noch Peer noch
+> `package-lock` erfassen die entscheidende Quelle: Expo führt für jedes SDK
+> eine Liste erwarteter Pakete. `npx expo install --check` nennt
+> `expo-system-ui` dort ausdrücklich (erwartet `~57.0.4`) — es gehört zum
+> Satz von SDK 57 und wird vom Framework selbst geladen, nicht über einen
+> Import im Projektcode. Zusammen mit `userInterfaceStyle: "light"` in
+> `app.json` setzt es den Hintergrund beim Start.
+>
+> **Nicht entfernen.** `tar` und `zustand` stehen nicht auf dieser Liste und
+> bleiben zum Entfernen vorgesehen.
+>
+> Nebenbefund derselben Prüfung: 18 Pakete liegen unter den für SDK 57
+> erwarteten Versionen, darunter `typescript@7.0.2` gegen erwartete `~6.0.3` —
+> eine höhere Hauptversion als vorgesehen.
 
 `tar` in einer React-Native-App ist ein Node-Paket ohne Zweck auf dem Gerät.
 `zustand` ist bemerkenswert: `CLAUDE.md` führt es als Client-State-Bibliothek
@@ -474,8 +491,9 @@ Damit die Liste nicht länger wirkt, als die Lage ist:
 1. **Punkt 4** — ungenutzte Bezeichner, allen voran die neun toten
    `const router`. Compiler-belegt, kein Risiko, betrifft 11 Dateien.
 2. **Punkt 1** — die fünf Komponenten, 318 Zeilen. Kein Verwender, kein API-Bezug.
-3. **Punkt 5** — `tar`, `zustand`, `expo-system-ui` aus `mobile/package.json`.
+3. **Punkt 5** — `tar` und `zustand` aus `mobile/package.json`.
    `CLAUDE.md` und `TECH.md` zu Zustand mitziehen.
+   (`expo-system-ui` bleibt — siehe Nachtrag zu Punkt 5.)
 4. **Punkt 6** — `unregisterPushToken` an `logout` hängen. Kein Aufräumen,
    sondern ein echter Fehler: abgemeldete Geräte bekommen weiter Push.
    Braucht einen Test.
