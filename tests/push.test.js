@@ -98,8 +98,30 @@ describe('Anmelden', () => {
 
   it('vermerkt, wann der Token zuletzt gesehen wurde', () => {
     const h = setup();
+    const vorher = Date.now();
     h.call(REGISTER, { body: { expo_token: TOKEN }, authRecord: h.records.user });
-    expect(`${h.rows('push_devices')[0].last_seen}`).not.toBe('');
+    const nachher = Date.now();
+
+    // Geprueft wird das WANN, nicht nur das DASS: Der Zeitstempel muss in der
+    // Zeitspanne des Aufrufs liegen. Sonst kaeme auch ein fester Wert durch,
+    // und die Angabe waere wertlos — an ihr haengt, welche Geraete als
+    // verwaist gelten.
+    const gesehen = Date.parse(`${h.rows('push_devices')[0].last_seen}`);
+    expect(Number.isNaN(gesehen)).toBe(false);
+    expect(gesehen).toBeGreaterThanOrEqual(vorher);
+    expect(gesehen).toBeLessThanOrEqual(nachher);
+  });
+
+  it('frischt den Zeitpunkt bei einer erneuten Anmeldung auf', () => {
+    // Die Gegenprobe: Ein alter Eintrag darf nicht stehen bleiben.
+    const h = setup([
+      { id: 'd1', expo_token: TOKEN, user: 'user1', platform: 'ios', last_seen: '2020-01-01T00:00:00.000Z' },
+    ]);
+    const vorher = Date.now();
+    h.call(REGISTER, { body: { expo_token: TOKEN }, authRecord: h.records.user });
+
+    const gesehen = Date.parse(`${h.rows('push_devices')[0].last_seen}`);
+    expect(gesehen).toBeGreaterThanOrEqual(vorher);
   });
 });
 

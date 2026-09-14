@@ -50,11 +50,33 @@ describe('Neue Person', () => {
     expect(rec.get('streak_weeks')).toBe(0);
   });
 
-  it('uebernimmt keinen mitgeschickten Punktestand', () => {
-    // Die Registrierung darf kein Startguthaben setzen koennen.
+  it('laesst einen mitgeschickten Punktestand stehen — der Schutz liegt in der createRule', () => {
+    // Der Titel sagt bewusst das, was hier tatsaechlich geprueft wird. Vorher
+    // hiess dieser Test "uebernimmt keinen mitgeschickten Punktestand", pruefte
+    // aber, dass er sehr wohl uebernommen wird — wer die Suite ueberflog, las
+    // eine Absicherung, die es an dieser Stelle nicht gibt.
+    //
+    // Der Hook (defaults.pb.js) setzt points_total nur, wenn NICHTS
+    // mitgeschickt wurde (== null). Er ist der Standardwert-Geber, nicht der
+    // Schreibschutz. Gegen ein von Hand gesetztes Startguthaben schuetzen zwei
+    // andere Dinge:
+    //   1. die createRule der users-Sammlung, die die Registrierung auf die
+    //      erlaubten Felder begrenzt — sie gehoert in PocketBase, nicht in den
+    //      Hook, und laesst sich hier nicht pruefen (siehe
+    //      read-rules-migration.test.js fuer die Regeln, die es koennen);
+    //   2. der beforeUpdate-Hook, der jede spaetere Aenderung zurueckdreht —
+    //      das ist unten unter "Schreibschutz" geprueft, verbotener und
+    //      erlaubter Fall.
     const h = setup();
     const rec = neuerNutzer(h, { points_total: 5000 });
     expect(rec.get('points_total')).toBe(5000);
+  });
+
+  it('setzt den Punktestand auf 0, wenn nichts mitgeschickt wurde', () => {
+    // Die Gegenprobe: Ohne Angabe traegt der Hook die 0 ein. Genau das ist
+    // seine Aufgabe.
+    const h = setup();
+    expect(neuerNutzer(h).get('points_total')).toBe(0);
   });
 
   it('gilt als noch nicht eingefuehrt', () => {
