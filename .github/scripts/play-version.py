@@ -27,6 +27,26 @@ def b64url(daten):
     return base64.urlsafe_b64encode(daten).rstrip(b'=')
 
 
+def oeffne(anfrage, was):
+    """urlopen, das einen Fehler lesbar macht.
+
+    Google legt den GRUND in den Antwortkoerper; urllib zeigt nur den
+    Statuscode. Ohne das stand hier ein Python-Stapelabzug im Protokoll, und
+    wer nachsah, wusste nicht, woran es lag — genau der Punkt, den
+    upload-play.py fuer sich schon geloest hat.
+    """
+    try:
+        return urllib.request.urlopen(anfrage)
+    except urllib.error.HTTPError as fehler:
+        koerper = fehler.read().decode('utf-8', 'replace')
+        print(f'{was}: Google antwortete {fehler.code} {fehler.reason}:', file=sys.stderr)
+        print(koerper[:2000], file=sys.stderr)
+        raise SystemExit(1)
+    except urllib.error.URLError as fehler:
+        print(f'{was}: Google Play nicht erreichbar: {fehler.reason}', file=sys.stderr)
+        raise SystemExit(1)
+
+
 def token():
     with open(SA_JSON) as f:
         sa = json.load(f)
@@ -53,18 +73,25 @@ def token():
     }).encode()
     anfrage = urllib.request.Request(sa['token_uri'], data=koerper, method='POST')
     anfrage.add_header('Content-Type', 'application/x-www-form-urlencoded')
-    with urllib.request.urlopen(anfrage) as antwort:
+    with oeffne(anfrage, 'Token holen') as antwort:
         return json.loads(antwort.read())['access_token']
 
 
 def main():
     zugang = token()
 
-    def ruf(methode, pfad, daten=None):
+    def ruf(methode, pfad, daten=None, streng=True):
         anfrage = urllib.request.Request(f'{API}{pfad}', data=daten, method=methode)
         anfrage.add_header('Authorization', f'Bearer {zugang}')
         anfrage.add_header('Content-Type', 'application/json')
-        with urllib.request.urlopen(anfrage) as antwort:
+        # streng=False fuer das Aufraeumen im finally: Ein Fehler dort darf den
+        # eigentlichen Fehler nicht verdecken, und SystemExit aus einem finally
+        # heraus taete genau das.
+        if streng:
+            antwort = oeffne(anfrage, f'{methode} {pfad}')
+        else:
+            antwort = urllib.request.urlopen(anfrage)
+        with antwort:
             roh = antwort.read()
             return json.loads(roh) if roh else {}
 
@@ -80,7 +107,7 @@ def main():
     finally:
         # Die Bearbeitung war nur zum Nachsehen da.
         try:
-            ruf('DELETE', f'/edits/{bearbeitung}')
+            ruf('DELETE', f'/edits/{bearbeitung}', streng=False)
         except Exception:
             pass
 
