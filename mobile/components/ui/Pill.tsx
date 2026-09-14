@@ -10,9 +10,23 @@ interface PillProps {
   icon?: IconName;
   size?: 's' | 'm';
   style?: StyleProp<ViewStyle>;
+  // Auswahl-Chip: der ausgewählte Zustand wird sonst allein über die Farbe
+  // getragen und ist für den Screenreader nicht erkennbar. Wird nur gesetzt,
+  // wenn die Pille tatsächlich eine Auswahl darstellt.
+  selected?: boolean;
+  accessibilityLabel?: string;
 }
 
-export function Pill({ children, color = PP.teal, bg = alpha(PP.teal, "subtle"), icon, size = 'm', style }: PillProps) {
+export function Pill({
+  children,
+  color = PP.teal,
+  bg = alpha(PP.teal, "subtle"),
+  icon,
+  size = 'm',
+  style,
+  selected,
+  accessibilityLabel,
+}: PillProps) {
   const fs = size === 's' ? 'xs' : 'sm';
   const iconSize = size === 's' ? PP.iconSizes.xs : PP.iconSizes.sm;
   // Polsterung und Mindesthöhe wachsen mit der Schrift mit (PP.fontScale),
@@ -24,6 +38,10 @@ export function Pill({ children, color = PP.teal, bg = alpha(PP.teal, "subtle"),
 
   return (
     <View
+      // Als Ganzes ansagen statt Icon und Text getrennt.
+      accessible
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={selected === undefined ? undefined : { selected }}
       style={[
         {
           flexDirection: 'row',

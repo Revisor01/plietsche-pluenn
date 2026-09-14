@@ -18,6 +18,19 @@ interface PPButtonProps {
   loading?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  // Standardmäßig liest der Screenreader den Knopftitel vor. Nur setzen, wenn
+  // der Titel als Ansage nicht reicht (z.B. „Weiter" ohne Ziel).
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+}
+
+// Der sichtbare Titel ist die Ansage. Im Ladezustand ersetzt ein Spinner den
+// Text — ohne diese Ableitung wäre der Knopf dann stumm.
+function labelFromChildren(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (typeof children === 'number') return String(children);
+  if (Array.isArray(children)) return children.map(labelFromChildren).filter(Boolean).join(' ');
+  return '';
 }
 
 export function PPButton({
@@ -31,6 +44,8 @@ export function PPButton({
   loading,
   onPress,
   style,
+  accessibilityLabel,
+  accessibilityHint,
 }: PPButtonProps) {
   const h = size === 'l' ? 52 : size === 'm' ? 44 : 36;
   const fs = size === 'l' ? 'md' : 'base';
@@ -78,6 +93,13 @@ export function PPButton({
     style,
   ];
 
+  const a11y = {
+    accessibilityRole: 'button' as const,
+    accessibilityLabel: accessibilityLabel || labelFromChildren(children) || undefined,
+    accessibilityHint,
+    accessibilityState: { disabled: !!disabled || !!loading, busy: !!loading },
+  };
+
   // Feedback: Android per Ripple (View bleibt unverändert), iOS per Dimmen.
   const feedback = (extra?: StyleProp<ViewStyle>) =>
     ({ pressed }: { pressed: boolean }) =>
@@ -88,6 +110,7 @@ export function PPButton({
       <Pressable
         onPress={disabled || loading ? undefined : onPress}
         android_ripple={disabled || loading ? undefined : ripple(PP.onBrand)}
+        {...a11y}
         style={feedback()}
       >
         <LinearGradient
@@ -114,6 +137,7 @@ export function PPButton({
       <Pressable
         onPress={disabled || loading ? undefined : onPress}
         android_ripple={disabled || loading ? undefined : ripple(PP.teal)}
+        {...a11y}
         style={feedback({
           backgroundColor: isAndroid ? 'transparent' : PP.surface,
           borderWidth: 1,
@@ -131,6 +155,7 @@ export function PPButton({
     <Pressable
       onPress={disabled || loading ? undefined : onPress}
       android_ripple={disabled || loading ? undefined : ripple(PP.teal)}
+      {...a11y}
       style={feedback({ backgroundColor: 'transparent', borderRadius: r })}
     >
       {content}
