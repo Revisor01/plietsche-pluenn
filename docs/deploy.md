@@ -133,6 +133,23 @@ Schritt für Schritt:
 3. **Stack-Inhalt ersetzen** durch `docker-compose.portainer.yml` aus diesem
    Repo. Dabei verschwinden die beiden Bind-Mounts. `PB_ENCRYPTION_KEY` und
    `TZ` bleiben, wie sie sind.
+
+   > **Der Pfad zu `pb_data` muss absolut bleiben.** Portainer führt den Stack
+   > nicht in `/opt/stacks/plietsche-pb` aus, sondern in einem eigenen
+   > Arbeitsverzeichnis (gemessen: `/data/compose/264/v2`). Ein relatives
+   > `./pb_data` zeigt dort auf ein leeres Verzeichnis: PocketBase legt eine
+   > neue, leere Datenbank an, und der gesamte Bestand — Konten, Punkte,
+   > Abzeichen — ist nicht mehr eingebunden. In der Datei steht deshalb
+   > `/opt/stacks/plietsche-pb/pb_data:/pb_data`. Beim Einfügen in Portainer
+   > nicht auf einen relativen Pfad „vereinfachen".
+   >
+   > Gegenprobe nach dem Ausrollen, bevor irgendetwas gelöscht wird:
+   > ```bash
+   > docker inspect plietsche-pocketbase \
+   >   --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'
+   > ```
+   > Dort muss `/opt/stacks/plietsche-pb/pb_data` stehen, und die App muss
+   > angemeldet weiterhin Punkte und Abzeichen zeigen.
 4. **Ein Mal ausrollen** und den Verify von Hand laufen lassen:
    ```bash
    python3 .github/scripts/deploy-verify.py https://pb.xn--plietsche-plnn-rsb.de

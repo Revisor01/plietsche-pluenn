@@ -42,7 +42,13 @@ services:
     volumes:
       # Nur die Daten. Hooks und Migrationen kommen aus dem Abbild — ein
       # Bind-Mount auf /pb_hooks oder /pb_migrations würde sie überdecken.
-      - ./pb_data:/pb_data
+      #
+      # Absoluter Pfad, nicht `./pb_data`: Portainer legt den Stack in einem
+      # eigenen Arbeitsverzeichnis ab (gemessen: /data/compose/264/v2), nicht
+      # in /opt/stacks/plietsche-pb. Ein relativer Pfad zeigte dort auf ein
+      # leeres Verzeichnis — PocketBase legte eine neue, leere Datenbank an,
+      # und der gesamte Bestand wäre nicht mehr eingebunden.
+      - /opt/stacks/plietsche-pb/pb_data:/pb_data
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8090/api/health"]
       interval: 30s
