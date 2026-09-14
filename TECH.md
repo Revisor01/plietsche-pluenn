@@ -17,8 +17,8 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 
 | Ebene | Technologie | Version |
 |---|---|---|
-| Sprache | TypeScript | 7.0 |
-| App-Framework | React Native | 0.86.2 |
+| Sprache | TypeScript | 6.0 |
+| App-Framework | React Native | 0.86.3 |
 | | React | 19.2.3 |
 | | Expo SDK | 57 |
 | Architektur | React Native New Architecture (Fabric, TurboModules) | verpflichtend ab SDK 55 |
@@ -83,8 +83,17 @@ ist keines dieser Pakete enthalten.
 **Aktualisierung:** Die meisten Abhängigkeiten sind an das Expo SDK oder die
 PocketBase-Serverversion gebunden und werden nur gemeinsam angehoben
 (`npx expo install expo@^<major> --fix`). Dependabot ist entsprechend eingeschränkt und
-schlägt nur für die freien Pakete Updates vor (`@tanstack/react-query`,
-`typescript`) — siehe `.github/dependabot.yml`.
+schlägt Updates im Wesentlichen nur noch für `@tanstack/react-query` vor — siehe
+`.github/dependabot.yml`.
+
+> **TypeScript folgt dem SDK, nicht dem Neuesten.** Die aktuellste Version überhaupt
+> ist 7.0 (der in Go neu geschriebene Compiler), das SDK 57 erwartet aber `~6.0.3`.
+> Die App bleibt bewusst auf 6.0: TypeScript 7 ist von Expo nicht unterstützt
+> (`expo install --check` meldet es als Abweichung), bringt bis 7.1 keine
+> Compiler-API für Werkzeuge mit, und es gab eine gemeldete Unverträglichkeit beim
+> Laden der Expo-Konfiguration. Für eine App im TestFlight-Betrieb ist der vom SDK
+> erwartete Stand die sichere Wahl. Damit die Hauptversion nicht erneut unbemerkt
+> weiterwandert, lässt Dependabot für `typescript` nur Patch-Stände zu.
 
 ---
 

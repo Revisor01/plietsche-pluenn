@@ -8,7 +8,8 @@ version: 2
 # führen zu Versionskonflikten mit dem nativen Teil und brechen den Build.
 #
 # Deshalb sind hier nur die wenigen Pakete freigegeben, die unabhängig vom SDK
-# leben. Der Rest ist explizit ausgenommen.
+# leben. Der Rest ist explizit ausgenommen. TypeScript ist ein Sonderfall: Es
+# haengt am SDK, ist aber kein Expo-Paket — dort sind nur Patch-Staende offen.
 
 updates:
   # ── App-Abhängigkeiten (npm) ────────────────────────────────────────────
@@ -42,6 +43,14 @@ updates:
       - dependency-name: "pocketbase"
       # React-Typen folgen der React-Version aus dem SDK.
       - dependency-name: "@types/react"
+      # TypeScript gibt das Expo SDK vor (`expo install --check` erwartet ~6.0.3).
+      # Eine Hauptversion weiter (7.x, der Go-Compiler) ist von Expo nicht
+      # unterstuetzt und war hier bereits unbemerkt eingezogen. Deshalb nur
+      # Patch-Staende innerhalb 6.0 zulassen, Minor und Major blockieren.
+      - dependency-name: "typescript"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
 
   # ── Testwerkzeug im Repo-Root (npm) ─────────────────────────────────────
   # Getrennt von /mobile: Hier liegt nur Vitest für die Backend-Hooks, das
