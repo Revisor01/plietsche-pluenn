@@ -1,5 +1,12 @@
 name: Google Play
 
+# Der Titel des Laufs traegt bei einem Probelauf die Marke [Probelauf]. Daran
+# erkennt der Schritt "Letzten veroeffentlichten Stand ermitteln" die Laeufe,
+# die nichts veroeffentlicht haben, und ueberspringt sie — sonst verschoebe ein
+# Probelauf den Vergleichsstand fuer die Release-Notes.
+run-name: >-
+  ${{ inputs.probelauf && '[Probelauf] ' || '' }}Google Play ${{ inputs.spur }}
+
 # Baut den aktuellen Stand von main als signiertes Android-Paket und laedt es
 # in eine Testspur bei Google Play. Gegenstueck zum TestFlight-Workflow, nur
 # ohne Mac — Android baut auf einem gewoehnlichen Linux-Runner.
@@ -153,23 +160,37 @@ jobs:
             "-PPP_KEY_PASSWORD=$KEY_PASS"
           ls -la app/build/outputs/bundle/release/
 
-      - name: Letzten gebauten Stand ermitteln
+      - name: Letzten veroeffentlichten Stand ermitteln
         id: vorher
         env:
           GH_TOKEN: ${{ github.token }}
-        # Der Commit des letzten erfolgreichen Laufs dieses Workflows. Ein
-        # Git-Tag scheidet aus: Der eingebaute Token darf keine Referenz
+        # Der Commit des letzten Laufs, der tatsaechlich veroeffentlicht hat.
+        # Ein Git-Tag scheidet aus: Der eingebaute Token darf keine Referenz
         # setzen, die auf Workflow-Dateien zeigt.
         #
         # Der Branch gehoert in die Abfrage: Ohne ihn zaehlt auch ein Lauf von
         # einem Nebenzweig als Vergleichsstand, und die Hinweise entstuenden
         # dann aus einem Bereich, der mit diesem Zweig nichts zu tun hat.
+        #
+        # Probelaeufe scheiden ebenfalls aus: Sie verwerfen die Play-Bearbeitung
+        # und veroeffentlichen nichts, enden aber mit Erfolg. Zaehlten sie mit,
+        # gaelte der Commit des Probelaufs beim naechsten echten Lauf als
+        # "zuletzt ausgeliefert" — alle Aenderungen bis dahin fielen aus den
+        # Hinweisen heraus, obwohl sie nie bei einem Menschen angekommen sind.
+        # Erkennbar sind sie an der Marke [Probelauf] im Titel (siehe run-name).
         run: |
           SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/play-internal.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=1" \
-            | python3 -c "import json,sys; r=json.load(sys.stdin).get('workflow_runs') or [{}]; print(r[0].get('head_sha',''))")
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/play-internal.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=50" \
+            | python3 -c "
+          import json, sys
+          for run in json.load(sys.stdin).get('workflow_runs') or []:
+              if '[Probelauf]' in (run.get('display_title') or ''):
+                  continue
+              print(run.get('head_sha', ''))
+              break
+          ")
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-          echo "Letzter erfolgreicher Stand: ${SHA:-keiner}"
+          echo "Letzter veroeffentlichter Stand: ${SHA:-keiner}"
 
       - name: Testhinweise zusammenstellen
         id: hinweise
