@@ -24,7 +24,7 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 | Architektur | React Native New Architecture (Fabric, TurboModules) | verpflichtend ab SDK 55 |
 | Navigation | Expo Router (dateibasiert, typisierte Routen) | 57.0 |
 | Server-State | TanStack Query | 5.101 |
-| Client-State | Zustand | 5.0 |
+| Client-State | lokales `useState` (keine eigene Bibliothek) | — |
 | Backend | PocketBase (Go, eingebettetes SQLite) | 0.22.21 |
 | Backend-Logik | JavaScript-Hooks (Goja-Runtime) | ES5-kompatibel |
 | Container | Docker Compose hinter Traefik | — |
@@ -63,7 +63,7 @@ linking · blur · glass-effect · linear-gradient · haptics · print · sharin
 react-native-gesture-handler · react-native-screens · react-native-safe-area-context ·
 react-native-svg · react-native-qrcode-svg · qrcode · @react-native-community/datetimepicker ·
 @expo/vector-icons (Font Awesome 6) · @expo-google-fonts/work-sans · pocketbase-js-sdk ·
-@tanstack/react-query · zustand
+@tanstack/react-query
 
 > `expo-print` + `expo-sharing` + `qrcode` tragen den QR-Etikettenbogen
 > (`lib/qrsheet.ts`): HTML → PDF → Teilen-Dialog. `qrcode` erzeugt die Codes als
@@ -80,10 +80,10 @@ Alle betreffen ausschließlich Entwicklungswerkzeuge (`react-devtools-core`, `@e
 `@expo/fingerprint`) und landen nicht im ausgelieferten App-Bundle — im gebauten Bundle
 ist keines dieser Pakete enthalten.
 
-**Aktualisierung:** 33 der 36 Abhängigkeiten sind an das Expo SDK oder die
+**Aktualisierung:** Die meisten Abhängigkeiten sind an das Expo SDK oder die
 PocketBase-Serverversion gebunden und werden nur gemeinsam angehoben
 (`npx expo install expo@^<major> --fix`). Dependabot ist entsprechend eingeschränkt und
-schlägt nur für die drei freien Pakete Updates vor (`@tanstack/react-query`, `zustand`,
+schlägt nur für die freien Pakete Updates vor (`@tanstack/react-query`,
 `typescript`) — siehe `.github/dependabot.yml`.
 
 ---
