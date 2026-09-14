@@ -71,13 +71,13 @@ findet keine Korrektur.
 ```
 $ curl https://pb.xn--plietsche-plnn-rsb.de/api/collections/store/records
 HTTP 200
-{"items":[{"checkin_qr_secret":"nyMqdkkp5HSgyKPELJGVNfjCfzh0ozhk",
+{"items":[{"checkin_qr_secret":"<32 Zeichen, im Klartext lesbar>",
   "lat":54.3025,"lng":9.226,"geofence_radius_m":2000,
   "pts_checkin":10,"pts_take":5,"max_items_take":7, ...}]}
 ```
 
 **Fehlerszenario:** Jemand ruft die URL im Browser auf und hat das Geheimnis.
-Er schickt `POST /api/pp/scan` mit `{"qr_code":"nyMqdkkp…"}` — **ohne**
+Er schickt `POST /api/pp/scan` mit genau diesem Wert als `qr_code` — **ohne**
 `gps_lat`/`gps_lng`. `scan.pb.js:50` prüft den Geofence nur, wenn beide Werte
 mitkommen; fehlen sie, wird er übersprungen (Befund 2). Ergebnis: täglicher
 Check-in-Bonus plus fortlaufende Serie, von jedem Ort der Welt, für jedes
@@ -111,11 +111,24 @@ das Onboarding lesen `store` nicht, das Schließen der Regel bricht also keine
 Ansicht. Der Scan-Hook liest aus der neuen Sammlung, mit Rückfall auf das
 Altfeld für noch nicht migrierte Instanzen.
 
-**Schritt 2 — Rotation — unterbleibt bewusst.** Entscheidung des Betreibers
-am 14.09.2026: Die App wird von unter 100 Personen in einem einzelnen Laden
-genutzt; der Aufwand (neuer Aushang, Verteilung) steht nicht im Verhältnis zum
-Risiko, nachdem der Abrufweg geschlossen ist. Der alte Wert bleibt damit
-gültig. Das ist eine abgewogene Entscheidung, keine offene Lücke.
+**Schritt 2 — Rotation — zunächst bewusst unterlassen, dann doch ausgeführt.**
+Die ursprüngliche Entscheidung des Betreibers am 14.09.2026 lautete: Die App
+wird von unter 100 Personen in einem einzelnen Laden genutzt; der Aufwand
+(neuer Aushang, Verteilung) steht nicht im Verhältnis zum Risiko, nachdem der
+Abrufweg geschlossen ist.
+
+**Diese Abwägung fiel weg, als das Repository öffentlich gestellt wurde.** Der
+gemessene Wert stand im Klartext in genau diesem Bericht — die `curl`-Ausgabe
+oben war beim Anlegen ungefiltert übernommen worden. In einem privaten Repo war
+das vertretbar, in einem öffentlichen nicht.
+
+Deshalb am 14.09.2026 rotiert, vor dem Öffentlichmachen. Gegenprobe: Der alte
+Wert liefert an `POST /api/pp/scan` jetzt `404 Unbekannter QR-Code`, der neue
+`200`. Der Wert in der Versionsgeschichte ist damit wertlos; ein Umschreiben der
+Historie erübrigt sich. Der neue Wert steht in keiner Datei des Repos.
+
+**Der Aushang an der Ladentür muss mit dem neuen Code neu gedruckt werden** —
+der bisherige funktioniert nicht mehr.
 
 Aus demselben Grund bleibt `geofence_radius_m` vorerst auf 2000 (siehe
 Nebenbefund weiter unten): Der Radius ist ohne GPS ohnehin nicht bindend, und
