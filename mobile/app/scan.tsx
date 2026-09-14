@@ -88,7 +88,7 @@ export default function Scan() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       await qc.invalidateQueries();
       await qc.refetchQueries({ queryKey: ['me'] });
-      setResult((r) => (r ? { ...r, points: r.points + res.points, points_total: res.points_total } : r));
+      setResult((r) => (r ? { ...r, points: (r.points ?? 0) + (res.points ?? 0), points_total: res.points_total } : r));
       setDoorSecret(null);
       setExtraItems(0);
     } catch {
@@ -170,10 +170,10 @@ export default function Scan() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <PPText weight="semibold" size="md" color={PP.onBrand}>
-                        {result.label}
+                        {result.label || 'Teil mitgenommen'}
                       </PPText>
                       <PPText size="base" color={PP.onBrandMuted} style={{ marginTop: 2 }}>
-                        +{result.points} Punkte{result.did_checkin ? ' · inkl. Check-In' : ''}
+                        +{result.points ?? 0} Punkte{result.did_checkin ? ' · inkl. Check-In' : ''}
                       </PPText>
                     </View>
                   </View>
@@ -205,7 +205,7 @@ export default function Scan() {
                       <PPText size="base" color={PP.onBrandMuted} style={{ marginTop: 2 }}>
                         {result.already_checked_in
                           ? 'Du warst heute schon da.'
-                          : `+${result.points} Punkte · ${result.streak_weeks} Wochen Streak`}
+                          : `+${result.points ?? 0} Punkte · ${result.streak_weeks ?? 0} Wochen Streak`}
                       </PPText>
                     </View>
                   </View>
