@@ -10,18 +10,16 @@ import { Icon } from '../../../lib/icons';
 import { useItem, useCurrentUser } from '../../../lib/hooks/useData';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { updateItem, setShowcase, archiveItem, approveItem } from '../../../lib/api';
-import { itemThumb, groupLabel, typeLabel, conditionLabel } from '../../../lib/format';
+import {
+  itemThumb, groupLabel, typeLabel, conditionLabel,
+  CATEGORY_GROUPS, CATEGORY_TYPES, GROUPS_WITH_TYPE, categoryGroup, categoryType,
+} from '../../../lib/format';
 import { pb } from '../../../lib/pb';
 import { errorText } from '../../../lib/errors';
 import { invalidateItems } from '../../../lib/queryClient';
 import {
   Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, Hint,
 } from '../../../components/ui';
-
-const CATEGORIES = [
-  'damen-oberteil', 'damen-hose', 'damen-kleid', 'damen-schuhe',
-  'herren-oberteil', 'herren-hose', 'herren-schuhe', 'kinder', 'accessoires', 'sonstiges',
-];
 
 export default function ItemDetail() {
   const qc = useQueryClient();
@@ -35,7 +33,12 @@ export default function ItemDetail() {
   const [size, setSize] = useState('');
   const [points, setPoints] = useState('');
   const [location, setLocation] = useState('');
-  const [category, setCategory] = useState('sonstiges');
+  // Kategorie wie im Einstell-Formular aus Zielgruppe + optionaler Art
+  // zusammengesetzt, aus der einzigen Quelle in lib/format.ts. Vorher stand
+  // hier eine eigene Liste roher Schlüssel, die von jener Quelle abwich.
+  const [group, setGroup] = useState('sonstiges');
+  const [type, setType] = useState<string | null>(null);
+  const category = group && GROUPS_WITH_TYPE.includes(group) && type ? `${group}-${type}` : group;
   const [staysExternal, setStaysExternal] = useState(false);
   const [showcase, setShow] = useState(false);
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
@@ -48,7 +51,8 @@ export default function ItemDetail() {
     setSize(item.size ?? '');
     setPoints(String(item.points ?? ''));
     setLocation(item.location ?? '');
-    setCategory(item.category ?? 'sonstiges');
+    setGroup(categoryGroup(item.category));
+    setType(categoryType(item.category));
     setStaysExternal(!!item.stays_external);
     setShow(!!item.is_showcase);
   }, [item?.id]);
@@ -242,14 +246,34 @@ export default function ItemDetail() {
         <Field icon="map-pin" label="Standort" value={location} onChangeText={setLocation} placeholder="z.B. Regal 3" />
       </View>
 
-      <SectionTitle title="Kategorie" />
+      <SectionTitle title="Für wen" />
       <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
-        {CATEGORIES.map((c) => (
-          <Pressable key={c} onPress={() => setCategory(c)}>
-            <Pill bg={category === c ? PP.teal : alpha(PP.ink, "subtle")} color={category === c ? PP.onBrand : PP.ink2}>{c}</Pill>
+        {CATEGORY_GROUPS.map((g) => (
+          <Pressable
+            key={g.key}
+            onPress={() => { setGroup(g.key); if (!GROUPS_WITH_TYPE.includes(g.key)) setType(null); }}
+          >
+            <Pill bg={group === g.key ? PP.teal : alpha(PP.ink, "subtle")} color={group === g.key ? PP.onBrand : PP.ink2}>
+              {g.label}
+            </Pill>
           </Pressable>
         ))}
       </View>
+
+      {GROUPS_WITH_TYPE.includes(group) && (
+        <>
+          <SectionTitle title="Art" />
+          <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
+            {CATEGORY_TYPES.map((t) => (
+              <Pressable key={t.key} onPress={() => setType(t.key)}>
+                <Pill bg={type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={type === t.key ? PP.onBrand : PP.ink2}>
+                  {t.label}
+                </Pill>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
 
       <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.lg, gap: PP.space.md }}>
         <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
