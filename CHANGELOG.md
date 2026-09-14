@@ -18,9 +18,12 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ### Sonstiges
 - Gemeldete Sicherheitslücken in den verwendeten Bibliotheken geschlossen.
+- Farben, Abstände, Schriftgrößen, Rundungen und Symbolgrößen stehen jetzt an einer einzigen Stelle statt über die ganze App verstreut. Für Nutzer:innen ändert sich dadurch nichts; künftige Anpassungen am Aussehen wirken dafür überall gleich, statt einzelne Ansichten zu vergessen.
 
 ### Geändert (Erscheinungsbild)
 - **Neues App-Symbol:** Auf dem Startbildschirm steht jetzt ein P² im Kreis — schlicht, in den Farben der App. Die Linien sind schmal gehalten und das Zeichen steht mit Luft im Feld, damit es ruhig wirkt.
+- **Zwei Schriftgrößen leicht angepasst:** Die Überschrift im Abzeichen-Blatt und der große Punktestand in der Punkte-Übersicht stehen eine Spur kleiner. Beide fielen bisher aus der Reihe; jetzt passen sie zu den übrigen Größen der App.
+- **Gesperrte Überschriften laufen wieder wie entworfen:** Die App vergrößert alle Schrift um denselben Faktor, ließ dabei aber den Buchstabenabstand unverändert. Große Überschriften standen dadurch enger, als sie gedacht waren.
 
 ### Neu (Etiketten & Abzeichen-Details)
 - **QR-Etiketten zum Ausdrucken:** In der Teile-Übersicht erzeugt „QR-Etiketten drucken" einen A4-Bogen als PDF — vier Etiketten pro Reihe, je mit QR-Code, Name, Größe, Kategorie, Zustand, Nummer und Punktwert. Über den Teilen-Dialog geht er direkt an den Drucker oder per Mail weiter. Gedruckt wird immer die gerade gewählte Auswahl; bereits mitgenommene Teile bleiben außen vor. Die Codes stecken vollständig im Dokument, es braucht zum Drucken also kein Netz.
