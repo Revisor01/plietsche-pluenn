@@ -262,6 +262,32 @@ describe('Neues Teil', () => {
     );
     expect(rec.get('is_showcase')).toBe(false);
   });
+
+  // Der erlaubte Fall zum verbotenen darueber. Ohne ihn wuerde auch ein Hook
+  // durchgehen, der is_showcase pauschal auf false setzt — das Schaufenster
+  // liesse sich dann gar nicht mehr befuellen, und kein Test faende es.
+  it('laesst das Team ein Teil direkt ins Schaufenster stellen', () => {
+    for (const rolle of ['volunteer', 'admin']) {
+      const h = setup({ users: [{ __name: 'team', id: 'u1', role: rolle }] });
+      const rec = neuesTeil(
+        h,
+        { title: 'Jacke', is_showcase: true },
+        { authRecord: h.records.team }
+      );
+      expect(rec.get('is_showcase')).toBe(true);
+      // Und die Gegenprobe zum Status: Team-Teile sind sofort freigegeben.
+      expect(rec.get('status')).toBe('approved');
+    }
+  });
+
+  it('laesst ein Team-Teil ausserhalb des Schaufensters, wenn nichts gesetzt ist', () => {
+    // Der Hook darf nicht in die andere Richtung uebertreiben: Ohne Angabe
+    // bleibt das Teil im normalen Bestand.
+    const h = setup({ users: [{ __name: 'team', id: 'u1', role: 'admin' }] });
+    const rec = neuesTeil(h, { title: 'Hose' }, { authRecord: h.records.team });
+    expect(rec.get('is_showcase')).toBe(false);
+    expect(rec.get('status')).toBe('approved');
+  });
 });
 
 describe('Punkte fuers Bringen bei der Freigabe', () => {
