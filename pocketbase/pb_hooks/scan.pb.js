@@ -20,14 +20,26 @@ routerAdd('POST', '/api/pp/scan', (c) => {
   const lng = data.gps_lng;
   const now = new Date();
 
-  // Store singleton (door secret + geofence).
+  // Store singleton (Öffnungszeiten, Standort, Geofence).
   let store;
   try {
     store = $app.dao().findFirstRecordByFilter('store', '1=1');
   } catch (_) {
     throw new ApiError(500, 'Laden nicht konfiguriert');
   }
-  const doorSecret = `${store.get('checkin_qr_secret')}`.trim();
+
+  // Türgeheimnis: liegt in der gesperrten Sammlung store_secrets, nicht in
+  // `store`. `store` ist für alle Angemeldeten lesbar — ein Geheimnis darin
+  // wäre für jedes Konto abrufbar, weil PocketBase-Regeln auf ganze
+  // Datensätze wirken und nicht auf einzelne Felder.
+  // Rückfall auf das Altfeld, solange eine Instanz die Migration noch nicht
+  // gefahren hat; nach der Migration steht dort der Leerstring.
+  let doorSecret = '';
+  try {
+    const sec = $app.dao().findFirstRecordByFilter('store_secrets', '1=1');
+    doorSecret = `${sec.get('checkin_qr_secret') || ''}`.trim();
+  } catch (_) {}
+  if (!doorSecret) doorSecret = `${store.get('checkin_qr_secret') || ''}`.trim();
 
   const cfg = lib.config();
   // Hard cap on the stepper "took N items" figure.
