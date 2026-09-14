@@ -113,9 +113,9 @@ function SelectChip({ label, active, onPress }: { label: string; active: boolean
         paddingVertical: PP.space.sm,
         paddingHorizontal: PP.space.lg,
         borderRadius: PP.rTile2,
-        backgroundColor: active ? PP.tealDeep : alpha(PP.ink, "ghost"),
+        backgroundColor: active ? PP.teal : alpha(PP.ink, "ghost"),
         borderWidth: 1,
-        borderColor: active ? PP.tealDeep : alpha(PP.ink, "subtle"),
+        borderColor: active ? PP.teal : alpha(PP.ink, "subtle"),
       }}
     >
       <PPText weight={active ? 'semibold' : 'medium'} size="base" color={active ? PP.onBrand : PP.ink}>

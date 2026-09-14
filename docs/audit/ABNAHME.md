@@ -617,6 +617,21 @@ und wird dabei vollständig stumm.
 
 #### B-4 [KRITISCH] Weiß auf Teal = 2.72:1 — die häufigste Textkombination der App
 
+> **BEWUSST OFFEN — Entscheidung des Betreibers, 14.09.2026.**
+>
+> Der Befund wurde umgesetzt (abgedunkelter Verlauf nur für Flächen mit weißer
+> Schrift, schlechtester Punkt 4,68:1) und auf Ansage wieder **zurückgenommen**:
+> Das Ergebnis gefiel gestalterisch nicht. Die Knöpfe tragen wieder den hellen
+> Markenverlauf, die zugehörigen Tokens sind entfernt.
+>
+> Das ist eine abgewogene Gestaltungsentscheidung, keine offene Lücke: Die
+> Marke wiegt hier schwerer als der Normwert. **Dieser Befund ist damit
+> geschlossen und soll nicht erneut vorgeschlagen werden.**
+>
+> Zu meinem eigenen Vorgehen: Ich habe die Änderung anhand von Kontrastzahlen
+> vorgelegt statt anhand eines Bildes. Bei einer Gestaltungsfrage ist das die
+> falsche Grundlage — sichtbar wird sie erst am Gerät.
+
 Nachgerechnet: `#FFFFFF` auf `#27b092` ergibt **2.72:1**. Erforderlich sind
 4.5:1 für Fließtext, 3:1 selbst für großen Text — **beides verfehlt.**
 
