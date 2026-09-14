@@ -11,7 +11,8 @@ Das Repo hat zwei Teile:
 
 - **`mobile/`** — die App: Expo / React Native in TypeScript, eine Codebasis für
   iOS und Android. Navigation über Expo Router (dateibasiert), Server-State über
-  TanStack Query, Client-State über Zustand. Paketversion 0.1.0, App-Version
+  TanStack Query, Client-State über lokales `useState` — eine eigene
+  Client-State-Bibliothek gibt es nicht. Paketversion 0.1.0, App-Version
   1.0.0, Bundle-ID `de.godsapp.plietschepluenn`.
 - **`pocketbase/`** — das Backend: PocketBase mit eingebettetem SQLite. Die
   gesamte Fachlogik steckt in `pb_hooks/` (JavaScript-Hooks), das Schema in
