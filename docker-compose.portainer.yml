@@ -1,0 +1,60 @@
+# Der Stack, der in Produktion läuft (Portainer, Stack `plietsche-pb` auf
+# server.godsapp.de). Diese Datei ist die Quelle für den Stack-Inhalt.
+#
+# Unterschied zur docker-compose.yml daneben:
+#
+#   docker-compose.yml           Fremdes PocketBase-Abbild, Hooks und
+#                                Migrationen als Bind-Mount vom Host. Für den
+#                                lokalen Start und als Beschreibung des
+#                                Aufbaus. Änderungen an Hooks wirken hier
+#                                sofort nach einem Neustart, ohne Bauen.
+#
+#   docker-compose.portainer.yml Eigenes Abbild aus pocketbase/Dockerfile,
+#                                das Hooks und Migrationen enthält. Der
+#                                Workflow .github/workflows/deploy.yml baut
+#                                es bei jedem Push auf main und stößt den
+#                                Portainer-Webhook an; der Server zieht selbst.
+#
+# ACHTUNG beim einmaligen Umschalten: Der bisherige Stack mountet pb_hooks und
+# pb_migrations vom Host. Diese beiden Mounts würden die Dateien im Abbild
+# überdecken — der Container liefe dann weiter auf dem Stand, der in
+# /opt/stacks/plietsche-pb/ liegt, und die ganze Automatik wäre wirkungslos.
+# Deshalb steht hier nur noch pb_data. Siehe docs/deploy.md.
+#
+# Routing unverändert: Apache (KeyHelp) → 127.0.0.1:8888 (Traefik) → Container.
+
+services:
+  pocketbase:
+    image: ghcr.io/revisor01/plietsche-pluenn/pocketbase:latest
+    container_name: plietsche-pocketbase
+    restart: unless-stopped
+    command:
+      - "--encryptionEnv=PB_ENCRYPTION_KEY"
+      - "--http=0.0.0.0:8090"
+    environment:
+      PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY}
+      # Nur für die Uhrzeiten der nächtlichen Aufgaben und für Logzeilen.
+      # Tagesgrenze, Kalenderwoche und Jahreszahl hängen NICHT hieran — die
+      # rechnet die Fachlogik aus der gepflegten Ladenzeitzone (store.timezone).
+      # Geht diese Zeile auf einem anders eingerichteten Host verloren, bleiben
+      # Punkte, Serien und Abzeichen deshalb trotzdem richtig.
+      TZ: Europe/Berlin
+    volumes:
+      # Nur die Daten. Hooks und Migrationen kommen aus dem Abbild — ein
+      # Bind-Mount auf /pb_hooks oder /pb_migrations würde sie überdecken.
+      - ./pb_data:/pb_data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8090/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.plietsche-pb.rule=Host(`pb.xn--plietsche-plnn-rsb.de`)"
+      - "traefik.http.services.plietsche-pb.loadbalancer.server.port=8090"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true

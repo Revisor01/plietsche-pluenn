@@ -177,6 +177,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Android zielt auf Android 16 (API 36):** Google Play verlangt das ab dem 31. August 2026 für neue Apps und Updates.
 - **Automatische Prüfung auf Bibliotheks-Updates** eingerichtet, bewusst eng gefasst: Der Großteil der Abhängigkeiten hängt an der Expo-SDK- oder PocketBase-Version und darf nur gemeinsam angehoben werden.
 - **README und technischer Steckbrief** neu aufgesetzt: Funktionsübersicht nach Zielgruppe, Aufbau des Projekts, Datenschutz-Abschnitt, Stack mit Versionen, Datenmodell und Kennzahlen.
+- **Korrekturen erreichen den Laden jetzt ohne Verzug.** Der Serverteil der App wurde bisher von Hand aufgespielt und lief dadurch einmal vier Wochen auf einem alten Stand — eine bereits behobene Sicherheitslücke blieb in dieser Zeit offen. Jetzt wird er bei jeder Änderung selbsttätig eingespielt, und im Anschluss wird geprüft, ob der neue Stand tatsächlich läuft.
 - **Bibliotheken auf den aktuellen geprüften Stand gebracht.** Sie enthalten Fehlerkorrekturen der Hersteller, die unter anderem Kamera, Standort und Benachrichtigungen betreffen. Für Nutzer:innen ändert sich nichts an der Bedienung. Eine Entwicklungs-Bibliothek war unbemerkt auf eine Hauptversion gewandert, die nicht zum Rest passt; sie steht jetzt wieder auf dem abgestimmten Stand und ist gegen ein erneutes stillschweigendes Weiterwandern gesichert.
 
 ## [1.0.0 (4)] – 2026-06-27

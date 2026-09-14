@@ -1,4 +1,12 @@
-# Deployment stack for server.godsapp.de (Portainer).
+# Lokale und dokumentarische Fassung: fremdes PocketBase-Abbild, Hooks und
+# Migrationen als Bind-Mount vom Arbeitsverzeichnis. Zum Ausprobieren auf dem
+# eigenen Rechner und um den Aufbau zu beschreiben.
+#
+# NICHT die Fassung, die in Produktion läuft. Dort gilt
+# docker-compose.portainer.yml: eigenes Abbild aus pocketbase/Dockerfile, in
+# dem Hooks und Migrationen stecken, und nur pb_data als Mount. Der Grund
+# steht dort im Kopf.
+#
 # Routes via Traefik label → pb.plietsche-plünn.de (Punycode host).
 # Apache (KeyHelp) → 127.0.0.1:8888 (Traefik) → this container.
 
