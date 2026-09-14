@@ -24,8 +24,8 @@ import {
 function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress}>
-      <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
+      <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
+        <View style={{ width: 38, height: 38, borderRadius: PP.rTile2, backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
           <Icon name={icon} size={PP.iconSizes.md} color={PP.teal} />
         </View>
         <PPText weight="semibold" size="base" color={PP.ink} style={{ flex: 1 }}>{label}</PPText>
@@ -79,9 +79,9 @@ function SystemInfo() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 12,
+            gap: PP.space.md,
+            paddingHorizontal: PP.space.lg,
+            paddingVertical: PP.space.md,
             borderTopWidth: i === 0 ? 0 : 1,
             borderTopColor: PP.hairline,
           }}
@@ -179,7 +179,7 @@ export default function Account() {
       />
 
       <SectionTitle title="Name" />
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         <Field icon="user" label="Anzeigename" value={name} onChangeText={setName} autoCapitalize="words" />
         <PPButton
           size="m"
@@ -192,7 +192,7 @@ export default function Account() {
       </View>
 
       <SectionTitle title="E-Mail" />
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         <Card pad={12}>
           <PPText size="sm" color={PP.ink2}>Aktuell</PPText>
           <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: 2 }}>
@@ -219,7 +219,7 @@ export default function Account() {
       </View>
 
       <SectionTitle title="Passwort" />
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         <Field icon="lock" label="Aktuelles Passwort" secure value={oldPw} onChangeText={setOldPw} />
         <Field icon="lock" label="Neues Passwort" secure value={newPw} onChangeText={setNewPw} />
         <PPButton
@@ -236,7 +236,7 @@ export default function Account() {
       {isStaff && (
         <>
           <SectionTitle title="Verwaltung" />
-          <View style={{ paddingHorizontal: 20, gap: 10 }}>
+          <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
             {/* Alle Verwaltungswege sitzen hier gebündelt. Die Tabs selbst
                 zeigen dem Team dieselbe Ansicht wie allen anderen — Sonder-
                 funktionen gehören in diesen Bereich, nicht in die Kopfzeilen. */}
@@ -251,7 +251,7 @@ export default function Account() {
       {isAdmin && (
         <>
           <SectionTitle title="System" />
-          <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ paddingHorizontal: PP.space.xl }}>
             <SystemInfo />
           </View>
         </>
@@ -261,14 +261,14 @@ export default function Account() {
           abgesetzt und rot beschriftet, damit sie auffindbar ist — jedoch ohne
           die volle Signalwirkung eines Lösch-Buttons. Der vorherige Geister-
           Button mit Zurück-Pfeil las sich wie "eine Ebene zurück". */}
-      <View style={{ paddingHorizontal: 20, marginTop: 36 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.huge }}>
         <Pressable onPress={logout}>
           <Card
             pad={14}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 12,
+              gap: PP.space.md,
               backgroundColor: alpha(PP.err, "ghost"),
               borderWidth: 1,
               borderColor: alpha(PP.err, "medium"),
@@ -278,7 +278,7 @@ export default function Account() {
               style={{
                 width: 38,
                 height: 38,
-                borderRadius: 12,
+                borderRadius: PP.rTile2,
                 backgroundColor: alpha(PP.err, "soft"),
                 alignItems: 'center',
                 justifyContent: 'center',

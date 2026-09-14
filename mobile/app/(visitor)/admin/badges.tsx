@@ -178,7 +178,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
   };
 
   return (
-    <Card pad={14} style={{ gap: 12 }}>
+    <Card pad={14} style={{ gap: PP.space.md }}>
       <Field label="Name" value={draft.name} onChangeText={(v) => set({ name: v })} placeholder="z.B. Stammgast" />
       <Field label="Beschreibung" value={draft.description} onChangeText={(v) => set({ description: v })} placeholder="Kurzer Text" />
       <IconPicker value={draft.icon} onChange={(ic) => set({ icon: ic })} />
@@ -186,10 +186,10 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       {/* Art: gestuft oder einmalig. Bei Aktionsbadges anders benannt — dort
           ist „Teilnahme" der geläufige Fall, nicht „Einzel-Abzeichen". */}
       <View>
-        <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>
+        <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>
           ART
         </PPText>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
+        <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
           <Pressable onPress={() => set({ kind: 'tiered', trigger_type: isAction ? 'action_participation' : 'visits' })}>
             <Pill bg={draft.kind === 'tiered' ? PP.teal : alpha(PP.ink, "subtle")} color={draft.kind === 'tiered' ? PP.onBrand : PP.ink2}>
               Stufen
@@ -201,7 +201,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             </Pill>
           </Pressable>
         </View>
-        <PPText size="sm" color={PP.ink2} style={{ marginTop: 6 }}>
+        <PPText size="sm" color={PP.ink2} style={{ marginTop: PP.space.sm }}>
           {isAction
             ? draft.kind === 'single'
               ? 'Einmal im Aktionszeitraum dabei gewesen — fertig.'
@@ -213,10 +213,10 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       </View>
 
       <View>
-        <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>
+        <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>
           AUSLÖSER — WOFÜR ES VERGEBEN WIRD
         </PPText>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
           {TRIGGERS.filter((t) => t.kinds.includes(draft.kind)).map((t) => (
             <Pressable key={t.key} onPress={() => set({ trigger_type: t.key })}>
               <Pill bg={draft.trigger_type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={draft.trigger_type === t.key ? PP.onBrand : PP.ink2}>
@@ -229,9 +229,9 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
 
       {draft.trigger_type === 'action_participation' && (
         <View>
-          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 6, letterSpacing: PP.tracking.label }}>GEKOPPELTE AKTION</PPText>
+          <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>GEKOPPELTE AKTION</PPText>
           {campaigns.length ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
               {campaigns.map((c) => (
                 <Pressable key={c.id} onPress={() => set({ campaign: c.id })}>
                   <Pill bg={draft.campaign === c.id ? PP.teal : alpha(PP.ink, "subtle")} color={draft.campaign === c.id ? PP.onBrand : PP.ink2}>{c.name}</Pill>
@@ -241,14 +241,14 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
           ) : (
             <PPText size="sm" color={PP.ink2}>Lege zuerst eine Aktion an, dann kannst du sie hier koppeln.</PPText>
           )}
-          <PPText size="sm" color={PP.ink2} style={{ marginTop: 6 }}>
+          <PPText size="sm" color={PP.ink2} style={{ marginTop: PP.space.sm }}>
             Beim Freigeben markiert der Helfer, ob ein Teil zu dieser Aktion zählt. Bei „Stufen" steigt das Abzeichen ab den unten gesetzten Zielen.
           </PPText>
         </View>
       )}
 
       {draft.kind === 'single' ? (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: PP.space.sm }}>
           {draft.trigger_type === 'years_active' && (
             <PPText size="sm" color={PP.ink2}>
               Wird am 31.12. rückwirkend vergeben — nur wenn im Jahr aktiv. „ab" = ab welchem aktiven Jahr (1 = erstes Jahr).
@@ -259,7 +259,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
               Wer während der Aktion dabei war, bekommt es — einmal, ohne Schwelle.
             </PPText>
           )}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
             {/* Bei Teilnahme wertet der Server keine Schwelle aus (die Vergabe
                 läuft über die Aktion selbst). Das Feld hier zu zeigen, hätte
                 eine Einstellung vorgetäuscht, die es nicht gibt. */}
@@ -277,7 +277,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
           <ColorPicker value={draft.color} onChange={(hex) => set({ color: hex })} label="FARBE, WENN ERREICHT" />
         </View>
       ) : (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: PP.space.sm }}>
           <PPText weight="semibold" size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.label }}>
             STUFEN — „ab" = ab wie vielen, Bonus = einmalige Punkte
           </PPText>
@@ -286,9 +286,9 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             Stufe gibt es bei diesem Abzeichen nicht.
           </PPText>
           {slots.map((s) => (
-            <View key={s.tier} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 78, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: TIER_COLOR[s.tier] }} />
+            <View key={s.tier} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.sm }}>
+              <View style={{ width: 78, flexDirection: 'row', alignItems: 'center', gap: PP.space.sm }}>
+                <View style={{ width: 10, height: 10, borderRadius: PP.rMicro, backgroundColor: TIER_COLOR[s.tier] }} />
                 <PPText size="sm" color={PP.ink} numberOfLines={1}>{s.name}</PPText>
               </View>
               <View style={{ flex: 1 }}>
@@ -302,7 +302,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
         <View style={{ flex: 1 }}>
           <PPText weight="semibold" size="base" color={PP.ink}>Sichtbar für Nutzer</PPText>
           <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
@@ -312,7 +312,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         <Toggle value={draft.is_visible} onChange={(v) => set({ is_visible: v })} />
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
         <View style={{ flex: 1 }}>
           <PPText weight="semibold" size="base" color={PP.ink}>Geheim</PPText>
           <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
@@ -323,7 +323,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         <Toggle value={draft.is_secret} onChange={(v) => set({ is_secret: v })} />
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
         <View style={{ flex: 1 }}>
           <PPButton size="m" loading={busy} onPress={save}>{badge ? 'Speichern' : 'Anlegen'}</PPButton>
         </View>
@@ -366,7 +366,7 @@ export default function BadgeAdmin() {
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
-      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
         <Hint icon="info" tone="info">
           Abzeichen belohnen Aktivität. „Stufen" steigen mit jedem Ziel und geben dabei einen Bonus; „Einzel" gibt es genau einmal — etwa für Jahres-Treue oder die Teilnahme an einer Aktion. Die Stufen kommen aus „Punkte & Ränge".
         </Hint>
@@ -375,20 +375,20 @@ export default function BadgeAdmin() {
       {creating && (
         <>
           <SectionTitle title="Neues Badge" />
-          <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ paddingHorizontal: PP.space.xl }}>
             <BadgeEditor campaigns={campaigns ?? []} ranks={ranks} onSaved={onSaved} />
           </View>
         </>
       )}
 
       <SectionTitle title="Bestehende Badges" />
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {badges?.length ? (
           badges.map((b) => (
             <View key={b.id}>
               <Pressable onPress={() => setOpenId(openId === b.id ? null : b.id)}>
-                <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(PP.gold, "soft"), alignItems: 'center', justifyContent: 'center' }}>
+                <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
+                  <View style={{ width: 40, height: 40, borderRadius: PP.rTile2, backgroundColor: alpha(PP.gold, "soft"), alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="medal" size={PP.iconSizes.lg} color={PP.gold} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -403,7 +403,7 @@ export default function BadgeAdmin() {
                 </Card>
               </Pressable>
               {openId === b.id && (
-                <View style={{ marginTop: 8 }}>
+                <View style={{ marginTop: PP.space.sm }}>
                   <BadgeEditor badge={b} campaigns={campaigns ?? []} ranks={ranks} onSaved={onSaved} />
                 </View>
               )}

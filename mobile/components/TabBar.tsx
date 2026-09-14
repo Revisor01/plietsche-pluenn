@@ -173,10 +173,10 @@ const styles = StyleSheet.create({
   },
   bar: {
     height: 64,
-    borderRadius: 26,
+    borderRadius: PP.rSheet,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: PP.space.xs,
   },
   // Echtes Liquid Glass sampelt den Inhalt DAHINTER auf Systemebene. Deshalb
   // hier kein `overflow: hidden` (die Clipping-Ebene kappt genau das und macht
@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 3,
-    paddingVertical: 4,
+    paddingVertical: PP.space.xs,
   },
   iconWrap: {
     width: 38,
     height: 28,
-    borderRadius: 14,
+    borderRadius: PP.rField,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -213,14 +213,14 @@ const styles = StyleSheet.create({
     backgroundColor: PP.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: PP.hairline,
-    paddingTop: 12,
+    paddingTop: PP.space.md,
     ...surfaceElevation(2),
   },
   md3Item: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
-    paddingBottom: 12,
+    gap: PP.space.xs,
+    paddingBottom: PP.space.md,
   },
   // Der aktive Zustand wird allein über die Farbe von Icon und Label getragen —
   // bewusst ohne den MD3-Pill hinter dem Icon.

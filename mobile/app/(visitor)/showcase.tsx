@@ -18,7 +18,7 @@ function GridCard({ item }: { item: Item }) {
         style={{
           width: '100%',
           aspectRatio: 0.84,
-          borderRadius: 18,
+          borderRadius: PP.rTile,
           overflow: 'hidden',
           backgroundColor: alpha(PP.teal, "subtle"),
           alignItems: 'center',
@@ -31,7 +31,7 @@ function GridCard({ item }: { item: Item }) {
           <Icon name="shirt" size={PP.iconSizes.hero} color={alpha(PP.teal, 'veil')} />
         )}
       </View>
-      <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>
+      <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: PP.space.sm }} numberOfLines={1}>
         {item.title}
       </PPText>
       <PPText size="sm" color={PP.ink2} style={{ marginTop: 1 }}>
@@ -56,11 +56,11 @@ export default function Showcase() {
 
       <View
         style={{
-          paddingHorizontal: 20,
+          paddingHorizontal: PP.space.xl,
           flexDirection: 'row',
           flexWrap: 'wrap',
           justifyContent: 'space-between',
-          rowGap: 18,
+          rowGap: PP.space.lg,
         }}
       >
         {items?.length ? (

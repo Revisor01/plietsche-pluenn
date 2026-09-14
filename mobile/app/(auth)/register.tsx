@@ -41,22 +41,22 @@ export default function Register() {
       style={{ flex: 1, backgroundColor: PP.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 8 }}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={{ marginBottom: 8 }}>
+      <View style={{ flex: 1, paddingHorizontal: PP.space.xxl, paddingTop: insets.top + 8 }}>
+        <Pressable onPress={() => router.back()} hitSlop={10} style={{ marginBottom: PP.space.sm }}>
           <Icon name="chevron-left" size={PP.iconSizes.xl} color={PP.ink} />
         </Pressable>
 
-        <View style={{ alignItems: 'center', marginTop: 4, marginBottom: 24 }}>
+        <View style={{ alignItems: 'center', marginTop: PP.space.xs, marginBottom: PP.space.xxl }}>
           <BrandMark size={56} radius={18} />
-          <PPText weight="bold" size="xl" style={{ marginTop: 14, letterSpacing: PP.tracking.title }}>
+          <PPText weight="bold" size="xl" style={{ marginTop: PP.space.lg, letterSpacing: PP.tracking.title }}>
             Willkommen an Bord
           </PPText>
-          <PPText size="base" color={PP.ink2} style={{ marginTop: 4 }}>
+          <PPText size="base" color={PP.ink2} style={{ marginTop: PP.space.xs }}>
             Ein Konto, dann sammelst du los.
           </PPText>
         </View>
 
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: PP.space.md }}>
           <Field
             icon="user"
             label="Name"
@@ -90,13 +90,13 @@ export default function Register() {
           />
         </View>
 
-        <View style={{ marginTop: 22 }}>
+        <View style={{ marginTop: PP.space.xxl }}>
           <PPButton loading={loading} onPress={onSubmit} iconRight="arrow-right">
             Konto erstellen
           </PPButton>
         </View>
 
-        <View style={{ alignItems: 'center', marginTop: 18 }}>
+        <View style={{ alignItems: 'center', marginTop: PP.space.lg }}>
           <Pressable onPress={() => router.replace('/(auth)/login')} hitSlop={8}>
             <PPText size="base" color={PP.ink2}>
               Schon dabei? <PPText weight="semibold" size="base" color={PP.teal}>Anmelden</PPText>

@@ -55,7 +55,7 @@ function BadgeSheet({
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
-        style={{ flex: 1, backgroundColor: alpha(PP.inkDeep, "veil"), justifyContent: 'center', padding: 24 }}
+        style={{ flex: 1, backgroundColor: alpha(PP.inkDeep, "veil"), justifyContent: 'center', padding: PP.space.xxl }}
       >
         {/* Klicks auf die Karte sollen sie nicht schließen. */}
         <Pressable onPress={() => {}}>
@@ -76,23 +76,23 @@ function BadgeSheet({
               />
             </GradientRing>
 
-            <PPText weight="bold" size="lg" color={PP.ink} style={{ marginTop: 14, textAlign: 'center' }}>
+            <PPText weight="bold" size="lg" color={PP.ink} style={{ marginTop: PP.space.lg, textAlign: 'center' }}>
               {veiled ? 'Geheimes Abzeichen' : badge.name}
             </PPText>
 
-            <PPText size="base" color={PP.ink2} style={{ marginTop: 6, textAlign: 'center', lineHeight: PP.fontSizes.base * PP.leading.normal }}>
+            <PPText size="base" color={PP.ink2} style={{ marginTop: PP.space.sm, textAlign: 'center', lineHeight: PP.fontSizes.base * PP.leading.normal }}>
               {veiled
                 ? 'Was es dafür gibt, verraten wir noch nicht. Es taucht auf, sobald du es dir verdient hast.'
                 : badge.description || 'Keine Beschreibung hinterlegt.'}
             </PPText>
 
             {!veiled && (
-              <View style={{ marginTop: 14, width: '100%' }}>
+              <View style={{ marginTop: PP.space.lg, width: '100%' }}>
                 {single ? (
                   <View
                     style={{
-                      paddingVertical: 10,
-                      borderRadius: 12,
+                      paddingVertical: PP.space.md,
+                      borderRadius: PP.rTile2,
                       alignItems: 'center',
                       backgroundColor: earned
                         ? withAlpha(accent ?? PP.teal, 0.12)
@@ -117,15 +117,15 @@ function BadgeSheet({
                             style={{
                               flexDirection: 'row',
                               alignItems: 'center',
-                              gap: 10,
-                              paddingVertical: 7,
+                              gap: PP.space.md,
+                              paddingVertical: PP.space.sm,
                             }}
                           >
                             <View
                               style={{
                                 width: 12,
                                 height: 12,
-                                borderRadius: 6,
+                                borderRadius: PP.rMicro,
                                 backgroundColor: done ? c.base : alpha(PP.ink, "soft"),
                               }}
                             />
@@ -144,7 +144,7 @@ function BadgeSheet({
                         );
                       })}
                     {info.maxed && (
-                      <PPText size="sm" color={PP.ink2} style={{ marginTop: 6, textAlign: 'center' }}>
+                      <PPText size="sm" color={PP.ink2} style={{ marginTop: PP.space.sm, textAlign: 'center' }}>
                         Alle Stufen geschafft.
                       </PPText>
                     )}
@@ -153,7 +153,7 @@ function BadgeSheet({
               </View>
             )}
 
-            <View style={{ marginTop: 16, width: '100%' }}>
+            <View style={{ marginTop: PP.space.lg, width: '100%' }}>
               <PPButton size="m" variant="secondary" onPress={onClose}>Schließen</PPButton>
             </View>
           </Card>
@@ -195,7 +195,7 @@ export default function Badges() {
 
       {/* Zweispaltiges Raster — bei vielen Badges (jede Aktion bringt eins)
           wurde die einspaltige Liste zu lang zum Überblicken. */}
-      <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.md }}>
         {(badges ?? []).map((b) => {
           const ub = ubMap.get(b.id);
           const progress = ub?.progress ?? 0;
@@ -244,7 +244,7 @@ export default function Badges() {
                 size="base"
                 color={earned ? PP.ink : PP.ink2}
                 numberOfLines={1}
-                style={{ marginTop: 10, textAlign: 'center' }}
+                style={{ marginTop: PP.space.md, textAlign: 'center' }}
               >
                 {veiled ? 'Geheim' : b.name}
               </PPText>

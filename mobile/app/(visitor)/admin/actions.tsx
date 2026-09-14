@@ -118,10 +118,10 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
   };
 
   return (
-    <Card pad={14} style={{ gap: 12 }}>
+    <Card pad={14} style={{ gap: PP.space.md }}>
       <Field label="Name" value={name} onChangeText={setName} placeholder="z.B. Winterkleidung" />
       <Field label="Beschreibung" value={description} onChangeText={setDescription} placeholder="Kurzer Hinweis" />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
         <View style={{ flex: 1 }}><DateField label="Von" value={start} onChange={setStart} /></View>
         <View style={{ flex: 1 }}><DateField label="Bis" value={end} onChange={setEnd} /></View>
       </View>
@@ -129,7 +129,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
       {/* Farbe der Aushang-Karte — der Verlauf wird auf diese Farbe gezogen. */}
       <ColorPicker value={color} onChange={setColor} label="FARBE IM AUSHANG" />
 
-      <View style={{ gap: 8 }}>
+      <View style={{ gap: PP.space.sm }}>
         {/* Eine Zeile je Typ: Beschriftung links, Faktoren rechts. Vorher drei
             gestapelte Blöcke mit eigener Überschrift — viel Platz für wenig Inhalt. */}
         {([
@@ -137,7 +137,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
           { label: 'Mitnehmen', value: multTake, set: setMultTake },
           { label: 'Bringen', value: multBring, set: setMultBring },
         ] as const).map((row) => (
-          <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
             <PPText
               weight="medium"
               size="sm"
@@ -147,7 +147,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
             >
               {row.label}
             </PPText>
-            <View style={{ flexDirection: 'row', gap: 6, flex: 1 }}>
+            <View style={{ flexDirection: 'row', gap: PP.space.sm, flex: 1 }}>
               {FACTORS.map((m) => (
                 <Pressable key={m} onPress={() => row.set(m)} style={{ flex: 1 }}>
                   <Pill
@@ -164,7 +164,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
         <Hint icon="info" tone="info">×1 = kein Bonus. Du kannst mehrere Typen gleichzeitig erhöhen.</Hint>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{campaign ? 'Speichern' : 'Anlegen'}</PPButton></View>
         {campaign && <PPButton size="m" variant="ghost" fullWidth={false} onPress={remove}>Löschen</PPButton>}
       </View>
@@ -202,7 +202,7 @@ export default function ActionsAdmin() {
         trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
-      <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
         <Hint icon="info" tone="info">
           Aktionen sind Zeiträume mit Bonus-Punkten (z.B. „Winterkleidung, ×2"). Im Zeitraum zählt jeder Scan/Check-in mehrfach. Aktionen erscheinen automatisch als Aushang auf der Startseite.
         </Hint>
@@ -211,20 +211,20 @@ export default function ActionsAdmin() {
       {creating && (
         <>
           <SectionTitle title="Neue Aktion" />
-          <View style={{ paddingHorizontal: 20 }}>
+          <View style={{ paddingHorizontal: PP.space.xl }}>
             <CampaignEditor onSaved={onSaved} />
           </View>
         </>
       )}
 
       <SectionTitle title="Aktionen" />
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {campaigns?.length ? (
           campaigns.map((c) => (
             <View key={c.id}>
               <Pressable onPress={() => setOpenId(openId === c.id ? null : c.id)}>
-                <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(PP.teal, "soft"), alignItems: 'center', justifyContent: 'center' }}>
+                <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
+                  <View style={{ width: 40, height: 40, borderRadius: PP.rTile2, backgroundColor: alpha(PP.teal, "soft"), alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="sparkles" size={PP.iconSizes.lg} color={PP.teal} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -247,7 +247,7 @@ export default function ActionsAdmin() {
                 </Card>
               </Pressable>
               {openId === c.id && (
-                <View style={{ marginTop: 8 }}>
+                <View style={{ marginTop: PP.space.sm }}>
                   <CampaignEditor campaign={c} onSaved={onSaved} />
                 </View>
               )}

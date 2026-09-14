@@ -36,18 +36,18 @@ export default function Login() {
       style={{ flex: 1, backgroundColor: PP.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 18 }}>
-        <View style={{ alignItems: 'center', marginTop: 18, marginBottom: 28 }}>
+      <View style={{ flex: 1, paddingHorizontal: PP.space.xxl, paddingTop: insets.top + 18 }}>
+        <View style={{ alignItems: 'center', marginTop: PP.space.lg, marginBottom: PP.space.huge }}>
           <BrandMark />
-          <PPText weight="bold" size="xl" style={{ marginTop: 14, letterSpacing: PP.tracking.title }}>
+          <PPText weight="bold" size="xl" style={{ marginTop: PP.space.lg, letterSpacing: PP.tracking.title }}>
             Tach auch!
           </PPText>
-          <PPText size="base" color={PP.ink2} style={{ marginTop: 4 }}>
+          <PPText size="base" color={PP.ink2} style={{ marginTop: PP.space.xs }}>
             Melde dich an, dann geht's los.
           </PPText>
         </View>
 
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: PP.space.md }}>
           <Field
             icon="mail"
             label="E-Mail"
@@ -72,13 +72,13 @@ export default function Login() {
           />
         </View>
 
-        <View style={{ marginTop: 22 }}>
+        <View style={{ marginTop: PP.space.xxl }}>
           <PPButton loading={loading} onPress={onSubmit}>
             Anmelden
           </PPButton>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md, marginVertical: PP.space.xxl }}>
           <View style={{ flex: 1, height: 1, backgroundColor: PP.hairline }} />
           <PPText size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.caps }}>
             ODER

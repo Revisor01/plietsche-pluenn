@@ -50,17 +50,17 @@ export default function Permissions() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: PP.bg, paddingHorizontal: 24, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
-      <View style={{ marginTop: 12 }}>
+    <View style={{ flex: 1, backgroundColor: PP.bg, paddingHorizontal: PP.space.xxl, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
+      <View style={{ marginTop: PP.space.md }}>
         <PPText weight="bold" size="xl2" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
           Zwei kleine Bitten
         </PPText>
-        <PPText size="base" color={PP.ink2} style={{ marginTop: 4 }}>
+        <PPText size="base" color={PP.ink2} style={{ marginTop: PP.space.xs }}>
           Beides nur, wenn du willst.
         </PPText>
       </View>
 
-      <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
+      <View style={{ flex: 1, justifyContent: 'center', gap: PP.space.md }}>
         <PermCard
           icon="location"
           title="Standort beim Check-In"
@@ -80,7 +80,7 @@ export default function Permissions() {
       <PPButton iconRight="arrow-right" loading={finishing} onPress={finish}>
         Fertig
       </PPButton>
-      <View style={{ paddingTop: 14 }}>
+      <View style={{ paddingTop: PP.space.lg }}>
         <Dots count={3} active={2} />
       </View>
     </View>
@@ -101,12 +101,12 @@ function PermCard({
   onAsk: () => void;
 }) {
   return (
-    <Card pad={16} style={{ flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
+    <Card pad={16} style={{ flexDirection: 'row', gap: PP.space.lg, alignItems: 'flex-start' }}>
       <LinearGradient
         colors={PP.gradientSoft}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+        style={{ width: 44, height: 44, borderRadius: PP.rField, alignItems: 'center', justifyContent: 'center' }}
       >
         <Icon name={icon} size={PP.iconSizes.lg} color={PP.teal} />
       </LinearGradient>
@@ -117,7 +117,7 @@ function PermCard({
         <PPText size="sm" color={PP.ink2} style={{ marginTop: 3, lineHeight: PP.fontSizes.sm * PP.leading.normal }}>
           {desc}
         </PPText>
-        <View style={{ marginTop: 10 }}>
+        <View style={{ marginTop: PP.space.md }}>
           {state === 'granted' ? (
             <Pill icon="check">Erlaubt</Pill>
           ) : state === 'denied' ? (

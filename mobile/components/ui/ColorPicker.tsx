@@ -21,17 +21,17 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
 
   return (
     <View>
-      <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 8, letterSpacing: PP.tracking.label }}>
+      <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>
         {label}
       </PPText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
         {/* Standard = keine eigene Farbe (Marken-Verlauf bzw. Sky). */}
         <Pressable
           onPress={() => onChange('')}
           style={{
             width: 46,
             height: 46,
-            borderRadius: 12,
+            borderRadius: PP.rTile2,
             alignItems: 'center',
             justifyContent: 'center',
             // Standard = Markenfarbe. Vorher ein Zauberstab-Symbol, das wie
@@ -53,7 +53,7 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
               style={{
                 width: 46,
                 height: 46,
-                borderRadius: 12,
+                borderRadius: PP.rTile2,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: c.hex,

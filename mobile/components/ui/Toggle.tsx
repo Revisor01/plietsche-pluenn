@@ -4,15 +4,15 @@ import { PP, alpha } from '../../lib/theme';
 
 export function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   const knob = useAnimatedStyle(() => ({
-    transform: [{ translateX: withTiming(value ? 18 : 0, { duration: 150 }) }],
+    transform: [{ translateX: withTiming(value ? 18 : 0, { duration: PP.motion.fast }) }],
   }));
   const track = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(value ? PP.teal : alpha(PP.ink, "medium"), { duration: 150 }),
+    backgroundColor: withTiming(value ? PP.teal : alpha(PP.ink, "medium"), { duration: PP.motion.fast }),
   }));
 
   return (
     <Pressable onPress={() => onChange(!value)} hitSlop={6}>
-      <Animated.View style={[{ width: 46, height: 28, borderRadius: 999, justifyContent: 'center', paddingHorizontal: 3 }, track]}>
+      <Animated.View style={[{ width: 46, height: 28, borderRadius: PP.rPill, justifyContent: 'center', paddingHorizontal: 3 }, track]}>
         <Animated.View
           style={[
             {

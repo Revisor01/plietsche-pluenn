@@ -40,11 +40,11 @@ const styles = StyleSheet.create({
   wrap: {
     backgroundColor: PP.surface,
     borderRadius: PP.rField,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: PP.space.lg,
+    paddingVertical: PP.space.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: PP.space.md,
     borderWidth: 1,
     borderColor: alpha(PP.ink, "subtle"),
     // Füllt die Höhe der Zeile, wenn der Container streckt (Ränge-Liste im

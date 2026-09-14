@@ -1,6 +1,6 @@
 import { Pressable, View, ActivityIndicator, StyleProp, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation, alpha } from '../../lib/theme';
+import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation, alpha, glow } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -49,9 +49,9 @@ export function PPButton({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 10,
+        gap: PP.space.md,
         height: h,
-        paddingHorizontal: 22,
+        paddingHorizontal: PP.space.xxl,
       }}
     >
       {loading ? (
@@ -97,10 +97,7 @@ export function PPButton({
           style={[
             {
               borderRadius: radius,
-              shadowColor: PP.teal,
-              shadowOpacity: 0.32,
-              shadowRadius: 18,
-              shadowOffset: { width: 0, height: 6 },
+              ...glow(PP.teal, 's'),
             },
             // MD3 Filled Button: Elevation level 1 statt farbigem Glow.
             isAndroid ? surfaceElevation(1) : { elevation: 4 },

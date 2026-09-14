@@ -73,8 +73,8 @@ export default function ItemDetail() {
           title={item.title}
           leading={<IconButton icon="chevron-left" onPress={goBack} />}
         />
-        <View style={{ paddingHorizontal: 20 }}>
-          <View style={{ height: 280, borderRadius: 18, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ paddingHorizontal: PP.space.xl }}>
+          <View style={{ height: 280, borderRadius: PP.rTile, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
             {uri ? (
               <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             ) : (
@@ -83,10 +83,10 @@ export default function ItemDetail() {
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 20, marginTop: 16, gap: 12 }}>
-          <Card pad={16} style={{ gap: 14 }}>
+        <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.lg, gap: PP.space.md }}>
+          <Card pad={16} style={{ gap: PP.space.lg }}>
             {/* Titel + Punkte */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: PP.space.md }}>
               <PPText weight="bold" size="lg" color={PP.ink} style={{ flex: 1 }}>{item.title}</PPText>
               <Pill color={PP.teal} bg={alpha(PP.teal, 'soft')}>{item.points ?? 0} Punkte</Pill>
             </View>
@@ -107,8 +107,8 @@ export default function ItemDetail() {
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
+                      paddingVertical: PP.space.md,
+                      paddingHorizontal: PP.space.md,
                       backgroundColor: i % 2 === 0 ? alpha(PP.ink, "ghost") : 'transparent',
                     }}
                   >
@@ -210,9 +210,9 @@ export default function ItemDetail() {
       />
 
       <SectionTitle title="Foto" />
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ paddingHorizontal: PP.space.xl }}>
         <Pressable onPress={pickPhoto}>
-          <View style={{ height: 200, borderRadius: 18, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ height: 200, borderRadius: PP.rTile, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             ) : (
@@ -223,8 +223,8 @@ export default function ItemDetail() {
       </View>
 
       {item.status === 'pending' && (
-        <View style={{ paddingHorizontal: 20, marginTop: 12 }}>
-          <View style={{ backgroundColor: alpha(PP.warn, "soft"), borderRadius: PP.rField, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.md }}>
+          <View style={{ backgroundColor: alpha(PP.warn, "soft"), borderRadius: PP.rField, padding: PP.space.md, flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
             <View style={{ flex: 1 }}>
               <PPText weight="semibold" size="base" color={PP.ink}>Noch nicht freigegeben</PPText>
             </View>
@@ -234,9 +234,9 @@ export default function ItemDetail() {
       )}
 
       <SectionTitle title="Details" />
-      <View style={{ paddingHorizontal: 20, gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         <Field icon="shirt" label="Bezeichnung" value={title} onChangeText={setTitle} />
-        <View style={{ flexDirection: 'row', gap: 12 }}>
+        <View style={{ flexDirection: 'row', gap: PP.space.md }}>
           <View style={{ flex: 1 }}><Field label="Größe" value={size} onChangeText={setSize} /></View>
           <View style={{ flex: 1 }}><Field label="Punkte" value={points} onChangeText={setPoints} keyboardType="number-pad" /></View>
         </View>
@@ -244,7 +244,7 @@ export default function ItemDetail() {
       </View>
 
       <SectionTitle title="Kategorie" />
-      <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
         {CATEGORIES.map((c) => (
           <Pressable key={c} onPress={() => setCategory(c)}>
             <Pill bg={category === c ? PP.teal : alpha(PP.ink, "subtle")} color={category === c ? PP.onBrand : PP.ink2}>{c}</Pill>
@@ -252,14 +252,14 @@ export default function ItemDetail() {
         ))}
       </View>
 
-      <View style={{ paddingHorizontal: 20, marginTop: 16, gap: 12 }}>
-        <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.lg, gap: PP.space.md }}>
+        <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
           <View style={{ flex: 1 }}>
             <PPText weight="semibold" size="base" color={PP.ink}>Im Schaufenster</PPText>
           </View>
           <Toggle value={showcase} onChange={toggleShowcase} />
         </Card>
-        <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
           <View style={{ flex: 1 }}>
             <PPText weight="semibold" size="base" color={PP.ink}>Wird extern gelagert</PPText>
           </View>
@@ -268,16 +268,16 @@ export default function ItemDetail() {
       </View>
 
       <SectionTitle title="QR-Code" />
-      <View style={{ paddingHorizontal: 20, alignItems: 'center' }}>
-        <Card pad={20} style={{ alignItems: 'center', gap: 10 }}>
-          <View style={{ padding: 12, backgroundColor: PP.surface, borderRadius: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, alignItems: 'center' }}>
+        <Card pad={20} style={{ alignItems: 'center', gap: PP.space.md }}>
+          <View style={{ padding: PP.space.md, backgroundColor: PP.surface, borderRadius: PP.rTile2 }}>
             <QRCode value={item.qr_code || item.sku} size={160} color={PP.ink} backgroundColor={PP.onBrand} />
           </View>
           <PPText weight="semibold" size="md" color={PP.ink}>{item.qr_code || item.sku}</PPText>
         </Card>
       </View>
 
-      <View style={{ paddingHorizontal: 20, marginTop: 24, gap: 10 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.xxl, gap: PP.space.md }}>
         <PPButton icon="check" loading={busy} onPress={save}>Speichern</PPButton>
         <PPButton variant="ghost" onPress={doArchive}>Archivieren</PPButton>
       </View>

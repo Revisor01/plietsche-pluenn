@@ -49,11 +49,11 @@ export default function StoreInfo() {
         leading={<IconButton icon="chevron-left" onPress={goBack} />}
       />
 
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ paddingHorizontal: PP.space.xl }}>
         <View
           style={{
             height: 150,
-            borderRadius: 20,
+            borderRadius: PP.rTile,
             backgroundColor: alpha(PP.sandInk, "soft"),
             alignItems: 'center',
             justifyContent: 'center',
@@ -64,7 +64,7 @@ export default function StoreInfo() {
       </View>
 
       <SectionTitle title="Öffnungszeiten" />
-      <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ paddingHorizontal: PP.space.xl }}>
         <Card pad={0} style={{ overflow: 'hidden' }}>
           {(openDays.length ? openDays : DAYS).map((d, i) => {
             const h = store?.hours_json?.[d.key] ?? null;
@@ -75,8 +75,8 @@ export default function StoreInfo() {
                 style={{
                   flexDirection: 'row',
                   justifyContent: 'space-between',
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
+                  paddingHorizontal: PP.space.lg,
+                  paddingVertical: PP.space.md,
                   borderTopWidth: i === 0 ? 0 : 1,
                   borderTopColor: PP.hairline,
                 }}
@@ -94,8 +94,8 @@ export default function StoreInfo() {
       </View>
 
       <SectionTitle title="Wo du uns findest" />
-      <View style={{ paddingHorizontal: 20 }}>
-        <Card pad={14} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+      <View style={{ paddingHorizontal: PP.space.xl }}>
+        <Card pad={14} style={{ flexDirection: 'row', gap: PP.space.md, alignItems: 'flex-start' }}>
           <View
             style={{
               width: 38,
@@ -115,7 +115,7 @@ export default function StoreInfo() {
             <PPText size="sm" color={PP.ink2}>
               {store?.address ?? ''}
             </PPText>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+            <View style={{ flexDirection: 'row', gap: PP.space.sm, marginTop: PP.space.md }}>
               <Pressable onPress={openMaps}>
                 <Pill icon="map-pin" size="s">
                   Route
@@ -133,7 +133,7 @@ export default function StoreInfo() {
         </Card>
       </View>
 
-      <View style={{ paddingHorizontal: 20, marginTop: 28 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.huge }}>
         <PPButton variant="secondary" icon="arrow-left" onPress={logout}>
           Abmelden
         </PPButton>

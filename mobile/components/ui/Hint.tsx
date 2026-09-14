@@ -29,11 +29,11 @@ export function Hint({
       style={{
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 10,
+        gap: PP.space.md,
         backgroundColor: t.bg,
         borderRadius: PP.rField,
-        paddingVertical: 11,
-        paddingHorizontal: 13,
+        paddingVertical: PP.space.md,
+        paddingHorizontal: PP.space.md,
       }}
     >
       {icon && <Icon name={icon} size={PP.iconSizes.sm} color={t.icon} style={{ marginTop: 1 }} />}

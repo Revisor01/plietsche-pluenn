@@ -12,12 +12,12 @@ export function SectionTitle({ title, action, onAction }: SectionTitleProps) {
   return (
     <View
       style={{
-        paddingHorizontal: 20,
+        paddingHorizontal: PP.space.xl,
         flexDirection: 'row',
         alignItems: 'baseline',
         justifyContent: 'space-between',
-        marginTop: 22,
-        marginBottom: 10,
+        marginTop: PP.space.xxl,
+        marginBottom: PP.space.md,
       }}
     >
       <PPText weight="semibold" size="base" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>

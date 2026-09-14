@@ -13,12 +13,12 @@ export function PPHeader({ title, subtitle, leading, trailing }: PPHeaderProps) 
   return (
     <View
       style={{
-        paddingHorizontal: 20,
-        paddingTop: 8,
-        paddingBottom: 14,
+        paddingHorizontal: PP.space.xl,
+        paddingTop: PP.space.sm,
+        paddingBottom: PP.space.lg,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: PP.space.md,
       }}
     >
       {leading}

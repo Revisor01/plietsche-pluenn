@@ -52,13 +52,13 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
   };
 
   return (
-    <Card pad={12} style={{ gap: 10 }}>
-      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: 12 }}>
+    <Card pad={12} style={{ gap: PP.space.md }}>
+      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: PP.space.md }}>
         <View
           style={{
             width: 70,
             height: 84,
-            borderRadius: 12,
+            borderRadius: PP.rTile2,
             overflow: 'hidden',
             backgroundColor: alpha(PP.teal, "subtle"),
             alignItems: 'center',
@@ -78,20 +78,20 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
           <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
             {item.sku}{item.size ? ` · Gr. ${item.size}` : ''} · {item.points ?? 0} P
           </PPText>
-          <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', gap: PP.space.sm, marginTop: PP.space.sm, flexWrap: 'wrap' }}>
             <Pill size="s" color={st.color} bg={st.bg}>{st.label}</Pill>
             {item.stays_external && (
               <Pill size="s" icon="map-pin" color={PP.warn} bg={alpha(PP.warn, 'soft')}>extern</Pill>
             )}
           </View>
           {!!item.location && (
-            <PPText size="xs" color={PP.ink3} style={{ marginTop: 4 }}>
+            <PPText size="xs" color={PP.ink3} style={{ marginTop: PP.space.xs }}>
               {item.location}{submitter ? ` · von ${submitter}` : ''}
             </PPText>
           )}
         </View>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ padding: 5, backgroundColor: PP.surface, borderRadius: 7 }}>
+          <View style={{ padding: PP.space.xs, backgroundColor: PP.surface, borderRadius: PP.rMicro }}>
             <QRCode value={item.qr_code || item.sku} size={48} color={PP.ink} backgroundColor={PP.onBrand} />
           </View>
           <Icon name="chevron-right" size={PP.iconSizes.sm} color={PP.ink3} />
@@ -101,7 +101,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
       {!item.taken_at && (
         // Hauptaktion mit Text, Archivieren als roter Icon-Button — bricht
         // auch bei großer Schrift nicht um.
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.sm }}>
           {item.status === 'pending' ? (
             <View style={{ flex: 1 }}>
               <PPButton size="s" icon="check" loading={busy} onPress={() => run(() => approveItem(item.id, false))}>
@@ -190,7 +190,7 @@ export default function ItemsInventory() {
         trailing={<IconButton icon="plus" onPress={() => router.push('/(visitor)/items/new')} />}
       />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6, paddingBottom: 12 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: PP.space.xl, gap: PP.space.sm, paddingBottom: PP.space.md }}>
         {FILTERS.map((f) => (
           <Pressable key={f.key} onPress={() => setFilter(f.key)}>
             <Pill bg={filter === f.key ? PP.teal : alpha(PP.ink, "subtle")} color={filter === f.key ? PP.onBrand : PP.ink2}>
@@ -203,14 +203,14 @@ export default function ItemsInventory() {
       {/* Etiketten zum Anheften — das PDF geht in den Teilen-Dialog und von
           dort an den Drucker. */}
       {filtered.some((i) => !i.taken_at) && (
-        <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
+        <View style={{ paddingHorizontal: PP.space.xl, paddingBottom: PP.space.md }}>
           <PPButton size="s" variant="secondary" icon="tag" loading={printing} onPress={printSheet}>
             QR-Etiketten drucken
           </PPButton>
         </View>
       )}
 
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {filtered.length ? (
           filtered.map((it) => (
             <ItemRow key={it.id} item={it} onChange={onChange} onOpen={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)/items`)} />

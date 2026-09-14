@@ -92,8 +92,8 @@ export default function Home() {
 
       {/* Die Fortschrittskarte führt in die Punkte-Übersicht — der Verlauf
           stand vorher doppelt als "Watt's neu" unter dem Dashboard. */}
-      <Pressable style={{ paddingHorizontal: 20 }} onPress={() => router.push('/(visitor)/points')}>
-        <Card pad={22} radius={26} style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
+      <Pressable style={{ paddingHorizontal: PP.space.xl }} onPress={() => router.push('/(visitor)/points')}>
+        <Card pad={22} radius={26} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.lg }}>
           <GradientRing size={120} stroke={11} progress={tier.progress}>
             <PPText weight="medium" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label }}>
               PUNKTE
@@ -118,12 +118,12 @@ export default function Home() {
             >
               {motivation.pill}
             </Pill>
-            <PPText size="base" color={PP.ink} style={{ marginTop: 12, lineHeight: PP.fontSizes.base * PP.leading.normal }}>
+            <PPText size="base" color={PP.ink} style={{ marginTop: PP.space.md, lineHeight: PP.fontSizes.base * PP.leading.normal }}>
               {motivation.text}
             </PPText>
             {/* Nur zeigen, wenn der Motivationstext den Rang nicht schon nennt. */}
             {tier.remaining > 0 && !motivation.text.includes(tier.name) && (
-              <PPText size="sm" color={PP.ink2} style={{ marginTop: 10 }}>
+              <PPText size="sm" color={PP.ink2} style={{ marginTop: PP.space.md }}>
                 Noch <PPText weight="semibold" size="sm" color={PP.teal}>{formatPoints(tier.remaining)}</PPText> bis {tier.name}.
               </PPText>
             )}
@@ -136,7 +136,7 @@ export default function Home() {
           <SectionTitle title="Aushang" />
           {/* Freie Ankündigungen zuerst: dort stehen Dinge wie Öffnungszeiten,
               die immer obenauf gehören. Aktionen laufen befristet darunter. */}
-          <View style={{ paddingHorizontal: 20, gap: 10 }}>
+          <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
             {visibleNeeds.map((n) => {
               const accent = normalizeHex(n.color) ?? PP.sky;
               return (
@@ -149,13 +149,13 @@ export default function Home() {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 12,
+                  gap: PP.space.md,
                   backgroundColor: withAlpha(accent, 0.08),
                   borderLeftWidth: 4,
                   borderLeftColor: accent,
                 }}
               >
-                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: withAlpha(accent, 0.18), alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 38, height: 38, borderRadius: PP.rTile2, backgroundColor: withAlpha(accent, 0.18), alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="megaphone" size={PP.iconSizes.md} color={accent} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
@@ -172,8 +172,8 @@ export default function Home() {
               const factors = campaignFactors(c);
               return (
                 <GradientCard key={c.id} pad={16} radius={20} colors={accentGradient(c.color)}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: alpha(PP.onBrand, "medium"), alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
+                    <View style={{ width: 44, height: 44, borderRadius: PP.rField, backgroundColor: alpha(PP.onBrand, "medium"), alignItems: 'center', justifyContent: 'center' }}>
                       <Icon name="sparkles" size={PP.iconSizes.lg} color={PP.onBrand} />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
@@ -187,17 +187,17 @@ export default function Home() {
                   </View>
                   {/* Was es dem User bringt — jeder erhöhte Typ einzeln. */}
                   {!!factors.length && (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm, marginTop: PP.space.md }}>
                       {factors.map((f) => (
                         <View
                           key={f.label}
                           style={{
                             flexDirection: 'row',
                             alignItems: 'center',
-                            gap: 6,
-                            paddingVertical: 6,
-                            paddingHorizontal: 12,
-                            borderRadius: 999,
+                            gap: PP.space.sm,
+                            paddingVertical: PP.space.sm,
+                            paddingHorizontal: PP.space.md,
+                            borderRadius: PP.rPill,
                             backgroundColor: alpha(PP.onBrand, "medium"),
                           }}
                         >
@@ -216,14 +216,14 @@ export default function Home() {
         </>
       )}
 
-      <View style={{ paddingHorizontal: 20, paddingTop: 14, flexDirection: 'row', gap: 12 }}>
+      <View style={{ paddingHorizontal: PP.space.xl, paddingTop: PP.space.lg, flexDirection: 'row', gap: PP.space.md }}>
         <Pressable style={{ flex: 1 }} onPress={() => router.push('/(visitor)/items/new')}>
-          <Card pad={14} style={{ alignItems: 'flex-start', gap: 8 }}>
+          <Card pad={14} style={{ alignItems: 'flex-start', gap: PP.space.sm }}>
             <View
               style={{
                 width: 38,
                 height: 38,
-                borderRadius: 12,
+                borderRadius: PP.rTile2,
                 backgroundColor: alpha(PP.teal, "subtle"),
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -248,7 +248,7 @@ export default function Home() {
               pad={14}
               style={{
                 alignItems: 'flex-start',
-                gap: 8,
+                gap: PP.space.sm,
                 ...(openCount
                   ? { backgroundColor: alpha(PP.warn, "soft"), borderWidth: 1, borderColor: alpha(PP.warn, "veil") }
                   : null),
@@ -259,7 +259,7 @@ export default function Home() {
                   style={{
                     width: 38,
                     height: 38,
-                    borderRadius: 12,
+                    borderRadius: PP.rTile2,
                     backgroundColor: openCount ? PP.warn : alpha(PP.warn, "soft"),
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -272,9 +272,9 @@ export default function Home() {
                     style={{
                       marginLeft: 'auto',
                       minWidth: 24,
-                      paddingHorizontal: 7,
+                      paddingHorizontal: PP.space.sm,
                       paddingVertical: 2,
-                      borderRadius: 999,
+                      borderRadius: PP.rPill,
                       backgroundColor: PP.warn,
                       alignItems: 'center',
                     }}
@@ -311,7 +311,7 @@ export default function Home() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 4 }}
+            contentContainerStyle={{ paddingHorizontal: PP.space.xl, gap: PP.space.md, paddingBottom: PP.space.xs }}
           >
             {showcase.map((item) => (
               <ShowcaseCard
@@ -334,7 +334,7 @@ export default function Home() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 4 }}
+            contentContainerStyle={{ paddingHorizontal: PP.space.xl, gap: PP.space.md, paddingBottom: PP.space.xs }}
           >
             {recentItems.map((it) => (
               <ShowcaseCard
