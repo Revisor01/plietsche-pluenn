@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pb, type PPUser } from '../pb';
+import { queryClient } from '../queryClient';
+import { unregisterPushToken } from '../push';
 
 export function useAuth() {
   const [user, setUser] = useState<PPUser | null>(
@@ -65,6 +67,26 @@ export function useAuth() {
       const email = pb.authStore.record?.email as string;
       await pb.collection('users').authWithPassword(email, newPassword);
     },
-    logout: () => pb.authStore.clear(),
+    // Abmelden räumt das Gerät auf. Reihenfolge ist zwingend:
+    //  1. Push-Token abmelden, SOLANGE die Anmeldung noch gültig ist — die
+    //     Route /api/pp/push/unregister verlangt ein Token. Danach ginge es
+    //     nicht mehr, und das Gerät bekäme weiter die Mitteilungen des alten
+    //     Kontos (und die DSGVO-Opt-out-Funktion liefe nie).
+    //  2. Auth-Store leeren.
+    //  3. Query-Cache leeren — der QueryClient ist ein Modul-Singleton und
+    //     überlebt das Abmelden. Ohne diesen Schritt sähe die nächste Person
+    //     am selben Gerät bis zu 30 Sekunden lang (staleTime) den Namen, die
+    //     Punkte, den Verlauf und die Abzeichen der vorigen.
+    // unregisterPushToken schluckt seine Fehler bereits selbst; das try/catch
+    // ist die zweite Absicherung: Ein Gerät ohne Netz muss trotzdem rauskommen.
+    logout: async () => {
+      try {
+        await unregisterPushToken();
+      } catch {
+        // Kein Netz o.ä. — darf das Abmelden nicht verhindern.
+      }
+      pb.authStore.clear();
+      queryClient.clear();
+    },
   };
 }

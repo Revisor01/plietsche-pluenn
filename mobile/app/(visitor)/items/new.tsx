@@ -10,6 +10,8 @@ import { useCurrentUser } from '../../../lib/hooks/useData';
 import { createItem } from '../../../lib/api';
 import { CATEGORY_GROUPS, CATEGORY_TYPES, GROUPS_WITH_TYPE } from '../../../lib/format';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
+import { errorText } from '../../../lib/errors';
+import { invalidateItems } from '../../../lib/queryClient';
 import {
   Screen,
   PPHeader,
@@ -100,8 +102,9 @@ export default function NewItem() {
         is_showcase: isStaff ? showcase : false,
         photoUri,
       });
-      await qc.invalidateQueries({ queryKey: ['my_items'] });
-      await qc.invalidateQueries({ queryKey: ['pending_items'] });
+      // Staff-Teile sind sofort freigegeben und stehen damit auch im Laden —
+      // deshalb der komplette Bestand, nicht nur die eigenen und die offenen.
+      await invalidateItems(qc);
       Alert.alert(
         'Danke!',
         isStaff
@@ -110,7 +113,7 @@ export default function NewItem() {
         [{ text: 'OK', onPress: goBack }],
       );
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte das Teil nicht einstellen.');
+      Alert.alert('Fehler', errorText(e, 'Konnte das Teil nicht einstellen.'));
     } finally {
       setBusy(false);
     }

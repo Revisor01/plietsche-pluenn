@@ -12,6 +12,8 @@ import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { updateItem, setShowcase, archiveItem, approveItem } from '../../../lib/api';
 import { itemThumb, groupLabel, typeLabel, conditionLabel } from '../../../lib/format';
 import { pb } from '../../../lib/pb';
+import { errorText } from '../../../lib/errors';
+import { invalidateItems } from '../../../lib/queryClient';
 import {
   Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, Hint,
 } from '../../../components/ui';
@@ -147,9 +149,7 @@ export default function ItemDetail() {
 
   const done = async () => {
     await refetch();
-    await qc.invalidateQueries({ queryKey: ['all_items'] });
-    await qc.invalidateQueries({ queryKey: ['showcase'] });
-    await qc.invalidateQueries({ queryKey: ['recent_items'] });
+    await invalidateItems(qc);
   };
 
   const save = async () => {
@@ -183,7 +183,7 @@ export default function ItemDetail() {
       await done();
       Alert.alert('Gespeichert', 'Änderungen übernommen.');
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht speichern.'));
     } finally {
       setBusy(false);
     }

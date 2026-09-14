@@ -10,6 +10,7 @@ import { saveTiers, savePointConfig } from '../../../lib/api';
 import { DEFAULT_TIERS, tierColor } from '../../../lib/format';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Hint } from '../../../components/ui';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
+import { errorText } from '../../../lib/errors';
 
 // Parse a numeric string; empty/NaN/negative → clamped to `min`.
 function parseNum(s: string, min = 0): number {
@@ -93,7 +94,7 @@ export default function TiersAdmin() {
       await qc.invalidateQueries({ queryKey: ['store'] });
       Alert.alert('Gespeichert', 'Punkte und Ränge wurden aktualisiert.');
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht speichern.'));
     } finally {
       setBusy(false);
     }

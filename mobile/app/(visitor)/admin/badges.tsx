@@ -12,6 +12,7 @@ import { createBadge, updateBadge, deleteBadge, updateCampaign, type BadgeInput 
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint, ColorPicker } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
+import { errorText } from '../../../lib/errors';
 
 const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
   { key: 'visits', label: 'Besuche', kinds: ['tiered', 'single'] },
@@ -151,7 +152,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       }
       onSaved();
     } catch (e: any) {
-      Alert.alert('Fehler', e?.message ?? 'Konnte nicht speichern.');
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht speichern.'));
     } finally {
       setBusy(false);
     }
@@ -169,7 +170,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             await deleteBadge(badge.id);
             onSaved();
           } catch (e: any) {
-            Alert.alert('Fehler', e?.message ?? 'Konnte nicht löschen.');
+            Alert.alert('Fehler', errorText(e, 'Konnte nicht löschen.'));
           }
         },
       },
@@ -350,6 +351,10 @@ export default function BadgeAdmin() {
     setCreating(false);
     await refetch();
     await qc.invalidateQueries({ queryKey: ['badges'] });
+    await qc.invalidateQueries({ queryKey: ['all_badges'] });
+    // Der Editor pflegt die Gegenseite der Kopplung mit (campaigns.badge) —
+    // die Aktions-Listen tragen den alten Stand, bis sie neu geladen werden.
+    await qc.invalidateQueries({ queryKey: ['campaigns'] });
   };
 
   return (

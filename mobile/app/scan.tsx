@@ -12,6 +12,7 @@ import { Icon } from '../lib/icons';
 import { pb } from '../lib/pb';
 import { scan, type ScanResult } from '../lib/api';
 import { useStore } from '../lib/hooks/useData';
+import { errorText } from '../lib/errors';
 
 // Write the fresh total back into the auth-store record so useAuth() consumers
 // (and any screen reading authStore.record) reflect it immediately, without
@@ -70,7 +71,7 @@ export default function Scan() {
       await qc.refetchQueries({ queryKey: ['me'] });
     } catch (e: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      setError(e?.response?.message || e?.message || 'Unbekannter QR-Code');
+      setError(errorText(e, 'Unbekannter QR-Code'));
     } finally {
       setBusy(false);
     }
