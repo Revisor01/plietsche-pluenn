@@ -18,6 +18,20 @@ info:
     welche Sammlung wer lesen und schreiben darf, steht in den Regeln der
     jeweiligen Sammlung (`pocketbase/pb_migrations/`).
 
+    **Zugriff auf die Ladendaten (`store`):** Lesen setzt eine Anmeldung
+    voraus (`@request.auth.id != ""`), Schreiben bleibt dem Team vorbehalten.
+    Das Türgeheimnis liegt nicht darin, sondern in der Sammlung
+    `store_secrets`, die über die API für niemanden lesbar ist — nur die
+    Hooks auf dem Server kommen daran. PocketBase-Regeln wirken auf ganze
+    Datensätze, nicht auf einzelne Felder; ein Geheimnis in einer lesbaren
+    Sammlung wäre für jede Person abrufbar, die die Sammlung lesen darf.
+
+    **Behoben am 14.09.2026:** `store` war zuvor mit einem Leerstring als
+    Leseregel angelegt — in PocketBase heißt das „alle, auch ohne Anmeldung",
+    nicht „niemand". Dadurch war `checkin_qr_secret` unangemeldet abrufbar.
+    Das Geheimnis ist ausgelagert, die Leseregel gesetzt und der Code
+    ausgetauscht worden.
+
     **Antwortformen sind ein Vertrag.** Sobald eine App-Version im Store ist,
     liest sie diese Routen und lässt sich nicht mitdeployen. Felder dürfen
     hinzukommen, aber nicht verschwinden, umbenannt werden oder den Typ
@@ -47,9 +61,9 @@ paths:
       description: |
         Die Route erkennt selbst, worum es sich handelt:
 
-        - **Türcode** (`store.checkin_qr_secret`) → Check-in mit Besuchsbonus
-          und Serie, einmal je Tag. Optional lässt sich die Zahl der ohne Code
-          mitgenommenen Teile nachtragen.
+        - **Türcode** (`store_secrets.checkin_qr_secret`) → Check-in mit
+          Besuchsbonus und Serie, einmal je Tag. Optional lässt sich die Zahl
+          der ohne Code mitgenommenen Teile nachtragen.
         - **Code eines Teils** (`items.qr_code`) → Teil mitnehmen. Ist es der
           erste Scan des Tages, wird zugleich eingecheckt.
 

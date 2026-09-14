@@ -7,6 +7,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Behoben
+- **Der Türcode war von außen abrufbar:** Die Ladeninformationen — Öffnungszeiten, Adresse, Punktwerte, Ränge — standen für jede Person im Netz, auch ohne Anmeldung. Darin lag auch der Code vom Aushang an der Ladentür. Wer ihn kannte, konnte sich von überall einchecken und sich Punkte und Serie gutschreiben lassen. Der Code liegt jetzt getrennt und ist über keinen Weg mehr abrufbar; die Ladeninformationen sehen angemeldete Nutzer:innen wie bisher. Der bisherige Code gilt als verbrannt und wird ausgetauscht — der Aushang an der Tür wird dafür neu gedruckt.
 - **In „Was gibt es Neues" standen interne Notizen:** Die Hinweise für Tester:innen und im Store entstanden aus den letzten Änderungen — darunter auch solche, die nur den Bauvorgang betreffen. Wer die App bekam, las Sätze über Signaturschlüssel statt über die App. Jetzt steht dort nur noch, was tatsächlich an der App anders ist.
 - **Neue Teile standen mit 0 Punkten im Bestand:** Wer ein Teil ohne Punktwert anlegte, sah in der Teile-Übersicht eine 0 — beim Mitnehmen gab es trotzdem 30 Punkte. Die beiden Angaben widersprachen sich, jetzt steht von Anfang an der Wert dort, der auch gutgeschrieben wird.
 

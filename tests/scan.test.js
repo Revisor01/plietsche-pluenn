@@ -22,7 +22,6 @@ function setup(overrides = {}) {
   const store = Object.assign(
     {
       __name: 'store',
-      checkin_qr_secret: DOOR,
       lat: STORE_LAT,
       lng: STORE_LNG,
       pts_checkin: 10,
@@ -31,6 +30,13 @@ function setup(overrides = {}) {
     },
     overrides.store || {}
   );
+
+  // Das Tuergeheimnis liegt in einer eigenen, gesperrten Sammlung — nicht in
+  // `store`, das alle Angemeldeten lesen duerfen.
+  const secrets =
+    overrides.storeSecrets !== undefined
+      ? overrides.storeSecrets
+      : [{ __name: 'secret', checkin_qr_secret: DOOR }];
 
   const user = Object.assign(
     {
@@ -46,6 +52,7 @@ function setup(overrides = {}) {
 
   return loadHook('scan.pb.js', {
     store: [store],
+    store_secrets: secrets,
     users: [user],
     items: overrides.items || [],
     visits: overrides.visits || [],
@@ -389,6 +396,105 @@ describe('Zweiter Besuch am selben Tag', () => {
     expect(res.body.did_checkin).toBe(false);
     expect(res.body.checkin_points).toBe(0);
     expect(res.body.points).toBe(30);
+  });
+});
+
+describe('Tuergeheimnis liegt getrennt vom Laden', () => {
+  // Das Geheimnis stand bis zum 14.09.2026 im `store`-Datensatz, den jede
+  // Person auch ohne Anmeldung lesen konnte. Es liegt jetzt in einer eigenen,
+  // gesperrten Sammlung. Diese Tests halten beide Seiten fest: dass der
+  // Scan weiter funktioniert, und dass der Laden das Geheimnis nicht mehr
+  // kennt.
+
+  it('erkennt den Tuercode aus der gesperrten Sammlung', () => {
+    // Erlaubter Fall: Das Geheimnis steht ausschliesslich in store_secrets.
+    const h = setup();
+    expect(h.records.store.get('checkin_qr_secret')).toBe('');
+
+    const res = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+    expect(res.status).toBe(200);
+    expect(res.body.type).toBe('checkin');
+    expect(res.body.points).toBe(10);
+    expect(h.rows('visits')).toHaveLength(1);
+  });
+
+  it('gibt das Geheimnis in keiner Antwort heraus', () => {
+    // Verbotener Fall: Die Route darf den Code nirgends zurueckspiegeln —
+    // weder beim Check-in noch beim Teil.
+    const h = setup({
+      items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
+    });
+
+    const checkin = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
+    expect(JSON.stringify(checkin.body)).not.toContain(DOOR);
+
+    const item = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    expect(JSON.stringify(item.body)).not.toContain(DOOR);
+  });
+
+  it('nimmt einen Code aus dem Laden-Datensatz nicht mehr als Tuercode an', () => {
+    // Verbotener Fall: Wer den alten, oeffentlich abgerufenen Wert kennt und
+    // ihn scannt, bekommt keinen Check-in. Das Feld in `store` ist tot.
+    const h = setup({
+      store: { checkin_qr_secret: 'alter-oeffentlicher-code' },
+      storeSecrets: [{ checkin_qr_secret: DOOR }],
+    });
+
+    let err;
+    try {
+      h.call(ROUTE, { body: { qr_code: 'alter-oeffentlicher-code' }, authRecord: auth(h) });
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(404);
+    expect(err.message).toBe('Unbekannter QR-Code');
+    expect(h.rows('visits')).toHaveLength(0);
+    expect(h.records.user.get('points_total')).toBe(0);
+  });
+
+  it('laesst ein leeres Geheimnis keinen beliebigen Code zum Tuercode machen', () => {
+    // Ist die gesperrte Sammlung leer und das Altfeld geraeumt, darf ein
+    // leerer Vergleich nicht jeden Code durchwinken.
+    const h = setup({ storeSecrets: [] });
+
+    let err;
+    try {
+      h.call(ROUTE, { body: { qr_code: 'irgendwas' }, authRecord: auth(h) });
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(404);
+    expect(h.rows('visits')).toHaveLength(0);
+  });
+
+  it('liest den Laden weiterhin fuer Punktwerte und Geofence', () => {
+    // Erlaubter Fall: Angemeldete sehen den Laden — Punktwerte und Radius
+    // wirken unveraendert, obwohl das Geheimnis ausgezogen ist.
+    const h = setup({ store: { pts_checkin: 25, pts_take: 4, geofence_radius_m: 500 } });
+
+    const res = h.call(ROUTE, {
+      body: { qr_code: DOOR, items_count: 2, gps_lat: STORE_LAT + 0.003, gps_lng: STORE_LNG },
+      authRecord: auth(h),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.points).toBe(33); // 25 Besuch + 2 Teile a 4
+    expect(res.body.points_total).toBe(33);
+  });
+
+  it('weist ausserhalb des Radius weiterhin ab', () => {
+    const h = setup({ store: { geofence_radius_m: 100 } });
+    let err;
+    try {
+      h.call(ROUTE, {
+        body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.01, gps_lng: STORE_LNG },
+        authRecord: auth(h),
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Du bist nicht im Laden');
+    expect(h.rows('visits')).toHaveLength(0);
   });
 });
 
