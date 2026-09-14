@@ -1,7 +1,7 @@
 import { View, ViewStyle, StyleProp, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { PP, isAndroid, MD3_SHAPE, surfaceElevation, alpha } from '../../lib/theme';
+import { PP, surfaceElevation, alpha, isAndroid, radius as cardRadius } from '../../lib/theme';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -29,7 +29,7 @@ export function GlassCard({
   tint = 'light',
   style,
 }: GlassCardProps) {
-  const r = radius ?? (isAndroid ? MD3_SHAPE.lg : 24);
+  const r = radius ?? cardRadius(PP.rCard, 'lg');
 
   if (isAndroid) {
     return (

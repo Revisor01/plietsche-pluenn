@@ -20,3 +20,4 @@ export { ColorPicker, AUSHANG_COLORS } from './ColorPicker';
 export { DateField, formatDE } from './DateField';
 export { Toggle } from './Toggle';
 export { Hint } from './Hint';
+export { IconTile } from './IconTile';

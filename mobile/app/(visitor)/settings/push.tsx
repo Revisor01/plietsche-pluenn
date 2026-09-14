@@ -1,13 +1,13 @@
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP, alpha } from '../../../lib/theme';
-import { Icon, type IconName } from '../../../lib/icons';
+import { PP } from '../../../lib/theme';
+import { type IconName } from '../../../lib/icons';
 import { pb } from '../../../lib/pb';
 import { useCurrentUser } from '../../../lib/hooks/useData';
-import { Screen, PPHeader, PPText, Card, Toggle, IconButton } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Toggle, IconButton, IconTile } from '../../../components/ui';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 
 type PrefKey = 'push_streak_enabled' | 'push_campaign_enabled' | 'push_badge_enabled' | 'push_other_enabled';
@@ -75,18 +75,7 @@ export default function PushSettings() {
                 borderTopColor: PP.hairline,
               }}
             >
-              <View
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: PP.rTile2,
-                  backgroundColor: alpha(PP.teal, "subtle"),
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name={row.icon} size={PP.iconSizes.lg} color={PP.teal} />
-              </View>
+              <IconTile icon={row.icon} size="s" />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <PPText weight="semibold" size="base" color={PP.ink}>
                   {row.title}

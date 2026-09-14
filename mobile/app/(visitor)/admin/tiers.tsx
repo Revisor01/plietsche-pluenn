@@ -8,7 +8,7 @@ import { Icon } from '../../../lib/icons';
 import { useStore } from '../../../lib/hooks/useData';
 import { saveTiers, savePointConfig } from '../../../lib/api';
 import { DEFAULT_TIERS, tierColor } from '../../../lib/format';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Hint } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Field, PPButton, SectionTitle, IconButton, Hint } from '../../../components/ui';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { errorText } from '../../../lib/errors';
 

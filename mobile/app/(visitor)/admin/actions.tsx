@@ -7,7 +7,7 @@ import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCampaigns } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint, ColorPicker } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, DateField, formatDE, Hint, ColorPicker, IconTile } from '../../../components/ui';
 import type { Campaign } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { errorText } from '../../../lib/errors';
@@ -224,9 +224,7 @@ export default function ActionsAdmin() {
             <View key={c.id}>
               <Pressable onPress={() => setOpenId(openId === c.id ? null : c.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
-                  <View style={{ width: 40, height: 40, borderRadius: PP.rTile2, backgroundColor: alpha(PP.teal, "soft"), alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="sparkles" size={PP.iconSizes.lg} color={PP.teal} />
-                  </View>
+                  <IconTile icon="sparkles" tone="soft" size="s" />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size="md" color={PP.ink}>{c.name}</PPText>
                     {/* Zeitraum und Boni in getrennten Zeilen — in einer Zeile

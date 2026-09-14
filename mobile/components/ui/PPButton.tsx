@@ -1,6 +1,6 @@
 import { Pressable, View, ActivityIndicator, StyleProp, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation, alpha, glow } from '../../lib/theme';
+import { PP, ripple, pressedOpacity, surfaceElevation, alpha, glow, isAndroid, radius } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -36,7 +36,7 @@ export function PPButton({
   const fs = size === 'l' ? 'md' : 'base';
   const iconSize = size === 'l' ? PP.iconSizes.lg : PP.iconSizes.md;
   // MD3 Buttons sind vollrund; iOS behält die weichere, eckigere Formsprache.
-  const radius = isAndroid ? MD3_SHAPE.full : size === 'l' ? PP.rBtn : 14;
+  const r = radius(size === 'l' ? PP.rBtn : PP.rField, 'full');
   // MD3 label-large hat spürbares Letter-Spacing, iOS-Labels nicht.
   const letterSpacing = isAndroid ? 0.1 : 0;
 
@@ -71,7 +71,7 @@ export function PPButton({
   const baseStyle: StyleProp<ViewStyle> = [
     {
       width: fullWidth ? '100%' : undefined,
-      borderRadius: radius,
+      borderRadius: r,
       overflow: 'hidden',
       opacity,
     },
@@ -96,7 +96,7 @@ export function PPButton({
           end={{ x: 1, y: 1 }}
           style={[
             {
-              borderRadius: radius,
+              borderRadius: r,
               ...glow(PP.teal, 's'),
             },
             // MD3 Filled Button: Elevation level 1 statt farbigem Glow.
@@ -119,7 +119,7 @@ export function PPButton({
           borderWidth: 1,
           // MD3 Outlined Button: sichtbarer Rand, keine Fläche.
           borderColor: isAndroid ? PP.hairline : alpha(PP.ink, "subtle"),
-          borderRadius: radius,
+          borderRadius: r,
         })}
       >
         {content}
@@ -131,7 +131,7 @@ export function PPButton({
     <Pressable
       onPress={disabled || loading ? undefined : onPress}
       android_ripple={disabled || loading ? undefined : ripple(PP.teal)}
-      style={feedback({ backgroundColor: 'transparent', borderRadius: radius })}
+      style={feedback({ backgroundColor: 'transparent', borderRadius: r })}
     >
       {content}
     </Pressable>

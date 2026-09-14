@@ -1,5 +1,5 @@
 import { Pressable, View, ActivityIndicator } from 'react-native';
-import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation, alpha } from '../../lib/theme';
+import { PP, ripple, pressedOpacity, alpha, isAndroid, radius } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 
 interface IconButtonProps {
@@ -25,7 +25,7 @@ export function IconButton({ icon, badge, dark = false, tint, bg, loading, onPre
         width: 40,
         height: 40,
         // MD3 Icon Buttons sind rund; iOS behält das abgerundete Quadrat.
-        borderRadius: isAndroid ? MD3_SHAPE.full : 14,
+        borderRadius: radius(PP.rField, 'full'),
         backgroundColor: bg ?? (dark ? alpha(PP.onBrand, "medium") : isAndroid ? 'transparent' : PP.surface),
         alignItems: 'center',
         justifyContent: 'center',
