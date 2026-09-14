@@ -3,7 +3,7 @@ import { View, Image, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
 import { useStoreItems } from '../../lib/hooks/useData';
 import {
@@ -28,7 +28,7 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
           aspectRatio: 4 / 5,
           borderRadius: 18,
           overflow: 'hidden',
-          backgroundColor: 'rgba(39,176,146,0.10)',
+          backgroundColor: alpha(PP.teal, "subtle"),
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -36,7 +36,7 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
         {uri ? (
           <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
-          <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(39,176,146,0.5)" />
+          <Icon name="shirt" size={PP.iconSizes.hero} color={alpha(PP.teal, 'veil')} />
         )}
         {item.stays_external && (
           <View
@@ -50,7 +50,7 @@ function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
               paddingVertical: 4,
               paddingHorizontal: 8,
               borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.92)',
+              backgroundColor: PP.onBrandMuted,
             }}
           >
             <Icon name="map-pin" size={PP.iconSizes.xs} color={PP.warn} />
@@ -105,12 +105,12 @@ function SelectChip({ label, active, onPress }: { label: string; active: boolean
         paddingVertical: 9,
         paddingHorizontal: 16,
         borderRadius: 12,
-        backgroundColor: active ? PP.teal : 'rgba(26,46,44,0.05)',
+        backgroundColor: active ? PP.teal : alpha(PP.ink, "ghost"),
         borderWidth: 1,
-        borderColor: active ? PP.teal : 'rgba(26,46,44,0.08)',
+        borderColor: active ? PP.teal : alpha(PP.ink, "subtle"),
       }}
     >
-      <PPText weight={active ? 'semibold' : 'medium'} size="base" color={active ? '#fff' : PP.ink}>
+      <PPText weight={active ? 'semibold' : 'medium'} size="base" color={active ? PP.onBrand : PP.ink}>
         {label}
       </PPText>
     </Pressable>
@@ -186,11 +186,11 @@ export default function Store() {
               paddingVertical: 8,
               paddingHorizontal: 14,
               borderRadius: 12,
-              backgroundColor: activeCount > 0 ? PP.teal : 'rgba(26,46,44,0.05)',
+              backgroundColor: activeCount > 0 ? PP.teal : alpha(PP.ink, "ghost"),
             }}
           >
-            <Icon name="filter" size={PP.iconSizes.sm} color={activeCount > 0 ? '#fff' : PP.ink2} />
-            <PPText weight="semibold" size="sm" color={activeCount > 0 ? '#fff' : PP.ink2}>
+            <Icon name="filter" size={PP.iconSizes.sm} color={activeCount > 0 ? PP.onBrand : PP.ink2} />
+            <PPText weight="semibold" size="sm" color={activeCount > 0 ? PP.onBrand : PP.ink2}>
               Filter{activeCount > 0 ? ` (${activeCount})` : ''}
             </PPText>
           </Pressable>
@@ -219,7 +219,7 @@ export default function Store() {
       {/* Filter sheet */}
       <Modal visible={sheetOpen} animationType="slide" transparent onRequestClose={() => setSheetOpen(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.40)' }} onPress={() => setSheetOpen(false)} />
+          <Pressable style={{ flex: 1, backgroundColor: alpha(PP.inkDeep, "veil") }} onPress={() => setSheetOpen(false)} />
           <View
             style={{
               backgroundColor: PP.bg,
@@ -234,7 +234,7 @@ export default function Store() {
           >
             {/* Grabber */}
             <View style={{ alignItems: 'center' }}>
-              <View style={{ width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(26,46,44,0.16)' }} />
+              <View style={{ width: 40, height: 5, borderRadius: 3, backgroundColor: alpha(PP.ink, "medium") }} />
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -244,7 +244,7 @@ export default function Store() {
               <Pressable
                 onPress={() => setSheetOpen(false)}
                 hitSlop={10}
-                style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(26,46,44,0.05)', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: alpha(PP.ink, "ghost"), alignItems: 'center', justifyContent: 'center' }}
               >
                 <Icon name="x" size={PP.iconSizes.sm} color={PP.ink2} />
               </Pressable>

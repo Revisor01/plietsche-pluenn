@@ -1,5 +1,5 @@
 import { View, Pressable } from 'react-native';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon, BADGE_ICONS, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -23,12 +23,12 @@ export function IconPicker({ value, onChange }: { value: string; onChange: (icon
                 borderRadius: 12,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: active ? PP.teal : 'rgba(26,46,44,0.05)',
+                backgroundColor: active ? PP.teal : alpha(PP.ink, "ghost"),
                 borderWidth: active ? 0 : 1,
                 borderColor: PP.hairline,
               }}
             >
-              <Icon name={name} size={PP.iconSizes.lg} color={active ? '#fff' : PP.ink2} />
+              <Icon name={name} size={PP.iconSizes.lg} color={active ? PP.onBrand : PP.ink2} />
             </Pressable>
           );
         })}

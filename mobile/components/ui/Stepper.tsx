@@ -1,6 +1,6 @@
 import { View, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -31,7 +31,7 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: StepperProps) {
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: disabled ? 'rgba(26,46,44,0.04)' : 'rgba(39,176,146,0.10)',
+        backgroundColor: disabled ? alpha(PP.ink, "ghost") : alpha(PP.teal, "subtle"),
         alignItems: 'center',
         justifyContent: 'center',
       }}

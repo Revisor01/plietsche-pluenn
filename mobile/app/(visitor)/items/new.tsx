@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { createItem } from '../../../lib/api';
@@ -142,9 +142,9 @@ export default function NewItem() {
             style={{
               height: 180,
               borderRadius: 18,
-              backgroundColor: 'rgba(39,176,146,0.08)',
+              backgroundColor: alpha(PP.teal, "subtle"),
               borderWidth: 1.5,
-              borderColor: 'rgba(39,176,146,0.25)',
+              borderColor: alpha(PP.teal, "medium"),
               borderStyle: 'dashed',
               alignItems: 'center',
               justifyContent: 'center',
@@ -178,7 +178,7 @@ export default function NewItem() {
             key={g.key}
             onPress={() => { setGroup(g.key); if (!GROUPS_WITH_TYPE.includes(g.key)) setType(null); }}
           >
-            <Pill bg={group === g.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={group === g.key ? '#fff' : PP.ink2}>
+            <Pill bg={group === g.key ? PP.teal : alpha(PP.ink, "subtle")} color={group === g.key ? PP.onBrand : PP.ink2}>
               {g.label}
             </Pill>
           </Pressable>
@@ -191,7 +191,7 @@ export default function NewItem() {
           <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {CATEGORY_TYPES.map((t) => (
               <Pressable key={t.key} onPress={() => setType(t.key)}>
-                <Pill bg={type === t.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={type === t.key ? '#fff' : PP.ink2}>
+                <Pill bg={type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={type === t.key ? PP.onBrand : PP.ink2}>
                   {t.label}
                 </Pill>
               </Pressable>
@@ -204,7 +204,7 @@ export default function NewItem() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}>
         {CONDITIONS.map((c) => (
           <Pressable key={c.key} onPress={() => setCondition(c.key)}>
-            <Pill bg={condition === c.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={condition === c.key ? '#fff' : PP.ink2}>
+            <Pill bg={condition === c.key ? PP.teal : alpha(PP.ink, "subtle")} color={condition === c.key ? PP.onBrand : PP.ink2}>
               {c.label}
             </Pill>
           </Pressable>
@@ -223,15 +223,15 @@ export default function NewItem() {
                 gap: 10,
                 paddingHorizontal: 12,
                 borderRadius: PP.rCard,
-                backgroundColor: destination === 'store' ? PP.teal : '#fff',
+                backgroundColor: destination === 'store' ? PP.teal : PP.surface,
                 ...PP.shadowCard,
               }}
             >
-              <Icon name="house" size={PP.iconSizes.xl} color={destination === 'store' ? '#fff' : PP.teal} />
+              <Icon name="house" size={PP.iconSizes.xl} color={destination === 'store' ? PP.onBrand : PP.teal} />
               <PPText
                 weight="semibold"
                 size="base"
-                color={destination === 'store' ? '#fff' : PP.ink}
+                color={destination === 'store' ? PP.onBrand : PP.ink}
                 style={{ textAlign: 'center' }}
               >
                 Bringe ich in den Laden
@@ -248,15 +248,15 @@ export default function NewItem() {
                 gap: 10,
                 paddingHorizontal: 12,
                 borderRadius: PP.rCard,
-                backgroundColor: destination === 'mine' ? PP.teal : '#fff',
+                backgroundColor: destination === 'mine' ? PP.teal : PP.surface,
                 ...PP.shadowCard,
               }}
             >
-              <Icon name="map-pin" size={PP.iconSizes.xl} color={destination === 'mine' ? '#fff' : PP.teal} />
+              <Icon name="map-pin" size={PP.iconSizes.xl} color={destination === 'mine' ? PP.onBrand : PP.teal} />
               <PPText
                 weight="semibold"
                 size="base"
-                color={destination === 'mine' ? '#fff' : PP.ink}
+                color={destination === 'mine' ? PP.onBrand : PP.ink}
                 style={{ textAlign: 'center' }}
               >
                 Verbleibt bei mir

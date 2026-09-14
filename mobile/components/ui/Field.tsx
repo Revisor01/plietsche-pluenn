@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, TextInput, Pressable, TextInputProps, StyleSheet } from 'react-native';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -38,7 +38,7 @@ export function Field({ icon, label, secure, ...inputProps }: FieldProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: '#fff',
+    backgroundColor: PP.surface,
     borderRadius: PP.rField,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: 'rgba(26,46,44,0.06)',
+    borderColor: alpha(PP.ink, "subtle"),
     // Füllt die Höhe der Zeile, wenn der Container streckt (Ränge-Liste im
     // Admin: zwei Felder nebeneinander sollen gleich hoch sein).
     flexGrow: 1,

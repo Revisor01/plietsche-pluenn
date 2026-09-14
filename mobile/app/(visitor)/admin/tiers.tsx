@@ -3,7 +3,7 @@ import { View, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useStore } from '../../../lib/hooks/useData';
 import { saveTiers, savePointConfig } from '../../../lib/api';
@@ -181,7 +181,7 @@ export default function TiersAdmin() {
             <Pressable
               onPress={() => removeRank(i)}
               hitSlop={8}
-              style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(26,46,44,0.06)', alignSelf: 'center' }}
+              style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: alpha(PP.ink, "subtle"), alignSelf: 'center' }}
             >
               <Icon name="trash" size={PP.iconSizes.sm} color={PP.ink3} />
             </Pressable>

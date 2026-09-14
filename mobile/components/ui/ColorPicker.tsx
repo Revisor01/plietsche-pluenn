@@ -5,17 +5,9 @@ import { PPText } from './Text';
 
 // Kuratierte Palette für Aushänge. Bewusst kein freies Hex-Feld: Auf dem Handy
 // umständlich, und weißer Text muss auf jeder Farbe lesbar bleiben. Alle Werte
-// sind dunkel genug dafür.
-export const AUSHANG_COLORS: { name: string; hex: string }[] = [
-  { name: 'Teal', hex: '#27b092' },
-  { name: 'Sky', hex: '#80b4e2' },
-  { name: 'Beere', hex: '#b0478a' },
-  { name: 'Koralle', hex: '#e2664f' },
-  { name: 'Bernstein', hex: '#d99320' },
-  { name: 'Wald', hex: '#4a8c56' },
-  { name: 'Pflaume', hex: '#7a5aa8' },
-  { name: 'Nordsee', hex: '#2d6e8e' },
-];
+// sind dunkel genug dafür. Die Liste selbst steht im Theme (PP.accents) —
+// sie ist eine Gestaltungsentscheidung, keine Zuständigkeit dieses Bausteins.
+export const AUSHANG_COLORS: { name: string; hex: string }[] = [...PP.accents];
 
 interface ColorPickerProps {
   /** Aktueller Wert als #RRGGBB, leer = Standard. */
@@ -49,7 +41,7 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
             borderColor: PP.ink,
           }}
         >
-          {!current && <Icon name="check" size={PP.iconSizes.md} color="#fff" />}
+          {!current && <Icon name="check" size={PP.iconSizes.md} color={PP.onBrand} />}
         </Pressable>
 
         {AUSHANG_COLORS.map((c) => {
@@ -69,7 +61,7 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
                 borderColor: PP.ink,
               }}
             >
-              {active && <Icon name="check" size={PP.iconSizes.md} color="#fff" />}
+              {active && <Icon name="check" size={PP.iconSizes.md} color={PP.onBrand} />}
             </Pressable>
           );
         })}

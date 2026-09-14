@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import QRCode from 'react-native-qrcode-svg';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { usePendingItems, useActiveCampaigns } from '../../../lib/hooks/useData';
 import type { Campaign } from '../../../lib/types';
@@ -76,7 +76,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
             height: 92,
             borderRadius: 12,
             overflow: 'hidden',
-            backgroundColor: 'rgba(39,176,146,0.10)',
+            backgroundColor: alpha(PP.teal, "subtle"),
             alignItems: 'center',
             justifyContent: 'center',
           }}
@@ -84,7 +84,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
           {uri ? (
             <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
-            <Icon name="shirt" size={PP.iconSizes.xl} color="rgba(39,176,146,0.5)" />
+            <Icon name="shirt" size={PP.iconSizes.xl} color={alpha(PP.teal, 'veil')} />
           )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -101,7 +101,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
             </View>
           )}
           {item.stays_external && (
-            <Pill icon="map-pin" color={PP.warn} bg="rgba(232,169,59,0.14)" size="s" style={{ marginTop: 6 }}>
+            <Pill icon="map-pin" color={PP.warn} bg={alpha(PP.warn, 'soft')} size="s" style={{ marginTop: 6 }}>
               verbleibt extern
             </Pill>
           )}
@@ -113,8 +113,8 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
         </View>
         {/* QR preview for the printable label. */}
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ padding: 6, backgroundColor: '#fff', borderRadius: 8 }}>
-            <QRCode value={item.qr_code || item.sku} size={56} color={PP.ink} backgroundColor="#fff" />
+          <View style={{ padding: 6, backgroundColor: PP.surface, borderRadius: 8 }}>
+            <QRCode value={item.qr_code || item.sku} size={56} color={PP.ink} backgroundColor={PP.onBrand} />
           </View>
           <PPText size="xs" color={PP.ink3} style={{ marginTop: 4 }}>
             {item.qr_code || item.sku}
@@ -130,8 +130,8 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
             Freigeben
           </PPButton>
         </View>
-        <IconButton icon="star" tint={PP.teal} bg="rgba(39,176,146,0.12)" loading={busy === 'showcase'} onPress={() => approve(true)} />
-        <IconButton icon="x" tint={PP.err} bg="rgba(217,83,79,0.12)" loading={busy === 'reject'} onPress={reject} />
+        <IconButton icon="star" tint={PP.teal} bg={alpha(PP.teal, 'soft')} loading={busy === 'showcase'} onPress={() => approve(true)} />
+        <IconButton icon="x" tint={PP.err} bg={alpha(PP.err, 'soft')} loading={busy === 'reject'} onPress={reject} />
       </View>
     </Card>
   );

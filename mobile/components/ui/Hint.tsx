@@ -1,14 +1,14 @@
 import { View } from 'react-native';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
 type Tone = 'info' | 'warn' | 'neutral';
 
 const TONES: Record<Tone, { bg: string; fg: string; icon: string }> = {
-  info: { bg: 'rgba(39,176,146,0.08)', fg: PP.ink2, icon: PP.teal },
-  warn: { bg: 'rgba(232,169,59,0.12)', fg: PP.ink2, icon: PP.warn },
-  neutral: { bg: 'rgba(26,46,44,0.05)', fg: PP.ink2, icon: PP.ink3 },
+  info: { bg: alpha(PP.teal, "subtle"), fg: PP.ink2, icon: PP.teal },
+  warn: { bg: alpha(PP.warn, "soft"), fg: PP.ink2, icon: PP.warn },
+  neutral: { bg: alpha(PP.ink, "ghost"), fg: PP.ink2, icon: PP.ink3 },
 };
 
 // A flat, shadowless hint block — a soft tinted background with optional icon.

@@ -2,7 +2,7 @@ import { View, Pressable, Modal, useWindowDimensions } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { useBadges, useUserBadges, useStore } from '../../lib/hooks/useData';
 import { badgeTierInfo, badgeTierSlots, normalizeHex, withAlpha } from '../../lib/format';
 import { Screen, PPHeader, PPText, BadgeMedallion, TIER_COLORS, GradientRing, Card, PPButton } from '../../components/ui';
@@ -40,7 +40,7 @@ function BadgeSheet({
       ? [accent, accent, accent]
       : tierC
         ? [tierC.base, tierC.light, tierC.base]
-        : ['rgba(26,46,44,0.18)', 'rgba(26,46,44,0.12)', 'rgba(26,46,44,0.18)'];
+        : [alpha(PP.ink, "medium"), alpha(PP.ink, "soft"), alpha(PP.ink, "medium")];
 
   const slots = single ? [] : badgeTierSlots(ranks);
   const stepValues: Record<string, number> = {
@@ -55,7 +55,7 @@ function BadgeSheet({
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
-        style={{ flex: 1, backgroundColor: 'rgba(10,26,24,0.45)', justifyContent: 'center', padding: 24 }}
+        style={{ flex: 1, backgroundColor: alpha(PP.inkDeep, "veil"), justifyContent: 'center', padding: 24 }}
       >
         {/* Klicks auf die Karte sollen sie nicht schließen. */}
         <Pressable onPress={() => {}}>
@@ -96,7 +96,7 @@ function BadgeSheet({
                       alignItems: 'center',
                       backgroundColor: earned
                         ? withAlpha(accent ?? PP.teal, 0.12)
-                        : 'rgba(26,46,44,0.05)',
+                        : alpha(PP.ink, "ghost"),
                     }}
                   >
                     <PPText weight="semibold" size="base" color={earned ? (accent ?? PP.teal) : PP.ink2}>
@@ -126,7 +126,7 @@ function BadgeSheet({
                                 width: 12,
                                 height: 12,
                                 borderRadius: 6,
-                                backgroundColor: done ? c.base : 'rgba(26,46,44,0.12)',
+                                backgroundColor: done ? c.base : alpha(PP.ink, "soft"),
                               }}
                             />
                             <PPText
@@ -218,7 +218,7 @@ export default function Badges() {
               ? [accent, accent, accent]
               : tierC
                 ? [tierC.base, tierC.light, tierC.base]
-                : ['rgba(26,46,44,0.18)', 'rgba(26,46,44,0.12)', 'rgba(26,46,44,0.18)'];
+                : [alpha(PP.ink, "medium"), alpha(PP.ink, "soft"), alpha(PP.ink, "medium")];
 
           return (
             <Pressable key={b.id} onPress={() => setOpen(b)} style={{ width: colWidth }}>

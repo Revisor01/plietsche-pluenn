@@ -2,7 +2,7 @@ import { View, Pressable, ScrollView } from 'react-native';
 import { useState, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { useCurrentUser, usePointsLog, useStore } from '../../lib/hooks/useData';
 import { formatPoints, relativeDay } from '../../lib/format';
@@ -113,8 +113,8 @@ export default function Points() {
           return (
             <Pressable key={f.key} onPress={() => setFilter(f.key)}>
               <Pill
-                bg={active ? PP.teal : 'rgba(26,46,44,0.06)'}
-                color={active ? '#fff' : PP.ink2}
+                bg={active ? PP.teal : alpha(PP.ink, "subtle")}
+                color={active ? PP.onBrand : PP.ink2}
               >
                 {f.label}
               </Pill>

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { lighten } from '../../lib/format';
 import { Icon, type IconName } from '../../lib/icons';
 import type { Tier } from '../../lib/types';
@@ -14,13 +14,7 @@ interface BadgeMedallionProps {
   color?: string;
 }
 
-export const TIER_COLORS: Record<Exclude<Tier, 'none'>, { base: string; light: string }> = {
-  bronze: { base: PP.bronze, light: '#E89E58' },
-  silber: { base: PP.silver, light: '#E0E0E0' },
-  gold: { base: PP.gold, light: '#FFD658' },
-  platin: { base: PP.platin, light: '#B9DCE8' },
-  diamant: { base: PP.diamant, light: '#B6ECF6' },
-};
+export const TIER_COLORS: Record<Exclude<Tier, 'none'>, { base: string; light: string }> = PP.tier;
 
 export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 56, color }: BadgeMedallionProps) {
   if (!earned || tier === 'none') {
@@ -30,11 +24,11 @@ export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 5
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: 'rgba(26,46,44,0.05)',
+          backgroundColor: alpha(PP.ink, "ghost"),
           alignItems: 'center',
           justifyContent: 'center',
           borderWidth: 1,
-          borderColor: 'rgba(26,46,44,0.06)',
+          borderColor: alpha(PP.ink, "subtle"),
         }}
       >
         <Icon name={icon} size={size * 0.42} color={PP.ink3} />
@@ -63,7 +57,7 @@ export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 5
         elevation: 4,
       }}
     >
-      <Icon name={icon} size={size * 0.46} color="#fff" />
+      <Icon name={icon} size={size * 0.46} color={PP.onBrand} />
     </LinearGradient>
   );
 }

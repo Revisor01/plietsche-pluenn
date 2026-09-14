@@ -1,7 +1,7 @@
 import { View, Pressable, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useStore } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
@@ -54,12 +54,12 @@ export default function StoreInfo() {
           style={{
             height: 150,
             borderRadius: 20,
-            backgroundColor: 'rgba(180,150,90,0.14)',
+            backgroundColor: alpha(PP.sandInk, "soft"),
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(138,109,58,0.5)" />
+          <Icon name="shirt" size={PP.iconSizes.hero} color={alpha(PP.sandInk, 'veil')} />
         </View>
       </View>
 
@@ -101,7 +101,7 @@ export default function StoreInfo() {
               width: 38,
               height: 38,
               borderRadius: 11,
-              backgroundColor: 'rgba(39,176,146,0.10)',
+              backgroundColor: alpha(PP.teal, "subtle"),
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -123,7 +123,7 @@ export default function StoreInfo() {
               </Pressable>
               {!!store?.phone && (
                 <Pressable onPress={() => Linking.openURL(`tel:${store.phone}`)}>
-                  <Pill icon="phone" bg="rgba(26,46,44,0.06)" color={PP.ink} size="s">
+                  <Pill icon="phone" bg={alpha(PP.ink, 'subtle')} color={PP.ink} size="s">
                     {store.phone}
                   </Pill>
                 </Pressable>

@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { pb } from '../../lib/pb';
 import { PPText, PPButton, Card, Pill } from '../../components/ui';
@@ -121,7 +121,7 @@ function PermCard({
           {state === 'granted' ? (
             <Pill icon="check">Erlaubt</Pill>
           ) : state === 'denied' ? (
-            <Pill bg="rgba(26,46,44,0.06)" color={PP.ink2}>
+            <Pill bg={alpha(PP.ink, 'subtle')} color={PP.ink2}>
               Übersprungen
             </Pill>
           ) : (

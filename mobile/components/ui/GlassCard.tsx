@@ -1,7 +1,7 @@
 import { View, ViewStyle, StyleProp, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { PP, isAndroid, MD3_SHAPE, surfaceElevation } from '../../lib/theme';
+import { PP, isAndroid, MD3_SHAPE, surfaceElevation, alpha } from '../../lib/theme';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -69,7 +69,7 @@ export function GlassCard({
           padding: pad,
           overflow: 'hidden',
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: 'rgba(255,255,255,0.5)',
+          borderColor: alpha(PP.onBrand, "veil"),
           backgroundColor: 'transparent',
         },
         style,

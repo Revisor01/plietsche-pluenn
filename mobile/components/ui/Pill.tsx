@@ -1,5 +1,5 @@
 import { View, StyleProp, ViewStyle } from 'react-native';
-import { PP, isAndroid, MD3_SHAPE } from '../../lib/theme';
+import { PP, isAndroid, MD3_SHAPE, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -12,7 +12,7 @@ interface PillProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function Pill({ children, color = PP.teal, bg = 'rgba(39,176,146,0.10)', icon, size = 'm', style }: PillProps) {
+export function Pill({ children, color = PP.teal, bg = alpha(PP.teal, "subtle"), icon, size = 'm', style }: PillProps) {
   const fs = size === 's' ? 'xs' : 'sm';
   const iconSize = size === 's' ? PP.iconSizes.xs : PP.iconSizes.sm;
   // Polsterung und Mindesthöhe wachsen mit der Schrift mit (PP.fontScale),

@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -78,19 +78,19 @@ export function Toast({ visible, title, subtitle, icon = 'medal', onHide, durati
             width: 40,
             height: 40,
             borderRadius: 12,
-            backgroundColor: 'rgba(255,255,255,0.2)',
+            backgroundColor: alpha(PP.onBrand, "medium"),
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Icon name={icon} size={PP.iconSizes.lg} color="#fff" />
+          <Icon name={icon} size={PP.iconSizes.lg} color={PP.onBrand} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <PPText weight="semibold" size="base" color="#fff">
+          <PPText weight="semibold" size="base" color={PP.onBrand}>
             {title}
           </PPText>
           {subtitle && (
-            <PPText size="sm" color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
+            <PPText size="sm" color="PP.onBrandMuted" style={{ marginTop: 1 }}>
               {subtitle}
             </PPText>
           )}
