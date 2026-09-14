@@ -69,6 +69,16 @@ jobs:
           fi
           echo "version=$ECHT" >> "$GITHUB_OUTPUT"
 
+      # Ohne setup-node laeuft der Job auf der Node-Version, die der Runner
+      # zufaellig mitbringt. Vitest 5 verlangt >=22.12 — faellt der Runner
+      # darunter, bricht dieser Schritt ab, und zwar der einzige, der vor dem
+      # App Store und der Produktionsspur noch pruefen koennte.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
       - name: Tests
         run: |
           npm ci
