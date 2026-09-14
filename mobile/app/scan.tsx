@@ -119,7 +119,13 @@ export default function Scan() {
               Tür oder Teil
             </PPText>
           </View>
-          <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Scanner schließen"
+            style={styles.closeBtn}
+            hitSlop={8}
+          >
             <Icon name="x" size={PP.iconSizes.lg} color={PP.onBrand} />
           </Pressable>
         </View>
@@ -217,7 +223,12 @@ export default function Scan() {
                       TEILE OHNE QR MITGENOMMEN?
                     </PPText>
                     <View style={{ alignItems: 'center', marginTop: PP.space.md }}>
-                      <Stepper value={extraItems} onChange={setExtraItems} max={maxItems} />
+                      <Stepper
+                        value={extraItems}
+                        onChange={setExtraItems}
+                        max={maxItems}
+                        accessibilityLabel="Teile ohne QR mitgenommen"
+                      />
                     </View>
                     <PPText size="xs" color={PP.ink3} style={{ textAlign: 'center', marginTop: PP.space.sm }}>
                       Höchstens {maxItems} Teile pro Besuch.

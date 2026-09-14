@@ -44,7 +44,7 @@ export default function StoreInfo() {
       <PPHeader
         subtitle="Über"
         title="Der Laden"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       <View style={{ paddingHorizontal: PP.space.xl }}>
@@ -114,13 +114,26 @@ export default function StoreInfo() {
               {store?.address ?? ''}
             </PPText>
             <View style={{ flexDirection: 'row', gap: PP.space.sm, marginTop: PP.space.md }}>
-              <Pressable onPress={openMaps}>
+              {/* Die Pille ist mit fontScale nur 25 pt hoch — hitSlop
+                  bringt die Trefferfläche auf 45 pt (WCAG 2.5.5). */}
+              <Pressable
+                onPress={openMaps}
+                accessibilityRole="button"
+                accessibilityLabel="Route zum Laden"
+                accessibilityHint="Öffnet die Karten-App."
+                hitSlop={10}
+              >
                 <Pill icon="map-pin" size="s">
                   Route
                 </Pill>
               </Pressable>
               {!!store?.phone && (
-                <Pressable onPress={() => Linking.openURL(`tel:${store.phone}`)}>
+                <Pressable
+                  onPress={() => Linking.openURL(`tel:${store.phone}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Laden anrufen, ${store.phone}`}
+                  hitSlop={10}
+                >
                   <Pill icon="phone" bg={alpha(PP.ink, 'subtle')} color={PP.ink} size="s">
                     {store.phone}
                   </Pill>

@@ -8,7 +8,12 @@ import type { Item } from '../lib/types';
 export function ShowcaseCard({ item, onPress }: { item: Item; onPress?: () => void }) {
   const uri = itemThumb(item);
   return (
-    <Pressable onPress={onPress} style={{ width: 132 }}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.title}${item.size ? `, Größe ${item.size}` : `, ${item.points} Punkte`}`}
+      style={{ width: 132 }}
+    >
       <View
         style={{
           width: 132,

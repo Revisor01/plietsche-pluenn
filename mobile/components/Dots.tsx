@@ -3,7 +3,14 @@ import { PP, alpha } from '../lib/theme';
 
 export function Dots({ count, active }: { count: number; active: number }) {
   return (
-    <View style={{ flexDirection: 'row', gap: PP.space.sm, justifyContent: 'center' }}>
+    // Der aktive Punkt wird sichtbar über Farbe und Breite getragen — als
+    // Ansage braucht es die Schrittzahl.
+    <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={`Schritt ${active + 1} von ${count}`}
+      style={{ flexDirection: 'row', gap: PP.space.sm, justifyContent: 'center' }}
+    >
       {Array.from({ length: count }).map((_, i) => (
         <View
           key={i}

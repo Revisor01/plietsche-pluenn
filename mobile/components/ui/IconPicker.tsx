@@ -17,6 +17,9 @@ export function IconPicker({ value, onChange }: { value: string; onChange: (icon
             <Pressable
               key={name}
               onPress={() => onChange(name)}
+              accessibilityRole="button"
+              accessibilityLabel={`Symbol ${name}`}
+              accessibilityState={{ selected: active }}
               style={{
                 width: 46,
                 height: 46,

@@ -125,7 +125,12 @@ function PermCard({
               Übersprungen
             </Pill>
           ) : (
-            <Pressable onPress={onAsk}>
+            <Pressable
+              onPress={onAsk}
+              accessibilityRole="button"
+              accessibilityLabel={`${title} erlauben`}
+              hitSlop={10}
+            >
               <Pill icon="plus">Erlauben</Pill>
             </Pressable>
           )}

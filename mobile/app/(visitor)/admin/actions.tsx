@@ -137,7 +137,15 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
             </PPText>
             <View style={{ flexDirection: 'row', gap: PP.space.sm, flex: 1 }}>
               {FACTORS.map((m) => (
-                <Pressable key={m} onPress={() => row.set(m)} style={{ flex: 1 }}>
+                <Pressable
+                  key={m}
+                  onPress={() => row.set(m)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${row.label}: Faktor ${factorLabel(m)}`}
+                  accessibilityState={{ selected: row.value === m }}
+                  hitSlop={8}
+                  style={{ flex: 1 }}
+                >
                   <Pill
                     bg={row.value === m ? PP.teal : alpha(PP.ink, "subtle")}
                     color={row.value === m ? PP.onBrand : PP.ink2}
@@ -154,7 +162,11 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
 
       <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
         <View style={{ flex: 1 }}><PPButton size="m" loading={busy} onPress={save}>{campaign ? 'Speichern' : 'Anlegen'}</PPButton></View>
-        {campaign && <PPButton size="m" variant="ghost" fullWidth={false} onPress={remove}>Löschen</PPButton>}
+        {campaign && (
+          <PPButton size="m" variant="ghost" fullWidth={false} accessibilityLabel="Aktion löschen" onPress={remove}>
+            Löschen
+          </PPButton>
+        )}
       </View>
     </Card>
   );
@@ -185,8 +197,8 @@ export default function ActionsAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Aktionen"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
-        trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
+        trailing={<IconButton icon="plus" accessibilityLabel="Neue Aktion anlegen" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
       <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
@@ -209,7 +221,13 @@ export default function ActionsAdmin() {
         {campaigns?.length ? (
           campaigns.map((c) => (
             <View key={c.id}>
-              <Pressable onPress={() => setOpenId(openId === c.id ? null : c.id)}>
+              <Pressable
+                onPress={() => setOpenId(openId === c.id ? null : c.id)}
+                accessibilityRole="button"
+                accessibilityLabel={c.name}
+                accessibilityHint={openId === c.id ? 'Bearbeiten schließen' : 'Aktion bearbeiten'}
+                accessibilityState={{ expanded: openId === c.id }}
+              >
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
                   <IconTile icon="sparkles" tone="soft" size="s" />
                   <View style={{ flex: 1, minWidth: 0 }}>

@@ -189,12 +189,24 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
           ART
         </PPText>
         <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
-          <Pressable onPress={() => set({ kind: 'tiered', trigger_type: isAction ? 'action_participation' : 'visits' })}>
+          <Pressable
+            onPress={() => set({ kind: 'tiered', trigger_type: isAction ? 'action_participation' : 'visits' })}
+            accessibilityRole="button"
+            accessibilityLabel="Stufen"
+            accessibilityState={{ selected: draft.kind === 'tiered' }}
+            hitSlop={8}
+          >
             <Pill bg={draft.kind === 'tiered' ? PP.teal : alpha(PP.ink, "subtle")} color={draft.kind === 'tiered' ? PP.onBrand : PP.ink2}>
               Stufen
             </Pill>
           </Pressable>
-          <Pressable onPress={() => set({ kind: 'single' })}>
+          <Pressable
+            onPress={() => set({ kind: 'single' })}
+            accessibilityRole="button"
+            accessibilityLabel="Einzel"
+            accessibilityState={{ selected: draft.kind === 'single' }}
+            hitSlop={8}
+          >
             <Pill bg={draft.kind === 'single' ? PP.teal : alpha(PP.ink, "subtle")} color={draft.kind === 'single' ? PP.onBrand : PP.ink2}>
               Einzel
             </Pill>
@@ -217,7 +229,14 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         </PPText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
           {TRIGGERS.filter((t) => t.kinds.includes(draft.kind)).map((t) => (
-            <Pressable key={t.key} onPress={() => set({ trigger_type: t.key })}>
+            <Pressable
+              key={t.key}
+              onPress={() => set({ trigger_type: t.key })}
+              accessibilityRole="button"
+              accessibilityLabel={t.label}
+              accessibilityState={{ selected: draft.trigger_type === t.key }}
+              hitSlop={8}
+            >
               <Pill bg={draft.trigger_type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={draft.trigger_type === t.key ? PP.onBrand : PP.ink2}>
                 {t.label}
               </Pill>
@@ -232,7 +251,14 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
           {campaigns.length ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
               {campaigns.map((c) => (
-                <Pressable key={c.id} onPress={() => set({ campaign: c.id })}>
+                <Pressable
+                  key={c.id}
+                  onPress={() => set({ campaign: c.id })}
+                  accessibilityRole="button"
+                  accessibilityLabel={c.name}
+                  accessibilityState={{ selected: draft.campaign === c.id }}
+                  hitSlop={8}
+                >
                   <Pill bg={draft.campaign === c.id ? PP.teal : alpha(PP.ink, "subtle")} color={draft.campaign === c.id ? PP.onBrand : PP.ink2}>{c.name}</Pill>
                 </Pressable>
               ))}
@@ -308,7 +334,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             Aus: Das Badge ist komplett aus der App genommen.
           </PPText>
         </View>
-        <Toggle value={draft.is_visible} onChange={(v) => set({ is_visible: v })} />
+        <Toggle value={draft.is_visible} onChange={(v) => set({ is_visible: v })} accessibilityLabel="Sichtbar für Nutzer" />
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
@@ -319,7 +345,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             erscheinen erst mit der ersten Stufe.
           </PPText>
         </View>
-        <Toggle value={draft.is_secret} onChange={(v) => set({ is_secret: v })} />
+        <Toggle value={draft.is_secret} onChange={(v) => set({ is_secret: v })} accessibilityLabel="Geheim" />
       </View>
 
       <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
@@ -327,7 +353,9 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
           <PPButton size="m" loading={busy} onPress={save}>{badge ? 'Speichern' : 'Anlegen'}</PPButton>
         </View>
         {badge && (
-          <PPButton size="m" variant="ghost" fullWidth={false} onPress={remove}>Löschen</PPButton>
+          <PPButton size="m" variant="ghost" fullWidth={false} accessibilityLabel="Abzeichen löschen" onPress={remove}>
+            Löschen
+          </PPButton>
         )}
       </View>
     </Card>
@@ -360,8 +388,8 @@ export default function BadgeAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Badges"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
-        trailing={<IconButton icon="plus" onPress={() => { setCreating(true); setOpenId(null); }} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
+        trailing={<IconButton icon="plus" accessibilityLabel="Neues Abzeichen anlegen" onPress={() => { setCreating(true); setOpenId(null); }} />}
       />
 
       <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
@@ -384,7 +412,13 @@ export default function BadgeAdmin() {
         {badges?.length ? (
           badges.map((b) => (
             <View key={b.id}>
-              <Pressable onPress={() => setOpenId(openId === b.id ? null : b.id)}>
+              <Pressable
+                onPress={() => setOpenId(openId === b.id ? null : b.id)}
+                accessibilityRole="button"
+                accessibilityLabel={b.name}
+                accessibilityHint={openId === b.id ? 'Bearbeiten schließen' : 'Abzeichen bearbeiten'}
+                accessibilityState={{ expanded: openId === b.id }}
+              >
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
                   <IconTile icon="medal" tint={PP.gold} tone="soft" size="s" />
                   <View style={{ flex: 1, minWidth: 0 }}>

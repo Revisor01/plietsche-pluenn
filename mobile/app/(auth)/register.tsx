@@ -42,7 +42,13 @@ export default function Register() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={{ flex: 1, paddingHorizontal: PP.space.xxl, paddingTop: insets.top + 8 }}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={{ marginBottom: PP.space.sm }}>
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Zurück"
+          hitSlop={10}
+          style={{ marginBottom: PP.space.sm }}
+        >
           <Icon name="chevron-left" size={PP.iconSizes.xl} color={PP.ink} />
         </Pressable>
 
@@ -97,7 +103,12 @@ export default function Register() {
         </View>
 
         <View style={{ alignItems: 'center', marginTop: PP.space.lg }}>
-          <Pressable onPress={() => router.replace('/(auth)/login')} hitSlop={8}>
+          <Pressable
+            onPress={() => router.replace('/(auth)/login')}
+            accessibilityRole="button"
+            accessibilityLabel="Schon dabei? Anmelden"
+            hitSlop={8}
+          >
             <PPText size="base" color={PP.ink2}>
               Schon dabei? <PPText weight="semibold" size="base" color={PP.teal}>Anmelden</PPText>
             </PPText>

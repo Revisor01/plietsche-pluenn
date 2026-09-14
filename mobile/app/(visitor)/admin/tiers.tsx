@@ -103,7 +103,7 @@ export default function TiersAdmin() {
       <PPHeader
         subtitle="Admin"
         title="Punkte & Ränge"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       {/* ── SEKTION 1: Punkte pro Aktion ── */}
@@ -178,6 +178,8 @@ export default function TiersAdmin() {
             </View>
             <Pressable
               onPress={() => removeRank(i)}
+              accessibilityRole="button"
+              accessibilityLabel={`Rang ${r.name || i + 1} löschen`}
               hitSlop={8}
               style={{ width: 36, height: 36, borderRadius: PP.rTile2, alignItems: 'center', justifyContent: 'center', backgroundColor: alpha(PP.ink, "subtle"), alignSelf: 'center' }}
             >

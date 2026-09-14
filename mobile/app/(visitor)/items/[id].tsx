@@ -60,7 +60,7 @@ export default function ItemDetail() {
   if (!item) {
     return (
       <Screen padBottom={120}>
-        <PPHeader subtitle="Teil" title="…" leading={<IconButton icon="chevron-left" onPress={goBack} />} />
+        <PPHeader subtitle="Teil" title="…" leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />} />
       </Screen>
     );
   }
@@ -74,7 +74,7 @@ export default function ItemDetail() {
         <PPHeader
           subtitle={item.sku}
           title={item.title}
-          leading={<IconButton icon="chevron-left" onPress={goBack} />}
+          leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
         />
         <View style={{ paddingHorizontal: PP.space.xl }}>
           <View style={{ height: 280, borderRadius: PP.rTile, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
@@ -209,12 +209,16 @@ export default function ItemDetail() {
       <PPHeader
         subtitle={item.sku}
         title="Teil bearbeiten"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       <SectionTitle title="Foto" />
       <View style={{ paddingHorizontal: PP.space.xl }}>
-        <Pressable onPress={pickPhoto}>
+        <Pressable
+          onPress={pickPhoto}
+          accessibilityRole="button"
+          accessibilityLabel={photoUri ? 'Foto ändern' : 'Foto auswählen'}
+        >
           <View style={{ height: 200, borderRadius: PP.rTile, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -252,6 +256,10 @@ export default function ItemDetail() {
           <Pressable
             key={g.key}
             onPress={() => { setGroup(g.key); if (!GROUPS_WITH_TYPE.includes(g.key)) setType(null); }}
+            accessibilityRole="button"
+            accessibilityLabel={g.label}
+            accessibilityState={{ selected: group === g.key }}
+            hitSlop={8}
           >
             <Pill bg={group === g.key ? PP.teal : alpha(PP.ink, "subtle")} color={group === g.key ? PP.onBrand : PP.ink2}>
               {g.label}
@@ -265,7 +273,14 @@ export default function ItemDetail() {
           <SectionTitle title="Art" />
           <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
             {CATEGORY_TYPES.map((t) => (
-              <Pressable key={t.key} onPress={() => setType(t.key)}>
+              <Pressable
+                key={t.key}
+                onPress={() => setType(t.key)}
+                accessibilityRole="button"
+                accessibilityLabel={t.label}
+                accessibilityState={{ selected: type === t.key }}
+                hitSlop={8}
+              >
                 <Pill bg={type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={type === t.key ? PP.onBrand : PP.ink2}>
                   {t.label}
                 </Pill>
@@ -280,13 +295,13 @@ export default function ItemDetail() {
           <View style={{ flex: 1 }}>
             <PPText weight="semibold" size="base" color={PP.ink}>Im Schaufenster</PPText>
           </View>
-          <Toggle value={showcase} onChange={toggleShowcase} />
+          <Toggle value={showcase} onChange={toggleShowcase} accessibilityLabel="Im Schaufenster" />
         </Card>
         <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
           <View style={{ flex: 1 }}>
             <PPText weight="semibold" size="base" color={PP.ink}>Wird extern gelagert</PPText>
           </View>
-          <Toggle value={staysExternal} onChange={setStaysExternal} />
+          <Toggle value={staysExternal} onChange={setStaysExternal} accessibilityLabel="Wird extern gelagert" />
         </Card>
       </View>
 

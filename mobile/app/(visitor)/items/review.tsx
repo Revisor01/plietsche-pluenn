@@ -69,7 +69,12 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
   return (
     <Card pad={14} style={{ gap: PP.space.md }}>
       {/* Tippen öffnet die Detailansicht zum Prüfen/Bearbeiten vor der Freigabe. */}
-      <Pressable onPress={onOpen} style={{ flexDirection: 'row', gap: PP.space.md }}>
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.title} prüfen`}
+        style={{ flexDirection: 'row', gap: PP.space.md }}
+      >
         <View
           style={{
             width: 76,
@@ -130,8 +135,23 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
             Freigeben
           </PPButton>
         </View>
-        <IconButton icon="star" tint={PP.teal} bg={alpha(PP.teal, 'soft')} loading={busy === 'showcase'} onPress={() => approve(true)} />
-        <IconButton icon="x" tint={PP.err} bg={alpha(PP.err, 'soft')} loading={busy === 'reject'} onPress={reject} />
+        <IconButton
+          icon="star"
+          accessibilityLabel="Ins Schaufenster freigeben"
+          tint={PP.teal}
+          bg={alpha(PP.teal, 'soft')}
+          loading={busy === 'showcase'}
+          onPress={() => approve(true)}
+        />
+        <IconButton
+          icon="x"
+          accessibilityLabel="Einreichung ablehnen"
+          accessibilityHint="Das Teil wird nicht aufgenommen."
+          tint={PP.err}
+          bg={alpha(PP.err, 'soft')}
+          loading={busy === 'reject'}
+          onPress={reject}
+        />
       </View>
     </Card>
   );
@@ -154,7 +174,7 @@ export default function ReviewItems() {
       <PPHeader
         subtitle="Freigabe"
         title="Eingereichte Teile"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>

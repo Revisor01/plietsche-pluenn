@@ -122,7 +122,7 @@ export default function NewItem() {
       <PPHeader
         subtitle={isStaff ? 'Neues Teil' : 'Teil vorschlagen'}
         title="Teil einstellen"
-        leading={<IconButton icon="chevron-left" onPress={goBack} />}
+        leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
       />
 
       {!isStaff && (
@@ -135,7 +135,11 @@ export default function NewItem() {
 
       <SectionTitle title="Foto" />
       <View style={{ paddingHorizontal: PP.space.xl }}>
-        <Pressable onPress={pickPhoto}>
+        <Pressable
+          onPress={pickPhoto}
+          accessibilityRole="button"
+          accessibilityLabel={photoUri ? 'Foto ändern' : 'Foto auswählen'}
+        >
           <View
             style={{
               height: 180,
@@ -175,6 +179,10 @@ export default function NewItem() {
           <Pressable
             key={g.key}
             onPress={() => { setGroup(g.key); if (!GROUPS_WITH_TYPE.includes(g.key)) setType(null); }}
+            accessibilityRole="button"
+            accessibilityLabel={g.label}
+            accessibilityState={{ selected: group === g.key }}
+            hitSlop={8}
           >
             <Pill bg={group === g.key ? PP.teal : alpha(PP.ink, "subtle")} color={group === g.key ? PP.onBrand : PP.ink2}>
               {g.label}
@@ -188,7 +196,14 @@ export default function NewItem() {
           <SectionTitle title="Art" />
           <View style={{ paddingHorizontal: PP.space.xl, flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
             {CATEGORY_TYPES.map((t) => (
-              <Pressable key={t.key} onPress={() => setType(t.key)}>
+              <Pressable
+                key={t.key}
+                onPress={() => setType(t.key)}
+                accessibilityRole="button"
+                accessibilityLabel={t.label}
+                accessibilityState={{ selected: type === t.key }}
+                hitSlop={8}
+              >
                 <Pill bg={type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={type === t.key ? PP.onBrand : PP.ink2}>
                   {t.label}
                 </Pill>
@@ -201,7 +216,14 @@ export default function NewItem() {
       <SectionTitle title="Zustand" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: PP.space.xl, gap: PP.space.sm }}>
         {CONDITIONS.map((c) => (
-          <Pressable key={c.key} onPress={() => setCondition(c.key)}>
+          <Pressable
+            key={c.key}
+            onPress={() => setCondition(c.key)}
+            accessibilityRole="button"
+            accessibilityLabel={c.label}
+            accessibilityState={{ selected: condition === c.key }}
+            hitSlop={8}
+          >
             <Pill bg={condition === c.key ? PP.teal : alpha(PP.ink, "subtle")} color={condition === c.key ? PP.onBrand : PP.ink2}>
               {c.label}
             </Pill>
@@ -212,7 +234,13 @@ export default function NewItem() {
       <SectionTitle title="Wohin kommt das Teil?" />
       <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         <View style={{ flexDirection: 'row', gap: PP.space.md, alignItems: 'stretch' }}>
-          <Pressable style={{ flex: 1 }} onPress={() => setDestination('store')}>
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={() => setDestination('store')}
+            accessibilityRole="button"
+            accessibilityLabel="Bringe ich in den Laden"
+            accessibilityState={{ selected: destination === 'store' }}
+          >
             <View
               style={{
                 minHeight: 112,
@@ -237,7 +265,13 @@ export default function NewItem() {
             </View>
           </Pressable>
 
-          <Pressable style={{ flex: 1 }} onPress={() => setDestination('mine')}>
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={() => setDestination('mine')}
+            accessibilityRole="button"
+            accessibilityLabel="Verbleibt bei mir"
+            accessibilityState={{ selected: destination === 'mine' }}
+          >
             <View
               style={{
                 minHeight: 112,
@@ -295,7 +329,7 @@ export default function NewItem() {
                 Sofort öffentlich auf der Startseite zeigen.
               </PPText>
             </View>
-            <Toggle value={showcase} onChange={setShowcase} />
+            <Toggle value={showcase} onChange={setShowcase} accessibilityLabel="Ins Schaufenster" />
           </Card>
         )}
       </View>
