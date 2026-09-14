@@ -120,6 +120,26 @@ neu — und läuft weiter auf dem Stand, der in
 `/opt/stacks/plietsche-pb/pb_hooks/` liegt. Der Verify würde das melden, aber
 erst nach jedem Deploy aufs Neue.
 
+> **Eingerichtet und in Betrieb seit 14.09.2026.** Die Schritte unten sind
+> ausgeführt; sie stehen hier als Beschreibung des Aufbaus und als Anleitung,
+> falls der Stack einmal neu aufgesetzt werden muss.
+>
+> Belegt durch den ersten vollständigen Lauf: Tests grün, Abbild gebaut und
+> nach GHCR geschoben, Webhook ausgelöst, Container um 19:55 neu erstellt
+> (vorher 19:51), Verify nach fünf Wartrunden mit allen fünf Merkmalen grün.
+> Der Datenbestand blieb unverändert; die App liefert angemeldet weiterhin
+> Ladeninfos, Schaufenster (8), Laden (14), Punkte und Abzeichen.
+>
+> Abweichungen von der ursprünglichen Planung:
+> - Das GHCR-Paket ist **öffentlich**, weil das Repository öffentlich ist —
+>   eine Registry-Anmeldung in Portainer erübrigt sich damit.
+> - Der Webhook hängt am **Stack** (Feld `Webhook`), nicht am Container.
+>   Ein Container-Webhook (`webhookType: 1`) ist für Docker Swarm gedacht und
+>   scheitert hier mit „This node is not a swarm manager".
+> - `/opt/stacks/plietsche-pb/pb_hooks/` und `.../pb_migrations/` sind
+>   entfernt (gesichert unter `/root/backups/plietsche-pb/`). Im
+>   Stack-Verzeichnis liegt nur noch `pb_data`.
+
 Schritt für Schritt:
 
 1. **Paket im Register sichtbar machen.** Das Repo ist privat, das Abbild
