@@ -15,9 +15,9 @@ export function Field({ icon, label, secure, ...inputProps }: FieldProps) {
 
   return (
     <View style={styles.wrap}>
-      {icon && <Icon name={icon} size={18} color={PP.ink3} />}
+      {icon && <Icon name={icon} size={PP.iconSizes.md} color={PP.ink3} />}
       <View style={{ flex: 1 }}>
-        <PPText weight="semibold" size={10.5} color={PP.ink3} style={styles.label}>
+        <PPText weight="semibold" size="xs" color={PP.ink3} style={styles.label}>
           {label.toUpperCase()}
         </PPText>
         <TextInput
@@ -29,7 +29,7 @@ export function Field({ icon, label, secure, ...inputProps }: FieldProps) {
       </View>
       {secure && (
         <Pressable onPress={() => setHidden((h) => !h)} hitSlop={10}>
-          <Icon name={hidden ? 'eye-off' : 'eye'} size={18} color={PP.ink3} />
+          <Icon name={hidden ? 'eye-off' : 'eye'} size={PP.iconSizes.md} color={PP.ink3} />
         </Pressable>
       )}
     </View>
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   label: {
-    letterSpacing: 0.3,
+    letterSpacing: PP.tracking.label,
   },
   input: {
     fontFamily: PP.font.medium,

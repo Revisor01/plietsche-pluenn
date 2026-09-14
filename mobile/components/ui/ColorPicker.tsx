@@ -29,7 +29,7 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
 
   return (
     <View>
-      <PPText weight="semibold" size={PP.fontSizes.xs} color={PP.ink3} style={{ marginBottom: 8, letterSpacing: 0.3 }}>
+      <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: 8, letterSpacing: PP.tracking.label }}>
         {label}
       </PPText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -49,7 +49,7 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
             borderColor: PP.ink,
           }}
         >
-          {!current && <Icon name="check" size={18} color="#fff" />}
+          {!current && <Icon name="check" size={PP.iconSizes.md} color="#fff" />}
         </Pressable>
 
         {AUSHANG_COLORS.map((c) => {
@@ -69,7 +69,7 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
                 borderColor: PP.ink,
               }}
             >
-              {active && <Icon name="check" size={18} color="#fff" />}
+              {active && <Icon name="check" size={PP.iconSizes.md} color="#fff" />}
             </Pressable>
           );
         })}

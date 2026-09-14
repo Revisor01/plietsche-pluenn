@@ -52,10 +52,10 @@ export default function Permissions() {
   return (
     <View style={{ flex: 1, backgroundColor: PP.bg, paddingHorizontal: 24, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
       <View style={{ marginTop: 12 }}>
-        <PPText weight="bold" size={24} color={PP.ink} style={{ letterSpacing: -0.4 }}>
+        <PPText weight="bold" size="xl2" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
           Zwei kleine Bitten
         </PPText>
-        <PPText size={13} color={PP.ink2} style={{ marginTop: 4 }}>
+        <PPText size="base" color={PP.ink2} style={{ marginTop: 4 }}>
           Beides nur, wenn du willst.
         </PPText>
       </View>
@@ -108,13 +108,13 @@ function PermCard({
         end={{ x: 1, y: 1 }}
         style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
       >
-        <Icon name={icon} size={22} color={PP.teal} />
+        <Icon name={icon} size={PP.iconSizes.lg} color={PP.teal} />
       </LinearGradient>
       <View style={{ flex: 1 }}>
-        <PPText weight="semibold" size={15} color={PP.ink}>
+        <PPText weight="semibold" size="md" color={PP.ink}>
           {title}
         </PPText>
-        <PPText size={12.5} color={PP.ink2} style={{ marginTop: 3, lineHeight: 17 }}>
+        <PPText size="sm" color={PP.ink2} style={{ marginTop: 3, lineHeight: PP.fontSizes.sm * PP.leading.normal }}>
           {desc}
         </PPText>
         <View style={{ marginTop: 10 }}>

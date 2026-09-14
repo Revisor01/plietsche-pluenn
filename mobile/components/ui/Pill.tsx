@@ -13,7 +13,8 @@ interface PillProps {
 }
 
 export function Pill({ children, color = PP.teal, bg = 'rgba(39,176,146,0.10)', icon, size = 'm', style }: PillProps) {
-  const fs = size === 's' ? 11 : 12.5;
+  const fs = size === 's' ? 'xs' : 'sm';
+  const iconSize = size === 's' ? PP.iconSizes.xs : PP.iconSizes.sm;
   // Polsterung und Mindesthöhe wachsen mit der Schrift mit (PP.fontScale),
   // sonst wird der Chip bei größerer Typo zu eng und die Schrift beschnitten.
   const scale = PP.fontScale;
@@ -39,7 +40,7 @@ export function Pill({ children, color = PP.teal, bg = 'rgba(39,176,146,0.10)', 
         style,
       ]}
     >
-      {icon && <Icon name={icon} size={fs + 2} color={color} />}
+      {icon && <Icon name={icon} size={iconSize} color={color} />}
       <PPText weight="medium" size={fs} color={color}>
         {children}
       </PPText>

@@ -83,10 +83,10 @@ export default function Points() {
         <Card pad={16} radius={20}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <View>
-              <PPText weight="semibold" size={11} color={PP.ink2} style={{ letterSpacing: 0.3 }}>
+              <PPText weight="semibold" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label }}>
                 GESAMT
               </PPText>
-              <PPText weight="bold" size={30} color={PP.ink} style={{ letterSpacing: -0.6, marginTop: 2, lineHeight: 32 }}>
+              <PPText weight="bold" size="xxl" color={PP.ink} style={{ letterSpacing: PP.tracking.hero, marginTop: 2, lineHeight: PP.fontSizes.xxl * PP.leading.tight }}>
                 {formatPoints(total)}
               </PPText>
             </View>
@@ -94,7 +94,7 @@ export default function Points() {
               {weekTotal > 0 && (
                 <Pill icon="arrow-up">+{formatPoints(weekTotal)} diese Woche</Pill>
               )}
-              <PPText size={11} color={PP.ink2} style={{ marginTop: 4 }}>
+              <PPText size="xs" color={PP.ink2} style={{ marginTop: 4 }}>
                 {tier.remaining > 0 ? `noch ${formatPoints(tier.remaining)} bis ${tier.name}` : `${tier.current} erreicht`}
               </PPText>
             </View>
@@ -126,14 +126,14 @@ export default function Points() {
       <View style={{ paddingHorizontal: 20, gap: 18 }}>
         {groups.length === 0 ? (
           <Card pad={16}>
-            <PPText size={13} color={PP.ink2}>
+            <PPText size="base" color={PP.ink2}>
               Noch keine Punkte in dieser Kategorie.
             </PPText>
           </Card>
         ) : (
           groups.map(([day, items]) => (
             <View key={day}>
-              <PPText weight="semibold" size={11} color={PP.ink2} style={{ letterSpacing: 0.3, marginBottom: 8 }}>
+              <PPText weight="semibold" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label, marginBottom: 8 }}>
                 {day.toUpperCase()}
               </PPText>
               <Card pad={0} style={{ overflow: 'hidden' }}>
@@ -163,17 +163,17 @@ export default function Points() {
                           justifyContent: 'center',
                         }}
                       >
-                        <Icon name={icon} size={18} color={color} />
+                        <Icon name={icon} size={PP.iconSizes.md} color={color} />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
-                        <PPText weight="medium" size={13} color={PP.ink} numberOfLines={1}>
+                        <PPText weight="medium" size="base" color={PP.ink} numberOfLines={1}>
                           {it.label || (it.kind === 'checkin' ? 'Check-In' : 'Punkte')}
                         </PPText>
-                        <PPText size={11} color={PP.ink2} style={{ marginTop: 1 }}>
+                        <PPText size="xs" color={PP.ink2} style={{ marginTop: 1 }}>
                           {time}
                         </PPText>
                       </View>
-                      <PPText weight="bold" size={14} color={it.points >= 0 ? PP.teal : PP.err}>
+                      <PPText weight="bold" size="base" color={it.points >= 0 ? PP.teal : PP.err}>
                         {it.points >= 0 ? '+' : ''}
                         {it.points}
                       </PPText>

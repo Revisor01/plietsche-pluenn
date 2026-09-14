@@ -2,10 +2,18 @@ import { Text as RNText, TextProps, StyleSheet, StyleProp, TextStyle } from 'rea
 import { PP } from '../../lib/theme';
 
 type Weight = 'regular' | 'medium' | 'semibold' | 'bold';
+type SizeStep = keyof typeof PP.fontSizes;
 
 interface PPTextProps extends TextProps {
   weight?: Weight;
-  size?: number;
+  /** Stufe aus `PP.fontSizes`. Bewusst keine Zahl — Größen gehören ins Theme. */
+  size?: SizeStep;
+  /**
+   * Nur für Größen, die aus einem übergebenen Maß berechnet werden (Initialen
+   * im Avatar, Zeichen im Markenzeichen, Medaille). Hier wird absichtlich an
+   * der Skala vorbeigearbeitet, weil ein Verhältnis gehalten wird, keine Größe.
+   */
+  rawSize?: number;
   color?: string;
 }
 
@@ -16,24 +24,35 @@ const fontFor: Record<Weight, string> = {
   bold: PP.font.bold,
 };
 
-export function PPText({ weight = 'regular', size = PP.fontSizes.base, color = PP.ink, style, ...rest }: PPTextProps) {
-  // Apply the global font scale to every size — including hard-coded size={n}
-  // values passed by screens — so typography grows app-wide from one knob.
-  const scaled = Math.round(size * PP.fontScale * 10) / 10;
+const scale = (n: number) => Math.round(n * PP.fontScale * 10) / 10;
 
-  // Ein lineHeight aus dem Style ist auf die UNSKALIERTE Größe gemünzt (z.B.
-  // size={24} + lineHeight: 26). Ohne Mitskalieren bleibt die Zeile kleiner als
-  // die Glyphen, und Ober-/Unterlängen werden abgeschnitten. Deshalb hier
-  // dieselbe Skalierung anwenden.
+export function PPText({
+  weight = 'regular',
+  size,
+  rawSize,
+  color = PP.ink,
+  style,
+  ...rest
+}: PPTextProps) {
+  // Der globale Schriftfaktor wirkt auf jede Größe — auch auf die berechneten.
+  const base = rawSize ?? PP.fontSizes[size ?? 'base'];
+  const scaled = scale(base);
+
+  // `lineHeight` und `letterSpacing` aus dem Style sind auf die UNSKALIERTE
+  // Größe gemünzt (z.B. size="xl2" + lineHeight: 26). Ohne Mitskalieren bliebe
+  // die Zeile kleiner als die Glyphen und Ober-/Unterlängen würden
+  // abgeschnitten; eine nicht mitskalierte Laufweite ließe große
+  // Überschriften enger stehen, als sie entworfen sind.
   const flat = StyleSheet.flatten(style) as TextStyle | undefined;
-  const lh = flat?.lineHeight;
-  const scaledLineHeight: StyleProp<TextStyle> =
-    typeof lh === 'number' ? { lineHeight: Math.round(lh * PP.fontScale * 10) / 10 } : null;
+  const metrics: TextStyle = {};
+  if (typeof flat?.lineHeight === 'number') metrics.lineHeight = scale(flat.lineHeight);
+  if (typeof flat?.letterSpacing === 'number') metrics.letterSpacing = scale(flat.letterSpacing);
+  const scaledMetrics: StyleProp<TextStyle> = Object.keys(metrics).length ? metrics : null;
 
   return (
     <RNText
       {...rest}
-      style={[{ fontFamily: fontFor[weight], fontSize: scaled, color }, style, scaledLineHeight]}
+      style={[{ fontFamily: fontFor[weight], fontSize: scaled, color }, style, scaledMetrics]}
     />
   );
 }

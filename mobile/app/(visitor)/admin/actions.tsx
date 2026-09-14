@@ -140,7 +140,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
           <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <PPText
               weight="medium"
-              size={PP.fontSizes.sm}
+              size="sm"
               color={PP.ink2}
               style={{ width: 104 }}
               numberOfLines={1}
@@ -225,17 +225,17 @@ export default function ActionsAdmin() {
               <Pressable onPress={() => setOpenId(openId === c.id ? null : c.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(39,176,146,0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="sparkles" size={20} color={PP.teal} />
+                    <Icon name="sparkles" size={PP.iconSizes.lg} color={PP.teal} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink}>{c.name}</PPText>
+                    <PPText weight="semibold" size="md" color={PP.ink}>{c.name}</PPText>
                     {/* Zeitraum und Boni in getrennten Zeilen — in einer Zeile
                         schnitt der Zeitraum die Faktoren regelmäßig ab. */}
-                    <PPText size={PP.fontSizes.sm} color={PP.ink2} numberOfLines={1}>
+                    <PPText size="sm" color={PP.ink2} numberOfLines={1}>
                       {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}
                     </PPText>
                     {campaignFactorRows(c).length > 0 && (
-                      <PPText size={PP.fontSizes.sm} color={PP.teal} numberOfLines={1} style={{ marginTop: 1 }}>
+                      <PPText size="sm" color={PP.teal} numberOfLines={1} style={{ marginTop: 1 }}>
                         {campaignFactorRows(c)
                           .map((f) => `${f.label} ×${factorLabel(f.factor)}`)
                           .join(' · ')}
@@ -243,7 +243,7 @@ export default function ActionsAdmin() {
                     )}
                   </View>
                   {isActive(c) && <Pill size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">aktiv</Pill>}
-                  <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={18} color={PP.ink3} />
+                  <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={PP.iconSizes.md} color={PP.ink3} />
                 </Card>
               </Pressable>
               {openId === c.id && (
@@ -254,7 +254,7 @@ export default function ActionsAdmin() {
             </View>
           ))
         ) : (
-          <Card pad={16}><PPText size={PP.fontSizes.base} color={PP.ink2}>Noch keine Aktionen.</PPText></Card>
+          <Card pad={16}><PPText size="base" color={PP.ink2}>Noch keine Aktionen.</PPText></Card>
         )}
       </View>
     </Screen>

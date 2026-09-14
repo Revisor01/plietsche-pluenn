@@ -95,17 +95,17 @@ export default function Home() {
       <Pressable style={{ paddingHorizontal: 20 }} onPress={() => router.push('/(visitor)/points')}>
         <Card pad={22} radius={26} style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
           <GradientRing size={120} stroke={11} progress={tier.progress}>
-            <PPText weight="medium" size={11} color={PP.ink2} style={{ letterSpacing: 0.3 }}>
+            <PPText weight="medium" size="xs" color={PP.ink2} style={{ letterSpacing: PP.tracking.label }}>
               PUNKTE
             </PPText>
-            <PPText weight="bold" size={32} color={PP.ink} style={{ letterSpacing: -0.8, lineHeight: 34 }}>
+            <PPText weight="bold" size="hero" color={PP.ink} style={{ letterSpacing: PP.tracking.hero, lineHeight: PP.fontSizes.hero * PP.leading.tight }}>
               {formatPoints(total)}
             </PPText>
             <PPText
               weight="semibold"
-              size={10.5}
+              size="xs"
               color={tierColor(tier.current)}
-              style={{ marginTop: 1, letterSpacing: 0.3 }}
+              style={{ marginTop: 1, letterSpacing: PP.tracking.label }}
             >
               {tier.current.toUpperCase()}
             </PPText>
@@ -118,13 +118,13 @@ export default function Home() {
             >
               {motivation.pill}
             </Pill>
-            <PPText size={13.5} color={PP.ink} style={{ marginTop: 12, lineHeight: 19 }}>
+            <PPText size="base" color={PP.ink} style={{ marginTop: 12, lineHeight: PP.fontSizes.base * PP.leading.normal }}>
               {motivation.text}
             </PPText>
             {/* Nur zeigen, wenn der Motivationstext den Rang nicht schon nennt. */}
             {tier.remaining > 0 && !motivation.text.includes(tier.name) && (
-              <PPText size={12} color={PP.ink2} style={{ marginTop: 10 }}>
-                Noch <PPText weight="semibold" size={12} color={PP.teal}>{formatPoints(tier.remaining)}</PPText> bis {tier.name}.
+              <PPText size="sm" color={PP.ink2} style={{ marginTop: 10 }}>
+                Noch <PPText weight="semibold" size="sm" color={PP.teal}>{formatPoints(tier.remaining)}</PPText> bis {tier.name}.
               </PPText>
             )}
           </View>
@@ -156,11 +156,11 @@ export default function Home() {
                 }}
               >
                 <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: withAlpha(accent, 0.18), alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="megaphone" size={18} color={accent} />
+                  <Icon name="megaphone" size={PP.iconSizes.md} color={accent} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>{n.title}</PPText>
-                  {!!n.detail && <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 1 }}>{n.detail}</PPText>}
+                  <PPText weight="semibold" size="base" color={PP.ink}>{n.title}</PPText>
+                  {!!n.detail && <PPText size="sm" color={PP.ink2} style={{ marginTop: 1 }}>{n.detail}</PPText>}
                 </View>
               </Card>
               );
@@ -174,12 +174,12 @@ export default function Home() {
                 <GradientCard key={c.id} pad={16} radius={20} colors={accentGradient(c.color)}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name="sparkles" size={22} color="#fff" />
+                      <Icon name="sparkles" size={PP.iconSizes.lg} color="#fff" />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <PPText weight="semibold" size={PP.fontSizes.md} color="#fff">{c.name}</PPText>
+                      <PPText weight="semibold" size="md" color="#fff">{c.name}</PPText>
                       {!!c.description && (
-                        <PPText size={PP.fontSizes.sm} color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
+                        <PPText size="sm" color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
                           {c.description}
                         </PPText>
                       )}
@@ -201,8 +201,8 @@ export default function Home() {
                             backgroundColor: 'rgba(255,255,255,0.22)',
                           }}
                         >
-                          <Icon name="flame" size={13} color="#fff" />
-                          <PPText weight="bold" size={PP.fontSizes.sm} color="#fff">
+                          <Icon name="flame" size={PP.iconSizes.xs} color="#fff" />
+                          <PPText weight="bold" size="sm" color="#fff">
                             {f.label} ×{f.factor.toLocaleString('de-DE')}
                           </PPText>
                         </View>
@@ -229,12 +229,12 @@ export default function Home() {
                 justifyContent: 'center',
               }}
             >
-              <Icon name="plus" size={18} color={PP.teal} />
+              <Icon name="plus" size={PP.iconSizes.md} color={PP.teal} />
             </View>
-            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>
+            <PPText weight="semibold" size="base" color={PP.ink}>
               Teil einstellen
             </PPText>
-            <PPText size={PP.fontSizes.sm} color={PP.ink2}>
+            <PPText size="sm" color={PP.ink2}>
               {isStaff ? 'Direkt im Laden' : 'Vorschlag einreichen'}
             </PPText>
           </Card>
@@ -265,7 +265,7 @@ export default function Home() {
                     justifyContent: 'center',
                   }}
                 >
-                  <Icon name={openCount ? 'bell' : 'check'} size={18} color={openCount ? '#fff' : PP.warn} />
+                  <Icon name={openCount ? 'bell' : 'check'} size={PP.iconSizes.md} color={openCount ? '#fff' : PP.warn} />
                 </View>
                 {!!openCount && (
                   <View
@@ -279,16 +279,16 @@ export default function Home() {
                       alignItems: 'center',
                     }}
                   >
-                    <PPText weight="bold" size={PP.fontSizes.sm} color="#fff">{openCount}</PPText>
+                    <PPText weight="bold" size="sm" color="#fff">{openCount}</PPText>
                   </View>
                 )}
               </View>
-              <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>
+              <PPText weight="semibold" size="base" color={PP.ink}>
                 Freigaben
               </PPText>
               <PPText
                 weight={openCount ? 'semibold' : 'regular'}
-                size={PP.fontSizes.sm}
+                size="sm"
                 color={openCount ? PP.warn : PP.ink2}
               >
                 {openCount

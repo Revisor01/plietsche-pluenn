@@ -36,7 +36,7 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: StepperProps) {
         justifyContent: 'center',
       }}
     >
-      <Icon name={icon} size={20} color={disabled ? PP.ink3 : PP.teal} />
+      <Icon name={icon} size={PP.iconSizes.lg} color={disabled ? PP.ink3 : PP.teal} />
     </Pressable>
   );
 
@@ -44,7 +44,7 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: StepperProps) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, alignSelf: 'center' }}>
       <Btn onPress={dec} disabled={value <= min} icon="minus" />
       <View style={{ minWidth: 60, alignItems: 'center' }}>
-        <PPText weight="bold" size={32} color={PP.ink}>
+        <PPText weight="bold" size="hero" color={PP.ink}>
           {value}
         </PPText>
       </View>

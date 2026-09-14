@@ -84,20 +84,20 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
           {uri ? (
             <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
-            <Icon name="shirt" size={28} color="rgba(39,176,146,0.5)" />
+            <Icon name="shirt" size={PP.iconSizes.xl} color="rgba(39,176,146,0.5)" />
           )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <PPText weight="semibold" size={PP.fontSizes.md} color={PP.ink} numberOfLines={1}>
+          <PPText weight="semibold" size="md" color={PP.ink} numberOfLines={1}>
             {item.title}
           </PPText>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+          <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
             {item.size ? `Größe ${item.size} · ` : ''}{item.sku}
           </PPText>
           {!!item.location && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
-              <Icon name="map-pin" size={12} color={PP.ink2} />
-              <PPText size={PP.fontSizes.sm} color={PP.ink2}>{item.location}</PPText>
+              <Icon name="map-pin" size={PP.iconSizes.xs} color={PP.ink2} />
+              <PPText size="sm" color={PP.ink2}>{item.location}</PPText>
             </View>
           )}
           {item.stays_external && (
@@ -106,7 +106,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
             </Pill>
           )}
           {!!submitter && (
-            <PPText size={PP.fontSizes.xs} color={PP.ink3} style={{ marginTop: 6 }}>
+            <PPText size="xs" color={PP.ink3} style={{ marginTop: 6 }}>
               von {submitter}
             </PPText>
           )}
@@ -116,7 +116,7 @@ function PendingCard({ item, campaigns, onDone, onOpen }: { item: Item; campaign
           <View style={{ padding: 6, backgroundColor: '#fff', borderRadius: 8 }}>
             <QRCode value={item.qr_code || item.sku} size={56} color={PP.ink} backgroundColor="#fff" />
           </View>
-          <PPText size={PP.fontSizes.xs} color={PP.ink3} style={{ marginTop: 4 }}>
+          <PPText size="xs" color={PP.ink3} style={{ marginTop: 4 }}>
             {item.qr_code || item.sku}
           </PPText>
         </View>
@@ -170,7 +170,7 @@ export default function ReviewItems() {
           ))
         ) : (
           <Card pad={16}>
-            <PPText size={PP.fontSizes.base} color={PP.ink2}>
+            <PPText size="base" color={PP.ink2}>
               Nichts zu prüfen — alle Vorschläge sind bearbeitet.
             </PPText>
           </Card>

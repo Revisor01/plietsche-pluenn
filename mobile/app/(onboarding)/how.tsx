@@ -21,10 +21,10 @@ export default function How() {
   return (
     <View style={{ flex: 1, backgroundColor: PP.bg, paddingHorizontal: 24, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
       <View style={{ marginTop: 12 }}>
-        <PPText weight="bold" size={24} color={PP.ink} style={{ letterSpacing: -0.4 }}>
+        <PPText weight="bold" size="xl2" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
           So funktioniert's
         </PPText>
-        <PPText size={13} color={PP.ink2} style={{ marginTop: 4 }}>
+        <PPText size="base" color={PP.ink2} style={{ marginTop: 4 }}>
           Drei Schritte, kein Schnickschnack.
         </PPText>
       </View>
@@ -46,13 +46,13 @@ export default function How() {
                 borderColor: 'rgba(39,176,146,0.18)',
               }}
             >
-              <Icon name={s.icon} size={24} color={PP.teal} />
+              <Icon name={s.icon} size={PP.iconSizes.xl} color={PP.teal} />
             </LinearGradient>
             <View style={{ flex: 1, paddingTop: 4 }}>
-              <PPText weight="semibold" size={16} color={PP.ink} style={{ letterSpacing: -0.2 }}>
+              <PPText weight="semibold" size="md" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
                 {s.title}
               </PPText>
-              <PPText size={13} color={PP.ink2} style={{ marginTop: 2, lineHeight: 18 }}>
+              <PPText size="base" color={PP.ink2} style={{ marginTop: 2, lineHeight: PP.fontSizes.base * PP.leading.normal }}>
                 {s.desc}
               </PPText>
             </View>

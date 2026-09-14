@@ -24,7 +24,8 @@ export function Avatar({ initials = '?', size = 38, gradient = false }: AvatarPr
           justifyContent: 'center',
         }}
       >
-        <PPText weight="semibold" size={size * 0.36} color="#fff">
+        {/* Hält ein Verhältnis zum Durchmesser, keine Größe — daher rawSize. */}
+        <PPText weight="semibold" rawSize={size * 0.36} color={PP.onBrand}>
           {initials}
         </PPText>
       </LinearGradient>
@@ -41,7 +42,7 @@ export function Avatar({ initials = '?', size = 38, gradient = false }: AvatarPr
         justifyContent: 'center',
       }}
     >
-      <PPText weight="semibold" size={size * 0.36} color={PP.ink}>
+      <PPText weight="semibold" rawSize={size * 0.36} color={PP.ink}>
         {initials}
       </PPText>
     </View>

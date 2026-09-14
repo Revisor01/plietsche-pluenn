@@ -35,10 +35,10 @@ export default function Welcome() {
           <Icon name="shirt" size={62} color="#fff" />
         </LinearGradient>
         <View style={{ alignItems: 'center' }}>
-          <PPText weight="bold" size={32} color={PP.ink} style={{ letterSpacing: -0.6 }}>
+          <PPText weight="bold" size="hero" color={PP.ink} style={{ letterSpacing: PP.tracking.hero }}>
             Moin!
           </PPText>
-          <PPText size={14} color={PP.ink2} style={{ marginTop: 8, lineHeight: 21, textAlign: 'center', maxWidth: 280 }}>
+          <PPText size="base" color={PP.ink2} style={{ marginTop: 8, lineHeight: PP.fontSizes.base * PP.leading.loose, textAlign: 'center', maxWidth: 280 }}>
             Schön, dass du da bist. Plietsche Plünn ist der Kleidertausch-Laden deiner Kirchengemeinde — und das hier ist deine App dazu.
           </PPText>
         </View>

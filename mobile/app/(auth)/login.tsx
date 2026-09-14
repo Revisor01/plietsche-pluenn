@@ -39,10 +39,10 @@ export default function Login() {
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 18 }}>
         <View style={{ alignItems: 'center', marginTop: 18, marginBottom: 28 }}>
           <BrandMark />
-          <PPText weight="bold" size={22} style={{ marginTop: 14, letterSpacing: -0.4 }}>
+          <PPText weight="bold" size="xl" style={{ marginTop: 14, letterSpacing: PP.tracking.title }}>
             Tach auch!
           </PPText>
-          <PPText size={13} color={PP.ink2} style={{ marginTop: 4 }}>
+          <PPText size="base" color={PP.ink2} style={{ marginTop: 4 }}>
             Melde dich an, dann geht's los.
           </PPText>
         </View>
@@ -80,7 +80,7 @@ export default function Login() {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22 }}>
           <View style={{ flex: 1, height: 1, backgroundColor: PP.hairline }} />
-          <PPText size={11} color={PP.ink3} style={{ letterSpacing: 0.4 }}>
+          <PPText size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.caps }}>
             ODER
           </PPText>
           <View style={{ flex: 1, height: 1, backgroundColor: PP.hairline }} />

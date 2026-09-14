@@ -26,10 +26,10 @@ function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; on
     <Pressable onPress={onPress}>
       <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(39,176,146,0.10)', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon} size={18} color={PP.teal} />
+          <Icon name={icon} size={PP.iconSizes.md} color={PP.teal} />
         </View>
-        <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink} style={{ flex: 1 }}>{label}</PPText>
-        <Icon name="chevron-right" size={18} color={PP.ink3} />
+        <PPText weight="semibold" size="base" color={PP.ink} style={{ flex: 1 }}>{label}</PPText>
+        <Icon name="chevron-right" size={PP.iconSizes.md} color={PP.ink3} />
       </Card>
     </Pressable>
   );
@@ -86,8 +86,8 @@ function SystemInfo() {
             borderTopColor: PP.hairline,
           }}
         >
-          <PPText size={PP.fontSizes.sm} color={PP.ink3}>{r.label}</PPText>
-          <PPText weight="semibold" size={PP.fontSizes.sm} color={PP.ink} style={{ flexShrink: 1, textAlign: 'right' }}>
+          <PPText size="sm" color={PP.ink3}>{r.label}</PPText>
+          <PPText weight="semibold" size="sm" color={PP.ink} style={{ flexShrink: 1, textAlign: 'right' }}>
             {r.value}
           </PPText>
         </View>
@@ -194,8 +194,8 @@ export default function Account() {
       <SectionTitle title="E-Mail" />
       <View style={{ paddingHorizontal: 20, gap: 12 }}>
         <Card pad={12}>
-          <PPText size={PP.fontSizes.sm} color={PP.ink2}>Aktuell</PPText>
-          <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink} style={{ marginTop: 2 }}>
+          <PPText size="sm" color={PP.ink2}>Aktuell</PPText>
+          <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: 2 }}>
             {user?.email ?? '–'}
           </PPText>
         </Card>
@@ -284,9 +284,9 @@ export default function Account() {
                 justifyContent: 'center',
               }}
             >
-              <Icon name="arrow-left" size={18} color={PP.err} />
+              <Icon name="arrow-left" size={PP.iconSizes.md} color={PP.err} />
             </View>
-            <PPText weight="semibold" size={PP.fontSizes.base} color={PP.err} style={{ flex: 1 }}>
+            <PPText weight="semibold" size="base" color={PP.err} style={{ flex: 1 }}>
               Abmelden
             </PPText>
           </Card>

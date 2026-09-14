@@ -142,7 +142,7 @@ export default function TiersAdmin() {
           keyboardType="number-pad"
           placeholder="7"
         />
-        <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: -2 }}>
+        <PPText size="sm" color={PP.ink2} style={{ marginTop: -2 }}>
           Mehr Teile können pro Besuch nicht mitgenommen bzw. gescannt werden.
         </PPText>
       </View>
@@ -183,7 +183,7 @@ export default function TiersAdmin() {
               hitSlop={8}
               style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(26,46,44,0.06)', alignSelf: 'center' }}
             >
-              <Icon name="trash" size={16} color={PP.ink3} />
+              <Icon name="trash" size={PP.iconSizes.sm} color={PP.ink3} />
             </Pressable>
           </View>
         ))}

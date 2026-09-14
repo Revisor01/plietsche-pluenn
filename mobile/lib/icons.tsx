@@ -234,7 +234,7 @@ interface IconProps {
   style?: any;
 }
 
-export function Icon({ name, size = 22, color = PP.ink, style }: IconProps) {
+export function Icon({ name, size = PP.iconSizes.lg, color = PP.ink, style }: IconProps) {
   const fa = FA6[name] ?? 'circle';
   return <FontAwesome6 name={fa as any} size={size} color={color} iconStyle="solid" style={style} />;
 }

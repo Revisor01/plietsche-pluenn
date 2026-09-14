@@ -24,16 +24,16 @@ export function PPHeader({ title, subtitle, leading, trailing }: PPHeaderProps) 
       {leading}
       <View style={{ flex: 1, minWidth: 0 }}>
         {subtitle && (
-          <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ letterSpacing: 0.2, marginBottom: 2 }}>
+          <PPText size="sm" color={PP.ink2} style={{ letterSpacing: PP.tracking.label, marginBottom: 2 }}>
             {subtitle}
           </PPText>
         )}
         {/* iOS: großer Titel mit engem Tracking. MD3 headline-small: keins. */}
         <PPText
           weight="semibold"
-          size={isAndroid ? PP.fontSizes.lg : PP.fontSizes.xl}
+          size={isAndroid ? 'lg' : 'xl'}
           color={PP.ink}
-          style={{ letterSpacing: isAndroid ? 0 : -0.4 }}
+          style={{ letterSpacing: isAndroid ? PP.tracking.body : PP.tracking.title }}
         >
           {title}
         </PPText>

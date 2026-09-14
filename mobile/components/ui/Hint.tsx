@@ -36,8 +36,8 @@ export function Hint({
         paddingHorizontal: 13,
       }}
     >
-      {icon && <Icon name={icon} size={15} color={t.icon} style={{ marginTop: 1 }} />}
-      <PPText size={PP.fontSizes.sm} color={t.fg} style={{ flex: 1, lineHeight: 18 }}>
+      {icon && <Icon name={icon} size={PP.iconSizes.sm} color={t.icon} style={{ marginTop: 1 }} />}
+      <PPText size="sm" color={t.fg} style={{ flex: 1, lineHeight: PP.fontSizes.sm * PP.leading.loose }}>
         {children}
       </PPText>
     </View>

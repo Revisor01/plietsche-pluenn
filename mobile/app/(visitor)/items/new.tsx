@@ -155,8 +155,8 @@ export default function NewItem() {
               <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             ) : (
               <>
-                <Icon name="camera" size={32} color={PP.teal} />
-                <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 8 }}>
+                <Icon name="camera" size={PP.iconSizes.xl} color={PP.teal} />
+                <PPText size="sm" color={PP.ink2} style={{ marginTop: 8 }}>
                   Foto auswählen
                 </PPText>
               </>
@@ -227,10 +227,10 @@ export default function NewItem() {
                 ...PP.shadowCard,
               }}
             >
-              <Icon name="house" size={26} color={destination === 'store' ? '#fff' : PP.teal} />
+              <Icon name="house" size={PP.iconSizes.xl} color={destination === 'store' ? '#fff' : PP.teal} />
               <PPText
                 weight="semibold"
-                size={PP.fontSizes.base}
+                size="base"
                 color={destination === 'store' ? '#fff' : PP.ink}
                 style={{ textAlign: 'center' }}
               >
@@ -252,10 +252,10 @@ export default function NewItem() {
                 ...PP.shadowCard,
               }}
             >
-              <Icon name="map-pin" size={26} color={destination === 'mine' ? '#fff' : PP.teal} />
+              <Icon name="map-pin" size={PP.iconSizes.xl} color={destination === 'mine' ? '#fff' : PP.teal} />
               <PPText
                 weight="semibold"
-                size={PP.fontSizes.base}
+                size="base"
                 color={destination === 'mine' ? '#fff' : PP.ink}
                 style={{ textAlign: 'center' }}
               >
@@ -290,10 +290,10 @@ export default function NewItem() {
         {isStaff && (
           <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <PPText weight="semibold" size={PP.fontSizes.base} color={PP.ink}>
+              <PPText weight="semibold" size="base" color={PP.ink}>
                 Ins Schaufenster
               </PPText>
-              <PPText size={PP.fontSizes.sm} color={PP.ink2} style={{ marginTop: 2 }}>
+              <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
                 Sofort öffentlich auf der Startseite zeigen.
               </PPText>
             </View>

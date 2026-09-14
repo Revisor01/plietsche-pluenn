@@ -33,7 +33,8 @@ export function PPButton({
   style,
 }: PPButtonProps) {
   const h = size === 'l' ? 52 : size === 'm' ? 44 : 36;
-  const fs = size === 'l' ? 16 : size === 'm' ? 14.5 : 13;
+  const fs = size === 'l' ? 'md' : 'base';
+  const iconSize = size === 'l' ? PP.iconSizes.lg : PP.iconSizes.md;
   // MD3 Buttons sind vollrund; iOS behält die weichere, eckigere Formsprache.
   const radius = isAndroid ? MD3_SHAPE.full : size === 'l' ? PP.rBtn : 14;
   // MD3 label-large hat spürbares Letter-Spacing, iOS-Labels nicht.
@@ -57,11 +58,11 @@ export function PPButton({
         <ActivityIndicator color={textColor} />
       ) : (
         <>
-          {icon && <Icon name={icon} size={fs + 4} color={textColor} />}
+          {icon && <Icon name={icon} size={iconSize} color={textColor} />}
           <PPText weight="semibold" size={fs} color={textColor} style={{ letterSpacing }}>
             {children}
           </PPText>
-          {iconRight && <Icon name={iconRight} size={fs + 4} color={textColor} />}
+          {iconRight && <Icon name={iconRight} size={iconSize} color={textColor} />}
         </>
       )}
     </View>

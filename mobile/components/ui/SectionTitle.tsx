@@ -20,12 +20,12 @@ export function SectionTitle({ title, action, onAction }: SectionTitleProps) {
         marginBottom: 10,
       }}
     >
-      <PPText weight="semibold" size={14} color={PP.ink} style={{ letterSpacing: -0.2 }}>
+      <PPText weight="semibold" size="base" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
         {title}
       </PPText>
       {action && (
         <Pressable onPress={onAction} hitSlop={8}>
-          <PPText weight="medium" size={12} color={PP.teal}>
+          <PPText weight="medium" size="sm" color={PP.teal}>
             {action}
           </PPText>
         </Pressable>
