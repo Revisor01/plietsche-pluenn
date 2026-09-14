@@ -84,9 +84,19 @@ Check-in-Bonus plus fortlaufende Serie, von jedem Ort der Welt, für jedes
 angemeldete Konto. Der Kontostand, die Ränge und die Bestenliste sind damit
 frei erfindbar. Zusätzlich liegen Standort und Radius des Ladens offen.
 
-Erschwerend: Das Geheimnis lässt sich nicht heimlich wechseln — es hängt
-gedruckt an der Ladentür. Ein Wechsel bedeutet Aushang neu drucken (das ist
-schon einmal passiert, siehe Notiz „Tür-Code rotiert", 03.08.2026).
+~~Erschwerend: Das Geheimnis lässt sich nicht heimlich wechseln — es hängt
+gedruckt an der Ladentür. Ein Wechsel bedeutet Aushang neu drucken.~~
+
+> **Diese Annahme war falsch (richtiggestellt 14.09.2026).** Ein Aushang war
+> zum Zeitpunkt des Audits nie gedruckt worden; der Laden ist noch nicht in
+> Betrieb. Die Einschätzung stammte aus einer älteren Notiz über eine frühere
+> Rotation und ist ungeprüft in den Befund eingeflossen.
+>
+> Sie hat die Empfehlung unnötig schwer gemacht: Schritt 2 wurde zunächst
+> abgelehnt, weil der vermeintliche Aufwand — neuer Aushang, Verteilung — nicht
+> im Verhältnis zu stehen schien. Tatsächlich kostete die Rotation einen
+> API-Aufruf. **Eine Annahme über die Welt außerhalb des Codes gehört
+> nachgefragt, nicht aus einer Notiz übernommen.**
 
 **Empfehlung:** Zwei Schritte, beide nötig.
 1. `checkin_qr_secret` aus der öffentlich lesbaren Sammlung herausnehmen —
@@ -94,8 +104,8 @@ schon einmal passiert, siehe Notiz „Tür-Code rotiert", 03.08.2026).
    `store` auf `@request.auth.id != ""` setzen und das Geheimnis nie an den
    Client ausliefern. Die App braucht es nicht: Sie schickt den gescannten
    Code an den Server, der Vergleich passiert in `scan.pb.js:47`.
-2. Danach den Code rotieren und den Aushang neu drucken — der alte ist
-   verbrannt.
+2. Danach den Code rotieren — der alte ist verbrannt. (Erledigt am 14.09.2026;
+   ein Aushang war noch nicht gedruckt, es gab also nichts zu ersetzen.)
 
 Zu beachten: Die App liest `store` für Öffnungszeiten, Adresse und Ränge. Wer
 die Sammlung auf angemeldet umstellt, muss prüfen, ob eine Ansicht sie vor dem
@@ -127,8 +137,8 @@ Wert liefert an `POST /api/pp/scan` jetzt `404 Unbekannter QR-Code`, der neue
 `200`. Der Wert in der Versionsgeschichte ist damit wertlos; ein Umschreiben der
 Historie erübrigt sich. Der neue Wert steht in keiner Datei des Repos.
 
-**Der Aushang an der Ladentür muss mit dem neuen Code neu gedruckt werden** —
-der bisherige funktioniert nicht mehr.
+Ein Aushang war zu diesem Zeitpunkt noch nicht gedruckt — die Rotation hatte
+deshalb keine Folgen außerhalb des Servers.
 
 Aus demselben Grund bleibt `geofence_radius_m` vorerst auf 2000 (siehe
 Nebenbefund weiter unten): Der Radius ist ohne GPS ohnehin nicht bindend, und
