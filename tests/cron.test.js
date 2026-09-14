@@ -212,10 +212,21 @@ describe('push-scheduled', () => {
         },
       ],
     });
+    const vorher = Date.now();
     h.runCron('push-scheduled');
+    const nachher = Date.now();
+
     expect(h.pushed).toHaveLength(1);
     expect(h.pushed[0].title).toBe('Neue Teile da');
-    expect(`${h.records.msg.get('sent_at')}`).not.toBe('');
+
+    // Der Versandzeitpunkt, nicht irgendein nicht-leerer Wert: Der Filter des
+    // Cronjobs prueft nur auf sent_at = "", ein Hook, der hier "ja" eintraegt,
+    // kaeme mit not.toBe('') durch — und die Nachricht waere fuer immer
+    // abgehakt, ohne dass jemand sagen koennte, wann sie rausging.
+    const gesetzt = Date.parse(`${h.records.msg.get('sent_at')}`);
+    expect(Number.isNaN(gesetzt)).toBe(false);
+    expect(gesetzt).toBeGreaterThanOrEqual(vorher);
+    expect(gesetzt).toBeLessThanOrEqual(nachher);
   });
 
   it('ruehrt eine Nachricht mit spaeterem Zeitpunkt nicht an', () => {
@@ -249,24 +260,203 @@ describe('push-scheduled', () => {
 });
 
 describe('year-badges', () => {
+  // Der Job handelt an genau einem Tag im Jahr. Vorher stand hier ein Test,
+  // der sich am 31. Dezember per `return` selbst abschaltete — also genau an
+  // dem Tag, an dem etwas passiert. Geprueft wurde damit nie die Vergabe,
+  // sondern nur, dass an den uebrigen 364 Tagen nichts geschieht.
+  //
+  // Jetzt wird das Datum gestellt. Wichtig dabei: Der Job liest den Tag und
+  // die Jahreszahl in der LADENZEITZONE (lib.storeParts), nicht in der des
+  // Prozesses — die Suite laeuft in UTC, der Laden in Europe/Berlin. Im
+  // Dezember ist das UTC+1.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function amTag(iso) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(iso));
+  }
+
+  // Der Laufzeitpunkt des Cronjobs: 31.12. um 3:40 Ortszeit = 2:40 UTC.
+  const SILVESTER = '2026-12-31T02:40:00.000Z';
+  // Ein gewoehnlicher Tag.
+  const IM_JULI = '2026-07-15T02:40:00.000Z';
+
+  // Besuch am 1. Januar des Jahres, um die Mittagszeit.
+  function besuchIm(jahr, id) {
+    return { id, user: 'u1', checkin_at: `${jahr}-01-01T12:00:00.000Z` };
+  }
+
+  const TREUE_BADGES = [
+    { id: 'b3', name: 'Drei Jahre dabei', kind: 'single', trigger_type: 'years_active', trigger_value: 3, points_reward: 100 },
+    { id: 'b5', name: 'Fuenf Jahre dabei', kind: 'single', trigger_type: 'years_active', trigger_value: 5, points_reward: 200 },
+  ];
+
   it('ist als taegliche Aufgabe um 3:40 eingetragen', () => {
     const h = setup([]);
     expect(h.crons['year-badges'].expr).toBe('40 3 * * *');
   });
 
   it('vergibt an einem gewoehnlichen Tag nichts', () => {
-    // Der Job laeuft taeglich, handelt aber nur am 31. Dezember.
-    const heute = new Date();
-    if (heute.getMonth() === 11 && heute.getDate() === 31) return;
-
+    amTag(IM_JULI);
     const h = setup([{ __name: 'u', id: 'u1' }], {
-      badges: [
-        { id: 'b1', name: 'Treue', kind: 'single', trigger_type: 'years_active', trigger_value: 1 },
-      ],
-      visits: [{ id: 'v1', user: 'u1', checkin_at: new Date().toISOString() }],
+      badges: TREUE_BADGES,
+      visits: [besuchIm(2024, 'v1'), besuchIm(2025, 'v2'), besuchIm(2026, 'v3')],
     });
     h.runCron('year-badges');
     expect(h.rows('user_badges')).toHaveLength(0);
+  });
+
+  it('vergibt am 31. Dezember die erreichte Stufe, nicht die naechsthoehere', () => {
+    // Besuche in drei Kalenderjahren: Das Abzeichen fuer drei Jahre wird
+    // vergeben, das fuer fuenf nicht.
+    amTag(SILVESTER);
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      badges: TREUE_BADGES,
+      visits: [besuchIm(2024, 'v1'), besuchIm(2025, 'v2'), besuchIm(2026, 'v3')],
+    });
+    h.runCron('year-badges');
+
+    const vergeben = h.rows('user_badges');
+    expect(vergeben).toHaveLength(1);
+    expect(vergeben[0].badge).toBe('b3');
+    expect(vergeben[0].current_tier).toBe('gold');
+    // Genau der Bonus der erreichten Stufe, nicht die Summe beider.
+    expect(h.records.u.get('points_total')).toBe(100);
+  });
+
+  it('vergibt beide Stufen, wenn beide erreicht sind', () => {
+    amTag(SILVESTER);
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      badges: TREUE_BADGES,
+      visits: [
+        besuchIm(2022, 'v1'),
+        besuchIm(2023, 'v2'),
+        besuchIm(2024, 'v3'),
+        besuchIm(2025, 'v4'),
+        besuchIm(2026, 'v5'),
+      ],
+    });
+    h.runCron('year-badges');
+    expect(h.rows('user_badges').map((b) => b.badge).sort()).toEqual(['b3', 'b5']);
+    expect(h.records.u.get('points_total')).toBe(300);
+  });
+
+  it('vergibt nichts, wenn erst ein Jahr zusammengekommen ist', () => {
+    // Drei Besuche im selben Jahr sind ein aktives Jahr, nicht drei.
+    amTag(SILVESTER);
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      badges: TREUE_BADGES,
+      visits: [
+        { id: 'v1', user: 'u1', checkin_at: '2026-01-01T12:00:00.000Z' },
+        { id: 'v2', user: 'u1', checkin_at: '2026-06-01T12:00:00.000Z' },
+        { id: 'v3', user: 'u1', checkin_at: '2026-12-01T12:00:00.000Z' },
+      ],
+    });
+    h.runCron('year-badges');
+    expect(h.rows('user_badges')).toHaveLength(0);
+    expect(h.records.u.get('points_total')).toBe(0);
+  });
+
+  it('vergibt ein bereits vergebenes Abzeichen nicht noch einmal', () => {
+    amTag(SILVESTER);
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 100 }], {
+      badges: TREUE_BADGES,
+      visits: [besuchIm(2024, 'v1'), besuchIm(2025, 'v2'), besuchIm(2026, 'v3')],
+      user_badges: [{ id: 'ub1', user: 'u1', badge: 'b3', progress: 1, current_tier: 'gold' }],
+    });
+    h.runCron('year-badges');
+    expect(h.rows('user_badges')).toHaveLength(1);
+    // Kein zweiter Bonus.
+    expect(h.records.u.get('points_total')).toBe(100);
+  });
+
+  it('zaehlt einen Besuch am 31. Dezember noch fuer dieses Jahr', () => {
+    // Der Grenzfall: Besuch am Silvesterabend, 20:00 Ortszeit (19:00 UTC).
+    // Der Cronjob laeuft danach um 3:40 — also erst am 1.1. Hier wird der Lauf
+    // vom selben Tag geprueft, mit dem Besuch am Vormittag.
+    amTag(SILVESTER);
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      badges: TREUE_BADGES,
+      visits: [
+        besuchIm(2024, 'v1'),
+        besuchIm(2025, 'v2'),
+        // 31.12.2026, 01:00 Ortszeit = 31.12. 00:00 UTC — derselbe Tag, an dem
+        // der Job laeuft, und das dritte aktive Jahr.
+        { id: 'v3', user: 'u1', checkin_at: '2026-12-31T00:00:00.000Z' },
+      ],
+    });
+    h.runCron('year-badges');
+    expect(h.rows('user_badges')).toHaveLength(1);
+    expect(h.rows('user_badges')[0].badge).toBe('b3');
+  });
+
+  it('zaehlt einen Besuch am 1.1. um 00:30 Ortszeit ins neue Jahr', () => {
+    // Der Zeitzonen-Fall: 1.1.2026 um 00:30 Ortszeit ist 31.12.2025 um 23:30
+    // UTC. Wer die Jahreszahl in UTC nimmt, zaehlt diesen Besuch ins Vorjahr —
+    // und dann fehlen drei Jahre, wo drei erreicht sind.
+    amTag(SILVESTER);
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      badges: TREUE_BADGES,
+      visits: [
+        besuchIm(2024, 'v1'),
+        // 1.1.2025, 00:30 Ortszeit (Winterzeit, UTC+1).
+        { id: 'v2', user: 'u1', checkin_at: '2024-12-31T23:30:00.000Z' },
+        besuchIm(2026, 'v3'),
+      ],
+    });
+    h.runCron('year-badges');
+    // Jahre: 2024 (v1), 2025 (v2, in Ladenzeit), 2026 (v3) = drei.
+    expect(h.rows('user_badges')).toHaveLength(1);
+    expect(h.rows('user_badges')[0].badge).toBe('b3');
+  });
+
+  it('behandelt mehrere Personen unabhaengig voneinander', () => {
+    amTag(SILVESTER);
+    const h = setup(
+      [
+        { __name: 'treu', id: 'u1', points_total: 0 },
+        { __name: 'neu', id: 'u2', points_total: 0 },
+      ],
+      {
+        badges: TREUE_BADGES,
+        visits: [
+          besuchIm(2024, 'v1'),
+          besuchIm(2025, 'v2'),
+          besuchIm(2026, 'v3'),
+          { id: 'v4', user: 'u2', checkin_at: '2026-05-01T12:00:00.000Z' },
+        ],
+      }
+    );
+    h.runCron('year-badges');
+    const vergeben = h.rows('user_badges');
+    expect(vergeben).toHaveLength(1);
+    expect(vergeben[0].user).toBe('u1');
+    expect(h.records.treu.get('points_total')).toBe(100);
+    expect(h.records.neu.get('points_total')).toBe(0);
+  });
+
+  it('fasst gestufte Abzeichen nicht an', () => {
+    // Der Job sucht ausdruecklich nach kind = "single". Ein gestuftes
+    // Treue-Abzeichen liefe sonst ueber grantBadge sofort auf Gold.
+    amTag(SILVESTER);
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      badges: [
+        {
+          id: 'bt',
+          name: 'Treue Stufen',
+          kind: 'tiered',
+          trigger_type: 'years_active',
+          tier_bronze: 1,
+          tier_gold: 3,
+        },
+      ],
+      visits: [besuchIm(2024, 'v1'), besuchIm(2025, 'v2'), besuchIm(2026, 'v3')],
+    });
+    h.runCron('year-badges');
+    expect(h.rows('user_badges')).toHaveLength(0);
+    expect(h.records.u.get('points_total')).toBe(0);
   });
 });
 
@@ -332,6 +522,223 @@ describe('action-badges', () => {
     h.runCron('action-badges');
     expect(h.rows('user_badges')).toHaveLength(1);
     // Kein zweiter Bonus.
+    expect(h.records.u.get('points_total')).toBe(50);
+  });
+
+  it('vergibt ein Abzeichen auch an jemanden, der nur da war', () => {
+    // Zweig b): Teilnahme durch reinen Besuch im Aktionszeitraum, ohne ein
+    // Teil beigesteuert zu haben.
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      campaigns: [
+        {
+          id: 'c1',
+          badge: 'b1',
+          starts_at: '2026-03-01T00:00:00.000Z',
+          ends_at: '2026-03-31T23:59:59.000Z',
+        },
+      ],
+      badges: [
+        {
+          id: 'b1',
+          name: 'Dabei gewesen',
+          kind: 'single',
+          trigger_type: 'action_participation',
+          points_reward: 50,
+        },
+      ],
+      action_counts: [],
+      visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-03-15T12:00:00.000Z' }],
+    });
+    h.runCron('action-badges');
+    expect(h.rows('user_badges')).toHaveLength(1);
+    expect(h.records.u.get('points_total')).toBe(50);
+  });
+
+  it('vergibt nichts an jemanden, der ausserhalb des Aktionszeitraums da war', () => {
+    // Die Gegenprobe zu Zweig b): Der Besuch liegt einen Tag nach Aktionsende.
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      campaigns: [
+        {
+          id: 'c1',
+          badge: 'b1',
+          starts_at: '2026-03-01T00:00:00.000Z',
+          ends_at: '2026-03-31T23:59:59.000Z',
+        },
+      ],
+      badges: [
+        {
+          id: 'b1',
+          name: 'Dabei gewesen',
+          kind: 'single',
+          trigger_type: 'action_participation',
+          points_reward: 50,
+        },
+      ],
+      action_counts: [],
+      visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-04-01T12:00:00.000Z' }],
+    });
+    h.runCron('action-badges');
+    expect(h.rows('user_badges')).toHaveLength(0);
+    expect(h.records.u.get('points_total')).toBe(0);
+  });
+});
+
+describe('action-badges: gestufte Abzeichen', () => {
+  // Der Zweig, vor dem der Code im Kommentar selbst warnt: grantBadge wuerde
+  // ein gestuftes Abzeichen sofort auf Gold setzen und die Stufen
+  // ueberspringen — samt aller Boni, die dazwischenliegen. Zu viel vergebene
+  // Punkte lassen sich nicht zurueckholen.
+  //
+  // Deshalb laeuft der gestufte Fall ueber checkBadges/computeProgress, und
+  // genau das wird hier geprueft: die tatsaechlich erreichte Stufe und genau
+  // der Bonus, der zu ihr gehoert.
+
+  // Ein gestuftes Aktions-Abzeichen mit drei Stufen und je eigenem Bonus.
+  function gestuftesSetup(count, extra = {}) {
+    return setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      campaigns: [
+        {
+          id: 'c1',
+          name: 'Fruehjahrsputz',
+          badge: 'b1',
+          starts_at: '2026-01-01T00:00:00.000Z',
+          ends_at: '2026-12-31T23:59:59.000Z',
+        },
+      ],
+      badges: [
+        {
+          id: 'b1',
+          name: 'Sammlerin',
+          kind: 'tiered',
+          trigger_type: 'action_participation',
+          // computeProgress liest die Aktion vom Abzeichen, nicht umgekehrt.
+          campaign: 'c1',
+          tier_bronze: 2,
+          tier_silber: 5,
+          tier_gold: 10,
+          reward_bronze: 10,
+          reward_silber: 25,
+          reward_gold: 60,
+        },
+      ],
+      action_counts: [{ id: 'ac1', user: 'u1', campaign: 'c1', count }],
+      user_badges: extra.user_badges || [],
+    });
+  }
+
+  it('bleibt bei vier Beitraegen auf Bronze und ueberspringt nichts', () => {
+    // Schwellen 2/5/10, Stand 4: Bronze ist erreicht, Silber nicht.
+    const h = gestuftesSetup(4);
+    h.runCron('action-badges');
+
+    const vergeben = h.rows('user_badges');
+    expect(vergeben).toHaveLength(1);
+    expect(vergeben[0].current_tier).toBe('bronze');
+    expect(vergeben[0].progress).toBe(4);
+    // Genau der Bronze-Bonus, nicht die Summe aller Stufen (95).
+    expect(h.records.u.get('points_total')).toBe(10);
+  });
+
+  it('vergibt bei zehn Beitraegen alle drei Stufen genau einmal', () => {
+    // Wer die Aktion in einem Rutsch durchlaeuft, bekommt jede Stufe — aber
+    // jede nur einmal: 10 + 25 + 60.
+    const h = gestuftesSetup(10);
+    h.runCron('action-badges');
+
+    const vergeben = h.rows('user_badges');
+    expect(vergeben[0].current_tier).toBe('gold');
+    expect(h.records.u.get('points_total')).toBe(95);
+  });
+
+  it('zahlt beim naechsten Lauf nur die neu erreichte Stufe nach', () => {
+    // Stand 5 (Silber), Bronze war beim letzten Lauf schon vergeben: Es kommt
+    // genau der Silber-Bonus dazu, nicht noch einmal Bronze.
+    const h = gestuftesSetup(5, {
+      user_badges: [{ id: 'ub1', user: 'u1', badge: 'b1', progress: 2, current_tier: 'bronze' }],
+    });
+    h.runCron('action-badges');
+
+    const vergeben = h.rows('user_badges');
+    expect(vergeben).toHaveLength(1);
+    expect(vergeben[0].current_tier).toBe('silber');
+    expect(h.records.u.get('points_total')).toBe(25);
+  });
+
+  it('vergibt bei unveraendertem Stand keinen zweiten Bonus', () => {
+    const h = gestuftesSetup(4, {
+      user_badges: [{ id: 'ub1', user: 'u1', badge: 'b1', progress: 4, current_tier: 'bronze' }],
+    });
+    h.runCron('action-badges');
+    expect(h.rows('user_badges')[0].current_tier).toBe('bronze');
+    expect(h.records.u.get('points_total')).toBe(0);
+  });
+
+  it('vergibt unterhalb der ersten Stufe noch nichts', () => {
+    // Ein Beitrag, Bronze verlangt zwei.
+    const h = gestuftesSetup(1);
+    h.runCron('action-badges');
+    expect(h.rows('user_badges')[0].current_tier).toBe('none');
+    expect(h.records.u.get('points_total')).toBe(0);
+  });
+
+  it('fasst jemanden ohne Beitrag zur Aktion nicht an', () => {
+    // Der gestufte Zweig laeuft nur ueber action_counts mit count > 0 — anders
+    // als der einfache, der auch reine Besuche mitnimmt.
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      campaigns: [
+        {
+          id: 'c1',
+          badge: 'b1',
+          starts_at: '2026-01-01T00:00:00.000Z',
+          ends_at: '2026-12-31T23:59:59.000Z',
+        },
+      ],
+      badges: [
+        {
+          id: 'b1',
+          name: 'Sammlerin',
+          kind: 'tiered',
+          trigger_type: 'action_participation',
+          campaign: 'c1',
+          tier_bronze: 2,
+          reward_bronze: 10,
+        },
+      ],
+      action_counts: [{ id: 'ac1', user: 'u1', campaign: 'c1', count: 0 }],
+      visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-06-01T12:00:00.000Z' }],
+    });
+    h.runCron('action-badges');
+    expect(h.rows('user_badges')).toHaveLength(0);
+    expect(h.records.u.get('points_total')).toBe(0);
+  });
+
+  it('die Gegenprobe: ein einfaches Abzeichen laeuft weiterhin ueber grantBadge', () => {
+    // Derselbe Aufbau, nur kind: 'single'. Dann greift der andere Zweig, und
+    // das Abzeichen steht sofort auf Gold — was dort richtig ist, weil es nur
+    // eine Stufe gibt.
+    const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
+      campaigns: [
+        {
+          id: 'c1',
+          badge: 'b1',
+          starts_at: '2026-01-01T00:00:00.000Z',
+          ends_at: '2026-12-31T23:59:59.000Z',
+        },
+      ],
+      badges: [
+        {
+          id: 'b1',
+          name: 'Sammlerin',
+          kind: 'single',
+          trigger_type: 'action_participation',
+          campaign: 'c1',
+          points_reward: 50,
+        },
+      ],
+      action_counts: [{ id: 'ac1', user: 'u1', campaign: 'c1', count: 4 }],
+    });
+    h.runCron('action-badges');
+    expect(h.rows('user_badges')[0].current_tier).toBe('gold');
     expect(h.records.u.get('points_total')).toBe(50);
   });
 });
