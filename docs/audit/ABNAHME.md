@@ -892,7 +892,19 @@ Drei Wege, aufsteigend nach Aufwand:
 Bis dahin gilt: Nach jedem Eingriff an Hooks oder Migrationen denselben
 lesenden Abgleich fahren, der den Rückstand aufgedeckt hat.
 
-### 3. Verwaiste Container aus dem Vorgänger-Backend entfernen
+### ~~3. Verwaiste Container aus dem Vorgänger-Backend entfernen~~ — **erledigt 14.09.2026**
+
+> Beide Container, das Volume `plietsche-pluenn_postgres_data`, das Netz
+> `plietsche-pluenn_internal` und das Abbild `plietsche-pluenn_backend:latest`
+> (261 MB) sind entfernt. Vorher geprüft: kein laufender Container hing am
+> Alt-Netz, keiner nutzte das Abbild.
+>
+> Gesichert unter `/root/backups/plietsche-alt/`: Postgres-Dump, Quelltext,
+> die im Container gefundene `firebase-service-account.json` und der
+> Volume-Inhalt (6,5 MB komprimiert).
+>
+> Danach geprüft: `plietsche-pocketbase` und `plietsche-web` laufen unberührt
+> weiter, beide Domains antworten mit 200.
 
 Gemessen am 14.09.2026: `plietsche-backend` (Express + Drizzle) und
 `plietsche-postgres` liefen seit der Umstellung auf PocketBase im Mai 2026
