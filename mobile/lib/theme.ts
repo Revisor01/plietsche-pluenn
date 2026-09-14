@@ -261,7 +261,9 @@ export const PP = {
   },
 } as const;
 
-export type PPTheme = typeof PP;
+// `PPTheme = typeof PP` stand hier ohne einen einzigen Verwender. Wer die Form
+// der Palette als Typ braucht, schreibt `typeof PP` — das ist kürzer als der
+// Import und läuft nicht Gefahr, veraltet neben `PP` stehen zu bleiben.
 
 /**
  * Farbiger Glanz unter einem Markenelement — drei Stufen statt vier von Hand

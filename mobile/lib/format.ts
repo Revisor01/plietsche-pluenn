@@ -225,6 +225,8 @@ export function campaignFactors(c?: {
 }
 
 // "Vorbeikommen ×3 · Mitnehmen ×1,5 · Bringen ×2" — empty when nothing is boosted.
+// Eine Zeile für die Listendarstellung; `campaignFactors` liefert dieselben
+// Werte einzeln, wenn sie als getrennte Marken gezeigt werden sollen.
 export function campaignFactorsLabel(c?: {
   mult_visit?: number;
   mult_take?: number;
@@ -275,7 +277,9 @@ export function initials(name?: string) {
 // Statt zweier fester Sätze: die passendste Situation gewinnt. Reihenfolge =
 // Priorität — je konkreter der Anlass, desto weiter oben.
 
-export interface Motivation {
+// Nur modulintern: Beide Formen erscheinen ausschließlich in der Signatur von
+// `motivationFor()`, und die Aufrufstelle leitet ihre Typen daraus ab.
+interface Motivation {
   /** Kurzer Chip über dem Text. */
   pill: string;
   /** Icon des Chips (Name aus lib/icons). */
@@ -286,7 +290,7 @@ export interface Motivation {
   text: string;
 }
 
-export interface MotivationInput {
+interface MotivationInput {
   streakWeeks: number;
   /** Punkte bis zum nächsten Rang; 0 = höchster Rang erreicht. */
   tierRemaining: number;

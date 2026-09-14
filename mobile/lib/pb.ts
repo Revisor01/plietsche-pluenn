@@ -4,6 +4,8 @@
 import PocketBase, { AsyncAuthStore } from 'pocketbase';
 import * as SecureStore from 'expo-secure-store';
 
+import type { Role } from './types';
+
 const PB_URL = process.env.EXPO_PUBLIC_PB_URL;
 if (!PB_URL) {
   // Fail loud during dev — env var must be set in mobile/.env.
@@ -29,7 +31,10 @@ export type PPUser = {
   id: string;
   email: string;
   name: string;
-  role: 'visitor' | 'volunteer' | 'admin';
+  // Eine Quelle für die Rollen: `Role` aus types.ts. Die Aufzählung stand hier
+  // ein zweites Mal wörtlich — eine neue Rolle hätte an beiden Stellen
+  // nachgetragen werden müssen, und nur eine davon hätte der Compiler gemahnt.
+  role: Role;
   avatar?: string;
   points_total: number;
   streak_weeks: number;
