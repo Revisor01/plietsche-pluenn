@@ -230,13 +230,13 @@ describe('send', () => {
 
   it('schickt nichts los, wenn es keine Empfänger:innen gibt', () => {
     const h = setup();
-    expect(h.push.send([], 'Titel', 'Text', '')).toEqual({ sent: 0 });
+    expect(h.push.send([], 'Titel', 'Text', '')).toEqual({ sent: 0, failed: 0 });
     expect(h.httpCalls).toHaveLength(0);
   });
 
   it('baut die Nachricht, wie Expo sie erwartet', () => {
     const h = setup([person('u1', ['streak'])], [{ id: 'd1', user: 'u1', expo_token: 'TOK1' }]);
-    expect(h.push.send([ZIEL], 'Moin!', '10 Punkte', '/(visitor)/points')).toEqual({ sent: 1 });
+    expect(h.push.send([ZIEL], 'Moin!', '10 Punkte', '/(visitor)/points')).toEqual({ sent: 1, failed: 0 });
 
     expect(h.httpCalls).toHaveLength(1);
     expect(h.httpCalls[0].method).toBe('POST');
@@ -263,7 +263,7 @@ describe('send', () => {
     const h = setup();
     const ziele = [];
     for (let i = 0; i < 250; i++) ziele.push({ token: `TOK${i}`, userId: 'u1', deviceId: `d${i}` });
-    expect(h.push.send(ziele, 'Titel', 'Text', '')).toEqual({ sent: 250 });
+    expect(h.push.send(ziele, 'Titel', 'Text', '')).toEqual({ sent: 250, failed: 0 });
     expect(h.httpCalls).toHaveLength(3);
     expect(JSON.parse(h.httpCalls[0].body)).toHaveLength(100);
     expect(JSON.parse(h.httpCalls[2].body)).toHaveLength(50);
@@ -291,7 +291,7 @@ describe('send', () => {
       'Text',
       ''
     );
-    expect(ergebnis).toEqual({ sent: 1 });
+    expect(ergebnis).toEqual({ sent: 1, failed: 0 });
     // Genau das tote Gerät ist weg, das lebende bleibt.
     expect(h.rows('push_devices').map((d) => d.id)).toEqual(['d1']);
   });
@@ -303,7 +303,7 @@ describe('send', () => {
     h.httpResponses.push({
       json: { data: [{ status: 'error', details: { error: 'MessageRateExceeded' } }] },
     });
-    expect(h.push.send([ZIEL], 'Titel', 'Text', '')).toEqual({ sent: 0 });
+    expect(h.push.send([ZIEL], 'Titel', 'Text', '')).toEqual({ sent: 0, failed: 0 });
     expect(h.rows('push_devices')).toHaveLength(1);
   });
 
@@ -311,14 +311,16 @@ describe('send', () => {
     // Ein fehlgeschlagener Versand darf keinen Check-in zurückrollen.
     const h = setup([person('u1', ['streak'])], [{ id: 'd1', user: 'u1', expo_token: 'TOK1' }]);
     h.httpResponses.push(new Error('Netz weg'));
-    expect(h.push.send([ZIEL], 'Titel', 'Text', '')).toEqual({ sent: 0 });
+    // Expo wurde nicht erreicht: failed zaehlt den Stapel, damit der Aufrufer
+    // die Nachricht stehen lassen und erneut versuchen kann.
+    expect(h.push.send([ZIEL], 'Titel', 'Text', '')).toEqual({ sent: 0, failed: 1 });
     expect(h.rows('push_devices')).toHaveLength(1);
   });
 
   it('meldet 0, wenn Expo eine Antwort ohne Quittungen schickt', () => {
     const h = setup();
     h.httpResponses.push({ json: {} });
-    expect(h.push.send([ZIEL], 'Titel', 'Text', '')).toEqual({ sent: 0 });
+    expect(h.push.send([ZIEL], 'Titel', 'Text', '')).toEqual({ sent: 0, failed: 0 });
   });
 
   it('ordnet die Quittungen des zweiten Stapels den richtigen Geräten zu', () => {
@@ -344,7 +346,7 @@ describe('send', () => {
     );
     h.httpResponses.push({ json: { data: zweiter } });
 
-    expect(h.push.send(ziele, 'Titel', 'Text', '')).toEqual({ sent: 109 });
+    expect(h.push.send(ziele, 'Titel', 'Text', '')).toEqual({ sent: 109, failed: 0 });
     const uebrig = h.rows('push_devices').map((d) => d.id);
     expect(uebrig).toHaveLength(109);
     expect(uebrig).not.toContain('d105');

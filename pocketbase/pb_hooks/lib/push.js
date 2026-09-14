@@ -77,8 +77,14 @@ module.exports = {
   },
 
   // Send a batch of messages to Expo. Removes tokens Expo reports as dead.
+  //
+  // Rückgabe: { sent, failed }. `failed` zählt die Stapel, die Expo gar nicht
+  // erreicht haben — daran erkennt der Aufrufer den Unterschied zwischen „es
+  // gab nichts zu senden" und „es ging nicht raus". Ohne diese Unterscheidung
+  // gilt eine Nachricht auch dann als verschickt, wenn Expo nicht erreichbar
+  // war, und der Cronjob holt sie nie wieder.
   send(targets, title, body, deepLink) {
-    if (!targets.length) return { sent: 0 };
+    if (!targets.length) return { sent: 0, failed: 0 };
     const dao = $app.dao();
     const messages = targets.map((t) => ({
       to: t.token,
@@ -90,6 +96,7 @@ module.exports = {
 
     // Expo accepts up to 100 messages per request.
     let sent = 0;
+    let failed = 0;
     for (let i = 0; i < messages.length; i += 100) {
       const batch = messages.slice(i, i + 100);
       try {
@@ -111,9 +118,12 @@ module.exports = {
           }
         }
       } catch (_) {
-        // network error — skip this batch, try next run
+        // Expo nicht erreichbar. Der Stapel wird als gescheitert vermerkt,
+        // damit der Aufrufer die Nachricht stehen lassen und beim nächsten
+        // Lauf erneut versuchen kann.
+        failed++;
       }
     }
-    return { sent };
+    return { sent, failed };
   },
 };

@@ -38,6 +38,7 @@ const NUMBER_FIELDS = new Set([
   'progress',
   'trigger_value',
   'points_reward',
+  'send_attempts',
   'multiplier',
   'mult_visit',
   'mult_take',

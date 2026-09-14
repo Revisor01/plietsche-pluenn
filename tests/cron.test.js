@@ -241,6 +241,124 @@ describe('push-scheduled', () => {
     expect(`${h.records.msg.get('sent_at')}`).toBe('');
   });
 
+  // Die Nachricht galt bisher als verschickt, sobald der Versuch gelaufen war
+  // — auch wenn Expo gar nicht erreichbar war. Der Filter des Jobs holt sie
+  // danach nie wieder: Eine Ankuendigung „Heute geschlossen" lief ins Leere,
+  // im Verwaltungsbereich stand ein Haekchen.
+  describe('wenn Expo nicht erreichbar ist', () => {
+    function faellig(extra = {}) {
+      return Object.assign(
+        {
+          __name: 'msg',
+          id: 'm1',
+          title: 'Heute geschlossen',
+          body: 'Bitte nicht kommen',
+          scheduled_at: new Date(Date.now() - 86400000).toISOString(),
+          sent_at: '',
+        },
+        extra
+      );
+    }
+
+    // Echt geladene Push-Bibliothek: Nur so laeuft der Code, der die Quittungen
+    // von Expo auswertet und {sent} zurueckgibt. Der Stub meldet nichts.
+    function setupEcht(extra = {}) {
+      return loadHook(
+        'cron.pb.js',
+        {
+          users: [
+            {
+              __name: 'u',
+              id: 'u1',
+              role: 'visitor',
+              push_campaign_enabled: true,
+            },
+          ],
+          push_devices: [{ id: 'd1', user: 'u1', expo_token: 'ExponentPushToken[abc]' }],
+          visits: [],
+          badges: [],
+          user_badges: [],
+          campaigns: [],
+          action_counts: [],
+          points_log: [],
+          push_messages: [faellig(extra)],
+          store: [{ pts_checkin: 10 }],
+        },
+        { realPush: true }
+      );
+    }
+
+    it('laesst sent_at leer, wenn der Versand scheitert', () => {
+      const h = setupEcht();
+      h.httpResponses.push(new Error('Netzwerk nicht erreichbar'));
+      h.runCron('push-scheduled');
+
+      expect(h.httpCalls).toHaveLength(1);
+      expect(`${h.records.msg.get('sent_at')}`).toBe('');
+    });
+
+    it('versucht es im naechsten Lauf erneut und markiert dann als verschickt', () => {
+      const h = setupEcht();
+      h.httpResponses.push(new Error('Netzwerk nicht erreichbar'));
+      h.runCron('push-scheduled');
+      expect(`${h.records.msg.get('sent_at')}`).toBe('');
+
+      // Zweiter Lauf, diesmal antwortet Expo (Standardantwort des Harness).
+      h.runCron('push-scheduled');
+      expect(h.httpCalls).toHaveLength(2);
+      const gesetzt = Date.parse(`${h.records.msg.get('sent_at')}`);
+      expect(Number.isNaN(gesetzt)).toBe(false);
+    });
+
+    it('zaehlt die Fehlversuche mit', () => {
+      const h = setupEcht();
+      h.httpResponses.push(new Error('weg'), new Error('immer noch weg'));
+      h.runCron('push-scheduled');
+      expect(h.records.msg.get('send_attempts')).toBe(1);
+      h.runCron('push-scheduled');
+      expect(h.records.msg.get('send_attempts')).toBe(2);
+    });
+
+    it('gibt nach fuenf Fehlversuchen auf, statt ewig zu kreisen', () => {
+      const h = setupEcht({ send_attempts: 4 });
+      h.httpResponses.push(new Error('weg'));
+      h.runCron('push-scheduled');
+
+      expect(h.records.msg.get('send_attempts')).toBe(5);
+      // Aufgegeben heisst: abgehakt, damit der Job nicht jede Minute weiter
+      // dagegenlaeuft. Dass es nicht geklappt hat, steht am Zaehler.
+      expect(`${h.records.msg.get('sent_at')}`).not.toBe('');
+      const zeit = Date.parse(`${h.records.msg.get('sent_at')}`);
+      expect(Number.isNaN(zeit)).toBe(false);
+    });
+
+    it('hakt eine Nachricht ohne Empfaenger sofort ab', () => {
+      // Niemand hat diese Kategorie eingeschaltet: Es gibt nichts zu senden
+      // und nichts, was scheitern koennte. Ein Wiederholen waere sinnlos.
+      const h = loadHook(
+        'cron.pb.js',
+        {
+          users: [{ id: 'u1', role: 'visitor', push_campaign_enabled: false }],
+          push_devices: [{ id: 'd1', user: 'u1', expo_token: 'ExponentPushToken[abc]' }],
+          visits: [],
+          badges: [],
+          user_badges: [],
+          campaigns: [],
+          action_counts: [],
+          points_log: [],
+          push_messages: [faellig()],
+          store: [{ pts_checkin: 10 }],
+        },
+        { realPush: true }
+      );
+      h.runCron('push-scheduled');
+
+      expect(h.httpCalls).toHaveLength(0);
+      expect(`${h.records.msg.get('sent_at')}`).not.toBe('');
+      expect(h.records.msg.get('send_attempts')).toBe(0);
+    });
+  });
+
   it('verschickt eine bereits versandte Nachricht kein zweites Mal', () => {
     const gestern = new Date(Date.now() - 86400000).toISOString();
     const h = setup([], {
