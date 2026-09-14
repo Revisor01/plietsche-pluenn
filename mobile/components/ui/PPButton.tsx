@@ -1,6 +1,6 @@
 import { Pressable, View, ActivityIndicator, StyleProp, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation } from '../../lib/theme';
+import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -40,7 +40,7 @@ export function PPButton({
   // MD3 label-large hat spürbares Letter-Spacing, iOS-Labels nicht.
   const letterSpacing = isAndroid ? 0.1 : 0;
 
-  const textColor = variant === 'primary' ? '#fff' : variant === 'ghost' ? PP.teal : PP.ink;
+  const textColor = variant === 'primary' ? PP.onBrand : variant === 'ghost' ? PP.teal : PP.ink;
   const opacity = disabled ? 0.5 : 1;
 
   const content = (
@@ -87,7 +87,7 @@ export function PPButton({
     return (
       <Pressable
         onPress={disabled || loading ? undefined : onPress}
-        android_ripple={disabled || loading ? undefined : ripple('#ffffff')}
+        android_ripple={disabled || loading ? undefined : ripple(PP.onBrand)}
         style={feedback()}
       >
         <LinearGradient
@@ -118,10 +118,10 @@ export function PPButton({
         onPress={disabled || loading ? undefined : onPress}
         android_ripple={disabled || loading ? undefined : ripple(PP.teal)}
         style={feedback({
-          backgroundColor: isAndroid ? 'transparent' : '#fff',
+          backgroundColor: isAndroid ? 'transparent' : PP.surface,
           borderWidth: 1,
           // MD3 Outlined Button: sichtbarer Rand, keine Fläche.
-          borderColor: isAndroid ? PP.hairline : 'rgba(26,46,44,0.08)',
+          borderColor: isAndroid ? PP.hairline : alpha(PP.ink, "subtle"),
           borderRadius: radius,
         })}
       >

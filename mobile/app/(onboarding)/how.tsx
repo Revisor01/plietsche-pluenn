@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText, PPButton } from '../../components/ui';
 import { Dots } from '../../components/Dots';
@@ -43,7 +43,7 @@ export default function How() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderWidth: 1,
-                borderColor: 'rgba(39,176,146,0.18)',
+                borderColor: alpha(PP.teal, "medium"),
               }}
             >
               <Icon name={s.icon} size={PP.iconSizes.xl} color={PP.teal} />

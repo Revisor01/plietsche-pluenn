@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Pressable, Platform, Modal } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -44,7 +44,7 @@ export function DateField({
       <Pressable
         onPress={openPicker}
         style={{
-          backgroundColor: '#fff',
+          backgroundColor: PP.surface,
           borderRadius: PP.rField,
           paddingHorizontal: 14,
           paddingVertical: 8,
@@ -52,7 +52,7 @@ export function DateField({
           alignItems: 'center',
           gap: 12,
           borderWidth: 1,
-          borderColor: 'rgba(26,46,44,0.06)',
+          borderColor: alpha(PP.ink, "subtle"),
         }}
       >
         <Icon name="calendar" size={PP.iconSizes.md} color={PP.ink3} />
@@ -91,7 +91,7 @@ export function DateField({
         <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
           <Pressable
             onPress={() => setOpen(false)}
-            style={{ flex: 1, backgroundColor: 'rgba(26,46,44,0.35)', justifyContent: 'flex-end' }}
+            style={{ flex: 1, backgroundColor: alpha(PP.ink, "strong"), justifyContent: 'flex-end' }}
           >
             {/* Tippen im Sheet darf es nicht schließen. */}
             <Pressable

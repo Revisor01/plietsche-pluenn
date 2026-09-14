@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import QRCode from 'react-native-qrcode-svg';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useItem, useCurrentUser } from '../../../lib/hooks/useData';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
@@ -74,11 +74,11 @@ export default function ItemDetail() {
           leading={<IconButton icon="chevron-left" onPress={goBack} />}
         />
         <View style={{ paddingHorizontal: 20 }}>
-          <View style={{ height: 280, borderRadius: 18, overflow: 'hidden', backgroundColor: 'rgba(39,176,146,0.08)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ height: 280, borderRadius: 18, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
             {uri ? (
               <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             ) : (
-              <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(39,176,146,0.5)" />
+              <Icon name="shirt" size={PP.iconSizes.hero} color={alpha(PP.teal, 'veil')} />
             )}
           </View>
         </View>
@@ -88,7 +88,7 @@ export default function ItemDetail() {
             {/* Titel + Punkte */}
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
               <PPText weight="bold" size="lg" color={PP.ink} style={{ flex: 1 }}>{item.title}</PPText>
-              <Pill color={PP.teal} bg="rgba(39,176,146,0.12)">{item.points ?? 0} Punkte</Pill>
+              <Pill color={PP.teal} bg={alpha(PP.teal, 'soft')}>{item.points ?? 0} Punkte</Pill>
             </View>
 
             {/* Eigenschaften — klare Zeilen statt loser Pills. */}
@@ -109,7 +109,7 @@ export default function ItemDetail() {
                       justifyContent: 'space-between',
                       paddingVertical: 10,
                       paddingHorizontal: 12,
-                      backgroundColor: i % 2 === 0 ? 'rgba(26,46,44,0.035)' : 'transparent',
+                      backgroundColor: i % 2 === 0 ? alpha(PP.ink, "ghost") : 'transparent',
                     }}
                   >
                     <PPText size="sm" color={PP.ink3}>{r.label}</PPText>
@@ -212,7 +212,7 @@ export default function ItemDetail() {
       <SectionTitle title="Foto" />
       <View style={{ paddingHorizontal: 20 }}>
         <Pressable onPress={pickPhoto}>
-          <View style={{ height: 200, borderRadius: 18, overflow: 'hidden', backgroundColor: 'rgba(39,176,146,0.08)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ height: 200, borderRadius: 18, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
             ) : (
@@ -224,7 +224,7 @@ export default function ItemDetail() {
 
       {item.status === 'pending' && (
         <View style={{ paddingHorizontal: 20, marginTop: 12 }}>
-          <View style={{ backgroundColor: 'rgba(232,169,59,0.12)', borderRadius: PP.rField, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ backgroundColor: alpha(PP.warn, "soft"), borderRadius: PP.rField, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={{ flex: 1 }}>
               <PPText weight="semibold" size="base" color={PP.ink}>Noch nicht freigegeben</PPText>
             </View>
@@ -247,7 +247,7 @@ export default function ItemDetail() {
       <View style={{ paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {CATEGORIES.map((c) => (
           <Pressable key={c} onPress={() => setCategory(c)}>
-            <Pill bg={category === c ? PP.teal : 'rgba(26,46,44,0.06)'} color={category === c ? '#fff' : PP.ink2}>{c}</Pill>
+            <Pill bg={category === c ? PP.teal : alpha(PP.ink, "subtle")} color={category === c ? PP.onBrand : PP.ink2}>{c}</Pill>
           </Pressable>
         ))}
       </View>
@@ -270,8 +270,8 @@ export default function ItemDetail() {
       <SectionTitle title="QR-Code" />
       <View style={{ paddingHorizontal: 20, alignItems: 'center' }}>
         <Card pad={20} style={{ alignItems: 'center', gap: 10 }}>
-          <View style={{ padding: 12, backgroundColor: '#fff', borderRadius: 12 }}>
-            <QRCode value={item.qr_code || item.sku} size={160} color={PP.ink} backgroundColor="#fff" />
+          <View style={{ padding: 12, backgroundColor: PP.surface, borderRadius: 12 }}>
+            <QRCode value={item.qr_code || item.sku} size={160} color={PP.ink} backgroundColor={PP.onBrand} />
           </View>
           <PPText weight="semibold" size="md" color={PP.ink}>{item.qr_code || item.sku}</PPText>
         </Card>

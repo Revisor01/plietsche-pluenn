@@ -32,7 +32,7 @@ export default function Welcome() {
             elevation: 8,
           }}
         >
-          <Icon name="shirt" size={62} color="#fff" />
+          <Icon name="shirt" size={62} color={PP.onBrand} />
         </LinearGradient>
         <View style={{ alignItems: 'center' }}>
           <PPText weight="bold" size="hero" color={PP.ink} style={{ letterSpacing: PP.tracking.hero }}>

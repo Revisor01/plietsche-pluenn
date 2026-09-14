@@ -21,7 +21,7 @@ export function BrandMark({ size = 64, radius = 20, iconSize }: { size?: number;
         elevation: 6,
       }}
     >
-      <Icon name="shirt" size={iconSize ?? size * 0.5} color="#fff" />
+      <Icon name="shirt" size={iconSize ?? size * 0.5} color={PP.onBrand} />
     </LinearGradient>
   );
 }

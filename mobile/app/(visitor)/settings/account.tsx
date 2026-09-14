@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
@@ -25,7 +25,7 @@ function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; on
   return (
     <Pressable onPress={onPress}>
       <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(39,176,146,0.10)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
           <Icon name={icon} size={PP.iconSizes.md} color={PP.teal} />
         </View>
         <PPText weight="semibold" size="base" color={PP.ink} style={{ flex: 1 }}>{label}</PPText>
@@ -269,9 +269,9 @@ export default function Account() {
               flexDirection: 'row',
               alignItems: 'center',
               gap: 12,
-              backgroundColor: 'rgba(217,83,79,0.07)',
+              backgroundColor: alpha(PP.err, "ghost"),
               borderWidth: 1,
-              borderColor: 'rgba(217,83,79,0.22)',
+              borderColor: alpha(PP.err, "medium"),
             }}
           >
             <View
@@ -279,7 +279,7 @@ export default function Account() {
                 width: 38,
                 height: 38,
                 borderRadius: 12,
-                backgroundColor: 'rgba(217,83,79,0.12)',
+                backgroundColor: alpha(PP.err, "soft"),
                 alignItems: 'center',
                 justifyContent: 'center',
               }}

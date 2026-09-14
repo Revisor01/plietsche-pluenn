@@ -110,11 +110,11 @@ export const PP = {
    */
   accents: [
     { name: 'Teal', hex: RAW.teal },
+    { name: 'Sky', hex: RAW.sky },
     { name: 'Beere', hex: '#b0478a' },
     { name: 'Koralle', hex: '#e2664f' },
     { name: 'Bernstein', hex: '#d99320' },
     { name: 'Wald', hex: '#4a8c56' },
-    { name: 'Sky', hex: RAW.sky },
     { name: 'Pflaume', hex: '#7a5aa8' },
     { name: 'Nordsee', hex: '#2d6e8e' },
   ] as const,

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient as SvgGrad, Stop } from 'react-native-svg';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 
 interface GradientRingProps {
   size?: number;
@@ -18,7 +18,7 @@ export function GradientRing({
   size = 132,
   stroke = 12,
   progress = 0,
-  trackColor = 'rgba(26,46,44,0.06)',
+  trackColor = alpha(PP.ink, "subtle"),
   colors,
   gradientKey,
   children,

@@ -3,7 +3,7 @@ import { View, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useCampaigns } from '../../../lib/hooks/useData';
 import { createCampaign, updateCampaign, deleteCampaign } from '../../../lib/api';
@@ -151,8 +151,8 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
               {FACTORS.map((m) => (
                 <Pressable key={m} onPress={() => row.set(m)} style={{ flex: 1 }}>
                   <Pill
-                    bg={row.value === m ? PP.teal : 'rgba(26,46,44,0.06)'}
-                    color={row.value === m ? '#fff' : PP.ink2}
+                    bg={row.value === m ? PP.teal : alpha(PP.ink, "subtle")}
+                    color={row.value === m ? PP.onBrand : PP.ink2}
                   >
                     ×{factorLabel(m)}
                   </Pill>
@@ -224,7 +224,7 @@ export default function ActionsAdmin() {
             <View key={c.id}>
               <Pressable onPress={() => setOpenId(openId === c.id ? null : c.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(39,176,146,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(PP.teal, "soft"), alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="sparkles" size={PP.iconSizes.lg} color={PP.teal} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -242,7 +242,7 @@ export default function ActionsAdmin() {
                       </PPText>
                     )}
                   </View>
-                  {isActive(c) && <Pill size="s" color={PP.teal} bg="rgba(39,176,146,0.12)">aktiv</Pill>}
+                  {isActive(c) && <Pill size="s" color={PP.teal} bg={alpha(PP.teal, 'soft')}>aktiv</Pill>}
                   <Icon name={openId === c.id ? 'chevron-down' : 'chevron-right'} size={PP.iconSizes.md} color={PP.ink3} />
                 </Card>
               </Pressable>

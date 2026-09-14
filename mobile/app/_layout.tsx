@@ -37,19 +37,28 @@ Notifications.setNotificationHandler({
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   const { Text, Pressable } = require('react-native');
   return (
-    <View style={{ flex: 1, backgroundColor: '#0e1c1b', padding: 24, paddingTop: 80 }}>
+    // Bewusst nacktes <Text> statt PPText: Dieser Bildschirm muss auch dann
+    // stehen, wenn die Schriften nicht geladen sind. Farben und Größen kommen
+    // trotzdem aus dem Theme.
+    <View style={{ flex: 1, backgroundColor: PP.inkDeep, padding: PP.space.xxl, paddingTop: 80 }}>
       <Pressable
         onPress={retry}
-        style={{ backgroundColor: PP.teal, paddingVertical: 12, borderRadius: 12, alignItems: 'center', marginBottom: 20 }}
+        style={{
+          backgroundColor: PP.teal,
+          paddingVertical: PP.space.md,
+          borderRadius: PP.rTile2,
+          alignItems: 'center',
+          marginBottom: PP.space.xl,
+        }}
       >
-        <Text style={{ color: '#fff', fontWeight: '700' }}>Neu versuchen</Text>
+        <Text style={{ color: PP.onBrand, fontWeight: '700' }}>Neu versuchen</Text>
       </Pressable>
-      <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Fehler beim Laden</Text>
-      <Text style={{ color: '#ffb3b0', fontSize: 13, marginTop: 8 }} selectable>
+      <Text style={{ color: PP.onBrand, fontSize: PP.fontSizes.md, fontWeight: '700' }}>Fehler beim Laden</Text>
+      <Text style={{ color: PP.errLight, fontSize: PP.fontSizes.base, marginTop: PP.space.sm }} selectable>
         {String(error?.message || error)}
       </Text>
-      <ScrollView style={{ marginTop: 16 }}>
-        <Text style={{ color: '#9AA8A7', fontSize: 11 }} selectable>
+      <ScrollView style={{ marginTop: PP.space.lg }}>
+        <Text style={{ color: PP.ink3, fontSize: PP.fontSizes.xs }} selectable>
           {String(error?.stack || '')}
         </Text>
       </ScrollView>

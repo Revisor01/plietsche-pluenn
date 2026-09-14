@@ -3,7 +3,7 @@ import { View, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useAllBadges, useCampaigns, useStore } from '../../../lib/hooks/useData';
 import { badgeTierSlots, type TierStep } from '../../../lib/format';
@@ -191,12 +191,12 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         </PPText>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <Pressable onPress={() => set({ kind: 'tiered', trigger_type: isAction ? 'action_participation' : 'visits' })}>
-            <Pill bg={draft.kind === 'tiered' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'tiered' ? '#fff' : PP.ink2}>
+            <Pill bg={draft.kind === 'tiered' ? PP.teal : alpha(PP.ink, "subtle")} color={draft.kind === 'tiered' ? PP.onBrand : PP.ink2}>
               Stufen
             </Pill>
           </Pressable>
           <Pressable onPress={() => set({ kind: 'single' })}>
-            <Pill bg={draft.kind === 'single' ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.kind === 'single' ? '#fff' : PP.ink2}>
+            <Pill bg={draft.kind === 'single' ? PP.teal : alpha(PP.ink, "subtle")} color={draft.kind === 'single' ? PP.onBrand : PP.ink2}>
               Einzel
             </Pill>
           </Pressable>
@@ -219,7 +219,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {TRIGGERS.filter((t) => t.kinds.includes(draft.kind)).map((t) => (
             <Pressable key={t.key} onPress={() => set({ trigger_type: t.key })}>
-              <Pill bg={draft.trigger_type === t.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.trigger_type === t.key ? '#fff' : PP.ink2}>
+              <Pill bg={draft.trigger_type === t.key ? PP.teal : alpha(PP.ink, "subtle")} color={draft.trigger_type === t.key ? PP.onBrand : PP.ink2}>
                 {t.label}
               </Pill>
             </Pressable>
@@ -234,7 +234,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {campaigns.map((c) => (
                 <Pressable key={c.id} onPress={() => set({ campaign: c.id })}>
-                  <Pill bg={draft.campaign === c.id ? PP.teal : 'rgba(26,46,44,0.06)'} color={draft.campaign === c.id ? '#fff' : PP.ink2}>{c.name}</Pill>
+                  <Pill bg={draft.campaign === c.id ? PP.teal : alpha(PP.ink, "subtle")} color={draft.campaign === c.id ? PP.onBrand : PP.ink2}>{c.name}</Pill>
                 </Pressable>
               ))}
             </View>
@@ -388,7 +388,7 @@ export default function BadgeAdmin() {
             <View key={b.id}>
               <Pressable onPress={() => setOpenId(openId === b.id ? null : b.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(232,185,35,0.14)', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(PP.gold, "soft"), alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="medal" size={PP.iconSizes.lg} color={PP.gold} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
@@ -397,8 +397,8 @@ export default function BadgeAdmin() {
                       {TRIGGERS.find((t) => t.key === b.trigger_type)?.label ?? b.trigger_type} · {b.tier_bronze}/{b.tier_silber}/{b.tier_gold}/{b.tier_platin}
                     </PPText>
                   </View>
-                  {b.is_secret && <Pill size="s" icon="lock" color={PP.ink2} bg="rgba(26,46,44,0.08)">geheim</Pill>}
-                  {!b.is_visible && <Pill size="s" color={PP.ink2} bg="rgba(26,46,44,0.08)">versteckt</Pill>}
+                  {b.is_secret && <Pill size="s" icon="lock" color={PP.ink2} bg={alpha(PP.ink, 'subtle')}>geheim</Pill>}
+                  {!b.is_visible && <Pill size="s" color={PP.ink2} bg={alpha(PP.ink, 'subtle')}>versteckt</Pill>}
                   <Icon name={openId === b.id ? 'chevron-down' : 'chevron-right'} size={PP.iconSizes.md} color={PP.ink3} />
                 </Card>
               </Pressable>

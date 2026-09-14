@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
 import { pb } from '../../../lib/pb';
 import { useCurrentUser } from '../../../lib/hooks/useData';
@@ -80,7 +80,7 @@ export default function PushSettings() {
                   width: 38,
                   height: 38,
                   borderRadius: 12,
-                  backgroundColor: 'rgba(39,176,146,0.10)',
+                  backgroundColor: alpha(PP.teal, "subtle"),
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}

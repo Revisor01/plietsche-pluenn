@@ -1,7 +1,7 @@
 import { View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
 import { useShowcase } from '../../lib/hooks/useData';
 import { itemThumb } from '../../lib/format';
@@ -20,7 +20,7 @@ function GridCard({ item }: { item: Item }) {
           aspectRatio: 0.84,
           borderRadius: 18,
           overflow: 'hidden',
-          backgroundColor: 'rgba(39,176,146,0.10)',
+          backgroundColor: alpha(PP.teal, "subtle"),
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -28,7 +28,7 @@ function GridCard({ item }: { item: Item }) {
         {uri ? (
           <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
-          <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(39,176,146,0.5)" />
+          <Icon name="shirt" size={PP.iconSizes.hero} color={alpha(PP.teal, 'veil')} />
         )}
       </View>
       <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>

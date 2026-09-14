@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { CameraView } from 'expo-camera';
-import { PP } from '../lib/theme';
+import { PP, alpha } from '../lib/theme';
 import { Icon } from '../lib/icons';
 import { PPText, PPButton } from './ui';
 
@@ -36,7 +36,7 @@ export function QRScanner({ onScanned, active = true }: QRScannerProps) {
           {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
             <View key={corner} style={[styles.corner, cornerStyle(corner)]} />
           ))}
-          <Icon name="qr" size={64} color="rgba(255,255,255,0.25)" />
+          <Icon name="qr" size={64} color={alpha(PP.onBrand, 'medium')} />
         </View>
       </View>
     </CameraView>
@@ -54,16 +54,16 @@ export function CameraGate({
   children: React.ReactNode;
 }) {
   if (granted === null) {
-    return <View style={{ flex: 1, backgroundColor: '#0e1c1b' }} />;
+    return <View style={{ flex: 1, backgroundColor: PP.inkDeep }} />;
   }
   if (!granted) {
     return (
       <View style={styles.permWrap}>
-        <Icon name="camera" size={PP.iconSizes.hero} color="#fff" />
-        <PPText weight="semibold" size="lg" color="#fff" style={{ marginTop: 16, textAlign: 'center' }}>
+        <Icon name="camera" size={PP.iconSizes.hero} color={PP.onBrand} />
+        <PPText weight="semibold" size="lg" color={PP.onBrand} style={{ marginTop: 16, textAlign: 'center' }}>
           Kamera-Zugriff nötig
         </PPText>
-        <PPText size="base" color="rgba(255,255,255,0.7)" style={{ marginTop: 6, textAlign: 'center', maxWidth: 280 }}>
+        <PPText size="base" color="PP.onBrandFaint" style={{ marginTop: 6, textAlign: 'center', maxWidth: 280 }}>
           Zum Scannen von QR-Codes brauchen wir kurz deine Kamera.
         </PPText>
         <View style={{ marginTop: 24, width: 220 }}>
@@ -82,7 +82,7 @@ function cornerStyle(corner: 'tl' | 'tr' | 'bl' | 'br') {
   else base.bottom = 0;
   if (corner[1] === 'l') base.left = 0;
   else base.right = 0;
-  base.borderColor = '#fff';
+  base.borderColor = PP.onBrand;
   if (corner[0] === 't') base.borderTopWidth = w;
   if (corner[0] === 'b') base.borderBottomWidth = w;
   if (corner[1] === 'l') base.borderLeftWidth = w;
@@ -98,5 +98,5 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   frame: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center' },
   corner: {},
-  permWrap: { flex: 1, backgroundColor: '#0e1c1b', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  permWrap: { flex: 1, backgroundColor: PP.inkDeep, alignItems: 'center', justifyContent: 'center', padding: 24 },
 });

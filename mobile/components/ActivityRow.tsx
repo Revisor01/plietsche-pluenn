@@ -23,7 +23,7 @@ export function ActivityRow({ icon, tone = 'teal', title, subtitle, imageUri }: 
         gap: 12,
         paddingHorizontal: 14,
         paddingVertical: 10,
-        backgroundColor: '#fff',
+        backgroundColor: PP.surface,
         borderRadius: 16,
         ...PP.shadowCard,
       }}

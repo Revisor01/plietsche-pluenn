@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 
 import type { Item } from './types';
 import { categoryLabel } from './format';
+import { PP } from './theme';
 
 /**
  * Druckbogen mit QR-Etiketten — zum Ausschneiden und an die Kleidung heften.
@@ -64,13 +65,13 @@ export async function printQrSheet(items: Item[], title = 'QR-Etiketten'): Promi
 <style>
   @page { size: A4; margin: ${MM(10)}; }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, system-ui, sans-serif; color: #1A2E2C; margin: 0; }
+  body { font-family: -apple-system, system-ui, sans-serif; color: ${PP.ink}; margin: 0; }
   h1 { font-size: 13pt; margin: 0 0 2mm; letter-spacing: -0.2pt; }
-  .sub { font-size: 8.5pt; color: #5A6B6A; margin: 0 0 5mm; }
+  .sub { font-size: 8.5pt; color: ${PP.ink2}; margin: 0 0 5mm; }
   .sheet { display: flex; flex-wrap: wrap; gap: ${MM(4)}; }
   .tag {
     width: ${MM(60)}; height: ${MM(32)};
-    border: 0.4mm dashed #B7C4C2; border-radius: 2mm;
+    border: 0.4mm dashed ${PP.printCut}; border-radius: 2mm;
     padding: ${MM(2)}; display: flex; gap: ${MM(2)};
     align-items: center; page-break-inside: avoid;
   }
@@ -80,9 +81,9 @@ export async function printQrSheet(items: Item[], title = 'QR-Etiketten'): Promi
            overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2;
            -webkit-box-orient: vertical; }
   .size { font-size: 8.5pt; font-weight: 600; margin-top: 0.6mm; }
-  .meta { font-size: 7pt; color: #5A6B6A; margin-top: 0.6mm; line-height: 1.2; }
+  .meta { font-size: 7pt; color: ${PP.ink2}; margin-top: 0.6mm; line-height: 1.2; }
   .foot { margin-top: 1.2mm; }
-  .sku { font-size: 7.5pt; font-weight: 700; color: #27b092; letter-spacing: 0.2pt; }
+  .sku { font-size: 7.5pt; font-weight: 700; color: ${PP.teal}; letter-spacing: 0.2pt; }
 </style></head>
 <body>
   <h1>Plietsche Plünn — ${esc(title)}</h1>

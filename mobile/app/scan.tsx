@@ -7,7 +7,7 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../lib/theme';
+import { PP, alpha } from '../lib/theme';
 import { Icon } from '../lib/icons';
 import { pb } from '../lib/pb';
 import { scan, type ScanResult } from '../lib/api';
@@ -106,30 +106,30 @@ export default function Scan() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0e1c1b' }}>
+    <View style={{ flex: 1, backgroundColor: PP.inkDeep }}>
       <CameraGate granted={perm?.granted ?? null} onRequest={requestPerm}>
         <QRScanner onScanned={onScanned} active={!result && !error && !busy} />
 
         <View style={[styles.topBar, { top: insets.top + 8 }]}>
           <View>
-            <PPText weight="semibold" size="sm" color="rgba(255,255,255,0.7)" style={{ letterSpacing: PP.tracking.caps }}>
+            <PPText weight="semibold" size="sm" color="PP.onBrandFaint" style={{ letterSpacing: PP.tracking.caps }}>
               SCANNEN
             </PPText>
-            <PPText weight="bold" size="xl" color="#fff" style={{ marginTop: 2, letterSpacing: PP.tracking.title }}>
+            <PPText weight="bold" size="xl" color={PP.onBrand} style={{ marginTop: 2, letterSpacing: PP.tracking.title }}>
               Tür oder Teil
             </PPText>
           </View>
           <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
-            <Icon name="x" size={PP.iconSizes.lg} color="#fff" />
+            <Icon name="x" size={PP.iconSizes.lg} color={PP.onBrand} />
           </Pressable>
         </View>
 
         {!result && !error && (
           <View style={[styles.hint, { bottom: insets.bottom + 40 }]} pointerEvents="none">
             {busy ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={PP.onBrand} />
             ) : (
-              <PPText size="base" color="rgba(255,255,255,0.75)" style={{ textAlign: 'center' }}>
+              <PPText size="base" color="PP.onBrandFaint" style={{ textAlign: 'center' }}>
                 Halt die Kamera auf den Tür-Code oder das Etikett eines Teils.
               </PPText>
             )}
@@ -166,13 +166,13 @@ export default function Scan() {
                 <GradientCard pad={18} radius={20}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                     <View style={styles.okIcon}>
-                      <Icon name="check" size={PP.iconSizes.xl} color="#fff" />
+                      <Icon name="check" size={PP.iconSizes.xl} color={PP.onBrand} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <PPText weight="semibold" size="md" color="#fff">
+                      <PPText weight="semibold" size="md" color={PP.onBrand}>
                         {result.label}
                       </PPText>
-                      <PPText size="base" color="rgba(255,255,255,0.85)" style={{ marginTop: 2 }}>
+                      <PPText size="base" color="PP.onBrandMuted" style={{ marginTop: 2 }}>
                         +{result.points} Punkte{result.did_checkin ? ' · inkl. Check-In' : ''}
                       </PPText>
                     </View>
@@ -196,13 +196,13 @@ export default function Scan() {
                 <GradientCard pad={18} radius={20}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                     <View style={styles.okIcon}>
-                      <Icon name={result.already_checked_in ? 'info' : 'check'} size={PP.iconSizes.xl} color="#fff" />
+                      <Icon name={result.already_checked_in ? 'info' : 'check'} size={PP.iconSizes.xl} color={PP.onBrand} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <PPText weight="semibold" size="md" color="#fff">
+                      <PPText weight="semibold" size="md" color={PP.onBrand}>
                         {result.already_checked_in ? 'Schon eingecheckt' : 'Eingecheckt!'}
                       </PPText>
-                      <PPText size="base" color="rgba(255,255,255,0.85)" style={{ marginTop: 2 }}>
+                      <PPText size="base" color="PP.onBrandMuted" style={{ marginTop: 2 }}>
                         {result.already_checked_in
                           ? 'Du warst heute schon da.'
                           : `+${result.points} Punkte · ${result.streak_weeks} Wochen Streak`}
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: alpha(PP.onBrand, "medium"),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(26,46,44,0.16)',
+    backgroundColor: alpha(PP.ink, "medium"),
     alignSelf: 'center',
     marginBottom: 14,
   },
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: alpha(PP.onBrand, "medium"),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(217,83,79,0.12)',
+    backgroundColor: alpha(PP.err, "soft"),
     alignItems: 'center',
     justifyContent: 'center',
   },

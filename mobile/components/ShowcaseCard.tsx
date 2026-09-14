@@ -1,5 +1,5 @@
 import { View, Image, Pressable } from 'react-native';
-import { PP } from '../lib/theme';
+import { PP, alpha } from '../lib/theme';
 import { Icon } from '../lib/icons';
 import { PPText } from './ui/Text';
 import { itemThumb } from '../lib/format';
@@ -15,7 +15,7 @@ export function ShowcaseCard({ item, onPress }: { item: Item; onPress?: () => vo
           height: 158,
           borderRadius: 18,
           overflow: 'hidden',
-          backgroundColor: 'rgba(39,176,146,0.10)',
+          backgroundColor: alpha(PP.teal, "subtle"),
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -23,7 +23,7 @@ export function ShowcaseCard({ item, onPress }: { item: Item; onPress?: () => vo
         {uri ? (
           <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         ) : (
-          <Icon name="shirt" size={PP.iconSizes.hero} color="rgba(39,176,146,0.5)" />
+          <Icon name="shirt" size={PP.iconSizes.hero} color={alpha(PP.teal, 'veil')} />
         )}
       </View>
       <PPText weight="semibold" size="sm" color={PP.ink} style={{ marginTop: 8 }} numberOfLines={1}>

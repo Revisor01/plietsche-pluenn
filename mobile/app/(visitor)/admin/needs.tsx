@@ -3,7 +3,7 @@ import { View, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
 import { useAllNeeds, useActiveCampaigns } from '../../../lib/hooks/useData';
 import { createNeed, updateNeed, deleteNeed, sendPushNow } from '../../../lib/api';
@@ -82,7 +82,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             {TEMPLATES.map((t) => (
               <Pressable key={t.title} onPress={() => { setTitle(t.title); setDetail(t.detail); }}>
-                <Pill icon={t.icon} bg="rgba(39,176,146,0.10)" color={PP.teal}>{t.title}</Pill>
+                <Pill icon={t.icon} bg={alpha(PP.teal, 'subtle')} color={PP.teal}>{t.title}</Pill>
               </Pressable>
             ))}
           </View>
@@ -103,7 +103,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             <Pressable onPress={() => setCampaign('')}>
               <Pill
-                bg={!campaign ? 'rgba(39,176,146,0.14)' : 'rgba(26,46,44,0.05)'}
+                bg={!campaign ? alpha(PP.teal, "soft") : alpha(PP.ink, "ghost")}
                 color={!campaign ? PP.teal : PP.ink2}
               >
                 Eigenständig
@@ -113,7 +113,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
               <Pressable key={c.id} onPress={() => setCampaign(c.id)}>
                 <Pill
                   icon="sparkles"
-                  bg={campaign === c.id ? 'rgba(39,176,146,0.14)' : 'rgba(26,46,44,0.05)'}
+                  bg={campaign === c.id ? alpha(PP.teal, "soft") : alpha(PP.ink, "ghost")}
                   color={campaign === c.id ? PP.teal : PP.ink2}
                 >
                   {c.name}
@@ -139,7 +139,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         <Toggle value={active} onChange={setActive} />
       </View>
       {!need && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(128,180,226,0.10)', borderRadius: PP.rField, padding: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: alpha(PP.sky, "subtle"), borderRadius: PP.rField, padding: 12 }}>
           <Icon name="bell" size={PP.iconSizes.md} color={PP.sky} />
           <View style={{ flex: 1 }}>
             <PPText weight="semibold" size="base" color={PP.ink}>Als Push senden</PPText>
@@ -205,7 +205,7 @@ export default function NeedsAdmin() {
             <View key={n.id}>
               <Pressable onPress={() => setOpenId(openId === n.id ? null : n.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(128,180,226,0.16)', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: alpha(PP.sky, "medium"), alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="megaphone" size={PP.iconSizes.lg} color={PP.sky} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>

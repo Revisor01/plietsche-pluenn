@@ -1,6 +1,6 @@
 import { View, StyleSheet, type DimensionValue } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import type { Tier } from '../../lib/types';
 
 interface ProgressBarProps {
@@ -40,7 +40,7 @@ export function ProgressBar({ value = 0, height = 6, tier }: ProgressBarProps) {
 const styles = StyleSheet.create({
   track: {
     width: '100%',
-    backgroundColor: 'rgba(26,46,44,0.08)',
+    backgroundColor: alpha(PP.ink, "subtle"),
     overflow: 'hidden',
   },
 });

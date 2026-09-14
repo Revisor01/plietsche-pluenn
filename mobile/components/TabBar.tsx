@@ -4,7 +4,7 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PP, isAndroid, ripple, surfaceElevation } from '../lib/theme';
+import { PP, isAndroid, ripple, surfaceElevation, alpha } from '../lib/theme';
 import { Icon, type IconName } from '../lib/icons';
 import { PPText } from './ui/Text';
 import { useCurrentUser } from '../lib/hooks/useData';
@@ -151,7 +151,7 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
         <GlassView
           glassEffectStyle="regular"
           isInteractive
-          tintColor="rgba(255,255,255,0.30)"
+          tintColor={alpha(PP.onBrand, 'strong')}
           style={[styles.bar, styles.barGlass]}
         >
           {items}
@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
     // Der Fallback-Blur braucht das Clipping, sonst läuft er über die Ecken.
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(39,176,146,0.35)',
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderColor: alpha(PP.teal, "strong"),
+    backgroundColor: alpha(PP.onBrand, "veil"),
     ...PP.shadowTabBar,
   },
   item: {

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
-import { PP } from '../../lib/theme';
+import { PP, alpha } from '../../lib/theme';
 import { useCurrentUser, useShowcase, useActiveCampaigns, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
 import {
   nextTier,
@@ -173,13 +173,13 @@ export default function Home() {
               return (
                 <GradientCard key={c.id} pad={16} radius={20} colors={accentGradient(c.color)}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name="sparkles" size={PP.iconSizes.lg} color="#fff" />
+                    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: alpha(PP.onBrand, "medium"), alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="sparkles" size={PP.iconSizes.lg} color={PP.onBrand} />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <PPText weight="semibold" size="md" color="#fff">{c.name}</PPText>
+                      <PPText weight="semibold" size="md" color={PP.onBrand}>{c.name}</PPText>
                       {!!c.description && (
-                        <PPText size="sm" color="rgba(255,255,255,0.85)" style={{ marginTop: 1 }}>
+                        <PPText size="sm" color="PP.onBrandMuted" style={{ marginTop: 1 }}>
                           {c.description}
                         </PPText>
                       )}
@@ -198,11 +198,11 @@ export default function Home() {
                             paddingVertical: 6,
                             paddingHorizontal: 12,
                             borderRadius: 999,
-                            backgroundColor: 'rgba(255,255,255,0.22)',
+                            backgroundColor: alpha(PP.onBrand, "medium"),
                           }}
                         >
-                          <Icon name="flame" size={PP.iconSizes.xs} color="#fff" />
-                          <PPText weight="bold" size="sm" color="#fff">
+                          <Icon name="flame" size={PP.iconSizes.xs} color={PP.onBrand} />
+                          <PPText weight="bold" size="sm" color={PP.onBrand}>
                             {f.label} ×{f.factor.toLocaleString('de-DE')}
                           </PPText>
                         </View>
@@ -224,7 +224,7 @@ export default function Home() {
                 width: 38,
                 height: 38,
                 borderRadius: 12,
-                backgroundColor: 'rgba(39,176,146,0.10)',
+                backgroundColor: alpha(PP.teal, "subtle"),
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -250,7 +250,7 @@ export default function Home() {
                 alignItems: 'flex-start',
                 gap: 8,
                 ...(openCount
-                  ? { backgroundColor: 'rgba(232,169,59,0.12)', borderWidth: 1, borderColor: 'rgba(232,169,59,0.45)' }
+                  ? { backgroundColor: alpha(PP.warn, "soft"), borderWidth: 1, borderColor: alpha(PP.warn, "veil") }
                   : null),
               }}
             >
@@ -260,12 +260,12 @@ export default function Home() {
                     width: 38,
                     height: 38,
                     borderRadius: 12,
-                    backgroundColor: openCount ? PP.warn : 'rgba(232,169,59,0.14)',
+                    backgroundColor: openCount ? PP.warn : alpha(PP.warn, "soft"),
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Icon name={openCount ? 'bell' : 'check'} size={PP.iconSizes.md} color={openCount ? '#fff' : PP.warn} />
+                  <Icon name={openCount ? 'bell' : 'check'} size={PP.iconSizes.md} color={openCount ? PP.onBrand : PP.warn} />
                 </View>
                 {!!openCount && (
                   <View
@@ -279,7 +279,7 @@ export default function Home() {
                       alignItems: 'center',
                     }}
                   >
-                    <PPText weight="bold" size="sm" color="#fff">{openCount}</PPText>
+                    <PPText weight="bold" size="sm" color={PP.onBrand}>{openCount}</PPText>
                   </View>
                 )}
               </View>

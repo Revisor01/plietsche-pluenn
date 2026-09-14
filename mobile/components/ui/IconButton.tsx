@@ -1,5 +1,5 @@
 import { Pressable, View, ActivityIndicator } from 'react-native';
-import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation } from '../../lib/theme';
+import { PP, isAndroid, MD3_SHAPE, ripple, pressedOpacity, surfaceElevation, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 
 interface IconButtonProps {
@@ -15,18 +15,18 @@ interface IconButtonProps {
 }
 
 export function IconButton({ icon, badge, dark = false, tint, bg, loading, onPress }: IconButtonProps) {
-  const iconColor = tint ?? (dark ? '#fff' : PP.ink);
+  const iconColor = tint ?? (dark ? PP.onBrand : PP.ink);
   return (
     <Pressable
       onPress={loading ? undefined : onPress}
       hitSlop={8}
-      android_ripple={ripple(tint ?? (dark ? '#ffffff' : PP.ink), true)}
+      android_ripple={ripple(tint ?? (dark ? PP.onBrand : PP.ink), true)}
       style={({ pressed }) => ({
         width: 40,
         height: 40,
         // MD3 Icon Buttons sind rund; iOS behält das abgerundete Quadrat.
         borderRadius: isAndroid ? MD3_SHAPE.full : 14,
-        backgroundColor: bg ?? (dark ? 'rgba(255,255,255,0.18)' : isAndroid ? 'transparent' : '#fff'),
+        backgroundColor: bg ?? (dark ? alpha(PP.onBrand, "medium") : isAndroid ? 'transparent' : PP.surface),
         alignItems: 'center',
         justifyContent: 'center',
         opacity: pressedOpacity(pressed),
@@ -46,7 +46,7 @@ export function IconButton({ icon, badge, dark = false, tint, bg, loading, onPre
             borderRadius: 4,
             backgroundColor: PP.warn,
             borderWidth: 1.5,
-            borderColor: '#fff',
+            borderColor: PP.surface,
           }}
         />
       )}

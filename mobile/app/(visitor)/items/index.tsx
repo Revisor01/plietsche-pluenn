@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import QRCode from 'react-native-qrcode-svg';
 
-import { PP } from '../../../lib/theme';
+import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useAllItems } from '../../../lib/hooks/useData';
 import { setShowcase, archiveItem, approveItem } from '../../../lib/api';
@@ -26,11 +26,11 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 
 function statusPill(item: Item) {
-  if (item.taken_at) return { label: 'vergeben', color: PP.ink2, bg: 'rgba(26,46,44,0.08)' };
-  if (item.status === 'pending') return { label: 'zu prüfen', color: PP.warn, bg: 'rgba(232,169,59,0.14)' };
-  if (item.is_showcase) return { label: 'Schaufenster', color: PP.teal, bg: 'rgba(39,176,146,0.12)' };
-  if (item.status === 'archived') return { label: 'archiviert', color: PP.err, bg: 'rgba(217,83,79,0.10)' };
-  return { label: 'im Laden', color: PP.ink2, bg: 'rgba(26,46,44,0.06)' };
+  if (item.taken_at) return { label: 'vergeben', color: PP.ink2, bg: alpha(PP.ink, "subtle") };
+  if (item.status === 'pending') return { label: 'zu prüfen', color: PP.warn, bg: alpha(PP.warn, "soft") };
+  if (item.is_showcase) return { label: 'Schaufenster', color: PP.teal, bg: alpha(PP.teal, "soft") };
+  if (item.status === 'archived') return { label: 'archiviert', color: PP.err, bg: alpha(PP.err, "subtle") };
+  return { label: 'im Laden', color: PP.ink2, bg: alpha(PP.ink, "subtle") };
 }
 
 function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void; onOpen: () => void }) {
@@ -60,7 +60,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
             height: 84,
             borderRadius: 12,
             overflow: 'hidden',
-            backgroundColor: 'rgba(39,176,146,0.10)',
+            backgroundColor: alpha(PP.teal, "subtle"),
             alignItems: 'center',
             justifyContent: 'center',
           }}
@@ -68,7 +68,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
           {uri ? (
             <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
-            <Icon name="shirt" size={PP.iconSizes.xl} color="rgba(39,176,146,0.5)" />
+            <Icon name="shirt" size={PP.iconSizes.xl} color={alpha(PP.teal, 'veil')} />
           )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -81,7 +81,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
             <Pill size="s" color={st.color} bg={st.bg}>{st.label}</Pill>
             {item.stays_external && (
-              <Pill size="s" icon="map-pin" color={PP.warn} bg="rgba(232,169,59,0.14)">extern</Pill>
+              <Pill size="s" icon="map-pin" color={PP.warn} bg={alpha(PP.warn, 'soft')}>extern</Pill>
             )}
           </View>
           {!!item.location && (
@@ -91,8 +91,8 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
           )}
         </View>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ padding: 5, backgroundColor: '#fff', borderRadius: 7 }}>
-            <QRCode value={item.qr_code || item.sku} size={48} color={PP.ink} backgroundColor="#fff" />
+          <View style={{ padding: 5, backgroundColor: PP.surface, borderRadius: 7 }}>
+            <QRCode value={item.qr_code || item.sku} size={48} color={PP.ink} backgroundColor={PP.onBrand} />
           </View>
           <Icon name="chevron-right" size={PP.iconSizes.sm} color={PP.ink3} />
         </View>
@@ -121,7 +121,7 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
               </PPButton>
             </View>
           )}
-          <IconButton icon="trash" tint={PP.err} bg="rgba(217,83,79,0.12)" loading={busy} onPress={() => run(() => archiveItem(item.id))} />
+          <IconButton icon="trash" tint={PP.err} bg={alpha(PP.err, 'soft')} loading={busy} onPress={() => run(() => archiveItem(item.id))} />
         </View>
       )}
     </Card>
@@ -193,7 +193,7 @@ export default function ItemsInventory() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 6, paddingBottom: 12 }}>
         {FILTERS.map((f) => (
           <Pressable key={f.key} onPress={() => setFilter(f.key)}>
-            <Pill bg={filter === f.key ? PP.teal : 'rgba(26,46,44,0.06)'} color={filter === f.key ? '#fff' : PP.ink2}>
+            <Pill bg={filter === f.key ? PP.teal : alpha(PP.ink, "subtle")} color={filter === f.key ? PP.onBrand : PP.ink2}>
               {f.label}
             </Pill>
           </Pressable>
