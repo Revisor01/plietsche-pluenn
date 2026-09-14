@@ -43,15 +43,29 @@ export default function Scan() {
   const { data: store } = useStore();
   const maxItems = store?.max_items_take ?? 7;
 
-  const getCoords = async () => {
+  // Harte Zeitgrenze für die Standortermittlung. Drinnen im Laden hat das
+  // Gerät oft keine GPS-Sicht; getCurrentPositionAsync wartet dann ohne
+  // Obergrenze. Solange das läuft, blockiert der Scan: Die Kamera steht auf
+  // dem Etikett, es passiert nichts, und ein zweiter Versuch wird still
+  // verworfen. Nach COORDS_TIMEOUT_MS scannen wir lieber ohne Koordinaten
+  // weiter — der Server behandelt fehlende Koordinaten (siehe
+  // pb_hooks/lib/points.js, assertInGeofence: ohne Standort trägt der Code
+  // selbst die Prüfung).
+  const COORDS_TIMEOUT_MS = 3000;
+
+  const getCoords = async (): Promise<{ gps_lat?: number; gps_lng?: number }> => {
     try {
       const cur = await Location.getForegroundPermissionsAsync();
       if (cur.status !== 'granted') {
         const req = await Location.requestForegroundPermissionsAsync();
         if (req.status !== 'granted') return {};
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      return { gps_lat: pos.coords.latitude, gps_lng: pos.coords.longitude };
+      const position = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        .then((pos) => ({ gps_lat: pos.coords.latitude, gps_lng: pos.coords.longitude }));
+      const timeout = new Promise<{ gps_lat?: number; gps_lng?: number }>((resolve) => {
+        setTimeout(() => resolve({}), COORDS_TIMEOUT_MS);
+      });
+      return await Promise.race([position, timeout]);
     } catch {
       return {};
     }

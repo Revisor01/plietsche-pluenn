@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { PP, alpha } from '../lib/theme';
@@ -15,13 +15,19 @@ interface QRScannerProps {
 export function QRScanner({ onScanned, active = true }: QRScannerProps) {
   const lockRef = useRef(false);
 
+  // Die Sperre hängt an `active`, nicht an einem festen Timer. Ein fester
+  // Timer lief ab, während der Scan noch lief (Standortermittlung, Netz) —
+  // die Kamera nahm dann einen zweiten Code an, den der Screen still verwarf.
+  // Jetzt bleibt gesperrt, solange der Elternteil `active` auf false hält, und
+  // wird erst gelöst, wenn er wieder scanbereit ist.
+  useEffect(() => {
+    if (active) lockRef.current = false;
+  }, [active]);
+
   const handle = (result: { data: string }) => {
     if (!active || lockRef.current) return;
     lockRef.current = true;
     onScanned(result.data);
-    setTimeout(() => {
-      lockRef.current = false;
-    }, 1500);
   };
 
   return (
