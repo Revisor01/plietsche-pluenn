@@ -20,14 +20,5 @@
         "resourceClass": "m-medium"
       }
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "ascApiKeyPath": "/Users/simonluthe/.claude/secrets/AuthKey_6JGT8ZLHRJ.p8",
-        "ascApiKeyId": "6JGT8ZLHRJ",
-        "ascApiKeyIssuerId": "408ad2bb-fb61-43b2-a974-805dae7843a6"
-      }
-    }
   }
 }

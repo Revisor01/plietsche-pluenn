@@ -76,7 +76,14 @@ die unerreichbaren Objekte einsammeln
 
 ## HOCH
 
-### H-1 — Absoluter Pfad auf einen privaten Schlüssel steht im Repo
+### H-1 — Absoluter Pfad auf einen privaten Schlüssel steht im Repo — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** Der `submit`-Block ist aus `mobile/eas.json`
+> entfernt. Gegenprobe vorher: `eas submit` kommt in keinem Workflow und in
+> keinem npm-Skript vor — die Workflows legen den Schlüssel selbst aus
+> `secrets.ASC_KEY_P8_BASE64` ab und laden ohne EAS hoch. Der Block war
+> tatsächlich ungenutzt.
+
 
 **Fundstelle:** `mobile/eas.json:27`
 
