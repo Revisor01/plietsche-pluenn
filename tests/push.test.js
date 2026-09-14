@@ -172,3 +172,76 @@ describe('Abmelden', () => {
     expect(err.status).toBe(400);
   });
 });
+
+// Der Token kommt aus dem Anfragekoerper und landete ungeprueft in einem
+// Suchausdruck. Ein Anfuehrungszeichen darin bricht aus dem Ausdruck aus:
+// Mit `x" || user = "…` laesst sich die Besitzpruefung beim Abmelden
+// aushebeln oder ein fremdes Geraet auf das eigene Konto umschreiben — die
+// andere Person bekaeme keine Nachrichten mehr, der Angreifer ihre.
+describe('Token-Form — verbotene und erlaubte Faelle', () => {
+  const BOESE = [
+    ['Anfuehrungszeichen und ODER', 'x" || user = "user1'],
+    ['nur ein Anfuehrungszeichen', 'Exponent"Token'],
+    ['Backslash', 'ExponentPushToken[a\\b]'],
+    ['Leerzeichen und Klammerbruch', 'x" && id != "'],
+    ['voellig fremdes Format', 'irgendwas'],
+  ];
+
+  for (const [name, token] of BOESE) {
+    it(`weist beim Anmelden einen Token mit ${name} ab`, () => {
+      const h = setup([{ id: 'd1', expo_token: TOKEN, user: 'user1', platform: 'ios' }]);
+      let err;
+      try {
+        h.call(REGISTER, { body: { expo_token: token }, authRecord: h.records.other });
+      } catch (e) {
+        err = e;
+      }
+      expect(err.status).toBe(400);
+      expect(err.message).toBe('Ungueltiger Token');
+      // Der fremde Eintrag bleibt unberuehrt bei seiner Besitzerin.
+      const devices = h.rows('push_devices');
+      expect(devices).toHaveLength(1);
+      expect(devices[0].user).toBe('user1');
+      expect(devices[0].expo_token).toBe(TOKEN);
+    });
+
+    it(`weist beim Abmelden einen Token mit ${name} ab`, () => {
+      const h = setup([{ id: 'd1', expo_token: TOKEN, user: 'user1', platform: 'ios' }]);
+      let err;
+      try {
+        h.call(UNREGISTER, { body: { expo_token: token }, authRecord: h.records.other });
+      } catch (e) {
+        err = e;
+      }
+      expect(err.status).toBe(400);
+      expect(h.rows('push_devices')).toHaveLength(1);
+      expect(h.rows('push_devices')[0].user).toBe('user1');
+    });
+  }
+
+  // Der erlaubte Fall: genau die Formen, die die App tatsaechlich schickt.
+  const ECHT = [
+    ['ExponentPushToken', 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]'],
+    ['ExpoPushToken', 'ExpoPushToken[yyyyyyyyyyyyyyyyyyyyyy]'],
+    ['mit Binde- und Unterstrich', 'ExponentPushToken[a-b_c123]'],
+  ];
+
+  for (const [name, token] of ECHT) {
+    it(`nimmt einen echten Token an (${name})`, () => {
+      const h = setup();
+      const res = h.call(REGISTER, { body: { expo_token: token }, authRecord: h.records.user });
+      expect(res.status).toBe(200);
+      const devices = h.rows('push_devices');
+      expect(devices).toHaveLength(1);
+      expect(devices[0].expo_token).toBe(token);
+      expect(devices[0].user).toBe('user1');
+    });
+
+    it(`meldet einen echten Token wieder ab (${name})`, () => {
+      const h = setup([{ id: 'd1', expo_token: token, user: 'user1', platform: 'ios' }]);
+      const res = h.call(UNREGISTER, { body: { expo_token: token }, authRecord: h.records.user });
+      expect(res.status).toBe(200);
+      expect(h.rows('push_devices')).toHaveLength(0);
+    });
+  }
+});

@@ -280,7 +280,14 @@ paths:
               properties:
                 expo_token:
                   type: string
-                  description: Der Push-Token aus Expo.
+                  description: |
+                    Der Push-Token aus Expo. Geprüft wird die Form:
+                    `ExponentPushToken[…]` oder `ExpoPushToken[…]`, darin nur
+                    Buchstaben, Ziffern, Binde- und Unterstriche. Alles andere
+                    wird mit 400 abgewiesen — der Wert geht in einen
+                    Suchausdruck ein, aus dem ein Anführungszeichen sonst
+                    ausbrechen könnte.
+                  pattern: '^Expo(nent)?PushToken\[[A-Za-z0-9_-]+\]$'
                   example: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
                 platform:
                   type: string
@@ -296,13 +303,15 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Ok' }
         '400':
-          description: Kein Token übergeben.
+          description: Kein Token übergeben oder der Token hat nicht die Expo-Form.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Fehler' }
               examples:
                 keinToken:
                   value: { status: 400, message: 'Kein Token' }
+                ungueltigerToken:
+                  value: { status: 400, message: 'Ungueltiger Token' }
         '401':
           description: Nicht angemeldet.
           content:
@@ -331,6 +340,10 @@ paths:
               properties:
                 expo_token:
                   type: string
+                  description: |
+                    Der Push-Token aus Expo, in derselben geprüften Form wie
+                    beim Anmelden.
+                  pattern: '^Expo(nent)?PushToken\[[A-Za-z0-9_-]+\]$'
                   example: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
       responses:
         '200':
@@ -341,7 +354,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Ok' }
         '400':
-          description: Kein Token übergeben.
+          description: Kein Token übergeben oder der Token hat nicht die Expo-Form.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Fehler' }
