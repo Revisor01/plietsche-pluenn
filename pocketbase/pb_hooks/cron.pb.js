@@ -8,6 +8,10 @@
 //
 // PocketBase cron uses standard 5-field cron expressions (server local time).
 
+// Wie oft eine Nachricht erneut versucht wird, bevor sie abgehakt wird. Ohne
+// Grenze liefe der Job jede Minute gegen dieselbe unerreichbare Adresse.
+const MAX_SEND_ATTEMPTS = 5;
+
 // ── 1. Deliver scheduled push messages ─────────────────────────
 cronAdd('push-scheduled', '* * * * *', () => {
   const push = require(`${__hooks}/lib/push.js`);
@@ -24,7 +28,26 @@ cronAdd('push-scheduled', '* * * * *', () => {
     const role = `${msg.get('target_role') || ''}`;
     // Manual broadcasts count as the "other"/campaign category for opt-in.
     const targets = push.collectTokens(segment, role, 'campaign');
-    push.send(targets, `${msg.get('title')}`, `${msg.get('body')}`, `${msg.get('deep_link') || ''}`);
+    const res = push.send(targets, `${msg.get('title')}`, `${msg.get('body')}`, `${msg.get('deep_link') || ''}`) || {};
+
+    // Scheitert der Versand, bleibt sent_at leer — der Filter oben holt die
+    // Nachricht dann im nächsten Lauf wieder. Vorher galt sie als verschickt,
+    // sobald der Versuch gelaufen war: Eine Ankündigung „Heute geschlossen"
+    // lief ins Leere, während im Verwaltungsbereich ein Häkchen stand.
+    //
+    // „Gescheitert" heißt: Expo war nicht erreichbar (res.failed). Eine
+    // Nachricht ohne Empfänger:innen ist dagegen erledigt — da gibt es nichts
+    // zu wiederholen.
+    if (res.failed > 0) {
+      const attempts = (msg.get('send_attempts') || 0) + 1;
+      msg.set('send_attempts', attempts);
+      // Nach der letzten Wiederholung abhaken, sonst läuft der Job jede Minute
+      // weiter dagegen. Dass es nicht geklappt hat, steht am Zähler.
+      if (attempts >= MAX_SEND_ATTEMPTS) msg.set('sent_at', new Date().toISOString());
+      dao.saveRecord(msg);
+      continue;
+    }
+
     msg.set('sent_at', new Date().toISOString());
     dao.saveRecord(msg);
   }
