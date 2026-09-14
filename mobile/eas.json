@@ -20,14 +20,5 @@
         "resourceClass": "m-medium"
       }
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "ascApiKeyPath": "~/.claude/secrets/AuthKey_REPLACE_WITH_ASC_KEY_ID.p8",
-        "ascApiKeyId": "REPLACE_WITH_ASC_KEY_ID",
-        "ascApiKeyIssuerId": "REPLACE_WITH_ASC_ISSUER_ID"
-      }
-    }
   }
 }
