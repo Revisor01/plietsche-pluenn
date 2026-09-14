@@ -1,54 +1,148 @@
-// Design tokens (1:1 from design/HANDOFF.md §3 + design/theme.jsx).
-// Use `PP` for all colors, radii, font sizes — never hard-code these in screens.
+// Design tokens — die EINE Stelle für Farben, Abstände, Schriftgrößen, Radien,
+// Icon-Größen und Schatten. In Screens und Komponenten nie hart kodieren:
+// `PP.<token>` für Farben und Maße, `alpha(farbe, stufe)` für getönte Flächen.
+//
+// Grundlage: docs/audit/theme.md (Bestandsaufnahme 14.09.2026).
 
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import type { IconName } from './icons';
 
-export const PP = {
-  // brand gradient (teal -> mint -> sky)
+// ---------------------------------------------------------------------------
+// Rohfarben — die einzige Stelle im Projekt mit Hex-Literalen.
+// ---------------------------------------------------------------------------
+const RAW = {
+  // Markenverlauf (teal -> mint -> sky)
   teal: '#27b092',
   mint: '#79c4b0',
   sky: '#80b4e2',
-  gradient: ['#27b092', '#79c4b0', '#80b4e2'] as const,
-  gradientSoft: ['rgba(39,176,146,0.12)', 'rgba(121,196,176,0.10)', 'rgba(128,180,226,0.12)'] as const,
-  gradientAngle: 135,
 
-  // surfaces — warmer than pure white for community feel
+  // Flächen — wärmer als reines Weiß
   bg: '#F4F7F4',
   surface: '#FFFFFF',
   sand: '#F4EFE6',
   sandDeep: '#EBE3D2',
-  glass: 'rgba(255,255,255,0.65)',
-  glassDark: 'rgba(26,46,44,0.55)',
+  sandInk: '#8a6d3a', // Schrift/Icon auf Sandfläche (Ladenkachel ohne Foto)
+  inkDeep: '#0e1c1b', // Vollbild-Dunkelgrund (Scanner, Aushang-Vorschau)
 
-  // text
+  // Text
   ink: '#1A2E2C',
   ink2: '#5A6B6A',
   ink3: '#9AA8A7',
   hairline: '#E5EDEB',
+  onBrand: '#FFFFFF', // Text/Icon auf gefärbtem Grund
 
-  // semantic
+  // Semantik
   warn: '#E8A93B',
   err: '#D9534F',
+  errLight: '#ffb3b0', // Fehlertext auf dunklem Grund — `err` wäre dort unlesbar
   ok: '#27b092',
 
-  // achievement tiers
+  // Ränge
   bronze: '#CD7F32',
   silver: '#B8B8B8',
   gold: '#E8B923',
   platin: '#7FB6C9',
   diamant: '#6FD3E8',
 
-  // radii
-  rCard: 22,
-  rTile: 18,
-  rPill: 999,
-  rField: 14,
-  rBtn: 16,
+  // Druck: die gestrichelte Schnittlinie auf dem QR-Blatt. Bewusst dunkler als
+  // `hairline` — Papier braucht mehr Kontrast als ein Display.
+  printCut: '#B7C4C2',
+} as const;
 
-  // type
-  // Global font scale — multiplies EVERY size rendered through PPText, including
-  // hard-coded size={n} values across screens. Bump this to enlarge the whole
-  // app's typography in one place.
+/** Deckkraft-Leiter: sechs Stufen statt 30 gestreuter Einzelwerte. */
+export const ALPHA = {
+  ghost: 0.05,
+  subtle: 0.08,
+  soft: 0.12,
+  medium: 0.18,
+  strong: 0.35,
+  veil: 0.5,
+} as const;
+
+export type AlphaStep = keyof typeof ALPHA;
+
+/**
+ * Hex-Farbe + Deckkraft → `rgba(...)`. Die Deckkraft ist entweder eine Stufe
+ * der Leiter (`alpha(PP.ink, 'soft')`) oder — nur wo die Leiter nicht passt,
+ * etwa bei Text auf gefärbtem Grund — eine Zahl.
+ */
+export function alpha(hex: string, step: AlphaStep | number): string {
+  const a = typeof step === 'number' ? step : ALPHA[step];
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+export const PP = {
+  ...RAW,
+
+  // ── Verlauf und Schleier ─────────────────────────────────────────────────
+  gradient: [RAW.teal, RAW.mint, RAW.sky] as const,
+  gradientSoft: [
+    alpha(RAW.teal, 'soft'),
+    alpha(RAW.mint, 'soft'),
+    alpha(RAW.sky, 'soft'),
+  ] as const,
+  gradientAngle: 135,
+  glass: alpha(RAW.surface, 0.65),
+  glassDark: alpha(RAW.ink, 0.55),
+  /** Abdunklung hinter Overlays und Modalen. */
+  scrim: alpha(RAW.inkDeep, 'veil'),
+
+  /** Text auf gefärbtem Grund, zwei Abstufungen unter `onBrand`. */
+  onBrandMuted: alpha(RAW.surface, 0.85),
+  onBrandFaint: alpha(RAW.surface, 0.7),
+
+  // ── Ränge ────────────────────────────────────────────────────────────────
+  /** Rangfarben mit ihrem hellen Gegenstück (Verlauf auf der Medaille). */
+  tier: {
+    bronze: { base: RAW.bronze, light: '#E89E58' },
+    silber: { base: RAW.silver, light: '#E0E0E0' },
+    gold: { base: RAW.gold, light: '#FFD658' },
+    platin: { base: RAW.platin, light: '#B9DCE8' },
+    diamant: { base: RAW.diamant, light: '#B6ECF6' },
+  },
+
+  /**
+   * Auswahlpalette für Aushänge. Das sind Daten — die Menge der Farben, die
+   * das Team einem Aushang geben darf —, keine UI-Rollen.
+   */
+  accents: [
+    { name: 'Teal', hex: RAW.teal },
+    { name: 'Beere', hex: '#b0478a' },
+    { name: 'Koralle', hex: '#e2664f' },
+    { name: 'Bernstein', hex: '#d99320' },
+    { name: 'Wald', hex: '#4a8c56' },
+    { name: 'Sky', hex: RAW.sky },
+    { name: 'Pflaume', hex: '#7a5aa8' },
+    { name: 'Nordsee', hex: '#2d6e8e' },
+  ] as const,
+
+  // ── Abstände: 4er-Raster, sieben Stufen ──────────────────────────────────
+  space: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 20,
+    xxl: 24,
+    huge: 32,
+  },
+
+  // ── Radien ───────────────────────────────────────────────────────────────
+  rMicro: 6, // QR-Rahmen, Sheet-Griff, Fortschrittsbalken
+  rTile2: 12, // Icon-Kachel — der häufigste Radius der App
+  rField: 14, // Eingabefeld, Hinweisblock
+  rBtn: 16, // Knopf, groß
+  rTile: 18, // Kachel, Bildfläche
+  rCard: 22, // Karte
+  rSheet: 28, // Oberkante Bottom Sheet
+  rPill: 999,
+
+  // ── Typografie ───────────────────────────────────────────────────────────
+  // Globaler Faktor über ALLE Schriftgrößen. Einzelne Stufen ändert man
+  // dagegen direkt in `fontSizes`.
   fontScale: 1.15,
   font: {
     regular: 'WorkSans_400Regular',
@@ -56,8 +150,7 @@ export const PP = {
     semibold: 'WorkSans_600SemiBold',
     bold: 'WorkSans_700Bold',
   },
-  // Base sizes — the global fontScale is applied on top in PPText, so these stay
-  // at their design values. Adjust fontScale (above) to grow everything at once.
+  /** Entwurfsgrößen; `fontScale` kommt in PPText obendrauf. */
   fontSizes: {
     xs: 10.5,
     sm: 11.5,
@@ -65,38 +158,97 @@ export const PP = {
     md: 15,
     lg: 17,
     xl: 22,
+    xl2: 24, // Kennzahlen auf Karten
     xxl: 28,
     hero: 32,
   },
+  /** Zeilenhöhe als Verhältnis zur Schriftgröße. */
+  leading: {
+    tight: 1.1,
+    snug: 1.25,
+    normal: 1.45,
+    loose: 1.6,
+  },
+  /** Laufweite: große Überschriften verdichtet, Kleinschrift gesperrt. */
+  tracking: {
+    hero: -0.8,
+    title: -0.4,
+    body: 0,
+    label: 0.3,
+    caps: 0.4,
+  },
 
-  // shadows (iOS) — Android uses `elevation`
+  // ── Icons ────────────────────────────────────────────────────────────────
+  iconSizes: {
+    xs: 12,
+    sm: 16,
+    md: 18,
+    lg: 20,
+    xl: 28,
+    hero: 48,
+  },
+  /** Was ein Symbol BEDEUTET — die Zuordnung ist eine Design-Entscheidung. */
+  icon: {
+    back: 'chevron-left',
+    forward: 'chevron-right',
+    close: 'x',
+    itemPlaceholder: 'shirt',
+    external: 'map-pin',
+  } as Record<string, IconName>,
+
+  // ── Maße wiederkehrender Elemente ────────────────────────────────────────
+  /** Kantenlänge der quadratischen Icon-Kachel (siehe IconTile). */
+  tile: { s: 40, m: 44, l: 48 },
+  /** Mindestmaß einer Antippfläche. */
+  touchTarget: 44,
+  border: { hair: StyleSheet.hairlineWidth, thin: 1 },
+
+  // ── Schatten ─────────────────────────────────────────────────────────────
   shadowCard: {
-    shadowColor: '#1A2E2C',
+    shadowColor: RAW.ink,
     shadowOpacity: 0.06,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
   shadowTabBar: {
-    shadowColor: '#1A2E2C',
+    shadowColor: RAW.ink,
     shadowOpacity: 0.12,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
 
-  // spacing rhythm (vertical default 14/22)
-  space: {
-    xs: 6,
-    sm: 10,
-    md: 14,
-    lg: 18,
-    xl: 22,
-    xxl: 32,
+  // ── Bewegung ─────────────────────────────────────────────────────────────
+  motion: {
+    fast: 150, // Schalter
+    base: 220, // Ein- und Ausblenden
+    spring: { damping: 16, stiffness: 160 },
   },
 } as const;
 
 export type PPTheme = typeof PP;
+
+/**
+ * Farbiger Glanz unter einem Markenelement — drei Stufen statt vier von Hand
+ * gesetzter Schattenblöcke, die alle dasselbe meinten.
+ */
+const GLOW = {
+  s: { opacity: 0.32, radius: 18, y: 6, elevation: 4 },
+  m: { opacity: 0.3, radius: 30, y: 14, elevation: 8 },
+  l: { opacity: 0.3, radius: 50, y: 20, elevation: 8 },
+} as const;
+
+export function glow(color: string, level: keyof typeof GLOW = 'm') {
+  const g = GLOW[level];
+  return {
+    shadowColor: color,
+    shadowOpacity: g.opacity,
+    shadowRadius: g.radius,
+    shadowOffset: { width: 0, height: g.y },
+    elevation: g.elevation,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Platform design language
@@ -110,19 +262,6 @@ export type PPTheme = typeof PP;
 // ---------------------------------------------------------------------------
 
 export const isAndroid = Platform.OS === 'android';
-export const isIOS = Platform.OS === 'ios';
-
-/**
- * MD3 state layers: Material legt bei Interaktion eine Farbschicht mit fester
- * Opazität über die Fläche, statt wie iOS die ganze View abzudunkeln.
- * Werte aus der MD3-Spec (State layers).
- */
-export const MD3_STATE = {
-  hover: 0.08,
-  focus: 0.1,
-  pressed: 0.1,
-  dragged: 0.16,
-} as const;
 
 /**
  * MD3 shape scale. Material bevorzugt durchgängig kleinere Radien als das
@@ -139,30 +278,11 @@ export const MD3_SHAPE = {
 } as const;
 
 /**
- * MD3 elevation levels 0–5 als React-Native-Elevation. iOS nutzt stattdessen
- * die weichen Schatten aus PP.shadowCard / PP.shadowTabBar.
+ * Ein Radius-Wert je Plattform: iOS behält die bestehende, weichere
+ * Formsprache, Android bekommt die MD3-Shape-Skala.
  */
-export const MD3_ELEVATION = [0, 1, 3, 6, 8, 12] as const;
-
-/**
- * Ein Radius-Wert je Plattform: iOS behält die bestehende, weichere Formsprache,
- * Android bekommt die MD3-Shape-Skala.
- */
-export function radius(ios: number, android: number): number {
-  return isAndroid ? android : ios;
-}
-
-/**
- * Overlay-Farbe für einen MD3 state layer. Auf iOS gibt es keine state layers —
- * dort wird stattdessen mit Opazität gearbeitet (siehe `pressedOpacity`).
- */
-export function stateLayer(color: string, opacity: number): string {
-  const hex = color.replace('#', '');
-  if (hex.length !== 6) return color;
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${opacity})`;
+export function radius(ios: number, android: keyof typeof MD3_SHAPE): number {
+  return isAndroid ? MD3_SHAPE[android] : ios;
 }
 
 /**
@@ -180,13 +300,16 @@ export function pressedOpacity(pressed: boolean): number {
  */
 export function ripple(color: string = PP.teal, borderless = false) {
   if (!isAndroid) return undefined;
-  return { color: stateLayer(color, MD3_STATE.pressed), borderless };
+  // MD3 state layer „pressed": 10 % Deckkraft über der Fläche.
+  return { color: alpha(color, 0.1), borderless };
 }
 
 /**
  * Plattform-Erhebung: auf Android eine MD3-Elevation-Stufe, auf iOS der
  * bestehende weiche Schatten.
  */
+const MD3_ELEVATION = [0, 1, 3, 6, 8, 12] as const;
+
 export function surfaceElevation(level: 0 | 1 | 2 | 3 | 4 | 5) {
   if (isAndroid) return { elevation: MD3_ELEVATION[level] };
   if (level === 0) return {};
