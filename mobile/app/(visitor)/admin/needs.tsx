@@ -56,10 +56,17 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         try {
           await sendPushNow(title.trim(), detail.trim() || 'Neuer Aushang im Laden');
         } catch (e: any) {
+          // Der Editor darf erst zuklappen, wenn der Hinweis quittiert ist.
+          // Lief `onSaved()` direkt hinterher, wechselte der Screen unter dem
+          // stehenden Dialog — und wer ihn dann wegtippte, ging davon aus, die
+          // Push sei raus. Deshalb schließt hier der OK-Knopf, nicht der Code
+          // darunter.
           Alert.alert(
             'Aushang gespeichert',
             'Die Push konnte nicht gesendet werden: ' + errorText(e, 'Unbekannter Fehler.'),
+            [{ text: 'OK', onPress: onSaved }],
           );
+          return;
         }
       }
       onSaved();
