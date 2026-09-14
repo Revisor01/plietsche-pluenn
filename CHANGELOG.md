@@ -6,6 +6,8 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+## [1.0.0 (33)] – 2026-09-14
+
 ### Neu
 
 **Laden & Teile**
