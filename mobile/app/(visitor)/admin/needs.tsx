@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { PP, alpha } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
-import { useAllNeeds, useActiveCampaigns } from '../../../lib/hooks/useData';
+import { useAllNeeds, useActiveCampaigns, useCurrentUser } from '../../../lib/hooks/useData';
 import { createNeed, updateNeed, deleteNeed, sendPushNow } from '../../../lib/api';
 import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill, ColorPicker, Hint, IconTile } from '../../../components/ui';
 import type { Need } from '../../../lib/types';
@@ -25,10 +25,17 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
   const [active, setActive] = useState(need?.is_active ?? true);
   const [color, setColor] = useState(need?.color ?? '');
   const [campaign, setCampaign] = useState(need?.campaign ?? '');
-  // Push only offered for new entries (a one-off broadcast, not on every edit).
+  // Push only offered for new entries (a one-off broadcast, not on every edit)
+  // and nur für Admins: push_messages.createRule lässt im Backend
+  // ausschließlich `admin` zu. Ein Volunteer bekäme sonst einen Schalter
+  // angeboten, dessen Benutzung der Server mit 403 abweist — der Aushang
+  // stünde, die Push nicht.
   const [push, setPush] = useState(false);
   const [busy, setBusy] = useState(false);
   const { data: campaigns } = useActiveCampaigns();
+  const { data: me } = useCurrentUser();
+  const isAdmin = me?.role === 'admin';
+  const canPush = isAdmin && !need;
 
   const save = async () => {
     if (!title.trim()) { Alert.alert('Fehlt noch', 'Bitte einen Titel angeben.'); return; }
@@ -45,7 +52,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
       };
       if (need) await updateNeed(need.id, payload);
       else await createNeed(payload);
-      if (push && !need) {
+      if (push && canPush) {
         try {
           await sendPushNow(title.trim(), detail.trim() || 'Neuer Aushang im Laden');
         } catch (e: any) {
@@ -137,7 +144,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         <View style={{ flex: 1 }}><PPText weight="semibold" size="base" color={PP.ink}>Aktiv anzeigen</PPText></View>
         <Toggle value={active} onChange={setActive} />
       </View>
-      {!need && (
+      {canPush && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md, backgroundColor: alpha(PP.sky, "subtle"), borderRadius: PP.rField, padding: PP.space.md }}>
           <Icon name="bell" size={PP.iconSizes.md} color={PP.sky} />
           <View style={{ flex: 1 }}>
