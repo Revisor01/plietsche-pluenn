@@ -9,21 +9,9 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { PP, alpha } from '../lib/theme';
 import { Icon } from '../lib/icons';
-import { pb } from '../lib/pb';
 import { scan, type ScanResult } from '../lib/api';
 import { useStore } from '../lib/hooks/useData';
 import { errorText } from '../lib/errors';
-
-// Write the fresh total back into the auth-store record so useAuth() consumers
-// (and any screen reading authStore.record) reflect it immediately, without
-// waiting for the ['me'] query to refetch.
-function syncTotal(total: number) {
-  const rec = pb.authStore.record;
-  if (rec && typeof total === 'number') {
-    rec.points_total = total;
-    pb.authStore.save(pb.authStore.token, rec);
-  }
-}
 import { QRScanner, CameraGate } from '../components/QRScanner';
 import { PPText, PPButton, GradientCard, Stepper } from '../components/ui';
 
@@ -80,7 +68,6 @@ export default function Scan() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setResult(res);
       if (res.type === 'checkin' && !res.already_checked_in) setDoorSecret(data);
-      syncTotal(res.points_total);
       await qc.invalidateQueries();
       await qc.refetchQueries({ queryKey: ['me'] });
     } catch (e: any) {
@@ -99,7 +86,6 @@ export default function Scan() {
       const coords = await getCoords();
       const res = await scan({ qr_code: doorSecret, items_count: extraItems, ...coords });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      syncTotal(res.points_total);
       await qc.invalidateQueries();
       await qc.refetchQueries({ queryKey: ['me'] });
       setResult((r) => (r ? { ...r, points: r.points + res.points, points_total: res.points_total } : r));
