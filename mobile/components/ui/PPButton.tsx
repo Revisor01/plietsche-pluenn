@@ -114,13 +114,14 @@ export function PPButton({
         style={feedback()}
       >
         <LinearGradient
-          colors={PP.gradient}
+          // Der abgedunkelte Verlauf, weil hier weißer Text darauf steht.
+          colors={PP.gradientOnDark}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
             {
               borderRadius: r,
-              ...glow(PP.teal, 's'),
+              ...glow(PP.tealDeep, 's'),
             },
             // MD3 Filled Button: Elevation level 1 statt farbigem Glow.
             isAndroid ? surfaceElevation(1) : { elevation: 4 },

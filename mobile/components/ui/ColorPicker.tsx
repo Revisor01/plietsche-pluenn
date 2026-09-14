@@ -44,7 +44,10 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
             borderColor: PP.ink,
           }}
         >
-          {!current && <Icon name="check" size={PP.iconSizes.md} color={PP.onBrand} />}
+          {/* Dunkles Häkchen: Die Fläche zeigt die Markenfarbe als Muster und
+              darf nicht abgedunkelt werden — sonst wählte man einen anderen
+              Ton als angezeigt. Weiß erreicht darauf nur 2,72:1, dunkel 5,24:1. */}
+          {!current && <Icon name="check" size={PP.iconSizes.md} color={PP.ink} />}
         </Pressable>
 
         {AUSHANG_COLORS.map((c) => {
