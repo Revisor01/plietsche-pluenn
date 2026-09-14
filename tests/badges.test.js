@@ -103,6 +103,33 @@ describe('badgeTiers — welche Stufen ein Abzeichen hat', () => {
     const h = setup({ store: { tiers_json: [1, 2, 3, 4, 5, 6, 7] }, badges: [GESTUFT] });
     expect(h.lib.tierSlotCount()).toBe(5);
   });
+
+  // PocketBase gibt ein json-Feld je nach Schreibweg als Array ODER als
+  // Zeichenkette zurueck. Wird die Zeichenkette nicht ausgepackt, zaehlt die
+  // Laenge Zeichen statt Raenge — und die Stufen darueber fallen stumm aus.
+  it('liest die Raenge auch als Zeichenkette', () => {
+    const h = setup({
+      store: { tiers_json: '[{"at":150},{"at":750},{"at":1500}]' },
+      badges: [GESTUFT],
+    });
+    expect(h.lib.tierSlotCount()).toBe(3);
+  });
+
+  it('nimmt bei leerer Rangliste als Zeichenkette fuenf Stufen an', () => {
+    // Der schaedliche Fall: '[]' hat zwei Zeichen. Ohne Auspacken blieben nur
+    // Bronze und Silber uebrig — Gold, Platin und Diamant waeren fuer jedes
+    // gestufte Abzeichen unerreichbar, samt der Punkte dahinter.
+    const h = setup({ store: { tiers_json: '[]' }, badges: [GESTUFT] });
+    expect(h.lib.tierSlotCount()).toBe(5);
+    const tiers = h.lib.badgeTiers(h.store.badges[0]);
+    expect(tiers.map((t) => t.tier)).toEqual(['bronze', 'silber', 'gold', 'platin', 'diamant']);
+  });
+
+  it('nimmt bei unlesbarer Rangliste fuenf Stufen an', () => {
+    // Kaputter Inhalt darf nicht heimlich Stufen kosten.
+    const h = setup({ store: { tiers_json: 'nicht json' }, badges: [GESTUFT] });
+    expect(h.lib.tierSlotCount()).toBe(5);
+  });
 });
 
 describe('reachedTier — welche Stufe erreicht ist', () => {

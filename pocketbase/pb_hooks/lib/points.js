@@ -155,10 +155,26 @@ module.exports = {
     return legacy && legacy > 0 ? legacy : 1.0;
   },
 
+  // Der wirksame Faktor einer Aktion: der hoechste ihrer drei Handlungstypen.
+  // Er entscheidet, welche von mehreren gleichzeitigen Aktionen gilt.
+  campaignBestMult(camp) {
+    return Math.max(
+      this.campaignMult(camp, 'visit'),
+      this.campaignMult(camp, 'take'),
+      this.campaignMult(camp, 'bring')
+    );
+  },
+
   // Find the highest-multiplier campaign active right now that applies to this
   // user. Honours target_role: 'all' (everyone), 'by_role'+target_role,
   // 'streak2plus' (streak >= 2), 'inactive14d' (no visit in 14 days).
   // Pass user=null to ignore targeting (e.g. for display lookups).
+  //
+  // Sortiert wird nach dem wirksamen Faktor, nicht nach dem Datenbankfeld
+  // `multiplier`. Das alte Sammelfeld ist fuer campaignMult nur noch der
+  // Rueckfall — laufen zwei Aktionen gleichzeitig, gewann sonst die mit dem
+  // hoeheren ALTEN Wert, waehrend die beworbene Aktion mit ihren neuen
+  // Faktoren wirkungslos blieb, samt ausbleibender Teilnahme-Zaehlung.
   findActiveCampaign(now, user) {
     const iso = now.toISOString().replace('T', ' ');
     let rows;
@@ -169,7 +185,13 @@ module.exports = {
     } catch (_) {
       return null;
     }
-    for (const c of rows) {
+    // Stabil sortieren: Bei gleichem Faktor bleibt die Reihenfolge aus der
+    // Datenbank erhalten, damit die Auswahl von Lauf zu Lauf dieselbe ist.
+    const sorted = rows
+      .map((c, i) => ({ c, i, m: this.campaignBestMult(c) }))
+      .sort((a, b) => (b.m - a.m) || (a.i - b.i))
+      .map((x) => x.c);
+    for (const c of sorted) {
       if (!user || this.campaignApplies(c, user, now)) return c;
     }
     return null;
@@ -461,12 +483,34 @@ module.exports = {
   tierSlotCount() {
     try {
       const s = $app.dao().findFirstRecordByFilter('store', '1=1');
-      const t = s ? s.get('tiers_json') : null;
+      const t = this.asArray(s ? s.get('tiers_json') : null);
+      // Nur ein echtes Array zaehlt. Ohne Raenge bleibt es bei fuenf Stufen —
+      // eine leere Liste ist „nichts gepflegt", nicht „keine Stufen".
       const n = t && t.length ? t.length : 5;
       return Math.max(1, Math.min(5, n));
     } catch (_) {
       return 5;
     }
+  },
+
+  // Ein json-Feld kommt aus PocketBase je nach Schreibweg als Array oder als
+  // JSON-Zeichenkette zurueck. Auf einer Zeichenkette zaehlt `.length` Zeichen
+  // statt Eintraege — das faellt nicht auf, weil nichts scheitert, sondern nur
+  // eine falsche Zahl herauskommt. Deshalb hier einmal an einer Stelle
+  // ausgepackt; alles, was danach kein Array ist, gilt als „nicht gepflegt".
+  asArray(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      const s = value.trim();
+      if (!s) return null;
+      try {
+        const parsed = JSON.parse(s);
+        return Array.isArray(parsed) ? parsed : null;
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   },
 
   // Tier thresholds + rewards for a badge, ordered bronze→diamant.
