@@ -158,15 +158,15 @@ keine Testinfrastruktur (siehe Gesamtbild).
 |---:|---|---|---|---|
 | 1 | Abmelden räumt Cache und Push-Token nicht auf | KRITISCH | **BEHOBEN, UNGETESTET** | `useAuth.ts:82-90`: `logout` ist async, ruft `unregisterPushToken()` in `try/catch`, dann `pb.authStore.clear()`, dann `queryClient.clear()` |
 | 2 | Freigeben aktualisiert die Startseite nicht | HOCH | **BEHOBEN, UNGETESTET** | `queryClient.ts:21-33`: `invalidateItems` mit allen sechs Schlüsseln; benutzt in `review.tsx:149`, `items/index.tsx:147`, `items/[id].tsx:151`, `items/new.tsx:105` |
-| 3 | Volunteer darf Ankündigung mit Push anlegen, Push scheitert | HOCH | **OFFEN** | `needs.tsx:149` zeigt den Toggle unverändert ohne `isAdmin`-Prüfung; `push_messages.createRule` ist weiterhin `admin` (`1700000000_init_schema.js:296-300`) |
+| 3 | Volunteer darf Ankündigung mit Push anlegen, Push scheitert | HOCH | **BEHOBEN, UNGETESTET** | `e8ce358`: Entscheidung des Betreibers vom 14.09.2026 — Push bleibt der Leitung vorbehalten. Der Schalter wird nur noch für Admins gezeigt, und `canPush` schützt zusätzlich den Absendeweg, damit zurückgebliebener Zustand keine Anfrage auslösen kann. Das Backend bleibt unverändert |
 | 4 | Englische SDK-Fehlermeldungen in deutschen Dialogen | HOCH | **BEHOBEN, UNGETESTET** | `lib/errors.ts` (`errorText`, 100 Zeilen, mit Begründung); an allen 14 Stellen eingesetzt — `grep` findet keinen rohen `e?.message`-Durchgriff mehr |
-| 5 | `syncTotal` schreibt in ein Feld, das der Ring nicht liest | MITTEL | **OFFEN** | `scan.tsx:20` unverändert vorhanden, aufgerufen in `:69` und `:88` |
+| 5 | `syncTotal` schreibt in ein Feld, das der Ring nicht liest | MITTEL | **BEHOBEN, UNGETESTET** | Entfernt mit `1fa51ad`, samt begründendem Kommentar und ungenutztem Import. Der Ring liest weiterhin `refetchQueries(['me'])` |
 | 6 | Aktionen ändern aktualisiert den Aushang nicht | MITTEL | **BEHOBEN, UNGETESTET** | `queryClient.ts:39-45` (`invalidateCampaigns`, deckt `['campaigns']`, `['campaign','active']` und `['needs','active']` ab), benutzt in `actions.tsx:175` |
 | 7 | Besucher lädt alle offenen Freigaben inkl. fremder Namen | MITTEL | **AN DER WURZEL BEHOBEN** (14.09.2026) | `useData.ts:107-119` ist unverändert — die Abfrage läuft weiterhin für alle Konten. Sie bekommt aber nichts Fremdes mehr: `items.listRule` gibt Besucher:innen nur noch freigegebene Teile und die eigenen Einreichungen (`1782710000_tighten_read_rules.js`, Befund Z-3). Fremde Namen kamen ohnehin nie an, weil `users.viewRule` den Expand blockt (Z-1). Der `isStaff`-Parameter wäre jetzt nur noch Sparsamkeit, keine Absicherung |
-| 8 | Scanner verwirft ersten Code bei langsamem Standort | MITTEL | **OFFEN** | `scan.tsx:46-58`: `getCoords` unverändert ohne Zeitgrenze; `QRScanner.tsx:18-24`: Sperre weiterhin an festem 1500-ms-Timer statt an `active` |
-| 9 | „undefined Wochen Streak" im Erfolgs-Sheet | NIEDRIG | **OFFEN** | `scan.tsx:208`: `${result.streak_weeks}` unverändert ohne `?? 0` |
+| 8 | Scanner verwirft ersten Code bei langsamem Standort | MITTEL | **BEHOBEN, UNGETESTET** | `d520765`: `getCoords` mit 3-s-Grenze (`Promise.race`, danach leeres Ergebnis), Sperre im QRScanner an `active` gekoppelt statt an den festen Timer |
+| 9 | „undefined Wochen Streak" im Erfolgs-Sheet | NIEDRIG | **BEHOBEN, UNGETESTET** | `74e82b0`: Rückfallwerte für `points`, `streak_weeks` und `label`; zusätzlich die Summe im selben Sheet abgesichert, die sonst einen ungültigen Wert erzeugt hätte |
 | 10 | Erfolgs-Hinweis bei Ankündigung wird überlagert | NIEDRIG | **OFFEN** | `needs.tsx:51-57`: `onSaved()` läuft unverändert direkt nach `Alert.alert`, nicht im `onPress` |
-| 11 | Kategorie-Auswahl zeigt rohe Schlüssel | NIEDRIG | **OFFEN** | `items/[id].tsx:21` (`CATEGORIES`) und `:247` unverändert; `categoryLabel` wird dort nicht benutzt |
+| 11 | Kategorie-Auswahl zeigt rohe Schlüssel | NIEDRIG | **BEHOBEN, UNGETESTET** | `2f9cf2c`: lokale Kategorien-Liste entfernt, Auswahl aus den gemeinsamen Gruppen wie beim Einstellen. Speicherformat unverändert; nebenbei fiel eine Abweichung weg |
 
 ---
 
@@ -958,9 +958,12 @@ sollte. Sie betrifft das Erscheinungsbild der ganzen App.
    werfen; absteigend sortieren statt `.reverse()`. Beides folgt dem Prinzip,
    das der Harness bei Filtern bereits richtig anwendet — bewusst scheitern
    statt still falsch liefern.
-10. **Die verbliebenen Anzeigefehler der App:** `syncTotal` entfernen,
-   `?? 0` im Erfolgs-Sheet, Kategorie-Klartext im Teil-Editor, Push-Schalter
-   auf `isAdmin`, Zeitgrenze für `getCoords`.
+10. ~~**Die verbliebenen Anzeigefehler der App**~~ — **erledigt 14.09.2026**
+   (`d520765`, `e8ce358`, `1fa51ad`, `74e82b0`, `2f9cf2c`). Alle fünf bestanden
+   noch und sind behoben. Der wichtigste war die fehlende Zeitgrenze beim
+   Standort: Im Laden ohne GPS-Sicht hing der Scan mehrere Sekunden, und der
+   zweite Versuch wurde still verschluckt. Offen bleibt aus dieser Gruppe nur
+   der überlagerte Erfolgshinweis beim Anlegen einer Ankündigung (NIEDRIG).
 11. **`[Unreleased]` zu einem Versionsabschnitt schließen (M-4)** und die
    Kategorien je einmal führen. Der Block ist inhaltlich gut gepflegt, aber
    inzwischen über 230 Zeilen lang und führt vier Unterüberschriften derselben
