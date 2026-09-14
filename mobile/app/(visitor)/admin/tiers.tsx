@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { View, Pressable, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP, alpha } from '../../../lib/theme';
@@ -22,7 +21,6 @@ function parseNum(s: string, min = 0): number {
 type Rank = { name: string; at: string };
 
 export default function TiersAdmin() {
-  const router = useRouter();
   const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: store, refetch } = useStore();

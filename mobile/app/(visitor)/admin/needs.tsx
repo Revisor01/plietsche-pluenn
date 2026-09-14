@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Pressable, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP, alpha } from '../../../lib/theme';
@@ -159,7 +158,6 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
 }
 
 export default function NeedsAdmin() {
-  const router = useRouter();
   const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: needs, refetch } = useAllNeeds();

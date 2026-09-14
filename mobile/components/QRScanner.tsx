@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { PP, alpha } from '../lib/theme';

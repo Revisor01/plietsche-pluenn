@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP } from '../../../lib/theme';
@@ -20,7 +19,6 @@ const ROWS: { key: PrefKey; icon: IconName; title: string; sub: string }[] = [
 ];
 
 export default function PushSettings() {
-  const router = useRouter();
   const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();

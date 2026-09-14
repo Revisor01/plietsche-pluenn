@@ -1,5 +1,4 @@
 import { View, Pressable, Linking, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
 
 import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
@@ -27,7 +26,6 @@ function fmtHours(v: string | null) {
 }
 
 export default function StoreInfo() {
-  const router = useRouter();
   const goBack = useGoBack();
   const { data: store } = useStore();
   const { logout } = useAuth();

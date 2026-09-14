@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Pressable, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP, alpha } from '../../../lib/theme';
@@ -336,7 +335,6 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
 }
 
 export default function BadgeAdmin() {
-  const router = useRouter();
   const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: badges, refetch } = useAllBadges();

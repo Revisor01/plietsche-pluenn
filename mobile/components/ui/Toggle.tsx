@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { PP, alpha } from '../../lib/theme';
 
