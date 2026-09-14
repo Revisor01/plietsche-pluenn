@@ -126,6 +126,12 @@ Migrationen und Hooks liegen in `pocketbase/pb_migrations/` und `pocketbase/pb_h
 und werden beim Start automatisch angewandt. Die Zugangsdaten kommen aus
 `pocketbase/.env.secrets` (nicht im Repository).
 
+Das ist die Fassung für den eigenen Rechner. In Produktion läuft
+`docker-compose.portainer.yml`: ein eigenes Abbild, in dem Hooks und
+Migrationen stecken, gebaut und ausgeliefert bei jedem Push auf `main`. Wie das
+abläuft, was einmalig umzustellen ist und wie man im Störfall von Hand
+ausliefert, steht in [`docs/deploy.md`](docs/deploy.md).
+
 ## Aufbau
 
 ```
@@ -141,9 +147,12 @@ plietsche-pluenn
 ├── pocketbase/
 │   ├── pb_hooks/              — Scanner-Endpunkt, Punkte- und Abzeichenlogik,
 │   │                            Push-Versand, Cron-Jobs
-│   └── pb_migrations/         — Schema und Startdaten
+│   ├── pb_migrations/         — Schema und Startdaten
+│   └── Dockerfile             — Abbild für die Auslieferung
 ├── design/                    — Design-Referenz und Entwurfsvorlagen
-└── docker-compose.yml
+├── docs/                      — API-Beschreibung und Auslieferung
+├── docker-compose.yml         — lokal
+└── docker-compose.portainer.yml — Produktion
 ```
 
 **Grundentscheidungen:**

@@ -126,6 +126,24 @@ Teile-Codes selbst) · `POST /api/pp/push/register` · `POST /api/pp/push/unregi
 
 ---
 
+## Auslieferung des Backends
+
+Push auf `main` → Tests → Abbild bauen und zu `ghcr.io` schieben →
+Portainer-Webhook → Prüfung gegen die laufende Instanz. Kein SSH aus der CI;
+der Server zieht selbst.
+
+Hooks und Migrationen liegen **im Abbild** (`pocketbase/Dockerfile`), nicht in
+einem Verzeichnis auf dem Host — der Stand des Containers ist damit der Stand
+eines Commits. Der Stack mountet deshalb nur noch `pb_data`.
+
+Geprüft wird nach dem Deploy nicht `/api/health`, sondern je Migration ein
+Schemamerkmal über die öffentliche API (`.github/scripts/deploy-verify.py`).
+Ein gesunder Container sagt über den ausgelieferten Stand nichts aus.
+
+Einzelheiten, die einmalige Umstellung und der Weg von Hand: [`docs/deploy.md`](docs/deploy.md).
+
+---
+
 ## Tracking und Analytik
 
 **Keine.** Kein Analytics-SDK, kein Crash-Reporter, keine Werbe-IDs, keine

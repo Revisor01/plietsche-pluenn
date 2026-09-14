@@ -1,0 +1,170 @@
+name: Deploy Backend
+
+# Liefert das PocketBase-Backend aus: Abbild bauen, zu ghcr.io schieben,
+# Portainer-Webhook anstoßen, danach gegen die laufende Instanz prüfen, ob der
+# neue Stand wirklich angekommen ist.
+#
+# Warum es diesen Workflow gibt: Hooks und Migrationen wurden bisher von Hand
+# per scp in die Bind-Mounts des Servers kopiert. Die Instanz lief dadurch vier
+# Wochen auf einem alten Stand, und ein im Repo als behoben geführter
+# kritischer Sicherheitsfehler stand in Produktion weiter offen. Niemand hat es
+# gemerkt, weil nichts danach gesehen hat.
+#
+# Kein SSH in diesem Workflow. Der Server zieht selbst — dieselbe Bauweise wie
+# in den anderen Projekten (fairstand, konfi-quest). In der CI liegt damit kein
+# Zugang zu einer Maschine, auf der auch Authentik und Nextcloud laufen.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pocketbase/**'
+      - 'docker-compose.portainer.yml'
+      # Die Workflow-Datei selbst gehört in die Liste. Bei konfi-quest hat
+      # genau dieses Detail zweimal Deploys verschluckt: Eine Änderung am
+      # Ablauf löste keinen Lauf aus, und es passierte einfach nichts.
+      - '.github/workflows/deploy.yml'
+      - '.github/scripts/deploy-verify.py'
+  # Für den Störfall und für den ersten Lauf von Hand.
+  workflow_dispatch:
+
+# Zwei gleichzeitige Läufe würden dasselbe :latest-Tag überschreiben und sich
+# gegenseitig die Reihenfolge verderben. Nicht abbrechen: Ein angefangener
+# Deploy soll zu Ende laufen und geprüft werden, statt halb erledigt liegen
+# zu bleiben.
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  BASIS_URL: https://pb.xn--plietsche-plnn-rsb.de
+
+jobs:
+  # Das Test-Gate. Eigener Job in DIESEM Workflow statt workflow_run, und
+  # zwar aus zwei Gründen:
+  #
+  #   1. workflow_run startet einen zweiten, entkoppelten Lauf. Er hängt in der
+  #      Oberfläche nicht am Push, und ob der Testlauf grün war, muss man
+  #      zusätzlich abfragen — ein Ablauf, den man beim Lesen leicht falsch
+  #      versteht. Ein `needs` ist an einer Stelle zu sehen und nicht zu
+  #      umgehen.
+  #   2. workflow_run läuft immer gegen den Stand des Standard-Branch, nicht
+  #      gegen den auslösenden Commit. Dieser Unterschied ist genau die Sorte
+  #      Feinheit, die still das Falsche ausliefert.
+  #
+  # Dass die Backend-Tests damit zweimal laufen (hier und in tests.yml), ist
+  # der Preis. Sie brauchen unter einer Minute.
+  tests:
+    name: Backend-Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Tests
+        run: npm test
+
+  deploy:
+    name: Abbild bauen und ausliefern
+    runs-on: ubuntu-latest
+    # Ohne always(). Rote Tests, kein Deploy — keine Hintertür.
+    needs: tests
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Vollständigkeitsprüfung vor dem Push, nach dem Vorbild der
+      # Hennstedt-Seite („mindestens 50 Seiten gebaut, sonst exit 1").
+      #
+      # Der Gedanke dahinter: Ein unvollständiger Build fällt sonst nicht auf.
+      # Fehlt hier eine Hook-Datei, startet PocketBase trotzdem und meldet sich
+      # gesund — nur rechnet dann niemand mehr Punkte aus, oder die nächtlichen
+      # Aufgaben laufen nicht mehr. Ein leeres pb_migrations/ wäre noch
+      # schlimmer: Eine frische Instanz hätte kein Schema, eine bestehende
+      # bliebe stumm auf dem alten.
+      - name: Prüfen, dass der Build-Kontext vollständig ist
+        run: |
+          set -eu
+          fehlt=0
+          for datei in \
+            pocketbase/pb_hooks/scan.pb.js \
+            pocketbase/pb_hooks/push.pb.js \
+            pocketbase/pb_hooks/defaults.pb.js \
+            pocketbase/pb_hooks/cron.pb.js \
+            pocketbase/pb_hooks/lib/points.js \
+            pocketbase/pb_hooks/lib/push.js \
+            pocketbase/Dockerfile
+          do
+            if [ ! -s "$datei" ]; then
+              echo "fehlt oder leer: $datei"
+              fehlt=1
+            fi
+          done
+          [ "$fehlt" -eq 0 ] || { echo "Der Build-Kontext ist unvollständig."; exit 1; }
+
+          # Die Migrationen einzeln aufzuzählen hieße, diese Liste bei jeder
+          # neuen Migration nachzuziehen — sie würde vergessen. Geprüft wird
+          # deshalb die Anzahl gegen eine Untergrenze, wie bei den Seiten der
+          # Hennstedt-Seite. Beim Schreiben waren es 19.
+          n=$(find pocketbase/pb_migrations -name '*.js' -type f | wc -l)
+          [ "$n" -ge 19 ] || { echo "Nur $n Migrationen gefunden – erwartet werden mindestens 19"; exit 1; }
+          echo "$n Migrationen und alle Hook-Dateien sind da"
+
+      - name: Bei GHCR anmelden
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Zwei Tags: :latest zieht der Stack, der Commit-SHA bleibt als
+      # unveränderlicher Stand stehen. Ohne den SHA-Tag gibt es später keinen
+      # Weg zurück auf ein bestimmtes Abbild, weil :latest überschrieben wird.
+      - name: Abbild bauen und schieben
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: ./pocketbase
+          file: ./pocketbase/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/revisor01/plietsche-pluenn/pocketbase:latest
+            ghcr.io/revisor01/plietsche-pluenn/pocketbase:${{ github.sha }}
+
+      # Der Webhook stößt in Portainer ein Neu-Ausrollen des Stacks an: Image
+      # ziehen, Container neu erstellen. Er antwortet sofort — fertig ist der
+      # Container damit nicht, deshalb wartet der Verify-Schritt danach.
+      #
+      # -f, damit ein Fehlerstatus den Lauf rot macht. Ohne das schluckt curl
+      # einen 404 oder 500 stillschweigend, und der Lauf wäre grün, ohne dass
+      # irgendetwas ausgerollt wurde.
+      - name: Portainer-Webhook anstoßen
+        env:
+          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "PORTAINER_WEBHOOK_URL ist nicht hinterlegt – ohne Webhook zieht der Server nichts."
+            exit 1
+          fi
+          curl -f -X POST "$WEBHOOK_URL"
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      # Der eigentliche Punkt des Ganzen. Ein Health-Check reicht nicht: Die
+      # Instanz war vier Wochen durchgehend gesund und trotzdem auf altem
+      # Stand. Geprüft wird deshalb je Migration ein Schemamerkmal über die
+      # öffentliche API. Was das Skript im Einzelnen tut und welche Falle es
+      # abfängt, steht in seinem Kopf.
+      - name: Prüfen, ob der neue Stand angekommen ist
+        run: python3 .github/scripts/deploy-verify.py "$BASIS_URL"

@@ -1,0 +1,7 @@
+# pb_data enthaelt die Datenbank samt Anmeldedaten und Uploads. Sie gehoert
+# niemals in ein Abbild, das nach ghcr.io geschoben wird.
+#
+# In der CI faellt das nicht auf: Dort ist das Verzeichnis nach dem Checkout
+# gar nicht da (.gitignore). Auf dem eigenen Rechner ist es da — und ohne diese
+# Datei landete beim Bauen von Hand die Produktionsdatenbank im Abbild.
+pb_data/
