@@ -55,6 +55,9 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Jahres-Treue-Badges** werden am 31.12. rückwirkend vergeben (für jedes aktive Jahr).
 - **Aktions-Teilnahme-Badges** werden nach Aktionsende an alle Teilnehmer vergeben.
 
+**Im Netz**
+- **plietsche-plünn.de zeigt jetzt den Laden:** Wer die Adresse im Browser aufrief, bekam bisher eine Fehlermeldung zu sehen. Dort steht jetzt eine Seite mit Öffnungszeiten, Anschrift, Telefonnummer und einer kurzen Beschreibung — für alle, die keine App benutzen. Die Anschrift des Ladens war im Hintergrund noch mit einem Beispielwert hinterlegt und ist korrigiert; sie erscheint dadurch auch in der App richtig.
+
 **Verwaltung**
 - **Verwaltungs-Bereich** im Profil bündelt Inventar, Badges, Aktionen und Bedarf für Helfer/Admins.
 - **Systeminfo im Konto:** Admins sehen unter Konto → System die iOS-Version, die App-Version, ob Apples Glas-Material auf dem Gerät verfügbar ist und ob die Bedienungshilfe „Transparenz reduzieren" es abschaltet. Damit lässt sich am Gerät selbst klären, warum die Tab-Leiste so aussieht, wie sie aussieht.
