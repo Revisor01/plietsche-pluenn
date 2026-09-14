@@ -16,6 +16,22 @@ const RAW = {
   mint: '#79c4b0',
   sky: '#80b4e2',
 
+  // Derselbe Verlauf, abgedunkelt — ausschließlich für Flächen, auf denen
+  // weißer Text steht (Primärknopf, aktive Auswahl-Pille).
+  //
+  // Warum: Weiß auf dem hellen Markenverlauf erreicht 2,72:1 (teal), 2,03:1
+  // (mint) und 2,20:1 (sky). Gefordert sind 4,5:1 für Fließtext; als „großer
+  // Text" (3:1) zählt bei fontScale 1.15 erst `lg` ab 19,6 pt, also fast keine
+  // Schrift der App. Mit Faktor 0,64 liegt der schlechteste Punkt des Verlaufs
+  // bei 4,68:1 — die Marke bleibt erkennbar (rund zwei Drittel der bisherigen
+  // Farbspannweite zwischen den Stufen), der Text wird lesbar.
+  //
+  // Der helle Verlauf oben bleibt unverändert und gilt weiter für alles, was
+  // keine weiße Schrift trägt: Ringe, Karten, Verlaufsflächen.
+  tealDeep: '#18705d',
+  mintDeep: '#4d7d70',
+  skyDeep: '#517390',
+
   // Flächen — wärmer als reines Weiß
   bg: '#F4F7F4',
   surface: '#FFFFFF',
@@ -27,7 +43,19 @@ const RAW = {
   // Text
   ink: '#1A2E2C',
   ink2: '#5A6B6A',
-  ink3: '#9AA8A7',
+  // Nebentext: Feld-Beschriftungen, Platzhalter, Zeitstempel, Meta-Zeilen.
+  // War #9AA8A7 — 2,46:1 auf Weiß, 2,28:1 auf dem Seitengrund. Gefordert sind
+  // 4,5:1, und diese Farbe steht fast immer in xs oder sm.
+  //
+  // Der Wert ist gegen beide tatsächlich vorkommenden Gründe gerechnet, nicht
+  // nur gegen Weiß: 4,88:1 auf `surface`, 4,53:1 auf `bg`. (`sand` trägt nur
+  // den Avatar, `sandDeep` wird nirgends als Hintergrund benutzt — dort steht
+  // kein Nebentext.)
+  //
+  // Weiter abzudunkeln bringt nichts: Schon ink2 selbst erreicht auf sandDeep
+  // nur 4,39:1; wer ink3 dort über 4,5 bringen wollte, müsste es mit ink2
+  // zusammenfallen lassen und verlöre die Abstufung Haupt-/Zweit-/Nebentext.
+  ink3: '#657473',
   hairline: '#E5EDEB',
   onBrand: '#FFFFFF', // Text/Icon auf gefärbtem Grund
 
@@ -79,6 +107,12 @@ export const PP = {
 
   // ── Verlauf und Schleier ─────────────────────────────────────────────────
   gradient: [RAW.teal, RAW.mint, RAW.sky] as const,
+  /**
+   * Der Markenverlauf für Flächen mit weißem Text — Primärknopf, aktive
+   * Auswahl-Pille. Schlechtester Punkt 4,68:1 statt 2,03:1 beim hellen
+   * Verlauf. Überall sonst gilt `gradient`.
+   */
+  gradientOnDark: [RAW.tealDeep, RAW.mintDeep, RAW.skyDeep] as const,
   gradientSoft: [
     alpha(RAW.teal, 'soft'),
     alpha(RAW.mint, 'soft'),
