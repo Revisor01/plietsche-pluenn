@@ -26,7 +26,7 @@ export function IconPicker({ value, onChange }: { value: string; onChange: (icon
                 borderRadius: PP.rTile2,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: active ? PP.tealDeep : alpha(PP.ink, "ghost"),
+                backgroundColor: active ? PP.teal : alpha(PP.ink, "ghost"),
                 borderWidth: active ? 0 : 1,
                 borderColor: PP.hairline,
               }}
