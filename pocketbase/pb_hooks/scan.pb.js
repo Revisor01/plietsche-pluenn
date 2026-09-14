@@ -57,13 +57,9 @@ routerAdd('POST', '/api/pp/scan', (c) => {
 
   // ── Case 1: DOOR QR → check-in ─────────────────────────────
   if (qr === doorSecret) {
-    // Geofence check.
-    let distance = null;
-    if (lat != null && lng != null) {
-      distance = lib.distanceM(lat, lng, store.get('lat'), store.get('lng'));
-      const radius = store.get('geofence_radius_m') || 150;
-      if (distance > radius) throw new ApiError(400, 'Du bist nicht im Laden');
-    }
+    // Geofence check. Die Entfernung wird behalten: doCheckin schreibt sie
+    // als gps_distance_m in den Besuch.
+    const distance = lib.assertInGeofence(store, lat, lng);
 
     if (alreadyToday) {
       // Already checked in today — only count extra stepper items, no second bonus.
@@ -111,11 +107,7 @@ routerAdd('POST', '/api/pp/scan', (c) => {
   // Geofence also applies to item scans (an item scan triggers a check-in).
   // GPS is optional — when provided it must be within the radius; without it we
   // fall back to trusting the in-store QR secret (same as the door check-in).
-  if (lat != null && lng != null) {
-    const d = lib.distanceM(lat, lng, store.get('lat'), store.get('lng'));
-    const radius = store.get('geofence_radius_m') || 150;
-    if (d > radius) throw new ApiError(400, 'Du bist nicht im Laden');
-  }
+  lib.assertInGeofence(store, lat, lng);
 
   // First scan of the day also checks the user in (visit bonus + streak).
   let checkinPts = 0;
