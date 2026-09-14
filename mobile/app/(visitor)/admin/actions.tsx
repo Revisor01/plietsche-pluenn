@@ -11,27 +11,20 @@ import type { Campaign } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { errorText } from '../../../lib/errors';
 import { invalidateCampaigns } from '../../../lib/queryClient';
+import { campaignFactorsLabel } from '../../../lib/format';
 
 const FACTORS = [1, 2, 3]; // 1 = kein Bonus. Ganze Zahlen: schnell zu erfassen,
 // ×1,5 war in der Praxis weder nötig noch auf einen Blick lesbar.
 
-// Kompakte Zusammenfassung der aktiven Typen für die Listendarstellung.
+// Einzelner Faktor für die Auswahlknöpfe (×1 / ×2 / ×3).
 function factorLabel(m: number): string {
   return `${m}`.replace('.', ',');
 }
-// Faktoren als einzelne Marken für die Übersicht — kein Fließtext, damit auf
-// einen Blick sichtbar ist, welche Werte eingetragen sind.
-function campaignFactorRows(c: Campaign): { label: string; factor: number }[] {
-  const { mult_visit: v, mult_take: t, mult_bring: b } = c;
-  if (v == null && t == null && b == null) {
-    return (c.multiplier ?? 1) > 1 ? [{ label: 'Punkte', factor: c.multiplier }] : [];
-  }
-  const out: { label: string; factor: number }[] = [];
-  if ((v ?? 1) > 1) out.push({ label: 'Kommen', factor: v! });
-  if ((t ?? 1) > 1) out.push({ label: 'Mitnehmen', factor: t! });
-  if ((b ?? 1) > 1) out.push({ label: 'Bringen', factor: b! });
-  return out;
-}
+
+// Die Faktoren einer Aktion wurden hier einmal lokal nachgebaut und der
+// Fließtext daraus ein drittes Mal von Hand zusammengesetzt. Beides kommt
+// jetzt aus lib/format.ts — so heißt „Vorbeikommen" überall gleich, und eine
+// Änderung an der Darstellung wirkt an allen Stellen.
 
 // Parse a PB datetime string into a local Date (for the picker).
 function parseDate(s?: string): Date | null {
@@ -237,11 +230,9 @@ export default function ActionsAdmin() {
                     <PPText size="sm" color={PP.ink2} numberOfLines={1}>
                       {formatDE(parseDate(c.starts_at))} – {formatDE(parseDate(c.ends_at))}
                     </PPText>
-                    {campaignFactorRows(c).length > 0 && (
+                    {!!campaignFactorsLabel(c) && (
                       <PPText size="sm" color={PP.teal} numberOfLines={1} style={{ marginTop: 1 }}>
-                        {campaignFactorRows(c)
-                          .map((f) => `${f.label} ×${factorLabel(f.factor)}`)
-                          .join(' · ')}
+                        {campaignFactorsLabel(c)}
                       </PPText>
                     )}
                   </View>
