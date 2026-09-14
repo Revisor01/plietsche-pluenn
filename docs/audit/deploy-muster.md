@@ -200,11 +200,28 @@ Produktion per SSH, und `schemaDrift.test.js:141` vergleicht sie.
   Arbeitsstand genommen, aber nicht aus der Historie — er ist Vorfahr von
   `origin/main` und damit für jede Person abrufbar. Betroffen sind das
   Postgres-Passwort, `JWT_SECRET`, `QR_SECRET`, `LOSUNG_API_KEY` und das
-  SMTP-Passwort. Mindestens Datenbank- und SMTP-Passwort stimmen **heute noch** mit
-  der lokalen `portainer-stack.yml` überein, sind also vermutlich weiter gültig.
-  Geprüft mit `git log --all -S<wert>` und `git merge-base --is-ancestor <commit>
-  origin/main`; die Werte werden hier bewusst nicht genannt. Das gehört gedreht,
-  und zwar unabhängig von allem, was in diesem Bericht sonst steht.
+  SMTP-Passwort.
+
+  > **Richtigstellung vom 14.09.2026: Die Werte sind nicht mehr gültig.**
+  >
+  > Der Befund oben stützte sich auf die lokale `portainer-stack.yml` im
+  > Arbeitsverzeichnis — eine Datei, die weder versioniert noch aktuell ist
+  > (sie steht in `.gitignore:127`). Sie konserviert den Stand von **vor** der
+  > Rotation und ist deshalb kein Beleg für den Betrieb.
+  >
+  > Gegen die laufenden Container gemessen (`docker inspect`, Vergleich über
+  > SHA-256-Fingerabdrücke, ohne die Werte zu notieren): **keiner der sechs
+  > stimmt überein.** Teilweise unterscheiden sich sogar die Längen — es sind
+  > neu erzeugte Werte. Der Betreiber hatte sie bereits gedreht.
+  >
+  > Was bleibt: Die alten, inzwischen wertlosen Werte stehen weiterhin in der
+  > öffentlichen Historie. Das ist Hygiene, kein Risiko; ein Umschreiben der
+  > Historie (Force-Push, alle Klone unbrauchbar) steht dafür nicht im
+  > Verhältnis. Entscheidung vom 14.09.2026: so belassen.
+  >
+  > **Die Lehre gehört zum Bericht:** Eine Datei im Arbeitsverzeichnis ist kein
+  > Systemzustand. Wer über Produktionsgeheimnisse urteilt, misst gegen die
+  > Produktion — sonst entsteht genau dieser Fehlalarm.
 
 ---
 
