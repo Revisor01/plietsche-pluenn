@@ -1,5 +1,5 @@
 import { View, StyleProp, ViewStyle } from 'react-native';
-import { PP, isAndroid, MD3_SHAPE, alpha } from '../../lib/theme';
+import { PP, alpha, radius } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { PPText } from './Text';
 
@@ -33,7 +33,7 @@ export function Pill({ children, color = PP.teal, bg = alpha(PP.teal, "subtle"),
           paddingVertical: padV,
           minHeight,
           // MD3 Chips sind eckig (8dp), iOS-Pills vollrund.
-          borderRadius: isAndroid ? MD3_SHAPE.sm : PP.rPill,
+          borderRadius: radius(PP.rPill, 'sm'),
           backgroundColor: bg,
           alignSelf: 'flex-start',
         },

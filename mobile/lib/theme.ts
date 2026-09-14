@@ -267,7 +267,7 @@ export const isAndroid = Platform.OS === 'android';
  * MD3 shape scale. Material bevorzugt durchgängig kleinere Radien als das
  * iOS-Design dieser App — Buttons sind dort vollrund (full), Karten medium.
  */
-export const MD3_SHAPE = {
+const MD3_SHAPE = {
   none: 0,
   xs: 4,
   sm: 8,

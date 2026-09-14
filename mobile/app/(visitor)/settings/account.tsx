@@ -19,15 +19,14 @@ import {
   PPButton,
   SectionTitle,
   IconButton,
+  IconTile,
 } from '../../../components/ui';
 
 function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress}>
       <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
-        <View style={{ width: 38, height: 38, borderRadius: PP.rTile2, backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon} size={PP.iconSizes.md} color={PP.teal} />
-        </View>
+        <IconTile icon={icon} size="s" />
         <PPText weight="semibold" size="base" color={PP.ink} style={{ flex: 1 }}>{label}</PPText>
         <Icon name="chevron-right" size={PP.iconSizes.md} color={PP.ink3} />
       </Card>
@@ -274,18 +273,7 @@ export default function Account() {
               borderColor: alpha(PP.err, "medium"),
             }}
           >
-            <View
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: PP.rTile2,
-                backgroundColor: alpha(PP.err, "soft"),
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon name="arrow-left" size={PP.iconSizes.md} color={PP.err} />
-            </View>
+            <IconTile icon="arrow-left" tint={PP.err} tone="soft" size="s" />
             <PPText weight="semibold" size="base" color={PP.err} style={{ flex: 1 }}>
               Abmelden
             </PPText>

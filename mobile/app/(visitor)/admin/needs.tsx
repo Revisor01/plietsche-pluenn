@@ -7,7 +7,7 @@ import { PP, alpha } from '../../../lib/theme';
 import { Icon, type IconName } from '../../../lib/icons';
 import { useAllNeeds, useActiveCampaigns } from '../../../lib/hooks/useData';
 import { createNeed, updateNeed, deleteNeed, sendPushNow } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill, ColorPicker, Hint } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Toggle, Pill, ColorPicker, Hint, IconTile } from '../../../components/ui';
 import type { Need } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { errorText } from '../../../lib/errors';
@@ -205,9 +205,7 @@ export default function NeedsAdmin() {
             <View key={n.id}>
               <Pressable onPress={() => setOpenId(openId === n.id ? null : n.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
-                  <View style={{ width: 40, height: 40, borderRadius: PP.rTile2, backgroundColor: alpha(PP.sky, "medium"), alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="megaphone" size={PP.iconSizes.lg} color={PP.sky} />
-                  </View>
+                  <IconTile icon="megaphone" tint={PP.sky} tone="medium" size="s" />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size="md" color={PP.ink}>{n.title}</PPText>
                     {!!n.detail && <PPText size="sm" color={PP.ink2} numberOfLines={1}>{n.detail}</PPText>}

@@ -1,6 +1,6 @@
 import { View, ViewStyle, StyleProp } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PP, isAndroid, MD3_SHAPE, surfaceElevation } from '../../lib/theme';
+import { PP, surfaceElevation, radius as cardRadius } from '../../lib/theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -12,7 +12,7 @@ interface CardProps {
 
 export function Card({ children, pad = PP.space.lg, radius, bg = PP.surface, style }: CardProps) {
   // MD3 nutzt kleinere Radien als die iOS-Formsprache dieser App.
-  const r = radius ?? (isAndroid ? MD3_SHAPE.md : PP.rCard);
+  const r = cardRadius(PP.rCard, 'md');
   return (
     <View
       style={[
@@ -36,7 +36,7 @@ interface GradientCardProps {
 }
 
 export function GradientCard({ children, pad = PP.space.lg, radius, colors, style }: GradientCardProps) {
-  const r = radius ?? (isAndroid ? MD3_SHAPE.md : PP.rCard);
+  const r = cardRadius(PP.rCard, 'md');
   return (
     <LinearGradient
       colors={colors ?? PP.gradient}

@@ -9,7 +9,7 @@ import { useAllBadges, useCampaigns, useStore } from '../../../lib/hooks/useData
 import { badgeTierSlots, type TierStep } from '../../../lib/format';
 import type { Campaign } from '../../../lib/types';
 import { createBadge, updateBadge, deleteBadge, updateCampaign, type BadgeInput } from '../../../lib/api';
-import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint, ColorPicker } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Card, Field, PPButton, SectionTitle, IconButton, Pill, Toggle, IconPicker, Hint, ColorPicker, IconTile } from '../../../components/ui';
 import type { Badge } from '../../../lib/types';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { errorText } from '../../../lib/errors';
@@ -388,9 +388,7 @@ export default function BadgeAdmin() {
             <View key={b.id}>
               <Pressable onPress={() => setOpenId(openId === b.id ? null : b.id)}>
                 <Card pad={14} style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
-                  <View style={{ width: 40, height: 40, borderRadius: PP.rTile2, backgroundColor: alpha(PP.gold, "soft"), alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="medal" size={PP.iconSizes.lg} color={PP.gold} />
-                  </View>
+                  <IconTile icon="medal" tint={PP.gold} tone="soft" size="s" />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <PPText weight="semibold" size="md" color={PP.ink}>{b.name}</PPText>
                     <PPText size="sm" color={PP.ink2}>
