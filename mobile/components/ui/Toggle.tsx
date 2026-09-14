@@ -11,12 +11,20 @@ interface ToggleProps {
   accessibilityHint?: string;
 }
 
+// Die Spurfarbe wird EINMAL beim Laden des Moduls berechnet, nicht im Worklet.
+// `useAnimatedStyle` läuft auf dem UI-Thread; eine gewöhnliche JS-Funktion wie
+// `alpha()` ist dort nicht vorhanden und der Aufruf reißt den Screen ab
+// ("Tried to synchronously call a Remote Function"). Fertige Farbwerte sind
+// blosse Zeichenketten und dürfen ins Worklet.
+const TRACK_OFF = alpha(PP.ink, 'medium');
+const TRACK_ON = PP.teal;
+
 export function Toggle({ value, onChange, accessibilityLabel, accessibilityHint }: ToggleProps) {
   const knob = useAnimatedStyle(() => ({
     transform: [{ translateX: withTiming(value ? 18 : 0, { duration: PP.motion.fast }) }],
   }));
   const track = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(value ? PP.teal : alpha(PP.ink, "medium"), { duration: PP.motion.fast }),
+    backgroundColor: withTiming(value ? TRACK_ON : TRACK_OFF, { duration: PP.motion.fast }),
   }));
 
   return (

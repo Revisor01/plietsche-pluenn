@@ -6,6 +6,10 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Behoben
+
+- **Absturz beim Öffnen von Teilen und Einstellungen behoben.** Jede Ansicht mit einem Schalter — die Detailansicht eines Teils (aus Laden, Inventar oder Freigabe-Liste), das Einstell-Formular, die Benachrichtigungen und die Admin-Bereiche für Badges und Suchanfragen — brach beim Öffnen sofort ab. Ursache war die Farbe der ausgeschalteten Schalter-Spur, die seit der Zusammenführung der Design-Farben erst während der Schalter-Animation berechnet wurde; dort ist sie nicht verfügbar. Sie steht jetzt wieder vorher fest.
+
 ## [1.0.0 (33)] – 2026-09-14
 
 ### Neu
