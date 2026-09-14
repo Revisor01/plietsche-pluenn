@@ -32,6 +32,41 @@ info:
     Das Geheimnis ist ausgelagert, die Leseregel gesetzt und der Code
     ausgetauscht worden.
 
+    **Zugriff auf die Besuche (`visits`):** Lesen bleibt bei der eigenen
+    Person (und `admin`), Anlegen ist über die API für niemanden möglich
+    (`createRule: null`). Besuche entstehen ausschließlich serverseitig in
+    `POST /api/pp/scan`; der Hook schreibt mit dem Admin-DAO und braucht die
+    Regel nicht.
+
+    **Behoben am 14.09.2026:** `visits.createRule` stand auf
+    `user = @request.auth.id`. Jedes Konto konnte sich damit beliebig viele
+    Besuche mit frei gewähltem `checkin_at` anlegen. Der Punktestand blieb
+    davon unberührt (er ist per Hook schreibgeschützt), die Abzeichen nicht:
+    Der Fortschritt für `trigger_type: "visits"` zählt die Zeilen, und das
+    Abzeichen schüttet je Stufe Punkte aus — serverseitig, also am
+    Schreibschutz vorbei.
+
+    **Zugriff auf die Teile (`items`):** Lesen ist auf das eingeschränkt, was
+    die Ansichten brauchen — freigegebene Teile (`status = "approved"`), der
+    Altbestand ohne gesetztes `status`-Feld, die eigenen Einreichungen und
+    für `volunteer`/`admin` alles. Anlegen bleibt für alle Angemeldeten offen
+    (Einreichungen; der Hook erzwingt `status: "pending"`), Ändern bleibt bei
+    `volunteer`/`admin`, Löschen bei `admin`.
+
+    **Behoben am 14.09.2026:** `items` war beim Lesen auf
+    `@request.auth.id != ""` gestellt. Jedes angemeldete Konto konnte damit
+    fremde `pending`-Einreichungen samt `location` abrufen — bei
+    `stays_external` die Privatadresse der einreichenden Person. Die App
+    filterte das nur in der Oberfläche.
+
+    **Zugriff auf die Aktionszähler (`action_counts`):** Lesen ist auf die
+    eigene Person (und `admin`) beschränkt, Schreiben war schon immer
+    serverseitig.
+
+    **Behoben am 14.09.2026:** `action_counts` war beim Lesen auf
+    `@request.auth.id != ""` gestellt und gab damit Nutzer-ID und
+    Teilnahmezahl jeder Person an jedes Konto heraus.
+
     **Antwortformen sind ein Vertrag.** Sobald eine App-Version im Store ist,
     liest sie diese Routen und lässt sich nicht mitdeployen. Felder dürfen
     hinzukommen, aber nicht verschwinden, umbenannt werden oder den Typ
