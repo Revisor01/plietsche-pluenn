@@ -12,7 +12,7 @@ interface CardProps {
 
 export function Card({ children, pad = PP.space.lg, radius, bg = PP.surface, style }: CardProps) {
   // MD3 nutzt kleinere Radien als die iOS-Formsprache dieser App.
-  const r = cardRadius(PP.rCard, 'md');
+  const r = radius ?? cardRadius(PP.rCard, 'md');
   return (
     <View
       style={[
@@ -36,7 +36,7 @@ interface GradientCardProps {
 }
 
 export function GradientCard({ children, pad = PP.space.lg, radius, colors, style }: GradientCardProps) {
-  const r = cardRadius(PP.rCard, 'md');
+  const r = radius ?? cardRadius(PP.rCard, 'md');
   return (
     <LinearGradient
       colors={colors ?? PP.gradient}
