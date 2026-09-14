@@ -5,7 +5,7 @@
 // seine Serie zu Unrecht; setzt es zu spät zurück, zeigt die App eine Serie,
 // die es nicht mehr gibt.
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createRequire } from 'node:module';
 
 const { loadHook } = createRequire(import.meta.url)('./harness.js');
@@ -121,6 +121,74 @@ describe('streak-reset', () => {
     h.runCron('streak-reset');
     expect(h.records.aktiv.get('streak_weeks')).toBe(2);
     expect(h.records.weg.get('streak_weeks')).toBe(0);
+  });
+});
+
+describe('streak-reset am Jahreswechsel', () => {
+  // Die Karenz rechnet gegen die laufende Woche. Fuer den Jahreswechsel
+  // braucht es deshalb einen festen Zeitpunkt.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function amTag(iso) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(iso));
+  }
+
+  it('laesst die Serie stehen, wenn die Vorwoche die 53. war', () => {
+    // Lauf am 5.1.2027 (KW 1/2027), letzter Besuch in KW 53/2026 — die
+    // unmittelbare Vorwoche, also Karenz.
+    amTag('2027-01-05T03:05:00.000Z');
+    const h = setup([
+      { __name: 'u', id: 'u1', streak_weeks: 6, streak_last_visit: '2026-12-29T12:00:00.000Z' },
+    ]);
+    h.runCron('streak-reset');
+    expect(h.records.u.get('streak_weeks')).toBe(6);
+  });
+
+  it('setzt zurueck, wenn die 53. Woche ausgelassen wurde', () => {
+    // Letzter Besuch in KW 52/2026, dazwischen liegt die ausgelassene KW 53 —
+    // zwei Wochen ohne Besuch, die Karenz ist aufgebraucht.
+    amTag('2027-01-05T03:05:00.000Z');
+    const h = setup([
+      { __name: 'u', id: 'u1', streak_weeks: 6, streak_last_visit: '2026-12-21T12:00:00.000Z' },
+    ]);
+    h.runCron('streak-reset');
+    expect(h.records.u.get('streak_weeks')).toBe(0);
+  });
+
+  it('laesst die Serie stehen, wenn das Vorjahr nur 52 Wochen hatte', () => {
+    // 2025 endet mit KW 52; am 5.1.2026 (KW 2/2026) ist ein Besuch in
+    // KW 52/2025 zwei Wochen her — das ist zu lang.
+    // Gegenprobe mit einem Lauf in KW 1/2026: dann ist es die Vorwoche.
+    amTag('2025-12-31T03:05:00.000Z'); // KW 1/2026
+    const h = setup([
+      { __name: 'u', id: 'u1', streak_weeks: 3, streak_last_visit: '2025-12-22T12:00:00.000Z' },
+    ]);
+    h.runCron('streak-reset');
+    expect(h.records.u.get('streak_weeks')).toBe(3);
+  });
+
+  it('setzt nach einer Luecke von zwei Jahren zurueck', () => {
+    // Letzter Besuch KW 52/2025, Lauf in KW 1/2027: ein ganzes Jahr dazwischen.
+    amTag('2027-01-05T03:05:00.000Z');
+    const h = setup([
+      { __name: 'u', id: 'u1', streak_weeks: 9, streak_last_visit: '2025-12-22T12:00:00.000Z' },
+    ]);
+    h.runCron('streak-reset');
+    expect(h.records.u.get('streak_weeks')).toBe(0);
+  });
+
+  it('setzt zurueck, wenn der letzte Besuch in der Zukunft steht', () => {
+    // Ein Zeitstempel aus der Zukunft ist kein gueltiger letzter Besuch. Die
+    // Karenz gilt nur rueckwaerts, die Serie wird zurueckgesetzt.
+    amTag('2026-09-14T03:05:00.000Z');
+    const h = setup([
+      { __name: 'u', id: 'u1', streak_weeks: 4, streak_last_visit: '2026-11-02T12:00:00.000Z' },
+    ]);
+    h.runCron('streak-reset');
+    expect(h.records.u.get('streak_weeks')).toBe(0);
   });
 });
 

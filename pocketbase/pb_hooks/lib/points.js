@@ -398,10 +398,35 @@ module.exports = {
     return count;
   },
 
+  // Wie viele Kalenderwochen ein Jahr nach ISO 8601 hat: 52 oder 53.
+  //
+  // 53 Wochen hat ein Jahr genau dann, wenn der 1. Januar ein Donnerstag ist
+  // oder wenn es ein Schaltjahr ist, das an einem Mittwoch beginnt. Gleich-
+  // bedeutend: Der 28. Dezember — der immer in der letzten Woche des Jahres
+  // liegt — fällt dann in KW 53.
+  //
+  // Die Angabe darf keine Näherung sein: Sie entscheidet, ob KW 52 oder KW 53
+  // die Vorgängerin von KW 1 des Folgejahres ist. Verwechselt man das, läuft
+  // eine Serie über eine ausgelassene Woche hinweg weiter.
+  isoWeeksInYear(year) {
+    const jan1 = new Date(Date.UTC(year, 0, 1)).getUTCDay(); // 0 = Sonntag
+    const schaltjahr = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    return jan1 === 4 || (schaltjahr && jan1 === 3) ? 53 : 52;
+  },
+
   // True when `later` is exactly one ISO week after `earlier` (handles year wrap).
+  //
+  // Die einzige Stelle im Projekt, an der „folgt diese Woche auf jene?"
+  // beantwortet wird — updateStreak, streakFromVisits und der Reset-Cron rufen
+  // alle hierher. Sonst liefen drei Nachbauten auseinander.
   isWeekAdjacent(earlier, later) {
     if (later - earlier === 1) return true;
-    return later % 100 === 1 && earlier % 100 >= 52 && Math.floor(later / 100) - Math.floor(earlier / 100) === 1;
+    // Jahreswechsel: KW 1 folgt auf die LETZTE Woche des Vorjahres — je nach
+    // Jahr KW 52 oder KW 53.
+    if (later % 100 !== 1) return false;
+    const earlierYear = Math.floor(earlier / 100);
+    if (Math.floor(later / 100) - earlierYear !== 1) return false;
+    return earlier % 100 === this.isoWeeksInYear(earlierYear);
   },
 
   updateStreak(user, visitDate) {
@@ -414,7 +439,7 @@ module.exports = {
       const thisWeek = this.isoWeek(visitDate);
       if (thisWeek === lastWeek) {
         // same week, no change
-      } else if (thisWeek - lastWeek === 1 || (thisWeek % 100 === 1 && lastWeek % 100 >= 52)) {
+      } else if (this.isWeekAdjacent(lastWeek, thisWeek)) {
         user.set('streak_weeks', current + 1);
       } else {
         user.set('streak_weeks', 1);
