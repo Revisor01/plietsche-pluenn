@@ -176,18 +176,30 @@ function matchesFilter(record, filter) {
   });
 }
 
+// Sortierung nachbilden.
+//
+// Absteigend wird absteigend sortiert — nicht aufsteigend sortiert und dann
+// umgedreht. Der Unterschied zeigt sich bei Gleichstand: `.reverse()` dreht
+// gleiche Werte gegeneinander um, und der Harness lieferte dann eine andere
+// Reihenfolge als PocketBase. Konkret betrifft das findActiveCampaign
+// (sortiert nach "-multiplier"): Bei zwei Aktionen mit demselben Faktor nimmt
+// PocketBase die erste, der Harness nahm die letzte — die Tests hätten eine
+// andere Aktion geprüft als die, die im Laden gilt.
+//
+// Array.prototype.sort ist seit ES2019 stabil, gleiche Werte behalten also
+// ihre Eingabereihenfolge. Genau das braucht es hier.
 function applySort(rows, sort) {
   const s = `${sort || ''}`.trim();
   if (!s) return rows;
   const desc = s.startsWith('-');
   const field = desc ? s.slice(1) : s;
-  const sorted = rows.slice().sort((a, b) => {
+  return rows.slice().sort((a, b) => {
     const av = a.get(field);
     const bv = b.get(field);
     if (av === bv) return 0;
-    return av > bv ? 1 : -1;
+    const cmp = av > bv ? 1 : -1;
+    return desc ? -cmp : cmp;
   });
-  return desc ? sorted.reverse() : sorted;
 }
 
 // ── DAO ────────────────────────────────────────────────────────
@@ -227,12 +239,34 @@ class FakeDao {
     return hit;
   }
 
-  findRecordsByFilter(collection, filter, sort, limit) {
+  // PocketBase nimmt fünf Parameter, der Harness nahm bisher vier: `offset`
+  // fiel still unter den Tisch. Alle Aufrufe in den Hooks übergeben ihn (heute
+  // durchgehend mit 0), und ein Test, der sich auf Blätterung verlässt, hätte
+  // etwas anderes geprüft als die Produktion — grün, während die falsche Seite
+  // gelesen wird. Deshalb wird er hier umgesetzt statt ignoriert.
+  //
+  // Reihenfolge wie in PocketBase: erst filtern, dann sortieren, dann `offset`
+  // überspringen, dann auf `limit` kürzen.
+  // PocketBase nimmt fünf Parameter, der Harness nahm bisher vier: `offset`
+  // fiel still unter den Tisch. Alle Aufrufe in den Hooks übergeben ihn (heute
+  // durchgehend mit 0), und ein Test, der sich auf Blätterung verlässt, hätte
+  // etwas anderes geprüft als die Produktion — grün, während die falsche Seite
+  // gelesen wird. Deshalb wird er hier umgesetzt statt ignoriert.
+  //
+  // Reihenfolge wie in PocketBase: erst filtern, dann sortieren, dann `offset`
+  // überspringen, dann auf `limit` kürzen.
+  findRecordsByFilter(collection, filter, sort, limit, offset) {
     const rows = applySort(
       this._rows(collection).filter((r) => matchesFilter(r, filter)),
       sort
     );
-    return limit && limit > 0 ? rows.slice(0, limit) : rows;
+    const skip = Number(offset || 0);
+    if (!Number.isInteger(skip) || skip < 0) {
+      // Bewusst scheitern statt still die erste Seite liefern.
+      throw new Error(`Harness: offset muss eine nicht-negative ganze Zahl sein, war: ${offset}`);
+    }
+    const page = skip > 0 ? rows.slice(skip) : rows;
+    return limit && limit > 0 ? page.slice(0, limit) : page;
   }
 
   saveRecord(record) {
@@ -253,8 +287,10 @@ class FakeDao {
 // ── Umgebung aufbauen und Hook laden ───────────────────────────
 //
 // store: { sammlung: [ {feld: wert}, … ] } — die Datensätze, die es geben soll.
+// opts.realPush: lib/push.js echt laden statt ersetzen (siehe require unten).
 // Rückgabe: { routes, crons, dao, records, call, runCron, ApiError }
-function loadHook(hookFile, store = {}) {
+function loadHook(hookFile, store = {}, opts = {}) {
+  const realPush = !!opts.realPush;
   const records = {};
   const seeded = {};
   for (const [collection, rows] of Object.entries(store)) {
@@ -270,6 +306,8 @@ function loadHook(hookFile, store = {}) {
   const routes = {};
   const crons = {};
   const pushed = [];
+  const httpCalls = [];    // die an Expo gestellten Anfragen
+  const httpResponses = []; // gestellte Antworten, der Reihe nach
   const libCache = {};
   const recordHooks = { beforeCreate: [], beforeUpdate: [], afterUpdate: [] };
 
@@ -333,10 +371,38 @@ function loadHook(hookFile, store = {}) {
       recordHooks.afterUpdate.push({ collection, handler });
     },
 
+    // Der echte Versand geht über $http.send an Expo. Hier wird nur die
+    // Antwort gestellt: Ein Test darf keine Nachrichten verschicken, aber die
+    // Auswertung der Quittungen (tote Token entfernen) soll laufen.
+    //
+    // httpResponses wird pro Aufruf abgearbeitet; ist nichts hinterlegt,
+    // quittiert Expo jede Nachricht der Reihe nach mit "ok".
+    $http: {
+      send: (req) => {
+        httpCalls.push(req);
+        if (httpResponses.length) {
+          const next = httpResponses.shift();
+          if (next instanceof Error) throw next;
+          return next;
+        }
+        const anzahl = JSON.parse(req.body).length;
+        return { json: { data: new Array(anzahl).fill({ status: 'ok' }) } };
+      },
+    },
+
     require: (spec) => {
       // Die Hooks laden ihre Bibliotheken über require(`${__hooks}/lib/…`).
-      // Der Push-Versand wird ersetzt: Ein Test darf keine Nachrichten senden.
-      if (spec.endsWith('/lib/push.js')) {
+      //
+      // Der Push-Versand wird standardmäßig ersetzt: Ein Test darf keine
+      // Nachrichten senden, und die meisten Tests interessiert nur, DASS
+      // gesendet wurde (h.pushed).
+      //
+      // Mit realPush: true wird lib/push.js dagegen echt geladen — nur
+      // $http.send ist dann gestellt. Nur so laufen die Zeilen, die
+      // entscheiden, WER eine Nachricht bekommt: die Zuordnung von Kategorie
+      // zu Opt-in-Feld und die Segmente. Das ist eine Einwilligungsfrage; ein
+      // Stub kann sie nicht beantworten.
+      if (spec.endsWith('/lib/push.js') && !realPush) {
         return {
           tokensForUser: () => [],
           collectTokens: () => [],
@@ -363,10 +429,16 @@ function loadHook(hookFile, store = {}) {
     // Rechenlogik. Als Objekt zurückgegeben, damit die this-Bindung der
     // Methoden erhalten bleibt (points.js ruft sich intern über this auf).
     lib: sandbox.require(`${HOOKS_DIR}/lib/points.js`),
+    // Der Push-Versand, in derselben Umgebung. Mit realPush ist das die echte
+    // Bibliothek, sonst der Stub.
+    push: sandbox.require(`${HOOKS_DIR}/lib/push.js`),
     records,
     routes,
     crons,
     pushed,
+    // Die an Expo gestellten Anfragen und die Warteschlange der Antworten.
+    httpCalls,
+    httpResponses,
     ApiError,
     store: seeded,
 
