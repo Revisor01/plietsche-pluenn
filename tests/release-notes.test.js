@@ -99,9 +99,15 @@ describe('Vorgabe und Grenzen', () => {
   });
 
   it('kürzt die Vorgabe bei Google Play auf 480 Zeichen', () => {
-    const lang = 'a'.repeat(600);
+    // Die Länge allein sagt nichts: 480 beliebige Zeichen kämen damit durch.
+    // Geprüft wird deshalb der Inhalt — und zwar mit unterscheidbarem Anfang
+    // und Ende, damit auch feststeht, dass VORN gekürzt wird und nicht etwa
+    // das Ende genommen.
+    const lang = `ANFANG${'a'.repeat(600)}ENDE`;
     const [zeile] = hinweise('play', { VORGABE: lang });
-    expect(zeile).toHaveLength(480);
+    expect(zeile).toBe(lang.slice(0, 480));
+    expect(zeile.startsWith('ANFANG')).toBe(true);
+    expect(zeile.endsWith('ENDE')).toBe(false);
   });
 
   it('meldet sich mit einem Satz, wenn nur Interna anliegen', () => {

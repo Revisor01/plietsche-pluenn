@@ -454,9 +454,18 @@ describe('Teile, die nicht mehr zu haben sind', () => {
     const h = setup({
       items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
     });
+    const vorher = Date.now();
     h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    const nachher = Date.now();
+
     const item = h.rows('items')[0];
-    expect(item.taken_at).toBeTruthy();
+    // Der Zeitpunkt des Scans, nicht irgendein gesetzter Wert: Ein Hook, der
+    // hier "ja" einträgt, käme mit toBeTruthy() durch.
+    const gesetzt = Date.parse(item.taken_at);
+    expect(Number.isNaN(gesetzt)).toBe(false);
+    expect(gesetzt).toBeGreaterThanOrEqual(vorher);
+    expect(gesetzt).toBeLessThanOrEqual(nachher);
+
     expect(item.user).toBeUndefined();
     expect(item.taken_by).toBeUndefined();
   });
