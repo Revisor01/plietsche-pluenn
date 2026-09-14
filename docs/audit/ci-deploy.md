@@ -113,7 +113,15 @@ legen den Schlüssel selbst aus `secrets.ASC_KEY_P8_BASE64` ab
 (`testflight.yml:74-81`, `release.yml:106-113`). Der Block ist also toter Ballast
 mit Informationswert für Dritte.
 
-### H-2 — Dritt-Actions sind auf Tags gepinnt, nicht auf Commit-SHA
+### H-2 — Dritt-Actions sind auf Tags gepinnt, nicht auf Commit-SHA — **BEHOBEN 14.09.2026**
+
+> **Behoben am 14.09.2026.** Alle 17 Verwendungen in den vier Workflows stehen
+> jetzt auf dem vollen Commit-SHA, die Version als Kommentar dahinter:
+> `actions/checkout` v7.0.1, `actions/setup-node` v7.0.0,
+> `actions/setup-java` v5.7.0, `gradle/actions/setup-gradle` v6.3.0.
+> Die SHA sind über die GitHub-API ermittelt und gegen die jeweilige
+> Versionsmarke gegengeprüft, nicht aus dem beweglichen Major-Tag übernommen.
+
 
 **Fundstellen:** in allen vier Workflows:
 
