@@ -139,6 +139,28 @@ App auf dem Handy nicht.
   gegen die App auf den Geräten. Vor jeder Änderung an einer Antwortform die
   Frage: Wer ruft diese Route noch — auch die Version im Store?
 
+## Ein Fix im Repo ist kein Fix auf dem Server
+
+Dasselbe gilt in der anderen Richtung, und es ist leichter zu übersehen: Ein
+behobener Fehler wirkt erst, wenn der Code **ausgeliefert** ist. Die Instanz
+unter `/opt/stacks/plietsche-pb/` hat **kein Git-Arbeitsverzeichnis** — Hooks
+und Migrationen werden von Hand kopiert. Wer das vergisst, hat einen Befund
+abgehakt, der weiter offensteht.
+
+- Ein Befund gilt erst als behoben, wenn er **dort gemessen wurde, wo er
+  aufgetreten ist.** Bei einem Sicherheitsbefund also gegen die laufende
+  Instanz, nicht gegen die Testsuite.
+- Nach jedem Eingriff an `pb_hooks/` oder `pb_migrations/`: Stand des Servers
+  abgleichen (Prüfsummen der Dateien, Schemamerkmal je Migration über die API).
+- Im Bericht oder Changelog trennen: „im Code behoben" und „ausgeliefert" sind
+  zwei Aussagen.
+
+*Konkret passiert (14.09.2026): Das Türgeheimnis war als KRITISCH gemeldet, im
+Repo behoben, getestet und in der Abnahme als BEHOBEN geführt. Auf dem Server
+stand es weiter im Klartext im offenen Netz — die Instanz lief auf dem Stand
+von vier Wochen zuvor. Aufgefallen ist es nur, weil ein Agent beim Messen einer
+anderen Sache zufällig die Produktion befragt hat.*
+
 ## CHANGELOG-Pflicht
 
 `CHANGELOG.md` wird bei **jedem Commit mitgeschrieben, der Nutzer:innen

@@ -23,10 +23,17 @@ Test ihn absichert, steht der Test dabei.
 | **OFFEN** (nicht angefasst) | 24 | 38 % |
 | **HINFÄLLIG** (Befund bestand nicht oder hat sich erledigt) | 2 | 3 % |
 
-**Die schweren Befunde sind erledigt.** Alle vier mit KRITISCH bewerteten
-Befunde (Türgeheimnis, Tagesgrenze, Apple-Schlüssel im Stash, Abmelden ohne
-Aufräumen) sind behoben, drei davon mit Tests abgesichert. Von den sieben
-HOCH-Befunden sind sechs behoben.
+**Die schweren Befunde sind erledigt — im Code und seit dem 14.09.2026 auch auf
+dem Server.** Alle vier mit KRITISCH bewerteten Befunde (Türgeheimnis,
+Tagesgrenze, Apple-Schlüssel im Stash, Abmelden ohne Aufräumen) sind behoben,
+drei davon mit Tests abgesichert. Von den sieben HOCH-Befunden sind sechs
+behoben.
+
+> **Zur Lesart dieser Tabelle:** „BEHOBEN" bezieht sich auf den **Code-Stand im
+> Repo**. Dass ein Befund damit auch auf der laufenden Instanz erledigt ist,
+> folgt daraus nicht — genau dieser Trugschluss ist in diesem Durchgang
+> unterlaufen und hat einen kritischen Befund vier Wochen länger offen stehen
+> lassen als angenommen. Der Auslieferungsstand steht im Nachtrag unten.
 
 **Das Offene liegt in der Breite, nicht in der Tiefe.** Die 24 offenen Befunde
 sind überwiegend MITTEL und NIEDRIG: Anzeigefehler, Harness-Schwächen,
@@ -73,6 +80,47 @@ gegen die laufende Instanz gemessen worden. Was sich dadurch geändert hat:
 
 **Testsuite nach diesem Nachtrag:** 276 Tests in 12 Dateien, alle grün
 (+24 gegenüber der Abnahme).
+
+### Ausgeliefert am 14.09.2026 — der Server steht jetzt auf dem Repo-Stand
+
+Der Rückstand war größer als zunächst angenommen: Die Instanz lief auf dem
+Stand vom **4. August**. Es fehlten drei Migrationen und vier Hooks — also
+neben dem Türgeheimnis auch die Zeitzonen- und die Serien-Korrektur.
+
+Die Ursache ist strukturell und bleibt bestehen: **Auf dem Server gibt es kein
+Git-Arbeitsverzeichnis.** Die Dateien unter `/opt/stacks/plietsche-pb/` werden
+von Hand kopiert, ein Abgleich mit dem Repo findet nirgends automatisch statt.
+Solange das so ist, kann der Stand jederzeit wieder auseinanderlaufen, ohne
+dass es jemandem auffällt.
+
+Vorgehen: Sicherung angelegt (`/root/backups/plietsche-pb/`, 1,8 MB — Daten,
+Hooks, Migrationen), Dateien übertragen und per Prüfsumme verglichen, Container
+neu gestartet, keine Fehler im Log.
+
+Gemessen vorher und nachher, unangemeldet:
+
+| Prüfung | vorher | nachher |
+|---|---|---|
+| `store` ohne Token | HTTP 200, Geheimnis im Klartext | HTTP 200, `totalItems: 0` |
+| `store_secrets` | existierte nicht | HTTP 403 |
+| Besuch fälschen (angemeldet) | HTTP 200, Zähler 2 → 3 | HTTP 403 |
+| fremde Aktivitätsprofile | sichtbar | nur eigene |
+| fremde Einreichungen samt Adresse | sichtbar | nur eigene |
+
+Der Datenbestand blieb unberührt (vorher wie nachher: 4 Konten, 30 Teile,
+5 Besuche, 37 Punkteinträge, 15 Abzeichen, 5 Abzeichenarten, 2 Aktionen,
+2 Aktionszähler). Die App funktioniert unverändert: Ladeninfos, Schaufenster
+(8), Laden (14), eigene Punkte (28), Abzeichen (5), Aktionen (2).
+
+Zusätzlich gesetzt: `TZ: Europe/Berlin` im Portainer-Stack — die Zeile stand im
+Repo, war dort aber nie angekommen. Sie betrifft nur die Uhrzeiten der
+nächtlichen Aufgaben; Tagesgrenze, Kalenderwoche und Jahreszahl rechnet die
+Fachlogik seit `cf0dc80` aus `store.timezone`.
+
+**Was daraus zu lernen ist:** Grüne Tests und ein sauberes Repo sagen nichts
+über den Server. Für die Apps auf den Geräten steht dieser Gedanke längst in
+den Projektregeln; für die Instanz stand er bisher nirgends. Ein Befund gilt
+erst als behoben, wenn er **dort** gemessen wurde, wo er aufgetreten ist.
 
 ---
 
@@ -768,10 +816,15 @@ Alle drei mit `1782710000_tighten_read_rules.js` und
 `tests/read-rules-migration.test.js`. Siehe die Befunde oben. Die Regeln von
 `users` bleiben bewusst unverändert: Der gemessene Stand ist der richtige.
 
-### 1. Die Migrationen auf der Produktion nachziehen
+### ~~1. Die Migrationen auf der Produktion nachziehen~~ — **erledigt 14.09.2026**
 
-**Beim Messen nebenbei gefunden, und es ist der dringendste Punkt der Liste:**
-Die laufende Instanz steht nicht auf dem Stand des Repos. Gemessen am
+> Ausgeliefert am 14.09.2026, Messung vorher/nachher im Nachtrag oben. Es
+> fehlten drei Migrationen und vier Hooks (Stand des Servers: 4. August). Die
+> strukturelle Ursache — kein Git auf dem Server, Dateien werden von Hand
+> kopiert — besteht weiter und ist als Punkt 2 aufgenommen.
+
+**Beim Messen nebenbei gefunden, und es war der dringendste Punkt der Liste:**
+Die laufende Instanz stand nicht auf dem Stand des Repos. Gemessen am
 14.09.2026, lesend über die API. Der Schemastand wurde je Migration an einem
 Feld geprüft, das sie anlegt:
 
@@ -817,7 +870,49 @@ Server bisher nicht.
 Beim Nachziehen laufen die drei ausstehenden Migrationen in der Reihenfolge
 ihrer Zeitstempel. Danach gehört derselbe lesende Abgleich wiederholt.
 
-### 2. Die sechs String-Literale bei den Farben beheben (B-10)
+### 2. Den Abstand zwischen Repo und Server schließen
+
+Der Rückstand von vier Wochen war kein Versehen, sondern die Folge des
+Vorgehens: **Auf dem Server gibt es kein Git-Arbeitsverzeichnis.**
+`/opt/stacks/plietsche-pb/` enthält nur `pb_data`, `pb_hooks` und
+`pb_migrations`; die Dateien werden von Hand kopiert. Niemand sieht, wenn
+etwas fehlt — genau deshalb fiel vier Wochen lang nicht auf, dass ein als
+behoben geführter kritischer Befund weiter offenstand.
+
+Drei Wege, aufsteigend nach Aufwand:
+
+1. **Abgleich zum Nachsehen** — ein kleines Skript, das Prüfsummen von Hooks
+   und Migrationen zwischen Repo und Server vergleicht und meldet, was fehlt.
+   Löst nichts automatisch, macht den Abstand aber sichtbar.
+2. **Git auf dem Server** — Repo klonen, Deploy per `git pull` plus Neustart.
+   Der Stand ist dann jederzeit ablesbar.
+3. **Auslieferung aus der CI** — Hooks und Migrationen bei jedem Commit auf
+   `main` übertragen. Der Abstand kann dann gar nicht erst entstehen.
+
+Bis dahin gilt: Nach jedem Eingriff an Hooks oder Migrationen denselben
+lesenden Abgleich fahren, der den Rückstand aufgedeckt hat.
+
+### 3. Verwaiste Container aus dem Vorgänger-Backend entfernen
+
+Gemessen am 14.09.2026: `plietsche-backend` (Express + Drizzle) und
+`plietsche-postgres` liefen seit der Umstellung auf PocketBase im Mai 2026
+ohne Aufgabe weiter. Die Datenbank `plietschepluenn` ist **leer** (keine
+einzige Tabelle), ein registrierter Push-Job scheiterte jeden Freitag an
+`relation "stores" does not exist`, und der Container beanspruchte über
+Traefik weiterhin `plietsche-plünn.de` — die Domain lieferte im Browser
+`Cannot GET /`.
+
+Beide Container sind am 14.09.2026 **gestoppt** (nicht entfernt); die Domains
+bedient jetzt der Stack `plietsche-web` mit einer statischen Seite. Gesichert
+liegen Postgres-Dump, Quellen und die im Container gefundene
+`firebase-service-account.json` unter `/root/backups/plietsche-alt/`.
+
+Offen: Container und das 47 MB große Volume `plietsche-pluenn_postgres_data`
+endgültig entfernen, wenn die Sicherung als ausreichend gilt. Der Firebase-
+Schlüssel gehört dabei geprüft — er stammt aus dem alten Push-Weg und ist
+vermutlich ungenutzt, das ist aber nicht gemessen.
+
+### 4. Die sechs String-Literale bei den Farben beheben (B-10)
 
 Sechs Zeilen, ein echter Darstellungsfehler an sichtbarer Stelle, vermutlich
 schon heute im Scanner zu sehen. Der kleinste Aufwand im ganzen Bericht bei
