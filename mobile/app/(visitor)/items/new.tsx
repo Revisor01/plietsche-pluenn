@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Pressable, Image, Alert, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -34,7 +33,6 @@ const CONDITIONS: { key: string; label: string }[] = [
 ];
 
 export default function NewItem() {
-  const router = useRouter();
   const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Pressable, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { PP, alpha } from '../../../lib/theme';
@@ -32,17 +31,6 @@ function campaignFactorRows(c: Campaign): { label: string; factor: number }[] {
   if ((t ?? 1) > 1) out.push({ label: 'Mitnehmen', factor: t! });
   if ((b ?? 1) > 1) out.push({ label: 'Bringen', factor: b! });
   return out;
-}
-
-function campaignTypesLabel(c: Campaign): string {
-  const v = c.mult_visit, t = c.mult_take, b = c.mult_bring;
-  // Alte Aktion ohne die neuen Felder → auf multiplier zurückfallen.
-  if (v == null && t == null && b == null) return `×${factorLabel(c.multiplier)}`;
-  const parts: string[] = [];
-  if ((v ?? 1) > 1) parts.push(`Vorbeikommen ×${factorLabel(v!)}`);
-  if ((t ?? 1) > 1) parts.push(`Mitnehmen ×${factorLabel(t!)}`);
-  if ((b ?? 1) > 1) parts.push(`Bringen ×${factorLabel(b!)}`);
-  return parts.length ? parts.join(' · ') : 'kein Bonus';
 }
 
 // Parse a PB datetime string into a local Date (for the picker).
@@ -173,7 +161,6 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
 }
 
 export default function ActionsAdmin() {
-  const router = useRouter();
   const goBack = useGoBack();
   const qc = useQueryClient();
   const { data: campaigns, refetch } = useCampaigns();

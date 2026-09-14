@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Image, Pressable, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import QRCode from 'react-native-qrcode-svg';
@@ -24,7 +24,6 @@ const CATEGORIES = [
 ];
 
 export default function ItemDetail() {
-  const router = useRouter();
   const qc = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
   const goBack = useGoBack();

@@ -1,5 +1,4 @@
 import { View, Image } from 'react-native';
-import { useRouter } from 'expo-router';
 
 import { PP, alpha } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
@@ -42,7 +41,6 @@ function GridCard({ item }: { item: Item }) {
 }
 
 export default function Showcase() {
-  const router = useRouter();
   const goBack = useGoBack();
   const { data: items } = useShowcase(200);
 
