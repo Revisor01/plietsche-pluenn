@@ -96,6 +96,26 @@ Zu beachten: Die App liest `store` für Öffnungszeiten, Adresse und Ränge. Wer
 die Sammlung auf angemeldet umstellt, muss prüfen, ob eine Ansicht sie vor dem
 Login braucht. Das Feld selbst gehört aber in keinem Fall in die Antwort.
 
+### Stand 14.09.2026: Schritt 1 behoben, Schritt 2 bewusst nicht
+
+**Schritt 1 ist erledigt.** Das Geheimnis liegt in einer eigenen Sammlung
+`store_secrets`, deren fünf Zugriffsregeln auf `null` stehen — über die
+REST-API kommt niemand daran, auch nicht angemeldet. `store` selbst verlangt
+jetzt `@request.auth.id != ""`. Geprüft und belegt: Login, Registrierung und
+das Onboarding lesen `store` nicht, das Schließen der Regel bricht also keine
+Ansicht. Der Scan-Hook liest aus der neuen Sammlung, mit Rückfall auf das
+Altfeld für noch nicht migrierte Instanzen.
+
+**Schritt 2 — Rotation — unterbleibt bewusst.** Entscheidung des Betreibers
+am 14.09.2026: Die App wird von unter 100 Personen in einem einzelnen Laden
+genutzt; der Aufwand (neuer Aushang, Verteilung) steht nicht im Verhältnis zum
+Risiko, nachdem der Abrufweg geschlossen ist. Der alte Wert bleibt damit
+gültig. Das ist eine abgewogene Entscheidung, keine offene Lücke.
+
+Aus demselben Grund bleibt `geofence_radius_m` vorerst auf 2000 (siehe
+Nebenbefund weiter unten): Der Radius ist ohne GPS ohnehin nicht bindend, und
+die Ortsprüfung stützt sich auf das Türgeheimnis, das nun wieder geschützt ist.
+
 ---
 
 ### [KRITISCH] Der Tageswechsel liegt um 02:00 Uhr Ortszeit — zweiter Bonus möglich
