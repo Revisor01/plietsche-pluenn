@@ -16,6 +16,7 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 KEY_ID = os.environ['ASC_KEY_ID']
@@ -52,18 +53,61 @@ def token():
     return f'{basis}.{b64url(roh_signatur(der))}'
 
 
+def hole(url):
+    """Ruft die API und macht einen Fehler lesbar.
+
+    Ohne Behandlung landete ein HTTP-Fehler als Python-Stapelabzug im
+    Protokoll, und der GRUND steht bei Apple im Antwortkoerper, den urllib
+    nicht zeigt. Der Job bricht so oder so ab, bevor etwas gebaut wird — aber
+    die Diagnose soll nicht am Protokoll scheitern.
+    """
+    anfrage = urllib.request.Request(url, headers={'Authorization': f'Bearer {token()}'})
+    try:
+        with urllib.request.urlopen(anfrage) as antwort:
+            return json.load(antwort)
+    except urllib.error.HTTPError as fehler:
+        koerper = fehler.read().decode('utf-8', 'replace')
+        print(f'App Store Connect antwortete {fehler.code} {fehler.reason}:',
+              file=sys.stderr)
+        print(koerper[:2000], file=sys.stderr)
+        raise SystemExit(1)
+    except urllib.error.URLError as fehler:
+        print(f'App Store Connect nicht erreichbar: {fehler.reason}', file=sys.stderr)
+        raise SystemExit(1)
+
+
 def main():
     url = (f'https://api.appstoreconnect.apple.com/v1/builds'
            f'?filter%5Bapp%5D={APP_ID}&limit=200&sort=-version')
-    anfrage = urllib.request.Request(url, headers={'Authorization': f'Bearer {token()}'})
-    with urllib.request.urlopen(anfrage) as antwort:
-        daten = json.load(antwort)
+    daten = hole(url)
 
-    nummern = []
+    # Nicht-numerische Nummern (etwa '1.0.0.23') fielen bisher stillschweigend
+    # durch isdigit() und zaehlten beim Maximum nicht mit — die errechnete
+    # naechste Nummer waere dann womoeglich schon vergeben, und der Upload
+    # schluege erst bei Apple fehl, nach einem vollstaendigen macOS-Build.
+    # Vergeben werden die Nummern zwar von genau diesem Skript, aber wenn je
+    # eine andere Form auftaucht, soll das auffallen statt still zu wirken.
+    nummern, fremd = [], []
     for build in daten.get('data', []):
-        wert = build['attributes'].get('version') or '0'
-        if str(wert).isdigit():
+        wert = str(build['attributes'].get('version') or '0')
+        if wert.isdigit():
             nummern.append(int(wert))
+        else:
+            fremd.append(wert)
+
+    if fremd:
+        print(f'Abbruch: {len(fremd)} Build-Nummer(n) in unerwarteter Form, '
+              f'z. B. {", ".join(sorted(set(fremd))[:5])}. Eine daraus '
+              f'errechnete Nummer koennte schon vergeben sein.', file=sys.stderr)
+        raise SystemExit(1)
+
+    # limit=200 ohne Paginierung: Apple sortiert `version` als Zeichenkette,
+    # womit ab dem 201. Build die hoechste Nummer aus dem Fenster fallen kann.
+    # Bis dahin ist Luft; damit es dann auffaellt, steht hier eine Warnung.
+    if len(daten.get('data', [])) >= 200:
+        print('Warnung: 200 Builds zurueckgeliefert — die Abfrage ist am '
+              'Limit. Ab hier braucht sie Paginierung, sonst kann die '
+              'hoechste Nummer fehlen.', file=sys.stderr)
 
     naechste = (max(nummern) if nummern else 0) + 1
     print(f'build={naechste}')

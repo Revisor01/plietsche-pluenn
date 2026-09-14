@@ -18,6 +18,9 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error  # ausdruecklich: urllib.request zieht das Modul zwar mit,
+                     # aber darauf zu bauen ist bruechig — der except-Zweig
+                     # unten faengt urllib.error.HTTPError.
 import urllib.parse
 import urllib.request
 
