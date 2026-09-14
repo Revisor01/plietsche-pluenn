@@ -133,12 +133,12 @@ erst als behoben, wenn er **dort** gemessen wurde, wo er aufgetreten ist.
 | 2 | Tageswechsel um 02:00 Ortszeit — zweiter Bonus | KRITISCH | **BEHOBEN** | `points.js:113-123` (`storeDayStart`), `storeParts`, `storeOffsetMinutes`; Zeitzone aus `store.timezone` konfigurierbar. Tests: `timezone.test.js` (16 Tests), u. a. „gibt für 00:30 Ortszeit keinen zweiten Check-in-Bonus am Vormittag" |
 | 3 | Ohne GPS wird der Geofence nicht geprüft | HOCH | **BEWUSST OFFEN** | `points.js:639-640`: `assertInGeofence` gibt bei fehlendem GPS `null` zurück. Der Befund hing ausdrücklich an Befund 1 („solange das Geheimnis geheim ist"); mit dessen Behebung trägt die Begründung wieder. Kommentar `scan.pb.js:107-109` |
 | 4 | Serie zählt über übersprungene KW 53 hinweg | HOCH | **BEHOBEN** | `points.js:416-420` (`isoWeeksInYear`), `:427-435` (`isWeekAdjacent`); alle drei Aufrufstellen nutzen jetzt dieselbe Funktion. Tests: `streak.test.js` („reisst, wenn die 53. Woche uebersprungen wurde", „kennt die Laenge des jeweiligen Jahres"), `cron.test.js:150` |
-| 5 | Aktion mit höchstem Faktor wird nicht gefunden | MITTEL | **OFFEN** | `points.js:168` sortiert unverändert nach `-multiplier`, während `campaignMult` (`:149-156`) `mult_visit`/`mult_take`/`mult_bring` bevorzugt. Kein Test mit zwei gleichzeitigen Aktionen |
-| 6 | Gestufte Aktions-Abzeichen erreichen Besucher nicht | MITTEL | **OFFEN** | `cron.pb.js:95-105`: Der `tiered`-Zweig läuft weiter nur über `action_counts` und bricht mit `continue` ab, bevor Abschnitt b) („Wer im Aktionszeitraum da war") erreicht wird |
-| 7 | `tiers_json` als Zeichenkette lässt Stufen verschwinden | MITTEL | **OFFEN** | `points.js:461-470`: `t.length` unverändert ohne Normalisierung. Bei `'[]'` ergibt das 2 Slots statt 5 |
-| 8 | Punkte aus Abzeichen fehlen im `points`-Feld | NIEDRIG | **OFFEN** | `scan.pb.js:87` liefert `res.points`; kein zusätzliches Feld `bonus_points` vorhanden (repoweit kein Treffer) |
-| 9 | Anführungszeichen im Push-Token brechen aus dem Filter | NIEDRIG | **OFFEN** | `push.pb.js:20` und `:42` setzen `token` unverändert ungeprüft in den Filter |
-| 10 | Push gilt als verschickt, auch wenn Expo nicht erreichbar | NIEDRIG | **OFFEN** | `cron.pb.js:28-30`: `sent_at` wird unverändert unabhängig vom Rückgabewert von `push.send` gesetzt |
+| 5 | Aktion mit höchstem Faktor wird nicht gefunden | MITTEL | **BEHOBEN** (14.09.2026) | `fe8c607`. `findActiveCampaign` sortiert jetzt in JS nach `campaignBestMult` — dem Maximum über `mult_visit`/`mult_take`/`mult_bring` mit Rückfall auf `multiplier` —, stabil bei Gleichstand; die Zielgruppenprüfung bleibt davor. Tests: `streak.test.js`, Abschnitt „zwei Aktionen gleichzeitig" (5 Tests), u. a. „nimmt die Aktion mit dem höheren Holen-Faktor" und „zählt die Teilnahme an der stärkeren Aktion mit" (der Folgeschaden über `bumpActionCount`) |
+| 6 | Gestufte Aktions-Abzeichen erreichen Besucher nicht | MITTEL | **WEITGEHEND HINFÄLLIG**, Rest bewusst offen (14.09.2026) | `262abfd`. Am Code nachgemessen: Bei einer Besuchsaktion (`mult_visit > 1`) zählt `doCheckin` den Besuch über `bumpActionCount(user, camp, 'visit', 1)` in `action_counts` — der `tiered`-Zweig erreicht diese Person also sehr wohl, und zwar schon beim Check-in, nicht erst über den Job. Der Befund nahm den Fall ohne `action_counts`-Zeile an. Test: `cron.test.js`, „erreicht auch jemanden, der bei einer Besuchsaktion nur da war". **Verbleibender Rest:** ein nachträglich verknüpftes gestuftes Abzeichen wird nicht nachgeholt (der `continue` überspringt Abschnitt b). Das aufzulösen hieße, Besuche rückwirkend als Teilnahme zu zählen — das widerspricht der gepflegten Regel „Teilnahme zählt, worauf es Bonus gibt" (CHANGELOG) und ist eine Entscheidung des Betreibers, keine Fehlerbehebung. Der Ist-Stand ist als Test festgehalten („holt ein nachtraeglich verknuepftes gestuftes Abzeichen NICHT nach") |
+| 7 | `tiers_json` als Zeichenkette lässt Stufen verschwinden | MITTEL | **BEHOBEN** (14.09.2026) | `fe8c607`. Neue Hilfsfunktion `lib.asArray` packt den Wert einmal aus (Array durchreichen, Zeichenkette per `JSON.parse`, alles andere gilt als nicht gepflegt → fünf Stufen); `tierSlotCount` zählt nur noch ein echtes Array. Tests: `badges.test.js` (3), u. a. „nimmt bei leerer Rangliste als Zeichenkette fuenf Stufen an" — der schädliche Fall `'[]'`, der zuvor nach Silber abschnitt |
+| 8 | Punkte aus Abzeichen fehlen im `points`-Feld | NIEDRIG | **BEHOBEN** (14.09.2026) | `262abfd`. `points` bleibt unverändert — Build 33 liest und zeigt genau dieses Feld (`mobile/app/scan.tsx:91,182`), eine Antwortform ist ein Vertrag. Ergänzt ist das **zusätzliche** Feld `bonus_points` in beiden Antwortformen, gemessen an `points_total` vor/nach `checkBadges` (`scan.pb.js`, `awardBadgesAndCountBonus`). Tests: `scan.test.js` (6), u. a. „weist die Abzeichen-Punkte beim Check-in getrennt aus" (`points` 10, `bonus_points` 500, `points_total` 510). `docs/openapi.yaml` mitgezogen (beide Schemata, `required`, Beispiele). Die beiden Antwortform-Tests prüfen jetzt eine Mindestmenge samt Werten statt einer geschlossenen Liste — als geschlossene Liste hätten sie die ausdrücklich erlaubte Ergänzung als Fehler gemeldet |
+| 9 | Anführungszeichen im Push-Token brechen aus dem Filter | NIEDRIG | **BEHOBEN** (14.09.2026) | `db6b04f`. `assertExpoToken` prüft die Form gegen `^Expo(nent)?PushToken\[[A-Za-z0-9_-]+\]$` und weist alles andere mit 400 ab — geprüft statt maskiert, weil Expo Token ausschließlich so vergibt. Die App schickt nur, was `getExpoPushTokenAsync` liefert; ausgelieferte Versionen brechen nicht. Tests: `push.test.js` (16) — je 5 verbotene Fälle für beide Routen mit Gegenprobe, dass der fremde Eintrag unberührt bleibt, dazu 3 erlaubte Formen für beide Routen. Mutationsprobe: Prüfung entfernt → 10 Tests rot. `docs/openapi.yaml` mitgezogen |
+| 10 | Push gilt als verschickt, auch wenn Expo nicht erreichbar | NIEDRIG | **BEHOBEN** (14.09.2026) | `7f19c41`. `lib/push.js` gibt jetzt `{ sent, failed }` zurück; `failed` zählt die Stapel, die Expo gar nicht erreicht haben. Der Job unterscheidet damit „keine Empfänger:innen" (sofort abhaken) von „ging nicht raus" (stehen lassen, nächster Lauf). Gegen ewiges Kreisen ein Zähler, nach fünf Fehlversuchen wird abgehakt. Additive Migration `1782720000_push_send_attempts.js` (optionales Zahlenfeld, keine bestehende Spalte und keine Regel verändert; die App liest `push_messages` nicht). Tests: `cron.test.js` (5) und `push-attempts-migration.test.js` (6). Mutationsprobe: Wiederholzweig abgeschaltet → 4 Tests rot |
 
 **Nebenbefund aus `redundanz.md`, hier mitgeprüft:** Die doppelte
 Geofence-Prüfung ist zusammengeführt (`points.js:639-645`,
@@ -146,6 +146,39 @@ Geofence-Prüfung ist zusammengeführt (`points.js:639-645`,
 `DEFAULT_GEOFENCE_RADIUS_M` an einer Stelle (`points.js:17`). Die
 Fehlermeldung „Du bist nicht im Laden" ist Wort für Wort erhalten —
 die Bedingung aus dem Bericht ist eingehalten.
+
+### Durchgang vom 14.09.2026 — Befunde 5 bis 10 abgearbeitet
+
+Jeder der sechs Befunde ist vor der Bearbeitung am aktuellen Code nachgeprüft
+worden, nicht aus der Tabelle übernommen. Fünf bestanden unverändert und sind
+behoben; einer (Nr. 6) ist dabei weitgehend zerfallen.
+
+**Vorgehen durchgehend: erst der Test, der den Fehler zeigt, dann der Fix.**
+Wo es um Sicherheit ging (Nr. 9), steht je ein Test für den verbotenen und den
+erlaubten Fall; die Behebungen sind zusätzlich durch Mutationsproben belegt
+(Prüfung entfernt → benannte Zahl Tests rot).
+
+**Testsuite: 348 → 412 Tests in 17 Dateien, alle grün.**
+
+**Was dabei über den Auftrag hinaus gefunden wurde:**
+
+- **Der Harness bildete `bool`-Felder falsch ab.** Für ein nicht gesetztes
+  `bool`-Feld lieferte er den Leerstring, PocketBase liefert `false`. Das ist
+  dieselbe Falle, für die `NUMBER_FIELDS` längst bestand — eine Typebene
+  weiter und bisher unbemerkt, weil kein Test je auf `toBe(false)` prüfte. Ein
+  solcher Test wäre rot gewesen, obwohl die Produktion stimmt. Behoben mit
+  `BOOLEAN_FIELDS` (zehn Felder des Schemas) und fünf Tests, die die Nullwerte
+  je Typ festhalten. Gefunden wurde es beim Nachziehen von `tests.md`-Befund 5,
+  nicht durch gezielte Suche — ein Hinweis darauf, dass `4.4`
+  („keine Schemaprüfung, `NUMBER_FIELDS` als Handliste") mehr als eine
+  Formfrage ist.
+- **Ein bestehender Test hätte eine erlaubte Änderung als Fehler gemeldet.**
+  Die beiden Antwortform-Tests in `scan.test.js` prüften die Feldliste als
+  **geschlossene** Menge. Die Projektregel erlaubt aber ausdrücklich, Felder
+  hinzuzufügen — nur Wegfallen und Umbenennen sind verboten. Der Test hat den
+  Vertrag also strenger abgebildet, als er ist, und wäre bei jeder erlaubten
+  Ergänzung umgefallen. Jetzt prüft er die vereinbarten Felder als
+  Mindestmenge samt ihrer Werte.
 
 ---
 
@@ -231,7 +264,7 @@ Befunde. `rBtn` besteht weiter (`PPButton.tsx:39`).
 | 1.5 | `c && c.id` — formal in Ordnung | **HINFÄLLIG** | dito |
 | 1.6 | `release-notes.test.js` — `toHaveLength(480)` ohne Inhalt | **OFFEN** | unverändert |
 | 2.1a | `lib/push.js` vollständig ungetestet (119 Zeilen) | **OFFEN** | Kein Test lädt das Modul echt; `collectTokens`/`tokensForUser`/`send` werden nie ausgeführt |
-| 2.1b | `awardPoints`, `recomputeTotal` ohne direkte Tests | **OFFEN** | unverändert |
+| 2.1b | `awardPoints`, `recomputeTotal` ohne direkte Tests | **BEHOBEN** (14.09.2026) | `8a72ddc`. Neue Datei `tests/points-award.test.js` (16 Tests). Geprüft sind die drei Zusagen, die im Code als Begründung stehen: Selbstheilung aus `points_log` (abgedrifteter Stand 9999 → 40, Stand ohne Verlauf 1234 → 0), mehrere Vergaben in einem Durchgang, veraltetes Nutzerobjekt (10 → 510). Dazu wiederholtes Rechnen ohne doppelte Addition und die Trennung nach Person |
 | 2.2a | Tagesgrenze ungetestet | **BEHOBEN** | `timezone.test.js` (16 Tests), beide Server-Zeitzonen gegenübergestellt |
 | 2.2b | Race-Guard `doCheckin` / Feld `deduped` ungetestet | **BEHOBEN** | `timezone.test.js:101` prüft `zweiter.deduped === true` |
 | 2.2c | `year-badges` am 31.12. ungetestet | **OFFEN** | `cron.test.js:259` steigt unverändert mit `return` aus |
@@ -244,7 +277,7 @@ Befunde. `rBtn` besteht weiter (`PPButton.tsx:39`).
 | 4.3 | `sort` ignoriert Sekundärkriterien, `.reverse()` instabil | **OFFEN** | `harness.js:190` unverändert `sorted.reverse()` |
 | 4.4 | Keine Schemaprüfung, `NUMBER_FIELDS` als Handliste | **OFFEN** | unverändert |
 | 4.5 | Filter-Injection im Harness nicht abbildbar | **OFFEN** | Feststellung einer Grenze, kein behebbarer Befund im Harness |
-| 5 | Erlaubter Fall für `is_showcase` fehlt | **OFFEN** | unverändert |
+| 5 | Erlaubter Fall für `is_showcase` fehlt | **BEHOBEN** (14.09.2026) | `8a72ddc`. `defaults.test.js`: „laesst das Team ein Teil direkt ins Schaufenster stellen" (für `volunteer` und `admin`) und die Gegenprobe ohne gesetztes Feld. Dabei gefunden: Der Harness lieferte für ein nicht gesetztes `bool`-Feld den Leerstring statt `false` — dieselbe Falle wie bei den Zahlenfeldern, eine Typebene weiter. `BOOLEAN_FIELDS` deckt jetzt die zehn `bool`-Felder des Schemas ab, 5 Tests in `harness-query.test.js` halten die Nullwerte je Typ fest |
 | 5b | **Zugriffsregeln der Migrationen vollständig ungetestet** | **TEILWEISE BEHOBEN** | `store-secret-migration.test.js` testet jetzt die Regeln *einer* Migration — der erste Test dieser Art im Repo und die Vorlage für die übrigen. Die anderen zwölf Sammlungen bleiben ungetestet; siehe „Erstmals geprüft" |
 | 6 | Die fünf lohnendsten fehlenden Tests | **2 von 5 behoben** | Nr. 1 (Harness-Zeit + Tagesgrenze) und Nr. 4 (Race-Guard) sind da. Nr. 2 (`lib/push.js`), Nr. 3 (`year-badges` am 31.12.), Nr. 5 (`tiered`-Zweig) fehlen |
 
