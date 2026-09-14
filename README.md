@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Platform-iOS%2016.4%2B%20%C2%B7%20Android-blue?logo=apple" alt="Platform">
   <img src="https://img.shields.io/badge/Version-1.0.0-green" alt="Version">
   <img src="https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo" alt="Expo">
-  <img src="https://img.shields.io/badge/TypeScript-7.0-3178c6?logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/TypeScript-6.0-3178c6?logo=typescript" alt="TypeScript">
   <img src="https://img.shields.io/badge/Backend-PocketBase%200.22-b8dbe4" alt="PocketBase">
   <img src="https://img.shields.io/badge/Tracking-Keins-brightgreen" alt="Kein Tracking">
 </p>
