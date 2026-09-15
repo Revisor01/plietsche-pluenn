@@ -188,10 +188,20 @@ export default function Store() {
     for (const it of items ?? []) {
       if (group && groupOf(it.category) !== group) continue;
       if (type && typeOf(it.category) !== type) continue;
+      // Auch die übrigen Filter einbeziehen: Sonst stehen Größen zur Auswahl,
+      // die es in der gewählten Ansicht gar nicht gibt — man wählt sie und
+      // landet bei „Keine Teile in dieser Ansicht", ohne zu sehen, warum.
+      if (loc === 'store' && it.stays_external) continue;
+      if (loc === 'external' && !it.stays_external) continue;
+      if (showcase === 'only' && !it.is_showcase) continue;
+      if (fresh === 'only') {
+        const at = Date.parse(it.created);
+        if (!Number.isFinite(at) || at < Date.now() - NEW_DAYS * 24 * 60 * 60 * 1000) continue;
+      }
       if (it.size) set.add(it.size);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'de', { numeric: true }));
-  }, [items, group, type]);
+  }, [items, group, type, loc, showcase, fresh]);
 
   const filtered = useMemo(() => {
     const freshSince = Date.now() - NEW_DAYS * 24 * 60 * 60 * 1000;
