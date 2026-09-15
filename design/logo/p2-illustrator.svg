@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" width="2048" height="2048">
+  <!--
+    Plietsche Plünn — P²-Zeichen, Arbeitsfassung für Illustrator.
+
+    Unterschied zu p2-icon.svg: kein Schattenstapel aus 14 Kopien, keine
+    <use>-Verweise. Jede Ebene ist ein eigenes, direkt anwählbares Objekt.
+
+    Ebenen (in Illustrator als Gruppen sichtbar):
+      Hintergrund   — die Verlaufsfläche
+      Ring          — der Kreis
+      P             — der Buchstabe
+      Hochgestellt2 — die kleine Zwei
+
+    Die Konturen sind bewusst als `stroke` belassen, damit Strichstärken
+    änderbar bleiben. Für Schnittpfade in Illustrator:
+    Objekt → Aussehen umwandeln, danach Pfadfinder.
+
+    Markenfarben (identisch mit mobile/lib/theme.ts):
+      teal #27b092 · mint #79c4b0 · sky #80b4e2
+  -->
+  <defs>
+    <linearGradient id="markenverlauf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#27b092"/>
+      <stop offset="0.5" stop-color="#79c4b0"/>
+      <stop offset="1" stop-color="#80b4e2"/>
+    </linearGradient>
+  </defs>
+
+  <g id="Hintergrund">
+    <rect width="2048" height="2048" fill="url(#markenverlauf)"/>
+  </g>
+
+  <g id="Zeichen" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <g id="Ring">
+      <circle cx="1024" cy="1024" r="700" stroke-width="54"/>
+    </g>
+    <g id="P">
+      <path d="M 799.7 1326.4 L 799.7 766.4 L 900.5 766.4 A 140.0 140.0 0 0 1 900.5 1046.4 L 799.7 1046.4" stroke-width="66"/>
+    </g>
+    <g id="Hochgestellt2">
+      <path d="M 1133.9 721.6 A 72.1 72.1 0 1 1 1271.9 735.0 L 1140.2 865.0 L 1278.2 865.0" stroke-width="58.1"/>
+    </g>
+  </g>
+</svg>
