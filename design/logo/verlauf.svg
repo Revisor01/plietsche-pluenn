@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
+  <!--
+    Plietsche Plünn — der Markenverlauf allein.
+
+    Oben die Fläche im Winkel der App (135°, teal → mint → sky), darunter die
+    drei Farben einzeln als Felder zum Aufnehmen mit der Pipette.
+
+    Werte identisch mit mobile/lib/theme.ts:
+      teal #27b092 · mint #79c4b0 · sky #80b4e2
+  -->
+  <defs>
+    <linearGradient id="markenverlauf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#27b092"/>
+      <stop offset="0.5" stop-color="#79c4b0"/>
+      <stop offset="1" stop-color="#80b4e2"/>
+    </linearGradient>
+  </defs>
+
+  <g id="Verlaufsflaeche">
+    <rect x="0" y="0" width="1200" height="400" fill="url(#markenverlauf)"/>
+  </g>
+
+  <g id="Einzelfarben">
+    <rect x="0"   y="400" width="400" height="200" fill="#27b092"/>
+    <rect x="400" y="400" width="400" height="200" fill="#79c4b0"/>
+    <rect x="800" y="400" width="400" height="200" fill="#80b4e2"/>
+  </g>
+
+  <g id="Beschriftung" font-family="Helvetica, Arial, sans-serif" font-size="26" fill="#ffffff">
+    <text x="200" y="510" text-anchor="middle">teal</text>
+    <text x="200" y="545" text-anchor="middle" font-size="22" opacity="0.85">#27b092</text>
+    <text x="600" y="510" text-anchor="middle">mint</text>
+    <text x="600" y="545" text-anchor="middle" font-size="22" opacity="0.85">#79c4b0</text>
+    <text x="1000" y="510" text-anchor="middle">sky</text>
+    <text x="1000" y="545" text-anchor="middle" font-size="22" opacity="0.85">#80b4e2</text>
+  </g>
+</svg>
