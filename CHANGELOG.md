@@ -7,6 +7,12 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Behoben
+- **Schaufenster-Knopf war farblich verdreht:** In der Teile-Übersicht leuchtete der Stern-Knopf kräftig bei genau den Teilen, die **nicht** im Schaufenster stehen — die Farbe zeigte also die Aufforderung statt des Zustands. Jetzt ist er kräftig, solange das Teil im Schaufenster liegt.
+
+### Geändert
+- **Weniger Beiwerk in der Teile-Liste:** Der kleine Pfeil am rechten Rand ist weg. Die ganze Zeile war ohnehin antippbar, er sagte nichts Zusätzliches.
+
+### Behoben
 
 - **Absturz beim Öffnen von Teilen und Einstellungen behoben.** Jede Ansicht mit einem Schalter — die Detailansicht eines Teils (aus Laden, Inventar oder Freigabe-Liste), das Einstell-Formular, die Benachrichtigungen und die Admin-Bereiche für Badges und Suchanfragen — brach beim Öffnen sofort ab. Ursache war die Farbe der ausgeschalteten Schalter-Spur, die seit der Zusammenführung der Design-Farben erst während der Schalter-Animation berechnet wurde; dort ist sie nicht verfügbar. Sie steht jetzt wieder vorher fest.
 

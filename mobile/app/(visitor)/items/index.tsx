@@ -99,7 +99,6 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
           <View style={{ padding: PP.space.xs, backgroundColor: PP.surface, borderRadius: PP.rMicro }}>
             <QRCode value={item.qr_code || item.sku} size={48} color={PP.ink} backgroundColor={PP.onBrand} />
           </View>
-          <Icon name="chevron-right" size={PP.iconSizes.sm} color={PP.ink3} />
         </View>
       </Pressable>
 
@@ -118,7 +117,11 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
               <PPButton
                 size="s"
                 icon="star"
-                variant={item.is_showcase ? 'secondary' : 'primary'}
+                // Kräftig, solange das Teil im Schaufenster ist — die Farbe
+                // markiert den Zustand, nicht die Aufforderung. Vorher war es
+                // umgekehrt: Das kräftige Teal stand an den Teilen, die gerade
+                // NICHT im Schaufenster sind.
+                variant={item.is_showcase ? 'primary' : 'secondary'}
                 loading={busy}
                 onPress={() => run(() => setShowcase(item.id, !item.is_showcase))}
               >
