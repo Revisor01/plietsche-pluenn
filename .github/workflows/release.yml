@@ -11,8 +11,10 @@ name: Veröffentlichen
 # Was danach noch von Hand passiert:
 #   - iOS: Die Fassung wird zur Pruefung eingereicht, nicht automatisch
 #     freigegeben. Apple prueft, danach gibst du sie in App Store Connect frei.
-#   - Android: Geht direkt in die Produktionsspur; Google startet die Pruefung
-#     selbst.
+#   - Android: Geht in die Produktionsspur; Google startet die Pruefung selbst.
+#     Bei Freigabe "draft" landet die Fassung stattdessen als Entwurf in der
+#     Play Console und wird dort von Hand freigegeben — so muss die allererste
+#     Veroeffentlichung laufen, siehe docs/store-release.md.
 
 on:
   workflow_dispatch:
@@ -28,6 +30,18 @@ on:
           - nur iOS
           - nur Android
         default: beide
+      freigabe:
+        description: 'Android: completed = geht sofort in die Produktionsspur. draft = Entwurf in der Play Console (fuer die ERSTE Veroeffentlichung noetig).'
+        type: choice
+        options:
+          - completed
+          - draft
+        # Vorgabe completed, weil das der Normalfall einer Veroeffentlichung ist.
+        # Fuer die allererste Veroeffentlichung muss hier draft gewaehlt werden:
+        # Solange die App bei Google unveroeffentlicht ist, lehnt die API jeden
+        # anderen Status ab ("Only releases with status draft may be created on
+        # draft app."). Der Lauf scheiterte sonst nach dem fertigen Build.
+        default: completed
       hinweis:
         description: 'Was ist neu? (leer = aus den Commits erzeugt)'
         required: false
@@ -343,6 +357,8 @@ jobs:
           cat /tmp/notes.txt
 
       - name: In die Produktionsspur stellen
+        env:
+          PLAY_RELEASE_STATUS: ${{ inputs.freigabe }}
         run: |
           AAB=$(ls mobile/android/app/build/outputs/bundle/release/*.aab | head -1)
           python3 .github/scripts/upload-play.py /tmp/gplay-sa.json "$AAB" \
@@ -352,13 +368,21 @@ jobs:
         if: always()
         env:
           VERSION_CODE: ${{ steps.version.outputs.code }}
+          FREIGABE: ${{ inputs.freigabe }}
         run: |
           {
             echo "## Google Play"
             echo ""
             echo "Version ${{ needs.pruefung.outputs.version }} (versionCode ${VERSION_CODE})"
-            echo "in der Produktionsspur, sofort fuer alle."
+            echo "in der Produktionsspur."
             echo ""
-            echo "Google startet die Pruefung selbst; bis zur Auslieferung dauert es"
-            echo "ueblicherweise einige Stunden."
+            if [ "$FREIGABE" = "draft" ]; then
+              echo "Status **Entwurf**: Die Fassung liegt in der Play Console und ist"
+              echo "noch bei niemandem. Dort freigeben — bei der ersten Veroeffentlichung"
+              echo "muessen vorher Store-Eintrag, Inhaltsbewertung und Datenschutzangaben"
+              echo "vollstaendig sein."
+            else
+              echo "Status **freigegeben**, sofort fuer alle. Google startet die Pruefung"
+              echo "selbst; bis zur Auslieferung dauert es ueblicherweise einige Stunden."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

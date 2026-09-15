@@ -25,7 +25,21 @@ on:
           - internal
           - alpha
           - beta
+          - production
         default: internal
+      freigabe:
+        description: 'completed = geht sofort an die Spur. draft = landet als Entwurf in der Play Console (noetig, solange die App dort noch nie veroeffentlicht wurde).'
+        type: choice
+        options:
+          - completed
+          - draft
+        # Vorgabe bleibt completed: Der interne Weg laeuft seit Monaten so, und
+        # ein stillschweigender Wechsel auf draft haette Testfassungen unbemerkt
+        # in der Konsole liegen lassen, statt sie an die Tester:innen zu geben.
+        # draft wird deshalb bewusst gewaehlt — vor allem fuer die erste
+        # Einreichung in die Produktionsspur, die Google anders gar nicht
+        # annimmt ("Only releases with status draft may be created on draft app.").
+        default: completed
       hinweis:
         description: 'Was soll getestet werden? (leer = aus den Commits erzeugt)'
         required: false
@@ -211,6 +225,7 @@ jobs:
         env:
           SPUR: ${{ inputs.spur }}
           PROBELAUF: ${{ inputs.probelauf }}
+          PLAY_RELEASE_STATUS: ${{ inputs.freigabe }}
         run: |
           AAB=$(ls mobile/android/app/build/outputs/bundle/release/*.aab | head -1)
           echo "Paket: $AAB"
@@ -225,6 +240,7 @@ jobs:
           HINWEISE: ${{ steps.hinweise.outputs.text }}
           SPUR: ${{ inputs.spur }}
           PROBELAUF: ${{ inputs.probelauf }}
+          FREIGABE: ${{ inputs.freigabe }}
         run: |
           {
             echo "## Google Play"
@@ -233,6 +249,13 @@ jobs:
               echo "**Probelauf** — nichts veroeffentlicht, Nummer unverbraucht."
             else
               echo "**versionCode ${VERSION_CODE}** in Spur \`${SPUR}\`, aus \`${GITHUB_SHA:0:7}\`"
+              echo ""
+              if [ "$FREIGABE" = "draft" ]; then
+                echo "Status **Entwurf** — liegt in der Play Console und geht erst"
+                echo "los, wenn du es dort freigibst."
+              else
+                echo "Status **freigegeben** — Google startet die Pruefung selbst."
+              fi
             fi
             echo ""
             echo "### Zu testen"
