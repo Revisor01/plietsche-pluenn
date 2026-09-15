@@ -368,7 +368,7 @@ module.exports = {
       } else {
         body += '.';
       }
-      push.send(targets, 'Moin!', body, '/(visitor)/points');
+      push.send(targets, 'Moin!', body, '/(visitor)/points', 'streak');
     } catch (_) {
       // ignore
     }

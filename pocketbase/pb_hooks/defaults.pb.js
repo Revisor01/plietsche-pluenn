@@ -144,7 +144,8 @@ onRecordAfterUpdateRequest((e) => {
         targets,
         'Dein Teil ist freigegeben',
         `„${r.get('title')}" ist jetzt im Laden — ${pts} Punkte für dich.`,
-        '/(visitor)/points'
+        '/(visitor)/points',
+        'badge'
       );
     }
   } catch (_) {}
