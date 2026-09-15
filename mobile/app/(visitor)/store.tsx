@@ -17,6 +17,18 @@ import {
 import { Screen, PPHeader, PPText, Card, PPButton } from '../../components/ui';
 import type { Item } from '../../lib/types';
 
+// "Neu" = in den letzten 14 Tagen eingestellt (Feld `created`).
+//
+// Die Startseite ("Neu im Laden", useRecentItems) nimmt stattdessen eine feste
+// Anzahl der zuletzt eingestellten Teile. Das passt dort, weil der Abschnitt eine
+// Zeile mit fester Breite füllt — er soll nie leer und nie endlos sein.
+// Ein Filter kann das nicht übernehmen: "die neuesten sechs" wäre unabhängig davon,
+// ob sie von gestern oder aus dem Frühjahr stammen, und ließe sich mit Größe oder
+// Kategorie nicht sinnvoll kombinieren. Deshalb hier ein Zeitraum.
+// 14 Tage, weil der Laden nicht täglich geöffnet ist: Wer alle zwei Wochen
+// vorbeikommt, soll genau das sehen, was seit dem letzten Besuch dazugekommen ist.
+const NEW_DAYS = 14;
+
 // Image-forward grid card — the photo is the hero, text sits below.
 function StoreCard({ item, onOpen }: { item: Item; onOpen: () => void }) {
   const uri = itemThumb(item);
@@ -93,7 +105,13 @@ function FilterRow({
         {title.toUpperCase()}
       </PPText>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
-        <SelectChip label="Alle" active={value === null} onPress={() => onSelect(null)} />
+        {/* Mehrere Zeilen haben ein "Alle" — für die Sprachausgabe die Zeile dazusagen. */}
+        <SelectChip
+          label="Alle"
+          a11yLabel={`Alle — ${title}`}
+          active={value === null}
+          onPress={() => onSelect(null)}
+        />
         {options.map((o) => (
           <SelectChip key={o.key} label={o.label} active={value === o.key} onPress={() => onSelect(o.key)} />
         ))}
@@ -102,13 +120,26 @@ function FilterRow({
   );
 }
 
-function SelectChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function SelectChip({
+  label,
+  a11yLabel,
+  active,
+  onPress,
+}: {
+  label: string;
+  a11yLabel?: string;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={a11yLabel ?? label}
       accessibilityState={{ selected: active }}
+      // Die Chips sind rund 36 pt hoch — knapp unter der empfohlenen Trefferfläche.
+      // hitSlop nur vertikal, damit nebeneinanderliegende Chips sich nicht überlappen.
+      hitSlop={{ top: 6, bottom: 6 }}
       style={{
         paddingVertical: PP.space.sm,
         paddingHorizontal: PP.space.lg,
@@ -137,6 +168,12 @@ export default function Store() {
   const [size, setSize] = useState<string | null>(null);
   // Aufbewahrung: im Laden vs. extern gelagert (große Teile bleiben bei der einreichenden Person).
   const [loc, setLoc] = useState<string | null>(null);
+  // "Neu" und "Schaufenster" sind eigene Zeilen statt Optionen der Aufbewahrungs-Zeile:
+  // Aufbewahrung beantwortet "wo liegt das Teil" und ist damit eine andere Frage. Wer
+  // "Schaufenster" in dieselbe Zeile packt, schließt außerdem "Im Laden + Schaufenster" aus,
+  // obwohl sich beides kombinieren lässt. Zwei eigene Ja/Nein-Zeilen bleiben kombinierbar.
+  const [showcase, setShowcase] = useState<string | null>(null);
+  const [fresh, setFresh] = useState<string | null>(null);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -157,15 +194,21 @@ export default function Store() {
   }, [items, group, type]);
 
   const filtered = useMemo(() => {
+    const freshSince = Date.now() - NEW_DAYS * 24 * 60 * 60 * 1000;
     return (items ?? []).filter((it) => {
       if (group && groupOf(it.category) !== group) return false;
       if (type && typeOf(it.category) !== type) return false;
       if (size && it.size !== size) return false;
       if (loc === 'store' && it.stays_external) return false;
       if (loc === 'external' && !it.stays_external) return false;
+      if (showcase === 'only' && !it.is_showcase) return false;
+      if (fresh === 'only') {
+        const at = Date.parse(it.created);
+        if (!Number.isFinite(at) || at < freshSince) return false;
+      }
       return true;
     });
-  }, [items, group, type, size, loc]);
+  }, [items, group, type, size, loc, showcase, fresh]);
 
   // Reset type/size when leaving a group that supported them.
   const selectGroup = (g: string | null) => {
@@ -174,7 +217,7 @@ export default function Store() {
     setSize(null);
   };
 
-  const activeCount = [group, type, size, loc].filter((v) => v !== null).length;
+  const activeCount = [group, type, size, loc, showcase, fresh].filter((v) => v !== null).length;
   const showType = group !== null && GROUPS_WITH_TYPE.includes(group);
 
   const sizeOptions = sizes.map((s) => ({ key: s, label: s }));
@@ -268,6 +311,20 @@ export default function Store() {
               </Pressable>
             </View>
 
+            <FilterRow
+              title="Neu"
+              options={[{ key: 'only', label: `Neu (${NEW_DAYS} Tage)` }]}
+              value={fresh}
+              onSelect={setFresh}
+            />
+
+            <FilterRow
+              title="Schaufenster"
+              options={[{ key: 'only', label: 'Nur Schaufenster' }]}
+              value={showcase}
+              onSelect={setShowcase}
+            />
+
             <FilterRow title="Für wen" options={GROUPS} value={group} onSelect={selectGroup} />
 
             {showType && (
@@ -294,7 +351,7 @@ export default function Store() {
                   size="m"
                   variant="ghost"
                   fullWidth={false}
-                  onPress={() => { setGroup(null); setType(null); setSize(null); setLoc(null); }}
+                  onPress={() => { setGroup(null); setType(null); setSize(null); setLoc(null); setShowcase(null); setFresh(null); }}
                 >
                   Zurücksetzen
                 </PPButton>
