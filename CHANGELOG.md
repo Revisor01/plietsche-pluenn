@@ -9,12 +9,14 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ### Neu
 - **Filter „Neu" im Laden:** zeigt nur Teile, die in den letzten 14 Tagen dazugekommen sind — praktisch, wenn man alle paar Wochen vorbeischaut und sehen will, was seit dem letzten Mal neu ist.
 - **Filter „Schaufenster" im Laden:** zeigt nur die Teile, die das Team ins Schaufenster gehoben hat. Lässt sich mit den übrigen Filtern kombinieren.
+- **Mitteilungen lassen sich auf Android einzeln einstellen:** Serie und Punkte, Aktionen und Ankündigungen, Abzeichen und Ränge sowie Sonstiges sind jetzt vier getrennte Arten in den Android-Systemeinstellungen. Jede kann dort für sich stummgeschaltet werden, oder ihren eigenen Ton bekommen — unabhängig von den Schaltern in der App.
 
 ### Behoben
 - **Schaufenster-Knopf war farblich verdreht:** In der Teile-Übersicht leuchtete der Stern-Knopf kräftig bei genau den Teilen, die **nicht** im Schaufenster stehen — die Farbe zeigte also die Aufforderung statt des Zustands. Jetzt ist er kräftig, solange das Teil im Schaufenster liegt.
 
 ### Geändert
 - **Weniger Beiwerk in der Teile-Liste:** Der kleine Pfeil am rechten Rand ist weg. Die ganze Zeile war ohnehin antippbar, er sagte nichts Zusätzliches.
+- **Erinnerungen zur Serie kommen jetzt deutlicher an, Sonstiges leiser.** Eine Serie läuft an einem bestimmten Tag ab — die Erinnerung darf auf dem iPhone auch einen Fokus durchbrechen und meldet sich auf Android oben am Bildschirm. Hinweise auf neue Aktionen und Abzeichen melden sich normal, alles Übrige wandert still in die Mitteilungszentrale.
 
 ### Behoben
 

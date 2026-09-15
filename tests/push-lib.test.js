@@ -247,6 +247,8 @@ describe('send', () => {
         title: 'Moin!',
         body: '10 Punkte',
         sound: 'default',
+        channelId: 'other',
+        interruptionLevel: 'passive',
         data: { deep_link: '/(visitor)/points' },
       },
     ]);
@@ -351,5 +353,94 @@ describe('send', () => {
     expect(uebrig).toHaveLength(109);
     expect(uebrig).not.toContain('d105');
     expect(uebrig).toContain('d5');
+  });
+});
+
+describe('send: Kanal und Dringlichkeit', () => {
+  // Warum das hier geprüft wird: Der Kanal entscheidet, wie laut eine
+  // Nachricht auf Android ankommt, das interruptionLevel dasselbe auf iOS.
+  // Beides ist unsichtbar — ein vertauschter Wert fällt erst auf, wenn eine
+  // Serien-Erinnerung stumm bleibt oder ein Abzeichen jemanden nachts weckt.
+  // Die Kennungen müssen außerdem mit mobile/lib/push.ts übereinstimmen
+  // (Tabelle: docs/push-channels.md).
+  const ZIEL = { token: 'TOK1', userId: 'u1', deviceId: 'd1' };
+
+  const ERWARTET = [
+    // Serie: die einzige Kategorie mit Frist — darf einen Fokus durchbrechen.
+    { kategorie: 'streak', channelId: 'streak', interruptionLevel: 'time-sensitive' },
+    { kategorie: 'campaign', channelId: 'campaign', interruptionLevel: 'active' },
+    { kategorie: 'badge', channelId: 'badge', interruptionLevel: 'active' },
+    // Alles ohne eigene Kategorie: still, wie der Opt-in-Rückfall auch.
+    { kategorie: 'other', channelId: 'other', interruptionLevel: 'passive' },
+    { kategorie: 'sonstiges', channelId: 'other', interruptionLevel: 'passive' },
+    { kategorie: '', channelId: 'other', interruptionLevel: 'passive' },
+    { kategorie: undefined, channelId: 'other', interruptionLevel: 'passive' },
+  ];
+
+  for (const { kategorie, channelId, interruptionLevel } of ERWARTET) {
+    it(`schickt "${kategorie === undefined ? '(fehlt)' : kategorie || '(leer)'}" auf Kanal ${channelId} mit ${interruptionLevel}`, () => {
+      const h = setup();
+      h.push.send([ZIEL], 'Titel', 'Text', '', kategorie);
+      const nachricht = JSON.parse(h.httpCalls[0].body)[0];
+      expect(nachricht.channelId).toBe(channelId);
+      expect(nachricht.interruptionLevel).toBe(interruptionLevel);
+    });
+  }
+
+  it('setzt den Kanal in jeder Nachricht eines Stapels, nicht nur der ersten', () => {
+    const h = setup();
+    const ziele = [];
+    for (let i = 0; i < 120; i++) ziele.push({ token: `TOK${i}`, userId: 'u1', deviceId: `d${i}` });
+    h.push.send(ziele, 'Titel', 'Text', '', 'streak');
+    for (const call of h.httpCalls) {
+      for (const m of JSON.parse(call.body)) {
+        expect(m.channelId).toBe('streak');
+        expect(m.interruptionLevel).toBe('time-sensitive');
+      }
+    }
+  });
+
+  it('hält die Kennungen mit der App zusammen', () => {
+    // Die App legt die Kanäle unter genau diesen Kennungen an
+    // (mobile/lib/push.ts). Laufen sie auseinander, adressiert das Backend
+    // einen Kanal, den es auf dem Gerät nicht gibt.
+    const h = setup();
+    expect(Object.keys(h.push.CHANNELS).sort()).toEqual(['badge', 'campaign', 'other', 'streak']);
+    for (const [name, eintrag] of Object.entries(h.push.CHANNELS)) {
+      expect(eintrag.channelId).toBe(name);
+    }
+  });
+});
+
+describe('Aufrufstellen reichen die Kategorie durch', () => {
+  // Der Kanal nützt nichts, wenn eine Aufrufstelle ihn vergisst — die
+  // Nachricht landete dann still auf „Sonstiges". Deshalb prüfen wir die
+  // echten Hooks, nicht nur send() selbst.
+
+  it('die Check-in-Bestätigung geht auf den Serien-Kanal', () => {
+    const h = loadHook(
+      'scan.pb.js',
+      {
+        users: [
+          {
+            __name: 'u1',
+            id: 'u1',
+            role: 'visitor',
+            points_total: 0,
+            push_streak_enabled: true,
+            push_campaign_enabled: true,
+            push_badge_enabled: true,
+            push_other_enabled: true,
+          },
+        ],
+        push_devices: [{ id: 'd1', user: 'u1', expo_token: 'TOK1' }],
+      },
+      { realPush: true }
+    );
+    h.lib.pushCheckinConfirmation(h.records.u1, 10, 0);
+    expect(h.httpCalls).toHaveLength(1);
+    const nachricht = JSON.parse(h.httpCalls[0].body)[0];
+    expect(nachricht.channelId).toBe('streak');
+    expect(nachricht.interruptionLevel).toBe('time-sensitive');
   });
 });

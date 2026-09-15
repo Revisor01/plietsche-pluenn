@@ -18,7 +18,7 @@ import {
 
 import { queryClient } from '../lib/queryClient';
 import { useAuth } from '../lib/hooks/useAuth';
-import { initialDeepLink, parseDeepLink } from '../lib/push';
+import { initialDeepLink, parseDeepLink, setupNotificationChannels } from '../lib/push';
 import { PP } from '../lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -32,6 +32,12 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+// Die Android-Kanäle stehen, bevor irgendetwas ankommt — nicht erst beim
+// Anmelden. Android schreibt die Eigenschaften eines Kanals beim ersten
+// Anlegen fest; käme die erste Nachricht zuerst, wäre die Wichtigkeit dauerhaft
+// die falsche. Auf iOS tut der Aufruf nichts.
+setupNotificationChannels();
 
 // expo-router renders this instead of a blank screen when a route throws.
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {

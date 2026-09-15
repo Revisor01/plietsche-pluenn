@@ -28,7 +28,7 @@ cronAdd('push-scheduled', '* * * * *', () => {
     const role = `${msg.get('target_role') || ''}`;
     // Manual broadcasts count as the "other"/campaign category for opt-in.
     const targets = push.collectTokens(segment, role, 'campaign');
-    const res = push.send(targets, `${msg.get('title')}`, `${msg.get('body')}`, `${msg.get('deep_link') || ''}`) || {};
+    const res = push.send(targets, `${msg.get('title')}`, `${msg.get('body')}`, `${msg.get('deep_link') || ''}`, 'campaign') || {};
 
     // Scheitert der Versand, bleibt sent_at leer — der Filter oben holt die
     // Nachricht dann im nächsten Lauf wieder. Vorher galt sie als verschickt,

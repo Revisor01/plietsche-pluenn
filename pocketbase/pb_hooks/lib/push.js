@@ -3,7 +3,36 @@
 
 const EXPO_URL = 'https://exp.host/--/api/v2/push/send';
 
+// ── Kanäle und Dringlichkeit ──────────────────────────────────────────────
+//
+// QUELLE DER WAHRHEIT: docs/push-channels.md. Diese Tabelle ist die Kopie fürs
+// Backend, `mobile/lib/push.ts` hält die Kopie für die App. Die Kennungen
+// MÜSSEN in beiden Dateien gleich lauten: Die App legt die Kanäle unter diesen
+// Namen an, das Backend adressiert sie. Wer hier etwas ändert, ändert beide
+// Stellen und die Tabelle in der Doku — sonst landen Nachrichten wieder im
+// Standardkanal.
+//
+// interruptionLevel ist die iOS-Seite derselben Entscheidung:
+//   time-sensitive — darf auch ein Fokus durchbrechen (Serie läuft heute ab)
+//   active         — normaler Ton und Banner
+//   passive        — still in die Mitteilungszentrale, kein Ton
+const CHANNELS = {
+  streak: { channelId: 'streak', interruptionLevel: 'time-sensitive' },
+  campaign: { channelId: 'campaign', interruptionLevel: 'active' },
+  badge: { channelId: 'badge', interruptionLevel: 'active' },
+  other: { channelId: 'other', interruptionLevel: 'passive' },
+};
+
+// Kategorie → Kanal. Unbekanntes wie „Sonstiges" behandeln, genauso wie die
+// Opt-in-Zuordnung oben.
+function channelFor(category) {
+  return CHANNELS[category] || CHANNELS.other;
+}
+
 module.exports = {
+  CHANNELS,
+  channelFor,
+
   // Collect Expo push tokens for the users a message targets, honouring each
   // user's per-category opt-in flag. Returns [{token, userId}].
   collectTokens(segment, role, category) {
@@ -83,14 +112,25 @@ module.exports = {
   // gab nichts zu senden" und „es ging nicht raus". Ohne diese Unterscheidung
   // gilt eine Nachricht auch dann als verschickt, wenn Expo nicht erreichbar
   // war, und der Cronjob holt sie nie wieder.
-  send(targets, title, body, deepLink) {
+  // `category` ist dieselbe Kategorie, mit der die Ziele gesammelt wurden. Sie
+  // bestimmt den Android-Kanal und die iOS-Dringlichkeit. Fehlt sie, gilt
+  // „Sonstiges" — eine Nachricht geht dann immer noch raus, nur leiser.
+  //
+  // Kennt ein Gerät den Kanal nicht (App-Stand vor den Kanälen), stellt
+  // expo-notifications über seinen Rückfallkanal zu (Wichtigkeit HIGH). Die
+  // Nachricht geht also nicht verloren und bleibt hörbar — siehe
+  // docs/push-channels.md.
+  send(targets, title, body, deepLink, category) {
     if (!targets.length) return { sent: 0, failed: 0 };
     const dao = $app.dao();
+    const ch = channelFor(category);
     const messages = targets.map((t) => ({
       to: t.token,
       title,
       body,
       sound: 'default',
+      channelId: ch.channelId,
+      interruptionLevel: ch.interruptionLevel,
       data: deepLink ? { deep_link: deepLink } : {},
     }));
 
