@@ -132,6 +132,10 @@ Migrationen stecken, gebaut und ausgeliefert bei jedem Push auf `main`. Wie das
 abläuft, was einmalig umzustellen ist und wie man im Störfall von Hand
 ausliefert, steht in [`docs/deploy.md`](docs/deploy.md).
 
+Wie die App selbst in den App Store und zu Google Play kommt — und wann eine
+Fassung als Entwurf statt sofort freigegeben hochgeladen wird — steht in
+[`docs/store-release.md`](docs/store-release.md).
+
 ## Aufbau
 
 ```
