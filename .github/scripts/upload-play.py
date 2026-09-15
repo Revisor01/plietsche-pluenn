@@ -12,8 +12,15 @@
 # validate: kompletter Durchlauf inkl. Upload + Track-Zuweisung + :validate,
 # aber die Edit wird VERWORFEN statt committet (kein Release, versionCode
 # bleibt unverbraucht) — fuer Workflow-Tests.
+#
+# Freigabestatus: PLAY_RELEASE_STATUS (Vorgabe "completed"). "draft" legt das
+# Release nur als Entwurf in der Konsole ab, statt es sofort auszuliefern.
+# Solange die App bei Google noch nie veroeffentlicht wurde, ist das der EINZIGE
+# zulaessige Status — jeder andere scheitert mit "Only releases with status
+# draft may be created on draft app."
 import base64
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -29,6 +36,12 @@ MODE = sys.argv[5] if len(sys.argv) > 5 else "commit"
 PKG = "de.godsapp.plietschepluenn"
 API = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PKG}"
 UP = f"https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/{PKG}"
+
+# Google kennt mehr Status (inProgress, halted), die brauchen aber zusaetzliche
+# Angaben (userFraction). Hier sind nur die beiden zugelassen, die dieser Weg
+# auch wirklich bedienen kann — alles andere faellt unten durch.
+ERLAUBTE_STATUS = ("draft", "completed")
+STATUS = os.environ.get("PLAY_RELEASE_STATUS", "").strip() or "completed"
 
 
 def b64url(data):
@@ -65,6 +78,15 @@ def get_token():
     with urllib.request.urlopen(req) as r:
         return json.loads(r.read())["access_token"]
 
+
+# Vor dem ersten Netzzugriff pruefen: Ein Tippfehler soll sofort auffallen und
+# nicht erst, nachdem das Paket hochgeladen ist. Durchgereicht wird ein
+# unbekannter Wert auf keinen Fall — Google antwortete darauf mit einer
+# Fehlermeldung, die nach einem Rechteproblem aussieht.
+if STATUS not in ERLAUBTE_STATUS:
+    print(f"FEHLER: PLAY_RELEASE_STATUS={STATUS!r} ist unbekannt. "
+          f"Erlaubt sind: {', '.join(ERLAUBTE_STATUS)}.", file=sys.stderr)
+    sys.exit(2)
 
 TOKEN = get_token()
 
@@ -113,13 +135,13 @@ try:
     print(f"Bundle hochgeladen: versionCode {vc}")
 
     release = {"releases": [{
-        "status": "completed",
+        "status": STATUS,
         "versionCodes": [str(vc)],
         "releaseNotes": [{"language": "de-DE", "text": notes}],
     }]}
     for track in TRACKS.split(","):
         call("PUT", f"{API}/edits/{edit}/tracks/{track}", json.dumps(release).encode())
-        print(f"Track {track}: gesetzt")
+        print(f"Track {track}: gesetzt (Status {STATUS})")
 
     if MODE == "validate":
         call("POST", f"{API}/edits/{edit}:validate", b"")
@@ -127,7 +149,11 @@ try:
         call("DELETE", f"{API}/edits/{edit}")
     else:
         call("POST", f"{API}/edits/{edit}:commit", b"")
-        print("Commit OK — Release eingereicht")
+        if STATUS == "draft":
+            print("Commit OK — Release liegt als ENTWURF in der Play Console "
+                  "und muss dort von Hand freigegeben werden.")
+        else:
+            print("Commit OK — Release eingereicht")
 except Exception:
     try:
         call("DELETE", f"{API}/edits/{edit}")
