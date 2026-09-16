@@ -6,6 +6,9 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ## [Unreleased]
 
+### Geändert
+- **Neues App-Symbol:** Das P² im Kreis ist feiner gezeichnet — echte Buchstabenformen statt nachgezogener Linien, ein zarterer Ring und ein weicher Schatten. Farben und Aufbau bleiben.
+
 ### Neu
 - **Filter „Neu" im Laden:** zeigt nur Teile, die in den letzten 14 Tagen dazugekommen sind — praktisch, wenn man alle paar Wochen vorbeischaut und sehen will, was seit dem letzten Mal neu ist.
 - **Filter „Schaufenster" im Laden:** zeigt nur die Teile, die das Team ins Schaufenster gehoben hat. Lässt sich mit den übrigen Filtern kombinieren.
