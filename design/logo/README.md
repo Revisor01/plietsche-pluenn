@@ -50,11 +50,22 @@ Normwert (−10 %/120 %) greift, der Strich und Schatten sauber umschließt.
 Wer eine neue Fassung aus Illustrator einspielt, prüft das zuerst:
 `rsvg-convert` rendern lassen und nachsehen, ob Ring und Zeichen da sind.
 
+`p2-illustrator.svg` ist die **Quelle**. Die drei übrigen P²-Dateien werden
+daraus abgeleitet und nicht von Hand geändert:
+
 | Datei | Verwendung |
 |---|---|
-| `p2-icon.svg` | App-Icon: Marken-Verlauf, langer Schatten |
+| `p2-illustrator.svg` | Quelle aus Illustrator — hier ändern |
+| `p2-icon.svg` | App-Icon: Marken-Verlauf, Schlagschatten |
 | `p2-mark-white.svg` | Weiß freigestellt — auf dunklem Grund |
 | `p2-mark-teal.svg` | Einfarbig Teal `#27b092` — Briefpapier, Web |
+
+Die Marken tragen keinen Schatten und keinen Hintergrund: Sie sollen auf
+beliebigem Grund sitzen.
+
+Die Dateien ohne `p2-` im Namen (`icon.svg`, `mark-*.svg`, `print.svg`) gehören
+zum **früheren** Zeichen mit dem angedeuteten Auge. Sie bleiben als Archiv
+liegen und werden nicht mehr gepflegt.
 
 Die App-Assets in `mobile/assets/` werden hieraus abgeleitet:
 `icon.png` (iOS, 1024, ohne Alpha), `android-icon-foreground.png` (512,
