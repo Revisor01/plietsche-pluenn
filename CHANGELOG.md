@@ -11,11 +11,14 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Neues App-Symbol:** Das P² im Kreis ist feiner gezeichnet — echte Buchstabenformen statt nachgezogener Linien, ein zarterer Ring und ein weicher Schatten. Farben und Aufbau bleiben.
 
 ### Neu
+- **Passwort vergessen:** Auf der Anmeldeseite lässt sich jetzt ein Link zum Zurücksetzen anfordern. Wer sein Passwort nicht mehr weiß, kommt wieder ins Konto, ohne jemanden fragen zu müssen.
+- **Konto löschen:** Im Profil lässt sich das eigene Konto endgültig entfernen — mit Passwortabfrage und Rückfrage davor. Punktestand, Serie, Abzeichen und Besuche werden dabei gelöscht; Teile, die schon im Laden sind, bleiben dort ohne Bezug zur Person.
 - **Filter „Neu" im Laden:** zeigt nur Teile, die in den letzten 14 Tagen dazugekommen sind — praktisch, wenn man alle paar Wochen vorbeischaut und sehen will, was seit dem letzten Mal neu ist.
 - **Filter „Schaufenster" im Laden:** zeigt nur die Teile, die das Team ins Schaufenster gehoben hat. Lässt sich mit den übrigen Filtern kombinieren.
 - **Mitteilungen lassen sich auf Android einzeln einstellen:** Serie und Punkte, Aktionen und Ankündigungen, Abzeichen und Ränge sowie Sonstiges sind jetzt vier getrennte Arten in den Android-Systemeinstellungen. Jede kann dort für sich stummgeschaltet werden, oder ihren eigenen Ton bekommen — unabhängig von den Schaltern in der App.
 
 ### Behoben
+- **E-Mail-Adresse ändern funktioniert jetzt wirklich.** Die App meldete „Wir haben dir eine E-Mail geschickt", verschickt wurde aber nie etwas — im Backend war kein Mailversand eingerichtet. Die Bestätigungsmail kommt jetzt an.
 - **Schaufenster-Knopf war farblich verdreht:** In der Teile-Übersicht leuchtete der Stern-Knopf kräftig bei genau den Teilen, die **nicht** im Schaufenster stehen — die Farbe zeigte also die Aufforderung statt des Zustands. Jetzt ist er kräftig, solange das Teil im Schaufenster liegt.
 
 ### Geändert

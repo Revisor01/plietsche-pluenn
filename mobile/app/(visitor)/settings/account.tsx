@@ -99,7 +99,7 @@ export default function Account() {
   const router = useRouter();
   const goBack = useGoBack();
   const { data: user, refetch } = useCurrentUser();
-  const { updateName, updateEmail, updatePassword, logout } = useAuth();
+  const { updateName, updateEmail, updatePassword, logout, deleteAccount } = useAuth();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
@@ -107,8 +107,12 @@ export default function Account() {
   const [email, setEmail] = useState('');
   const [oldPw, setOldPw] = useState('');
   const [newPw, setNewPw] = useState('');
+  // Zum Loeschen: erst aufklappen, dann Passwort eingeben. Zwei bewusste
+  // Schritte, damit niemand aus Versehen sein Konto entfernt.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePw, setDeletePw] = useState('');
 
-  const [busy, setBusy] = useState<null | 'name' | 'email' | 'pw'>(null);
+  const [busy, setBusy] = useState<null | 'name' | 'email' | 'pw' | 'delete'>(null);
 
   // useCurrentUser loads async; hydrate the name field once the user arrives.
   useEffect(() => {
@@ -167,6 +171,41 @@ export default function Account() {
     } finally {
       setBusy(null);
     }
+  };
+
+  // Konto löschen. Die Rückfrage benennt ausdrücklich, was verschwindet —
+  // Punkte, Serie und Abzeichen sind für viele der Grund, die App zu nutzen.
+  const confirmDelete = () => {
+    if (!deletePw) {
+      Alert.alert('Passwort fehlt', 'Bitte gib dein Passwort ein, um das Löschen zu bestätigen.');
+      return;
+    }
+    Alert.alert(
+      'Konto wirklich löschen?',
+      'Dein Punktestand, deine Serie, deine Abzeichen und alle Besuche werden gelöscht. Das lässt sich nicht rückgängig machen.',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        {
+          text: 'Endgültig löschen',
+          style: 'destructive',
+          onPress: async () => {
+            setBusy('delete');
+            try {
+              await deleteAccount(deletePw);
+              // Kein Alert mehr danach: Der Auth-Store ist leer, der Root-Guard
+              // schickt sofort zum Login — ein Hinweis auf einem verschwindenden
+              // Screen käme nicht mehr an.
+            } catch (e: any) {
+              setBusy(null);
+              Alert.alert(
+                'Klappt nich',
+                errorText(e, 'Konto konnte nicht gelöscht werden. Stimmt das Passwort?'),
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -279,6 +318,88 @@ export default function Account() {
             </PPText>
           </Card>
         </Pressable>
+      </View>
+
+      {/* Konto löschen steht bewusst ganz unten und hinter einem zweiten
+          Schritt: erst aufklappen, dann Passwort, dann Rückfrage. Stores
+          verlangen den Weg in der App (Apple 5.1.1(v)); er darf trotzdem
+          nicht aus Versehen gegangen werden. */}
+      <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.xl, gap: PP.space.md }}>
+        {!deleteOpen ? (
+          <Pressable
+            onPress={() => setDeleteOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Konto löschen"
+            hitSlop={PP.space.sm}
+            style={{ alignSelf: 'center', paddingVertical: PP.space.sm }}
+          >
+            <PPText size="sm" color={PP.ink3}>
+              Konto löschen
+            </PPText>
+          </Pressable>
+        ) : (
+          <Card
+            pad={PP.space.lg}
+            style={{
+              gap: PP.space.md,
+              backgroundColor: alpha(PP.err, 'ghost'),
+              borderWidth: 1,
+              borderColor: alpha(PP.err, 'medium'),
+            }}
+          >
+            <PPText weight="semibold" size="base" color={PP.err}>
+              Konto löschen
+            </PPText>
+            <PPText size="sm" color={PP.ink2}>
+              Punktestand, Serie, Abzeichen und alle Besuche werden gelöscht. Teile, die
+              du in den Laden gegeben hast, bleiben dort — ohne Bezug zu dir.
+            </PPText>
+            <Field
+              icon="lock"
+              label="Passwort zur Bestätigung"
+              secure
+              value={deletePw}
+              onChangeText={setDeletePw}
+            />
+            {/* Der Löschknopf folgt dem Muster des Abmelden-Knopfes oben:
+                rot getönte Karte statt eigener Button-Variante. */}
+            <Pressable
+              onPress={busy === 'delete' || !deletePw ? undefined : confirmDelete}
+              accessibilityRole="button"
+              accessibilityLabel="Konto endgültig löschen"
+              accessibilityState={{ disabled: !deletePw, busy: busy === 'delete' }}
+              style={{ opacity: !deletePw ? 0.5 : 1 }}
+            >
+              <Card
+                pad={14}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: PP.space.sm,
+                  backgroundColor: alpha(PP.err, 'medium'),
+                  borderWidth: 1,
+                  borderColor: PP.err,
+                }}
+              >
+                <PPText weight="semibold" size="base" color={PP.err}>
+                  {busy === 'delete' ? 'Wird gelöscht …' : 'Konto endgültig löschen'}
+                </PPText>
+              </Card>
+            </Pressable>
+            <PPButton
+              size="m"
+              variant="secondary"
+              disabled={busy === 'delete'}
+              onPress={() => {
+                setDeleteOpen(false);
+                setDeletePw('');
+              }}
+            >
+              Abbrechen
+            </PPButton>
+          </Card>
+        )}
       </View>
     </Screen>
   );

@@ -54,6 +54,13 @@ export function useAuth() {
     updateEmail: async (newEmail: string) => {
       await pb.collection('users').requestEmailChange(newEmail);
     },
+    // Passwort vergessen. PocketBase verschickt einen Link zum Zuruecksetzen.
+    // Die Antwort ist bewusst immer gleich, egal ob es die Adresse gibt —
+    // sonst liesse sich ueber die Fehlermeldung herausfinden, wer ein Konto
+    // hat. Der aufrufende Screen sagt deshalb "falls es ein Konto gibt".
+    requestPasswordReset: async (email: string) => {
+      await pb.collection('users').requestPasswordReset(email);
+    },
     // Change password. Requires the current password for verification.
     updatePassword: async (oldPassword: string, newPassword: string) => {
       const id = pb.authStore.record?.id;
@@ -85,6 +92,36 @@ export function useAuth() {
       } catch {
         // Kein Netz o.ä. — darf das Abmelden nicht verhindern.
       }
+      pb.authStore.clear();
+      queryClient.clear();
+    },
+    // Konto endgültig löschen. Reihenfolge wie beim Abmelden, mit einem
+    // Schritt davor:
+    //  1. Passwort prüfen — authWithPassword schlägt bei falschem Passwort
+    //     fehl und bricht ab, bevor irgendetwas gelöscht ist. Ein verlegtes
+    //     Gerät in fremder Hand darf das Konto nicht ausradieren können.
+    //  2. Push-Token abmelden, solange die Anmeldung noch gilt (siehe logout).
+    //  3. Datensatz löschen. Besuche, Punkteverlauf, Abzeichen, Aktions-
+    //     zähler und Push-Geräte hängen mit cascadeDelete am Konto und gehen
+    //     mit. Eingestellte Teile bleiben im Bestand des Ladens, verlieren
+    //     aber ihren Bezug (created_by ist bewusst ohne cascadeDelete).
+    //  4. Gerät aufräumen wie beim Abmelden.
+    deleteAccount: async (password: string) => {
+      const record = pb.authStore.record;
+      const id = record?.id;
+      const email = record?.email as string | undefined;
+      if (!id || !email) throw new Error('not authenticated');
+
+      await pb.collection('users').authWithPassword(email, password);
+
+      try {
+        await unregisterPushToken();
+      } catch {
+        // Kein Netz o.ä. — das Löschen selbst ist wichtiger. Der Datensatz in
+        // push_devices verschwindet ohnehin mit dem Konto.
+      }
+
+      await pb.collection('users').delete(id);
       pb.authStore.clear();
       queryClient.clear();
     },

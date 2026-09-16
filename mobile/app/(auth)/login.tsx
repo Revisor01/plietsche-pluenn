@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, KeyboardAvoidingView, Platform, Alert, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PP } from '../../lib/theme';
@@ -10,10 +10,11 @@ import { PPText, PPButton, Field } from '../../components/ui';
 export default function Login() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, requestPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const onSubmit = async () => {
     if (!email.trim() || !password) {
@@ -29,6 +30,52 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Passwort vergessen: Wir schicken den Link an die Adresse, die oben schon
+  // im Feld steht — ein eigener Screen dafuer waere ein Umweg. Die Rueckmeldung
+  // sagt bewusst "falls es ein Konto gibt": Ob die Adresse bekannt ist, darf
+  // hier niemand herauslesen koennen.
+  const onForgotPassword = () => {
+    const next = email.trim().toLowerCase();
+    if (!next) {
+      Alert.alert(
+        'E-Mail fehlt',
+        'Trag oben deine E-Mail-Adresse ein, dann schicken wir dir einen Link zum Zurücksetzen.',
+      );
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+      Alert.alert('E-Mail', 'Bitte eine gültige E-Mail-Adresse eingeben.');
+      return;
+    }
+    Alert.alert(
+      'Passwort zurücksetzen',
+      `Wir schicken einen Link an ${next}. Damit kannst du dir ein neues Passwort setzen.`,
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        {
+          text: 'Link schicken',
+          onPress: async () => {
+            setResetting(true);
+            try {
+              await requestPasswordReset(next);
+              Alert.alert(
+                'Guck in dein Postfach',
+                'Falls es ein Konto mit dieser Adresse gibt, ist der Link unterwegs. Schau auch im Spam-Ordner nach.',
+              );
+            } catch {
+              Alert.alert(
+                'Klappt nich',
+                'Der Link konnte nicht verschickt werden. Versuch es später nochmal.',
+              );
+            } finally {
+              setResetting(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -77,6 +124,19 @@ export default function Login() {
             Anmelden
           </PPButton>
         </View>
+
+        <Pressable
+          onPress={onForgotPassword}
+          disabled={resetting}
+          accessibilityRole="button"
+          accessibilityLabel="Passwort vergessen"
+          hitSlop={PP.space.md}
+          style={{ alignSelf: 'center', marginTop: PP.space.lg }}
+        >
+          <PPText size="sm" color={PP.ink2}>
+            {resetting ? 'Wird verschickt …' : 'Passwort vergessen?'}
+          </PPText>
+        </Pressable>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md, marginVertical: PP.space.xxl }}>
           <View style={{ flex: 1, height: 1, backgroundColor: PP.hairline }} />
