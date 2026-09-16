@@ -192,6 +192,28 @@ Schritt für Schritt:
 Mehr nicht. Kein SSH-Schlüssel, kein Portainer-API-Token, kein
 Superuser-Zugang — der Verify liest ausschließlich unangemeldet.
 
+## Mailversand
+
+Die App verschickt E-Mails, wenn jemand sein Passwort zurücksetzt, seine
+Adresse ändert oder sie bestätigt. Der Versand hängt **nicht** am Repo: Er
+steht in den Einstellungen der laufenden PocketBase-Instanz und wird bei einer
+Neuinstallation nicht mitgeliefert.
+
+| | |
+|---|---|
+| Postfach | `noreply@plietsche-plünn.de` (Mailbox bei KeyHelp auf der App-Domain) |
+| SMTP | `server.godsapp.de:587`, STARTTLS, `AUTH PLAIN` |
+| Zugangsdaten | `PLIETSCHE_MAIL_USER` / `PLIETSCHE_MAIL_PASS` in `~/.claude/secrets.env` |
+| Absendername | Plietsche Plünn |
+
+Die drei Vorlagen (Passwort zurücksetzen, Adresse bestätigen, Willkommen) sind
+auf Deutsch hinterlegt — PocketBase liefert sie ab Werk auf Englisch aus.
+
+**Nach einer Neuinstallation der Instanz zu prüfen:** SMTP eingeschaltet,
+Absender gesetzt, Vorlagen auf Deutsch. Sonst verspricht die App eine Mail,
+die nie ankommt — genau dieser Zustand bestand bis zum 16.09.2026
+unbemerkt.
+
 ## Im Störfall von Hand ausliefern
 
 **Erste Wahl: den Workflow von Hand starten.** Actions → *Deploy Backend* →
