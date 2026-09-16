@@ -1,44 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" width="2048" height="2048">
-  <!--
-    Plietsche Plünn — P²-Zeichen, Arbeitsfassung für Illustrator.
-
-    Unterschied zu p2-icon.svg: kein Schattenstapel aus 14 Kopien, keine
-    <use>-Verweise. Jede Ebene ist ein eigenes, direkt anwählbares Objekt.
-
-    Ebenen (in Illustrator als Gruppen sichtbar):
-      Hintergrund   — die Verlaufsfläche
-      Ring          — der Kreis
-      P             — der Buchstabe
-      Hochgestellt2 — die kleine Zwei
-
-    Die Konturen sind bewusst als `stroke` belassen, damit Strichstärken
-    änderbar bleiben. Für Schnittpfade in Illustrator:
-    Objekt → Aussehen umwandeln, danach Pfadfinder.
-
-    Markenfarben (identisch mit mobile/lib/theme.ts):
-      teal #27b092 · mint #79c4b0 · sky #80b4e2
-  -->
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Ebene_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 2048 2048">
+  <!-- Generator: Adobe Illustrator 30.8.1, SVG Export Plug-In . SVG Version: 2.1.4 Build 1)  -->
   <defs>
-    <linearGradient id="markenverlauf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#27b092"/>
-      <stop offset="0.5" stop-color="#79c4b0"/>
-      <stop offset="1" stop-color="#80b4e2"/>
+    <linearGradient id="Unbenannter_Verlauf_6" data-name="Unbenannter Verlauf 6" x1="427.8" y1="1444.2" x2="428.8" y2="1443.2" gradientTransform="translate(-876116 2957688.375) scale(2048 -2048)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2bb091"/>
+      <stop offset=".5" stop-color="#79c3b0"/>
+      <stop offset="1" stop-color="#80b3e1"/>
     </linearGradient>
+    <filter id="drop-shadow-1" x="736.5" y="709.5" width="503" height="749" filterUnits="userSpaceOnUse">
+      <feOffset dx="17" dy="17"/>
+      <feGaussianBlur result="blur" stdDeviation="14.2"/>
+      <feFlood flood-color="#a8a8a8" flood-opacity=".8"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="drop-shadow-2" x="1177.5" y="556.5" width="240" height="343" filterUnits="userSpaceOnUse">
+      <feOffset dx="17" dy="17"/>
+      <feGaussianBlur result="blur1" stdDeviation="14.2"/>
+      <feFlood flood-color="#a8a8a8" flood-opacity=".8"/>
+      <feComposite in2="blur1" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="drop-shadow-3" x="252.5" y="252.5" width="1577" height="1577" filterUnits="userSpaceOnUse">
+      <feOffset dx="17" dy="17"/>
+      <feGaussianBlur result="blur2" stdDeviation="14.2"/>
+      <feFlood flood-color="#a8a8a8" flood-opacity=".8"/>
+      <feComposite in2="blur2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
   </defs>
-
   <g id="Hintergrund">
-    <rect width="2048" height="2048" fill="url(#markenverlauf)"/>
+    <rect width="2048" height="2048" fill="url(#Unbenannter_Verlauf_6)"/>
   </g>
-
-  <g id="Zeichen" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
-    <g id="Ring">
-      <circle cx="1024" cy="1024" r="700" stroke-width="54"/>
-    </g>
-    <g id="P">
-      <path d="M 799.7 1326.4 L 799.7 766.4 L 900.5 766.4 A 140.0 140.0 0 0 1 900.5 1046.4 L 799.7 1046.4" stroke-width="66"/>
-    </g>
-    <g id="Hochgestellt2">
-      <path d="M 1133.9 721.6 A 72.1 72.1 0 1 1 1271.9 735.0 L 1140.2 865.0 L 1278.2 865.0" stroke-width="58.1"/>
-    </g>
+  <g filter="url(#drop-shadow-1)">
+    <path d="M973.1,735.8c44.5,0,82.1,8,112.7,23.9,30.6,15.9,53.8,38.4,69.7,67.3,15.9,28.9,23.9,63.4,23.9,103.4s-8,73.1-23.9,102.2c-15.9,29.1-39.2,51.5-69.7,67.1-30.6,15.6-68.1,23.4-112.7,23.4h-175.6v275.6h-34.6v-662.9h210.2ZM1143.4,930.4c0-51.4-15-91.2-44.9-119.5-29.9-28.3-72-42.4-126.3-42.4h-174.6v322.9h174.6c36.1,0,66.9-6.4,92.4-19.3,25.5-12.8,45-31.3,58.5-55.4,13.5-24.1,20.2-52.8,20.2-86.3Z" fill="#fffffb"/>
+  </g>
+  <g filter="url(#drop-shadow-2)">
+    <path d="M1216.5,650h-13.3v-.7c0-8.1,1.5-16.2,4.5-24.2,3-8,7.6-15.1,13.9-21.6,6.2-6.4,14-11.6,23.2-15.5,9.3-3.9,20.1-5.9,32.6-5.9s29.7,3.1,40.5,9.2c10.9,6.1,19.1,14.2,24.6,24.2,5.6,10,8.3,20.9,8.3,32.8s-1.9,20.1-5.8,29c-3.9,8.8-8.7,17-14.4,24.5-5.7,7.5-11.4,14.5-16.9,20.9l-91.1,104v1.1h134.8v11.8h-153.1v-10.9l100-114.8c5.3-6,10.5-12.4,15.5-19,5-6.6,9.1-13.8,12.4-21.7,3.3-7.8,4.9-16.6,4.9-26.2s-2.2-17.4-6.7-25.5c-4.4-8.1-11.1-14.7-19.9-19.8-8.8-5.1-19.9-7.7-33.2-7.7s-24.3,2.7-33.3,8.1c-9,5.4-15.8,12.2-20.5,20.5s-6.9,17.2-6.9,26.6v.7Z" fill="#fffffb"/>
+  </g>
+  <g filter="url(#drop-shadow-3)">
+    <circle cx="1024" cy="1024" r="732.2" fill="none" stroke="#fffffb" stroke-miterlimit="10" stroke-width="26"/>
   </g>
 </svg>
