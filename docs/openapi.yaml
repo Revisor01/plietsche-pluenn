@@ -134,12 +134,16 @@ paths:
                 gps_lat:
                   type: number
                   format: double
-                  description: Breitengrad des Geräts. Nur zusammen mit `gps_lng` ausgewertet.
+                  description: |
+                    Breitengrad des Geräts. Nur zusammen mit `gps_lng` ausgewertet.
+                    Dient allein der Prüfung, ob das Gerät im Umkreis des Ladens
+                    ist; die Koordinate wird nicht gespeichert — im Besuch landet
+                    nur der gerundete Abstand (`gps_distance_m`).
                   example: 54.1333
                 gps_lng:
                   type: number
                   format: double
-                  description: Längengrad des Geräts.
+                  description: Längengrad des Geräts. Wird ebenfalls nicht gespeichert.
                   example: 8.8567
                 items_count:
                   type: integer

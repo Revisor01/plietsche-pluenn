@@ -167,6 +167,24 @@ describe('Geofence', () => {
     expect(h.rows('visits')).toHaveLength(1);
   });
 
+  it('speichert keine Koordinaten, nur den Abstand zum Laden', () => {
+    // Datenminimierung: Der Standort dient allein der Pruefung, ob jemand vor
+    // Ort ist. Dafuer genuegt der Abstand — die genaue Position gehoert nicht
+    // dauerhaft in die Datenbank. Siehe Datenschutzerklaerung.
+    const h = setup();
+    const res = h.call(ROUTE, {
+      body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.00054, gps_lng: STORE_LNG },
+      authRecord: auth(h),
+    });
+    expect(res.status).toBe(200);
+
+    const visit = h.rows('visits')[0];
+    expect(visit.gps_lat).toBeUndefined();
+    expect(visit.gps_lng).toBeUndefined();
+    // Der Abstand bleibt erhalten — rund 60 m noerdlich des Ladens.
+    expect(visit.gps_distance_m).toBe(60);
+  });
+
   it('prueft den Geofence auch beim Scannen eines Teils', () => {
     const h = setup({
       items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
@@ -285,7 +303,6 @@ describe('Geofence', () => {
     });
     const besuch = h.rows('visits')[0];
     expect(besuch.gps_distance_m).toBe(60);
-    expect(besuch.gps_lat).toBe(STORE_LAT + 0.00054);
   });
 });
 
