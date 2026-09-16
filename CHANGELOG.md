@@ -7,6 +7,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased]
 
 ### Geändert
+- **Beim Check-in wird dein Standort nicht mehr gespeichert.** Die App prüft weiterhin, ob du wirklich im Laden bist — festgehalten wird davon aber nur noch, wie weit du vom Laden entfernt warst, nicht mehr, wo genau du standest. Am Check-in selbst ändert sich nichts.
 - **Neues App-Symbol:** Das P² im Kreis ist feiner gezeichnet — echte Buchstabenformen statt nachgezogener Linien, ein zarterer Ring und ein weicher Schatten. Farben und Aufbau bleiben.
 
 ### Neu

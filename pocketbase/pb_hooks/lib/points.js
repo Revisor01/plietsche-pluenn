@@ -322,8 +322,10 @@ module.exports = {
     visit.set('user', user.id);
     visit.set('checkin_at', now.toISOString());
     visit.set('items_count', itemsCount);
-    if (opts.lat != null) visit.set('gps_lat', opts.lat);
-    if (opts.lng != null) visit.set('gps_lng', opts.lng);
+    // Datenminimierung: Der Standort dient allein der Pruefung, ob jemand vor
+    // Ort ist. Dafuer genuegt der Abstand — die genauen Koordinaten werden
+    // bewusst nicht gespeichert. Die Felder gps_lat/gps_lng bleiben im Schema,
+    // damit alte Besuche lesbar bleiben; neue Besuche fuellen sie nicht mehr.
     if (opts.distance != null) visit.set('gps_distance_m', Math.round(opts.distance));
     if (camp) visit.set('campaign', camp.id);
 
