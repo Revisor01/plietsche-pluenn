@@ -25,6 +25,19 @@ Nginx liest die Dateien bei jeder Anfrage; ein Neustart ist nicht nötig.
 Das Symbol wird bewusst nicht doppelt im Repo gehalten — es ist dasselbe wie
 `mobile/assets/icon.png` und wird von dort kopiert.
 
+**Genau darin liegt die Falle:** Ändert sich das App-Symbol, merkt das hier
+niemand — die Seite liegt ausschließlich auf dem Server, kein Bauvorgang, keine
+Prüfung. Am 16.09.2026 zeigte die Seite deshalb noch das übernächste alte
+Zeichen, zwei Fassungen hinterher. Wer `mobile/assets/icon.png` neu erzeugt,
+kopiert es **im selben Zug** hierher und prüft danach:
+
+```bash
+curl -s "https://xn--plietsche-plnn-rsb.de/icon.png?v=$(date +%s)" | shasum -a 256
+shasum -a 256 mobile/assets/icon.png
+```
+
+Beide Prüfsummen müssen gleich sein.
+
 ## Was hier gepflegt werden muss
 
 - **Öffnungszeiten** stehen als HTML in der Seite und zusätzlich im
