@@ -22,16 +22,33 @@ per `<use>`, statt ihn zu kopieren.
 ## P² — das aktuelle App-Icon
 
 Seit Build 30 trägt die App das P² im Kreis: ein schlichtes, geometrisch
-konstruiertes P mit hochgestellter 2, kein Marken-P. Ring, Stamm, Bogen und
-Ziffer sind Strichzüge mit runden Enden — Ring 54, P 66, Ziffer 58 Einheiten
-stark, der Ring mit Radius 700 bei 2048 Kantenlänge. Der lange Schatten ist
-gegenüber `icon.svg` deutlich zurückgenommen (14 Stufen, 10 % Deckkraft):
-bei dieser Strichstärke ist er eine leise Kante, kein Effekt.
+konstruiertes P mit hochgestellter 2, kein Marken-P. Die Zeichnung kommt aus
+Illustrator (`p2-illustrator.svg`) und ist die Quelle für alle Symbole.
 
-Die Striche sind bewusst schmal. Ab etwa 56 px wird das grenzwertig — auf
-dem Homescreen (120 px) spielt das keine Rolle, in Einstellungen und Suche
-schon. Wer das ändert, ändert `RING_W` und `SW` gemeinsam, sonst kippt das
-Verhältnis von Ring zu Zeichen.
+Seit dem 16.09.2026 sind die Striche kräftiger: Ring 80, P 60, Ziffer 25
+Einheiten bei 2048 Kantenlänge, Ringradius 720,5. Die Buchstaben sind echte
+Schriftformen, die zusätzlich eine Kontur tragen — daher wirken sie voller als
+eine reine Strichzeichnung. Der Schatten ist ein weicher Schlagschatten
+(17 Einheiten Versatz, 14,2 Weichzeichnung, Grau bei 80 %), kein Stufenschatten.
+
+Damit ist auch die alte Einschränkung erledigt: Die vorige, dünnere Fassung
+wurde unter etwa 56 px grenzwertig. Bei 60 px sind Ring und Zeichen jetzt klar
+getrennt lesbar.
+
+### Falle beim Export aus Illustrator
+
+Illustrator schreibt die Filterbereiche als feste Nutzerkoordinaten
+(`x`, `y`, `width`, `height`), lässt aber `filterUnits="userSpaceOnUse"` weg.
+Ohne diese Angabe gilt nach SVG-Norm `objectBoundingBox`: Die Zahlen werden
+dann als **Vielfache der Objektgröße** gelesen, der Filterbereich landet weit
+außerhalb der Zeichenfläche — und alles mit Schatten verschwindet spurlos.
+Sichtbar wird das erst beim Rendern; im Illustrator und in manchen Vorschauen
+sieht die Datei richtig aus.
+
+In der Fassung im Repo sind die Bereiche deshalb **entfernt**, damit der
+Normwert (−10 %/120 %) greift, der Strich und Schatten sauber umschließt.
+Wer eine neue Fassung aus Illustrator einspielt, prüft das zuerst:
+`rsvg-convert` rendern lassen und nachsehen, ob Ring und Zeichen da sind.
 
 | Datei | Verwendung |
 |---|---|
