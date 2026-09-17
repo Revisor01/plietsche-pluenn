@@ -8,7 +8,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 ### Geändert
 - **Beim Check-in wird dein Standort nicht mehr gespeichert.** Die App prüft weiterhin, ob du wirklich im Laden bist — festgehalten wird davon aber nur noch, wie weit du vom Laden entfernt warst, nicht mehr, wo genau du standest. Am Check-in selbst ändert sich nichts.
-- **Neues App-Symbol:** Das P² im Kreis ist kräftiger gezeichnet — echte Buchstabenformen statt nachgezogener Linien, ein deutlicherer Ring und ein weicher Schatten. Dadurch bleibt es auch klein, etwa in den Einstellungen oder der Suche, gut zu erkennen. Farben und Aufbau bleiben.
+- **Neues App-Symbol:** P und 2 stehen jetzt gleich groß nebeneinander im Ring, in kräftiger Schrift statt dünner Linien — die hochgestellte Ziffer ist weg. Ring und Zeichen sind gleich stark, dadurch bleibt das Symbol auch klein gut zu erkennen, etwa in den Einstellungen oder der Suche. Farben bleiben.
 
 ### Neu
 - **Passwort vergessen:** Auf der Anmeldeseite lässt sich jetzt ein Link zum Zurücksetzen anfordern. Wer sein Passwort nicht mehr weiß, kommt wieder ins Konto, ohne jemanden fragen zu müssen.
