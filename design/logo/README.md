@@ -19,78 +19,68 @@ per `<use>`, statt ihn zu kopieren.
 | `mark-black.svg` | Einfarbig Schwarz freigestellt |
 | `print.svg` | Schwarz auf Weiß — Stempel, einfarbiger Druck |
 
-## P2 — das aktuelle App-Icon
+## P² — das aktuelle App-Icon
 
-Seit dem 17.09.2026 steht **P und 2 gleich groß nebeneinander** im Ring, ohne
-hochgestellte Ziffer. Gesetzt in **Work Sans Black (900)** — derselben Familie,
-die die App für ihre Texte benutzt. Die Buchstaben sind als Konturen in die
-Datei eingebettet; es muss also keine Schrift installiert sein.
+Seit dem 18.09.2026: eine **Glaslinse** auf dem Marken-Verlauf, darauf ein
+filigranes **P mit hochgestellter 2**. Die Linse hat echtes Volumen — heller
+Lichtsaum oben, weicher Schlagschatten unten — und hebt das Zeichen von der
+Fläche ab, ohne es fett zu machen.
 
-Die Maße bei 2048 Kantenlänge:
-
-| | |
-|---|---|
-| Zeichenbreite | 1000 (P und 2 verschränkt, Abstand −70 Font-Einheiten) |
-| Ringstärke | 208 |
-| Ringradius (Mitte) | 840 |
-| Luft innen | 154 |
-| Rand außen | 80 |
-
-**Die Ringstärke ist keine freie Wahl:** Sie entspricht der gemessenen
-Stammbreite des P in diesem Schnitt — 164 von 462 Einheiten Versalhöhe, also
-35,5 %. Nur dadurch wirken Ring und Zeichen gleich fett. Wer die eine Größe
-ändert, rechnet die andere mit, sonst kippt das Verhältnis.
-
-Die frühere Fassung war unter etwa 56 px grenzwertig. Diese hält bei 60 px
-klar durch: Ring und Zeichen bleiben getrennt lesbar.
-
-### Wie die Datei entsteht
-
-`p2-quelle.svg` wird **erzeugt**, nicht gezeichnet: Ein Skript liest die
-Konturen von `P` und `2` aus der Work-Sans-Datei, setzt sie verschränkt und
-legt Ring und Verlauf darum. Deshalb heißt sie nicht mehr `p2-illustrator.svg`
-— aus Illustrator kommt hier nichts mehr.
-
-Das hat einen praktischen Vorteil: Strichstärke, Abstand und Ringmaß sind
-Zahlen im Skript, keine Handarbeit. Eine neue Abstufung ist eine Änderung von
-drei Werten.
-
-### Die Dateien
-
-`p2-quelle.svg` ist die **Quelle**. Die übrigen werden daraus abgeleitet und
-nicht von Hand geändert:
+Die Zeichnung ist **keine SVG-Konstruktion**, sondern kommt als gerendertes
+PNG aus Claude Design. Darum liegt hier keine Vektorquelle: Volumen,
+Lichtsaum und Schatten sind Teil des Bildes.
 
 | Datei | Verwendung |
 |---|---|
-| `p2-quelle.svg` | Quelle — hier ändern |
-| `p2-icon.svg` | App-Icon: Verlauf und Zeichen, wie die Quelle |
-| `p2-mark-white.svg` | Weiß freigestellt — auf dunklem Grund |
-| `p2-mark-teal.svg` | Einfarbig Teal `#27b092` — Briefpapier, Web |
+| `p2-quelle.png` | **Quelle**, 1024 px, randlos — alle Symbole werden hieraus abgeleitet |
+| `p2-gerundet.png` | dieselbe Zeichnung mit eingebackener Ecken-Rundung |
 
-Die Marken tragen keinen Schatten und keinen Hintergrund: Sie sollen auf
-beliebigem Grund sitzen.
+**`p2-gerundet.png` gehört nicht in die App.** iOS und Android runden selbst;
+ein eingebackener Radius gäbe doppelte Ecken oder Beschnitt. Sie liegt nur für
+Stellen bereit, an denen das Symbol frei auf hellem Grund steht.
 
-Die Dateien ohne `p2-` im Namen (`icon.svg`, `mark-*.svg`, `print.svg`) gehören
-zum **früheren** Zeichen mit dem angedeuteten Auge. Sie bleiben als Archiv
-liegen und werden nicht mehr gepflegt.
+### Maße
 
-Die App-Assets in `mobile/assets/` werden hieraus abgeleitet, alle 1024 px:
+Die Linse sitzt mittig, Außenkante bei **70,6 %** der Halbfläche (Radius 362
+von 512), also 150 px Rand. Das liegt innerhalb der Android-Sicherheitszone —
+das Vordergrundbild braucht deshalb **keine** Verkleinerung, anders als bei den
+früheren Fassungen.
+
+### Die abgeleiteten Symbole
+
+Alle in `mobile/assets/`, alle 1024 px außer dem Favicon:
 
 | Datei | Besonderheit |
 |---|---|
 | `icon.png` | iOS — **ohne Alphakanal**, Apple lehnt Alpha ab |
-| `splash-icon.png` | nur das Motiv, der Verlauf kommt aus `app.json` |
-| `android-icon-background.png` | nur der Verlauf, ohne Alpha |
-| `android-icon-foreground.png` | Motiv auf **82 %**, zentriert |
-| `android-icon-monochrome.png` | reines Weiß, Android färbt selbst ein |
+| `splash-icon.png` | nur die Linse, transparent; der Verlauf kommt aus `app.json` |
+| `android-icon-background.png` | nur der Verlauf, aus den Eckfarben der Quelle nachgebaut |
+| `android-icon-foreground.png` | nur die Linse, freigestellt (Kreis r = 370, Kante leicht geglättet) |
+| `android-icon-monochrome.png` | Silhouette aus Ring und P², reines Weiß |
 | `favicon.png` | 48 px, ohne Alpha |
 
-**Zu den 82 %:** Android beschneidet das Vordergrundbild je nach Gerät rund,
-als Squircle oder als Quadrat. Die Ringaußenkante liegt bei 92 % der
-Halbfläche — bei den früher benutzten 92 % Skalierung fiel sie fast genau auf
-die runde Schnittkante, und es entstand eine doppelte Kontur. Mit 82 % bleiben
-rund 73 px Abstand. Wer den Ring verändert, prüft das nach: zusammensetzen,
-rund **und** als Squircle beschneiden, ansehen.
+**Zur Monochrom-Fassung:** Android färbt sie selbst ein, Volumen und Schatten
+gehen dabei verloren. Sie wird deshalb nicht aus der Linse abgeleitet, sondern
+als Silhouette neu gebaut — Ring als sauberer Kreis, das P² per Helligkeits-
+schwelle aus der Quelle gelöst. Wer die Quelle austauscht, sieht sie sich
+gesondert an; ein Automatismus trifft hier nicht immer.
+
+### Nach einem Austausch der Quelle prüfen
+
+1. Zusammensetzen und **rund und als Squircle** beschneiden — sitzt die Linse
+   frei, ohne die Schnittkante zu berühren?
+2. `icon.png` auf 60 px herunterrechnen — bleibt das P² lesbar?
+3. Hat `icon.png` wirklich keinen Alphakanal? (`sips -g hasAlpha`)
+
+### Frühere Fassungen
+
+Die Dateien ohne `p2-` im Namen (`icon.svg`, `mark-*.svg`, `print.svg`) gehören
+zum **ersten** Zeichen mit dem angedeuteten Auge. Sie bleiben als Archiv liegen
+und werden nicht mehr gepflegt.
+
+Dazwischen lagen zwei verworfene Richtungen: ein dünnes, konstruiertes P² im
+Ring (zu schwach bei kleinen Größen) und ein fettes „P2" nebeneinander in Work
+Sans Black (zu laut). Beide sind aus dem Ordner entfernt.
 
 Bei bestehendem `ios/`-Ordner zieht Expo das Icon **nicht** automatisch nach:
 `ios/PlietschePlnn/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png`
