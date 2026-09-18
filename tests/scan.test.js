@@ -489,15 +489,52 @@ describe('Teile, die nicht mehr zu haben sind', () => {
 });
 
 describe('Zweiter Besuch am selben Tag', () => {
-  function heute(stunde) {
-    const d = new Date();
-    d.setHours(stunde, 0, 0, 0);
-    return d.toISOString();
+  // Ein frueherer Zeitpunkt am laufenden **Ladentag**.
+  //
+  // Zwei Fallen stecken hier, beide nur zu bestimmten Uhrzeiten sichtbar:
+  //
+  //  1. Vorher stand hier eine feste Stunde (`d.setHours(9, ...)`). Zwischen
+  //     Mitternacht und 9 Uhr lag der "fruehere Besuch" damit in der Zukunft.
+  //  2. Der Ladentag richtet sich nach `Europe/Berlin` (store.timezone), nicht
+  //     nach der Zeitzone des Rechners. Wer stattdessen die lokale Mitternacht
+  //     nimmt, landet auf einem Laeufer mit anderer Zeitzone — oder in der
+  //     Stunde nach Mitternacht Ortszeit — vor dem Ladentagsbeginn, und der
+  //     Besuch zaehlt zu gestern.
+  //
+  // Beides hat in der Nacht zum 19.09.2026 das Test-Gate rot gefaerbt.
+  // Deshalb: Tagesbeginn in der Ladenzeitzone bestimmen und den Zeitpunkt
+  // sicher dazwischen legen — immer in der Vergangenheit, immer am selben
+  // Ladentag, unabhaengig von Uhrzeit und Zeitzone des Laufs.
+  const LADEN_TZ = 'Europe/Berlin';
+
+  function ladenTagesbeginn(jetzt) {
+    const teile = new Intl.DateTimeFormat('en-CA', {
+      timeZone: LADEN_TZ,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(jetzt).reduce((a, t) => ((a[t.type] = t.value), a), {});
+    // Wie viel Zeit ist am Ladentag schon vergangen?
+    const seitMitternacht =
+      (+teile.hour * 3600 + +teile.minute * 60 + +teile.second) * 1000;
+    return new Date(jetzt.getTime() - seitMitternacht);
+  }
+
+  function vorhin(stundenZurueck = 1) {
+    const jetzt = new Date();
+    const beginn = ladenTagesbeginn(jetzt);
+    const gewuenscht = jetzt.getTime() - stundenZurueck * 3600_000;
+    // Nicht vor den Ladentagsbeginn rutschen, aber auch nicht in die Zukunft.
+    const ms = Math.min(
+      Math.max(gewuenscht, beginn.getTime() + 60_000),
+      jetzt.getTime() - 1000,
+    );
+    return new Date(ms).toISOString();
   }
 
   it('vergibt den Besuchsbonus nur einmal taeglich', () => {
     const h = setup({
-      visits: [{ id: 'v1', user: 'user1', checkin_at: heute(9) }],
+      visits: [{ id: 'v1', user: 'user1', checkin_at: vorhin() }],
       user: { points_total: 10 },
     });
     const res = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
@@ -509,7 +546,7 @@ describe('Zweiter Besuch am selben Tag', () => {
 
   it('zaehlt beim zweiten Besuch nachgetragene Teile trotzdem', () => {
     const h = setup({
-      visits: [{ id: 'v1', user: 'user1', checkin_at: heute(9) }],
+      visits: [{ id: 'v1', user: 'user1', checkin_at: vorhin() }],
     });
     const res = h.call(ROUTE, { body: { qr_code: DOOR, items_count: 2 }, authRecord: auth(h) });
     expect(res.body.already_checked_in).toBe(true);
@@ -518,7 +555,7 @@ describe('Zweiter Besuch am selben Tag', () => {
 
   it('checkt beim Scannen eines Teils nicht erneut ein', () => {
     const h = setup({
-      visits: [{ id: 'v1', user: 'user1', checkin_at: heute(9) }],
+      visits: [{ id: 'v1', user: 'user1', checkin_at: vorhin() }],
       items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
     });
     const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
