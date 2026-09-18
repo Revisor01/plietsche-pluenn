@@ -95,6 +95,44 @@ export default function Home() {
         trailing={<IconButton icon="bell" badge accessibilityLabel="Benachrichtigungen" onPress={() => router.push('/(visitor)/settings/push?from=/(visitor)')} />}
       />
 
+      {/* Erinnerung an die offene E-Mail-Bestätigung. Sie steht bewusst oben,
+          verschwindet aber von selbst, sobald bestätigt wurde — und sie
+          versperrt nichts: Ohne Bestätigung lässt sich die App voll nutzen.
+          Der Weg führt ins Profil, dort sitzt der Knopf zum erneuten Senden. */}
+      {user && !user?.verified && (
+        <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.lg }}>
+          <Pressable
+            onPress={() => router.push('/(visitor)/settings/account?from=/(visitor)')}
+            accessibilityRole="button"
+            accessibilityLabel="E-Mail-Adresse bestätigen"
+            accessibilityHint="Öffnet dein Profil, dort kannst du die Mail erneut anfordern."
+          >
+            <Card
+              pad={14}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: PP.space.md,
+                backgroundColor: alpha(PP.warn, 'ghost'),
+                borderWidth: 1,
+                borderColor: alpha(PP.warn, 'soft'),
+              }}
+            >
+              <Icon name="mail" size={PP.iconSizes.md} color={PP.warn} />
+              <View style={{ flex: 1 }}>
+                <PPText weight="semibold" size="sm" color={PP.ink}>
+                  E-Mail-Adresse noch nicht bestätigt
+                </PPText>
+                <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
+                  Schau in dein Postfach — auch im Spam-Ordner.
+                </PPText>
+              </View>
+              <Icon name="chevron-right" size={PP.iconSizes.md} color={PP.ink3} />
+            </Card>
+          </Pressable>
+        </View>
+      )}
+
       {/* Die Fortschrittskarte führt in die Punkte-Übersicht — der Verlauf
           stand vorher doppelt als "Watt's neu" unter dem Dashboard. */}
       <Pressable
