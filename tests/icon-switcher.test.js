@@ -1,8 +1,6 @@
-// Icon-Umschalter: Auswahl zwischen den drei Entwürfen.
+// Icon-Umschalter: Auswahl zwischen den vier Gestaltungen des App-Symbols.
 //
-// Dient dem Ausprobieren auf dem Gerät — die Entscheidung, welches Symbol
-// die App dauerhaft trägt, steht noch aus. Der Umschalter fliegt wieder
-// raus, sobald sie gefallen ist.
+// Dunkelgrün ist die Vorgabe; die übrigen drei bleiben als Option.
 //
 // Geprüft wird die Quelle: Die Dateien ziehen React-Native-Module nach, die
 // in Node nicht existieren.
@@ -29,9 +27,9 @@ describe('Die vier Symbole', () => {
     expect(plugin[1].map((i) => i.name)).toEqual(['Ring', 'Sand', 'Scheibe', 'Dunkel']);
   });
 
-  it('tragen das dunkelgrüne als Vorauswahl', () => {
+  it('tragen das dunkelgrüne als Vorgabe', () => {
     // Das Haupticon ist das, was ohne Zutun erscheint — es muss mit der
-    // Datei des dunkelgrünen Entwurfs übereinstimmen.
+    // dunkelgrünen Datei übereinstimmen.
     const haupt = readFileSync(pfad('../mobile/assets/icon.png'));
     const dunkel = readFileSync(pfad('../mobile/assets/icons/dunkel.png'));
     expect(haupt.equals(dunkel)).toBe(true);
@@ -45,7 +43,7 @@ describe('Der Umschalter im Profil', () => {
     expect(konto).toContain('setAlternateAppIcon');
   });
 
-  it('bietet alle vier Entwürfe an', () => {
+  it('bietet alle vier Gestaltungen an', () => {
     for (const name of ['Ring', 'Sand', 'Scheibe', 'Dunkel']) {
       expect(konto).toContain(`'${name}'`);
     }
