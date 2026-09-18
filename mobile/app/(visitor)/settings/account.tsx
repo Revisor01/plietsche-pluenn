@@ -101,12 +101,10 @@ function SystemInfo() {
   );
 }
 
-// Zum Ausprobieren: die drei Entwuerfe fuer das App-Symbol. Das dunkelgruene
-// ist das Haupticon — es wird deshalb ueber null gesetzt, nicht ueber seinen
-// Namen. Sonst fuehrte iOS es als "alternatives" Symbol, und getAppIconName
-// meldete es nicht als das gewaehlte zurueck.
-//
-// Dieser Bereich fliegt wieder raus, sobald die Entscheidung gefallen ist.
+// Die Auswahl fuer das App-Symbol. Dunkelgruen ist das Haupticon — es wird
+// deshalb ueber null gesetzt, nicht ueber seinen Namen. Sonst fuehrte iOS es
+// als "alternatives" Symbol, und getAppIconName meldete es nicht als das
+// gewaehlte zurueck.
 const SYMBOLE = [
   { name: 'Dunkel' as const,  titel: 'Dunkelgrün', quelle: require('../../../assets/icons/dunkel.png'),  haupt: true },
   { name: 'Ring' as const,    titel: 'Ring hell',  quelle: require('../../../assets/icons/ring.png'),    haupt: false },
@@ -147,11 +145,7 @@ function SymbolWahl() {
   };
 
   return (
-    <View style={{ gap: PP.space.md }}>
-      <PPText size="sm" color={PP.ink2}>
-        Zum Ausprobieren. Das Symbol wechselt sofort auf dem Startbildschirm.
-      </PPText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.lg, justifyContent: 'space-between' }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.lg, justifyContent: 'space-between' }}>
         {SYMBOLE.map((eintrag) => {
           const gewaehlt = eintrag.haupt ? aktuell === null : aktuell === eintrag.name;
           return (
@@ -187,8 +181,7 @@ function SymbolWahl() {
               </PPText>
             </Pressable>
           );
-        })}
-      </View>
+      })}
     </View>
   );
 }

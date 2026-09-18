@@ -12,7 +12,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Das Symbol passt sich dem Bildschirm an:** Auf einem dunklen Homescreen erscheint es gedämpft statt hell leuchtend, und wer seine Symbole einfärben lässt, bekommt eine dafür gezeichnete Fassung. Auf Android fügt es sich ebenso in eingefärbte Startbildschirme ein.
 
 ### Neu
-- **Vier App-Symbole zur Auswahl:** Im Profil lässt sich unter „App-Symbol" zwischen vier Entwürfen wechseln — das Symbol auf dem Startbildschirm ändert sich sofort. Zum Ausprobieren, solange die Entscheidung noch aussteht.
+- **Das App-Symbol lässt sich aussuchen:** Im Profil stehen unter „App-Symbol" vier Gestaltungen zur Wahl — dunkelgrün, heller Ring, Sand und Scheibe. Ein Tipp genügt, das Symbol auf dem Startbildschirm wechselt sofort.
 - **E-Mail-Adresse bestätigen:** Nach der Registrierung kommt eine Mail mit einem Bestätigungslink. Solange die Adresse offen ist, erinnert ein Hinweis auf der Startseite daran; im Profil steht der Stand, und die Mail lässt sich dort erneut anfordern. Wer nicht bestätigt, kann die App trotzdem uneingeschränkt nutzen — die Bestätigung hilft nur, das Konto wiederzufinden, wenn das Passwort weg ist.
 - **Mails im Gewand der App:** Die Nachrichten zum Konto tragen jetzt Logo, Farbverlauf und einen klaren Knopf. Auch die Seite, auf der man nach dem Klick landet, gehört zu Plietsche Plünn — vorher war das eine nackte, englische Systemseite.
 - **Passwort vergessen:** Auf der Anmeldeseite lässt sich jetzt ein Link zum Zurücksetzen anfordern. Wer sein Passwort nicht mehr weiß, kommt wieder ins Konto, ohne jemanden fragen zu müssen.
