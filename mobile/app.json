@@ -57,6 +57,10 @@
         "expo-alternate-app-icons",
         [
           {
+            "name": "Ring",
+            "ios": "./assets/icons/ring.png"
+          },
+          {
             "name": "Sand",
             "ios": "./assets/icons/sand.png"
           },

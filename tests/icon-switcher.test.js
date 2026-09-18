@@ -13,9 +13,9 @@ import { readFileSync, existsSync } from 'node:fs';
 const lies = (p) => readFileSync(new URL(p, import.meta.url).pathname, 'utf-8');
 const pfad = (p) => new URL(p, import.meta.url).pathname;
 
-describe('Die drei Symbole', () => {
+describe('Die vier Symbole', () => {
   it('liegen als Dateien vor', () => {
-    for (const name of ['sand', 'scheibe', 'dunkel']) {
+    for (const name of ['sand', 'scheibe', 'dunkel', 'ring']) {
       expect(existsSync(pfad(`../mobile/assets/icons/${name}.png`)), `${name}.png fehlt`).toBe(true);
     }
   });
@@ -26,7 +26,7 @@ describe('Die drei Symbole', () => {
       (p) => Array.isArray(p) && p[0] === 'expo-alternate-app-icons',
     );
     expect(plugin, 'Plugin fehlt in app.json').toBeTruthy();
-    expect(plugin[1].map((i) => i.name)).toEqual(['Sand', 'Scheibe', 'Dunkel']);
+    expect(plugin[1].map((i) => i.name)).toEqual(['Ring', 'Sand', 'Scheibe', 'Dunkel']);
   });
 
   it('tragen das dunkelgrüne als Vorauswahl', () => {
@@ -45,8 +45,8 @@ describe('Der Umschalter im Profil', () => {
     expect(konto).toContain('setAlternateAppIcon');
   });
 
-  it('bietet alle drei Entwürfe an', () => {
-    for (const name of ['Sand', 'Scheibe', 'Dunkel']) {
+  it('bietet alle vier Entwürfe an', () => {
+    for (const name of ['Ring', 'Sand', 'Scheibe', 'Dunkel']) {
       expect(konto).toContain(`'${name}'`);
     }
   });
@@ -61,6 +61,22 @@ describe('Der Umschalter im Profil', () => {
     expect(konto).toMatch(/setAlternateAppIcon\([^)]*haupt\s*\?\s*null\s*:/);
     // Und der Haupteintrag ist genau einer.
     expect(konto.match(/haupt:\s*true/g) ?? []).toHaveLength(1);
+  });
+
+  it('zeichnet den Rahmen nicht auf das Bild', () => {
+    // borderWidth auf einem <Image> legt React Native als harte Kante ueber
+    // das Motiv — sichtbar als schwarze Linien und Absaetze. Der Rahmen
+    // gehoert deshalb auf eine Huelle darum.
+    const bild = konto.slice(konto.indexOf('<Image'), konto.indexOf('<Image') + 320);
+    expect(bild).not.toMatch(/borderWidth/);
+  });
+
+  it('zeigt die Vorschauen in fester, kleiner Groesse', () => {
+    // Mit width: '100%' fuellte jede Kachel ein Viertel der Bildschirmbreite
+    // — man sah nur einen Ausschnitt statt des Symbols.
+    const bild = konto.slice(konto.indexOf('<Image'), konto.indexOf('<Image') + 320);
+    expect(bild).toMatch(/width:\s*\d+/);
+    expect(bild).not.toMatch(/width:\s*'100%'/);
   });
 
   it('prüft, ob das Gerät das überhaupt kann', () => {

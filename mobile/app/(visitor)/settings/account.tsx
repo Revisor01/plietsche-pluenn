@@ -109,6 +109,7 @@ function SystemInfo() {
 // Dieser Bereich fliegt wieder raus, sobald die Entscheidung gefallen ist.
 const SYMBOLE = [
   { name: 'Dunkel' as const,  titel: 'Dunkelgrün', quelle: require('../../../assets/icons/dunkel.png'),  haupt: true },
+  { name: 'Ring' as const,    titel: 'Ring hell',  quelle: require('../../../assets/icons/ring.png'),    haupt: false },
   { name: 'Sand' as const,    titel: 'Sand',       quelle: require('../../../assets/icons/sand.png'),    haupt: false },
   { name: 'Scheibe' as const, titel: 'Scheibe',    quelle: require('../../../assets/icons/scheibe.png'), haupt: false },
 ];
@@ -150,7 +151,7 @@ function SymbolWahl() {
       <PPText size="sm" color={PP.ink2}>
         Zum Ausprobieren. Das Symbol wechselt sofort auf dem Startbildschirm.
       </PPText>
-      <View style={{ flexDirection: 'row', gap: PP.space.md }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.lg, justifyContent: 'space-between' }}>
         {SYMBOLE.map((eintrag) => {
           const gewaehlt = eintrag.haupt ? aktuell === null : aktuell === eintrag.name;
           return (
@@ -161,18 +162,22 @@ function SymbolWahl() {
               accessibilityRole="radio"
               accessibilityState={{ selected: gewaehlt, busy: laeuft === eintrag.name }}
               accessibilityLabel={eintrag.titel}
-              style={{ flex: 1, alignItems: 'center', gap: PP.space.xs, opacity: laeuft ? 0.6 : 1 }}
+              style={{ alignItems: 'center', gap: PP.space.xs, opacity: laeuft ? 0.6 : 1 }}
             >
-              <Image
-                source={eintrag.quelle}
+              <View
                 style={{
-                  width: '100%',
-                  aspectRatio: 1,
-                  borderRadius: 18,
-                  borderWidth: gewaehlt ? 3 : 1,
-                  borderColor: gewaehlt ? PP.teal : PP.hairline,
+                  padding: 3,
+                  borderRadius: 17,
+                  borderWidth: 2,
+                  borderColor: gewaehlt ? PP.teal : 'transparent',
                 }}
-              />
+              >
+                <Image
+                  source={eintrag.quelle}
+                  style={{ width: 62, height: 62, borderRadius: 13 }}
+                  resizeMode="contain"
+                />
+              </View>
               <PPText
                 size="sm"
                 weight={gewaehlt ? 'semibold' : 'regular'}
