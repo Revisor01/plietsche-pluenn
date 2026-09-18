@@ -6,7 +6,11 @@
     "scheme": "pp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": {
+      "light": "./assets/icon.png",
+      "dark": "./assets/icon-dark.png",
+      "tinted": "./assets/icon-tinted.png"
+    },
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "de.godsapp.plietschepluenn",
