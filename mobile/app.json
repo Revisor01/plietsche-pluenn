@@ -6,11 +6,7 @@
     "scheme": "pp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": {
-      "light": "./assets/icon.png",
-      "dark": "./assets/icon-dark.png",
-      "tinted": "./assets/icon-tinted.png"
-    },
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "de.godsapp.plietschepluenn",
@@ -56,7 +52,24 @@
       "expo-notifications",
       "@react-native-community/datetimepicker",
       "expo-status-bar",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "Sand",
+            "ios": "./assets/icons/sand.png"
+          },
+          {
+            "name": "Scheibe",
+            "ios": "./assets/icons/scheibe.png"
+          },
+          {
+            "name": "Dunkel",
+            "ios": "./assets/icons/dunkel.png"
+          }
+        ]
+      ]
     ],
     "experiments": {
       "typedRoutes": true

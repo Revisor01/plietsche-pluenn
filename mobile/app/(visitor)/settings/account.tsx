@@ -3,8 +3,14 @@ import { View, Alert, Pressable, Platform, AccessibilityInfo } from 'react-nativ
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
+import {
+  setAlternateAppIcon,
+  getAppIconName,
+  supportsAlternateIcons,
+} from 'expo-alternate-app-icons';
 
 import { PP, alpha } from '../../../lib/theme';
+import { Image } from 'react-native';
 import { Icon, type IconName } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
@@ -92,6 +98,93 @@ function SystemInfo() {
         </View>
       ))}
     </Card>
+  );
+}
+
+// Zum Ausprobieren: die drei Entwuerfe fuer das App-Symbol. Das dunkelgruene
+// ist das Haupticon — es wird deshalb ueber null gesetzt, nicht ueber seinen
+// Namen. Sonst fuehrte iOS es als "alternatives" Symbol, und getAppIconName
+// meldete es nicht als das gewaehlte zurueck.
+//
+// Dieser Bereich fliegt wieder raus, sobald die Entscheidung gefallen ist.
+const SYMBOLE = [
+  { name: 'Dunkel' as const,  titel: 'Dunkelgrün', quelle: require('../../../assets/icons/dunkel.png'),  haupt: true },
+  { name: 'Sand' as const,    titel: 'Sand',       quelle: require('../../../assets/icons/sand.png'),    haupt: false },
+  { name: 'Scheibe' as const, titel: 'Scheibe',    quelle: require('../../../assets/icons/scheibe.png'), haupt: false },
+];
+
+function SymbolWahl() {
+  const [aktuell, setAktuell] = useState<string | null>(() => {
+    try {
+      return getAppIconName();
+    } catch {
+      return null;
+    }
+  });
+  const [laeuft, setLaeuft] = useState<string | null>(null);
+
+  if (!supportsAlternateIcons) {
+    return (
+      <Card pad={14}>
+        <PPText size="sm" color={PP.ink2}>
+          Dieses Gerät kann das App-Symbol nicht wechseln.
+        </PPText>
+      </Card>
+    );
+  }
+
+  const waehle = async (eintrag: (typeof SYMBOLE)[number]) => {
+    setLaeuft(eintrag.name);
+    try {
+      await setAlternateAppIcon(eintrag.haupt ? null : eintrag.name);
+      setAktuell(eintrag.haupt ? null : eintrag.name);
+    } catch (e: any) {
+      Alert.alert('Klappt nich', errorText(e, 'Das Symbol ließ sich nicht wechseln.'));
+    } finally {
+      setLaeuft(null);
+    }
+  };
+
+  return (
+    <View style={{ gap: PP.space.md }}>
+      <PPText size="sm" color={PP.ink2}>
+        Zum Ausprobieren. Das Symbol wechselt sofort auf dem Startbildschirm.
+      </PPText>
+      <View style={{ flexDirection: 'row', gap: PP.space.md }}>
+        {SYMBOLE.map((eintrag) => {
+          const gewaehlt = eintrag.haupt ? aktuell === null : aktuell === eintrag.name;
+          return (
+            <Pressable
+              key={eintrag.name}
+              onPress={() => waehle(eintrag)}
+              disabled={laeuft !== null}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: gewaehlt, busy: laeuft === eintrag.name }}
+              accessibilityLabel={eintrag.titel}
+              style={{ flex: 1, alignItems: 'center', gap: PP.space.xs, opacity: laeuft ? 0.6 : 1 }}
+            >
+              <Image
+                source={eintrag.quelle}
+                style={{
+                  width: '100%',
+                  aspectRatio: 1,
+                  borderRadius: 18,
+                  borderWidth: gewaehlt ? 3 : 1,
+                  borderColor: gewaehlt ? PP.teal : PP.hairline,
+                }}
+              />
+              <PPText
+                size="sm"
+                weight={gewaehlt ? 'semibold' : 'regular'}
+                color={gewaehlt ? PP.teal : PP.ink2}
+              >
+                {eintrag.titel}
+              </PPText>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -315,6 +408,11 @@ export default function Account() {
         >
           Passwort ändern
         </PPButton>
+      </View>
+
+      <SectionTitle title="App-Symbol" />
+      <View style={{ paddingHorizontal: PP.space.xl }}>
+        <SymbolWahl />
       </View>
 
       {isStaff && (
