@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plietsche Plünn — Konto</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+  :root {
+    --teal: #27b092;
+    --mint: #79c4b0;
+    --sky: #80b4e2;
+    --bg: #F4F7F4;
+    --surface: #FFFFFF;
+    --ink: #1A2E2C;
+    --ink2: #5A6B6A;
+    --ink3: #9AA8A7;
+    --hairline: #E5EDEB;
+    --warn: #E8A93B;
+    --err: #D6584F;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+  }
+  .karte {
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(26,46,44,.05), 0 12px 32px rgba(26,46,44,.07);
+  }
+  .kopf {
+    background: linear-gradient(135deg, var(--teal) 0%, var(--mint) 52%, var(--sky) 100%);
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .kopf img { width: 46px; height: 46px; border-radius: 11px; display: block; }
+  .kopf span { font-size: 19px; font-weight: 600; color: #fff; letter-spacing: .2px; }
+  .inhalt { padding: 32px; }
+  h1 { margin: 0 0 10px; font-size: 22px; line-height: 1.3; letter-spacing: -.2px; }
+  p { margin: 0 0 16px; color: var(--ink2); }
+  p:last-child { margin-bottom: 0; }
+  .knopf {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 13px 26px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--teal);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .knopf:disabled { opacity: .5; cursor: default; }
+  label { display: block; margin: 18px 0 6px; font-size: 14px; color: var(--ink2); }
+  input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    background: var(--bg);
+    font: inherit;
+    color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+  .zeichen { font-size: 40px; line-height: 1; margin-bottom: 14px; }
+  .fuss {
+    border-top: 1px solid var(--hairline);
+    padding: 18px 32px 24px;
+    font-size: 13px;
+    color: var(--ink3);
+  }
+  .fuss a { color: var(--teal); text-decoration: none; }
+  .fehler { color: var(--err); }
+</style>
+</head>
+<body>
+  <main class="karte">
+    <div class="kopf">
+      <img src="icon.png" alt="">
+      <span>Plietsche Plünn</span>
+    </div>
+    <div class="inhalt" id="inhalt">
+      <h1>Einen Moment …</h1>
+      <p>Wir prüfen deinen Link.</p>
+    </div>
+    <div class="fuss">
+      Der Kleiderladen der Kirchengemeinde Hennstedt<br>
+      <a href="/">plietsche-plünn.de</a>
+    </div>
+  </main>
+
+<script>
+// Diese Seite bedient die drei Links aus den System-Mails:
+// Adresse bestaetigen, neues Passwort setzen, Adresswechsel bestaetigen.
+//
+// Ohne Token zeigt sie nur einen Hinweis — so laesst sie sich gefahrlos
+// direkt aufrufen.
+const PB = 'https://pb.xn--plietsche-plnn-rsb.de';
+const inhalt = document.getElementById('inhalt');
+
+// PocketBase baut den Link in den Mails fest als
+//   <appUrl>/_/#/auth/confirm-<fall>/<token>
+// Das laesst sich nicht umstellen ({ACTION_URL} ist Pflicht in der Vorlage).
+// Weil appUrl auf diese Webseite zeigt, landen die Leute hier — Fall und
+// Token stehen im Fragment nach der Raute.
+const frag = location.hash.replace(/^#\/?/, '');          // auth/confirm-.../<token>
+const m = frag.match(/auth\/confirm-([a-z-]+)\/(.+)$/);
+const fall = m ? m[1] : '';
+const token = m ? decodeURIComponent(m[2]) : '';
+
+function zeige(html) { inhalt.innerHTML = html; }
+
+function fertig(titel, text) {
+  zeige(`<div class="zeichen">✓</div><h1>${titel}</h1><p>${text}</p>`);
+}
+
+function schiefgegangen(text) {
+  zeige(
+    `<h1 class="fehler">Das hat nicht geklappt</h1><p>${text}</p>` +
+    `<p>Fordere den Link in der App neu an — unter <em>Profil</em>.</p>`
+  );
+}
+
+async function post(pfad, daten) {
+  const r = await fetch(PB + pfad, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(daten),
+  });
+  if (!r.ok && r.status !== 204) throw new Error(String(r.status));
+}
+
+async function bestaetigeAdresse() {
+  try {
+    await post('/api/collections/users/confirm-verification', { token });
+    fertig('Adresse bestätigt',
+      'Danke! Du kannst die App jetzt einfach weiter benutzen — hier ist nichts mehr zu tun.');
+  } catch {
+    schiefgegangen('Der Link ist abgelaufen oder wurde schon benutzt.');
+  }
+}
+
+async function bestaetigeWechsel() {
+  // Der Adresswechsel verlangt zusaetzlich das Passwort — sonst koennte
+  // jemand mit dem abgefangenen Link die Adresse allein umstellen.
+  zeige(`
+    <h1>Neue Adresse bestätigen</h1>
+    <p>Gib zur Sicherheit dein Passwort ein.</p>
+    <form id="f">
+      <label for="pw">Passwort</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button class="knopf" type="submit">Adresse bestätigen</button>
+    </form>
+    <p id="m"></p>
+  `);
+  document.getElementById('f').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const m = document.getElementById('m');
+    m.textContent = '';
+    try {
+      await post('/api/collections/users/confirm-email-change', {
+        token, password: document.getElementById('pw').value,
+      });
+      fertig('Adresse geändert', 'Deine neue E-Mail-Adresse ist jetzt hinterlegt.');
+    } catch {
+      m.className = 'fehler';
+      m.textContent = 'Stimmt das Passwort? Oder der Link ist abgelaufen.';
+    }
+  });
+}
+
+function setzePasswort() {
+  zeige(`
+    <h1>Neues Passwort setzen</h1>
+    <p>Mindestens acht Zeichen.</p>
+    <form id="f">
+      <label for="pw">Neues Passwort</label>
+      <input id="pw" type="password" autocomplete="new-password" minlength="8" required>
+      <label for="pw2">Noch einmal</label>
+      <input id="pw2" type="password" autocomplete="new-password" minlength="8" required>
+      <button class="knopf" type="submit">Passwort speichern</button>
+    </form>
+    <p id="m"></p>
+  `);
+  document.getElementById('f').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const m = document.getElementById('m');
+    const pw = document.getElementById('pw').value;
+    const pw2 = document.getElementById('pw2').value;
+    m.className = '';
+    if (pw !== pw2) { m.className = 'fehler'; m.textContent = 'Die beiden Eingaben sind nicht gleich.'; return; }
+    m.textContent = 'Wird gespeichert …';
+    try {
+      await post('/api/collections/users/confirm-password-reset', {
+        token, password: pw, passwordConfirm: pw2,
+      });
+      fertig('Passwort geändert', 'Du kannst dich jetzt in der App mit deinem neuen Passwort anmelden.');
+    } catch {
+      m.className = 'fehler';
+      m.textContent = 'Der Link ist abgelaufen oder wurde schon benutzt.';
+    }
+  });
+}
+
+if (!token) {
+  zeige('<h1>Nichts zu tun</h1><p>Diese Seite öffnet sich über einen Link aus einer unserer E-Mails.</p>');
+} else if (fall === 'verification') {
+  bestaetigeAdresse();
+} else if (fall === 'password-reset') {
+  setzePasswort();
+} else if (fall === 'email-change') {
+  bestaetigeWechsel();
+} else {
+  zeige('<h1>Nichts zu tun</h1><p>Diese Seite öffnet sich über einen Link aus einer unserer E-Mails.</p>');
+}
+</script>
+</body>
+</html>

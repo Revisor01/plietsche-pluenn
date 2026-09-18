@@ -78,3 +78,23 @@ describe('Anzeige im Profil', () => {
     expect(konto).toMatch(/Spam/);
   });
 });
+
+describe('Erinnerung auf der Startseite', () => {
+  const start = lies('../mobile/app/(visitor)/index.tsx');
+
+  it('zeigt einen Hinweis, solange die Adresse offen ist', () => {
+    expect(start).toContain('verified');
+  });
+
+  it('blendet ihn aus, sobald bestätigt wurde', () => {
+    // Negation im Bedingungsausdruck: Der Hinweis erscheint nur bei
+    // !user?.verified — sonst stünde er dauerhaft da.
+    expect(start).toMatch(/!user\?\.verified/);
+  });
+
+  it('führt ins Profil, wo sich die Mail erneut anfordern lässt', () => {
+    const i = start.indexOf('verified');
+    const abschnitt = start.slice(i, i + 1400);
+    expect(abschnitt).toMatch(/settings\/account/);
+  });
+});
