@@ -30,6 +30,10 @@ pb.authStore.onChange(() => {
 export type PPUser = {
   id: string;
   email: string;
+  // Von PocketBase gepflegt: steht auf true, sobald der Link aus der
+  // Bestaetigungsmail geoeffnet wurde. Die App erzwingt das nicht
+  // (onlyVerified ist aus), zeigt den Stand aber im Profil.
+  verified: boolean;
   name: string;
   // Eine Quelle für die Rollen: `Role` aus types.ts. Die Aufzählung stand hier
   // ein zweites Mal wörtlich — eine neue Rolle hätte an beiden Stellen

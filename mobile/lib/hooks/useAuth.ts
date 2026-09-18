@@ -41,6 +41,19 @@ export function useAuth() {
         role: 'visitor',
       });
       await pb.collection('users').authWithPassword(email, password);
+      // Bestaetigungsmail erst NACH der Anmeldung anfordern — vorher gibt es
+      // kein gueltiges Token und die Route weist die Anfrage ab.
+      //
+      // Der Fehler wird geschluckt: Steht der Mailversand still, ist das Konto
+      // trotzdem angelegt und die Person angemeldet. Die Bestaetigung ist kein
+      // Zwang (onlyVerified bleibt aus), sie laesst sich im Profil jederzeit
+      // nachholen. Eine hier durchgereichte Ausnahme wuerde die Registrierung
+      // scheitern lassen, obwohl das Konto laengst steht.
+      try {
+        await pb.collection('users').requestVerification(email);
+      } catch {
+        // Kein Netz, Mailserver weg — darf die Registrierung nicht aufhalten.
+      }
     },
     // Update display name. Refreshes authStore so the new value propagates.
     updateName: async (name: string) => {
@@ -53,6 +66,15 @@ export function useAuth() {
     // once the user confirms via the link (default collection behaviour).
     updateEmail: async (newEmail: string) => {
       await pb.collection('users').requestEmailChange(newEmail);
+    },
+    // Bestaetigungsmail erneut anfordern. Die Adresse kommt aus dem
+    // angemeldeten Konto und wird nicht uebergeben — sonst liesse sich die
+    // Funktion nutzen, um fremde Postfaecher mit Bestaetigungsmails zu
+    // beschicken.
+    requestVerification: async () => {
+      const email = pb.authStore.record?.email as string | undefined;
+      if (!email) throw new Error('not authenticated');
+      await pb.collection('users').requestVerification(email);
     },
     // Passwort vergessen. PocketBase verschickt einen Link zum Zuruecksetzen.
     // Die Antwort ist bewusst immer gleich, egal ob es die Adresse gibt —

@@ -99,7 +99,8 @@ export default function Account() {
   const router = useRouter();
   const goBack = useGoBack();
   const { data: user, refetch } = useCurrentUser();
-  const { updateName, updateEmail, updatePassword, logout, deleteAccount } = useAuth();
+  const { updateName, updateEmail, updatePassword, logout, deleteAccount, requestVerification } =
+    useAuth();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
@@ -112,7 +113,7 @@ export default function Account() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePw, setDeletePw] = useState('');
 
-  const [busy, setBusy] = useState<null | 'name' | 'email' | 'pw' | 'delete'>(null);
+  const [busy, setBusy] = useState<null | 'name' | 'email' | 'pw' | 'delete' | 'verify'>(null);
 
   // useCurrentUser loads async; hydrate the name field once the user arrives.
   useEffect(() => {
@@ -168,6 +169,21 @@ export default function Account() {
       Alert.alert('Gespeichert', 'Dein Passwort wurde geändert.');
     } catch (e: any) {
       Alert.alert('Fehler', 'Passwort konnte nicht geändert werden. Stimmt das aktuelle Passwort?');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const sendVerification = async () => {
+    setBusy('verify');
+    try {
+      await requestVerification();
+      Alert.alert(
+        'Mail ist unterwegs',
+        `Wir haben eine E-Mail an ${user?.email ?? 'deine Adresse'} geschickt. Schau auch im Spam-Ordner nach.`,
+      );
+    } catch (e: any) {
+      Alert.alert('Klappt nich', errorText(e, 'Die Mail konnte nicht verschickt werden.'));
     } finally {
       setBusy(null);
     }
@@ -236,7 +252,37 @@ export default function Account() {
           <PPText weight="semibold" size="base" color={PP.ink} style={{ marginTop: 2 }}>
             {user?.email ?? '–'}
           </PPText>
+          {/* Stand der Bestätigung. Sie ist kein Zwang — ohne sie lässt sich
+              die App voll nutzen. Der Hinweis sagt deshalb, was Sache ist,
+              ohne zu drängen. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.xs, marginTop: PP.space.sm }}>
+            <Icon
+              name={user?.verified ? 'check' : 'clock'}
+              size={PP.iconSizes.sm}
+              color={user?.verified ? PP.ok : PP.ink3}
+            />
+            <PPText size="sm" color={user?.verified ? PP.ok : PP.ink3}>
+              {user?.verified ? 'Bestätigt' : 'Noch nicht bestätigt'}
+            </PPText>
+          </View>
         </Card>
+
+        {!user?.verified && (
+          <Card pad={12} style={{ gap: PP.space.sm }}>
+            <PPText size="sm" color={PP.ink2}>
+              Wir haben dir nach der Anmeldung eine E-Mail geschickt. Schau
+              auch im Spam-Ordner nach — oder fordere sie hier neu an.
+            </PPText>
+            <PPButton
+              size="m"
+              variant="secondary"
+              loading={busy === 'verify'}
+              onPress={sendVerification}
+            >
+              Bestätigungsmail erneut senden
+            </PPButton>
+          </Card>
+        )}
         <Field
           icon="mail"
           label="Neue E-Mail"
