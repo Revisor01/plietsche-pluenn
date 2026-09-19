@@ -159,3 +159,30 @@ idb ui text --udid <UDID> "$(printf '@')"
 Im Laden steht ein Testteil **„xnxn, Gr. 345, 0 P"** — offensichtlich ein
 Überbleibsel. Das gehört nicht in einen Store-Screenshot; entweder vorher
 aufräumen oder ein Bild ohne dieses Teil wählen.
+
+## Offen (Stand 19.09.2026)
+
+Neun iOS-Bilder liegen in `design/store/ios/`. Drei Dinge fehlen noch:
+
+**Motiv 4, die Besucher-Detailansicht.** Der Testzugang `admin@plietsche.de`
+hat die Rolle `admin`; ein Teil öffnet sich deshalb als „Teil bearbeiten"
+(abgelegt als Motiv 10), nicht als Besucheransicht. Dafür wird ein Konto mit
+der Rolle `visitor` gebraucht — ebenso für eine Punkte-Ansicht ohne
+Verwaltungsrechte.
+
+**Motiv 11, die Mitteilung.** `xcrun simctl push` meldet zwar „Notification
+sent", das Bild bleibt aber leer: Die App hat die Benachrichtigungs-Erlaubnis
+nie erteilt bekommen (im Onboarding übersprungen), und ohne sie verwirft iOS
+die Zustellung stillschweigend. `xcrun simctl privacy … grant notifications`
+schlägt fehl — die Erlaubnis muss über die App selbst kommen. Der Weg über den
+Sperrbildschirm funktioniert ansonsten: von oben herunterwischen zeigt ihn,
+und dort steht die Mitteilung groß.
+
+**Alle Android-Bilder.**
+
+### Nebenbefund
+
+Die Anmeldung überlebt den App-Neustart im Simulator nicht — nach jedem
+`simctl launch` steht wieder die Anmeldeseite. Auf dem Gerät ist das nicht so;
+im Simulator ist die Keychain flüchtiger. Für die Aufnahmen heißt das: nach
+jedem Neustart neu anmelden, oder die App gar nicht erst beenden.
