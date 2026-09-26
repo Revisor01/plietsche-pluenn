@@ -230,7 +230,11 @@ describe('Ladenzeitzone ist gepflegt, nicht geerbt', () => {
       const h = setup();
       expect(h.lib.storeTimezone()).toBe('Europe/Berlin');
 
-      h.records.store.set('timezone', 'UTC');
+      // Geaendert wie ueber die Verwaltung: gesetzt UND gespeichert. Ein nur
+      // im Speicher geaenderter Datensatz ist fuer niemanden sonst sichtbar.
+      const laden = h.records.store;
+      laden.set('timezone', 'UTC');
+      h.dao.saveRecord(laden);
       h.lib.forgetStoreTimezone();
 
       expect(h.lib.storeTimezone()).toBe('UTC');

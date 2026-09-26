@@ -346,7 +346,8 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
     const h = setup();
     const wann = new Date('2026-09-10T14:30:00.000Z');
     h.lib.updateStreak(h.records.user, wann);
-    expect(h.records.user.get('streak_last_visit')).toBe(wann.toISOString());
+    // PocketBase speichert Datumsfelder mit Leerzeichen statt "T".
+    expect(h.records.user.get('streak_last_visit')).toBe('2026-09-10 14:30:00.000Z');
   });
 });
 
@@ -438,29 +439,34 @@ describe('campaignApplies — fuer wen eine Aktion gilt', () => {
   }
 
   it('gilt fuer alle, wenn nichts eingeschraenkt ist', () => {
-    expect(pruefe({ target_segment: 'all' })).toBe(true);
+    expect(pruefe({ target_role: 'all' })).toBe(true);
     expect(pruefe({})).toBe(true);
   });
 
+  // Die Sammlung campaigns hat kein Feld target_segment (siehe
+  // pb_migrations/): Zielgruppe UND Segment stehen beide in target_role mit
+  // den Werten all / visitor / streak2plus / inactive14d. Die Fixtures setzen
+  // deshalb target_role — ein Feld, das es nicht gibt, kaeme in Produktion nie
+  // an. Eine Rolle als Ziel ist dort nur `visitor` waehlbar.
   it('gilt nur fuer die gewaehlte Rolle', () => {
-    expect(pruefe({ target_segment: 'by_role', target_role: 'volunteer' }, { role: 'volunteer' })).toBe(true);
-    expect(pruefe({ target_segment: 'by_role', target_role: 'volunteer' }, { role: 'visitor' })).toBe(false);
+    expect(pruefe({ target_role: 'visitor' }, { role: 'visitor' })).toBe(true);
+    expect(pruefe({ target_role: 'visitor' }, { role: 'volunteer' })).toBe(false);
   });
 
   it('gilt ab zwei Wochen Serie', () => {
-    expect(pruefe({ target_segment: 'streak2plus' }, { streak_weeks: 2 })).toBe(true);
-    expect(pruefe({ target_segment: 'streak2plus' }, { streak_weeks: 1 })).toBe(false);
+    expect(pruefe({ target_role: 'streak2plus' }, { streak_weeks: 2 })).toBe(true);
+    expect(pruefe({ target_role: 'streak2plus' }, { streak_weeks: 1 })).toBe(false);
   });
 
   it('gilt fuer laenger Abwesende', () => {
     const lange = new Date(Date.now() - 20 * 86400000).toISOString();
     const kuerzlich = new Date(Date.now() - 3 * 86400000).toISOString();
-    expect(pruefe({ target_segment: 'inactive14d' }, { streak_last_visit: lange })).toBe(true);
-    expect(pruefe({ target_segment: 'inactive14d' }, { streak_last_visit: kuerzlich })).toBe(false);
+    expect(pruefe({ target_role: 'inactive14d' }, { streak_last_visit: lange })).toBe(true);
+    expect(pruefe({ target_role: 'inactive14d' }, { streak_last_visit: kuerzlich })).toBe(false);
   });
 
   it('gilt fuer jemanden, der noch nie da war, als abwesend', () => {
-    expect(pruefe({ target_segment: 'inactive14d' }, { streak_last_visit: '' })).toBe(true);
+    expect(pruefe({ target_role: 'inactive14d' }, { streak_last_visit: '' })).toBe(true);
   });
 });
 
@@ -536,8 +542,8 @@ describe('findActiveCampaign — welche Aktion gerade laeuft', () => {
     const h = setup({
       users: [{ __name: 'user', id: 'u1', role: 'visitor', streak_weeks: 0 }],
       campaigns: [
-        { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 3, target_segment: 'streak2plus' },
-        { id: 'c2', starts_at: gestern, ends_at: morgen, multiplier: 2, target_segment: 'all' },
+        { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 3, target_role: 'streak2plus' },
+        { id: 'c2', starts_at: gestern, ends_at: morgen, multiplier: 2, target_role: 'all' },
       ],
     });
     const c = h.lib.findActiveCampaign(jetzt, h.records.user);
@@ -589,8 +595,8 @@ describe('findActiveCampaign — welche Aktion gerade laeuft', () => {
       const h = setup({
         users: [{ __name: 'user', id: 'u1', role: 'visitor', streak_weeks: 0 }],
         campaigns: [
-          { id: 'c1', starts_at: gestern, ends_at: morgen, mult_take: 9, target_segment: 'streak2plus' },
-          { id: 'c2', starts_at: gestern, ends_at: morgen, mult_take: 2, target_segment: 'all' },
+          { id: 'c1', starts_at: gestern, ends_at: morgen, mult_take: 9, target_role: 'streak2plus' },
+          { id: 'c2', starts_at: gestern, ends_at: morgen, mult_take: 2, target_role: 'all' },
         ],
       });
       const c = h.lib.findActiveCampaign(jetzt, h.records.user);
@@ -620,7 +626,7 @@ describe('findActiveCampaign — welche Aktion gerade laeuft', () => {
   it('nimmt ohne Person die erste laufende Aktion', () => {
     const h = setup({
       campaigns: [
-        { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 3, target_segment: 'streak2plus' },
+        { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 3, target_role: 'streak2plus' },
       ],
     });
     const c = h.lib.findActiveCampaign(jetzt, null);

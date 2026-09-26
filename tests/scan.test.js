@@ -179,8 +179,10 @@ describe('Geofence', () => {
     expect(res.status).toBe(200);
 
     const visit = h.rows('visits')[0];
-    expect(visit.gps_lat).toBeUndefined();
-    expect(visit.gps_lng).toBeUndefined();
+    // Ein Zahlenfeld ohne Wert steht in PocketBase auf 0 — also keine
+    // Position gespeichert.
+    expect(visit.gps_lat).toBe(0);
+    expect(visit.gps_lng).toBe(0);
     // Der Abstand bleibt erhalten — rund 60 m noerdlich des Ladens.
     expect(visit.gps_distance_m).toBe(60);
   });
@@ -203,7 +205,7 @@ describe('Geofence', () => {
     // API-Beschreibung und so erscheint er in der App.
     expect(err.message).toBe('Du bist nicht im Laden');
     // Das Teil darf dabei nicht als mitgenommen markiert werden.
-    expect(h.rows('items')[0].taken_at).toBeUndefined();
+    expect(h.rows('items')[0].taken_at).toBe('');
     expect(h.records.user.get('points_total')).toBe(0);
   });
 
@@ -880,5 +882,48 @@ describe('Punkte aus Abzeichen in der Antwort', () => {
       'type',
     ]);
     expect(res.body.label).toBe('Jacke, M');
+  });
+});
+
+describe('Teilschreibung: das Teil laesst sich nicht als mitgenommen speichern', () => {
+  // Die Route schreibt nacheinander, ohne Transaktion: Besuch, Punkte fuers
+  // Einchecken, Punkte fuers Teil, Punktestand — und erst ganz am Ende
+  // taken_at am Teil. Scheitert dieser letzte Schreibvorgang (etwa „database
+  // is locked" unter Last), ist alles davor schon gespeichert.
+  //
+  // Dieser Test haelt fest, was HEUTE passiert — nicht, was passieren sollte.
+  // Befund offen: Punkte bleiben gutgeschrieben, das Teil bleibt verfuegbar
+  // und bringt beim naechsten Scan ein zweites Mal Punkte.
+  const TEIL = { id: 'item1', sku: 'PP-0001', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' };
+
+  it('behaelt die Punkte, laesst das Teil offen und zahlt beim zweiten Scan erneut', () => {
+    const h = setup({ items: [TEIL] });
+    const aus = h.failSaveOn('items', (r) => r.get('taken_at') !== '', 'database is locked');
+
+    expect(() => h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) })).toThrow(
+      'database is locked'
+    );
+
+    // Was nach dem Fehler gespeichert ist:
+    expect(h.rows('visits')).toHaveLength(1);
+    expect(h.rows('points_log').map((p) => [p.kind, p.points])).toEqual([
+      ['checkin', 10],
+      ['scan', 30],
+    ]);
+    expect(h.records.user.get('points_total')).toBe(40);
+    expect(h.rows('items')[0].taken_at).toBe('');
+
+    // Die App zeigt einen Fehler; die Person scannt noch einmal, jetzt klappt
+    // das Speichern.
+    aus();
+    const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    expect(res.status).toBe(200);
+    expect(res.body.item_points).toBe(30);
+    expect(res.body.did_checkin).toBe(false);
+
+    // Ein Teil, zweimal bezahlt.
+    expect(h.rows('points_log').filter((p) => p.kind === 'scan')).toHaveLength(2);
+    expect(h.records.user.get('points_total')).toBe(70);
+    expect(h.rows('items')[0].taken_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   });
 });

@@ -61,7 +61,8 @@ describe('awardPoints — einen Eintrag schreiben', () => {
     // keinen Verweis auf die Person, und umgekehrt.
     const h = setup();
     h.lib.awardPoints(h.records.user, 30, 'scan', 'Jacke', null);
-    expect(h.rows('points_log')[0].ref_id).toBeUndefined();
+    // Ein Textfeld ohne Wert ist in PocketBase der Leerstring.
+    expect(h.rows('points_log')[0].ref_id).toBe('');
   });
 
   it('schreibt einen leeren Text, wenn keine Bezeichnung kommt', () => {
