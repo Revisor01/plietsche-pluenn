@@ -1,97 +1,53 @@
-// Kontolöschung: Reihenfolge und Absicherung.
+// Konto löschen und Passwort vergessen: was die Screens aufrufen.
 //
-// `deleteAccount` in mobile/lib/hooks/useAuth.ts löscht das Konto endgültig.
-// Drei Eigenschaften müssen stimmen, und keine davon sieht `tsc`:
+// Die Sicherheitszusagen der Kontolöschung (Passwort vor Löschung, Push-
+// Abmeldung vor Löschung, Aufräumen danach, Löschen trotz fehlgeschlagener
+// Push-Abmeldung) werden in tests/auth-flow.test.js AUSGEFÜHRT — gegen einen
+// gestellten PocketBase-Client, der jeden Aufruf mitschreibt.
 //
-//  1. Das Passwort wird geprüft, BEVOR gelöscht wird. Sonst könnte jemand an
-//     einem entsperrten fremden Gerät das Konto ausradieren.
-//  2. Der Push-Token wird abgemeldet, solange die Anmeldung noch gilt — die
-//     Route /api/pp/push/unregister verlangt ein gültiges Token. Nach dem
-//     Löschen ginge es nicht mehr.
-//  3. Nach dem Löschen werden Auth-Store und Query-Cache geleert, sonst sähe
-//     die nächste Person am Gerät noch Name, Punkte und Verlauf.
-//
-// Geprüft wird die Quelle, nicht das Laufzeitverhalten: Die Datei zieht
-// React-Native-Module nach, die in Node nicht existieren.
+// Hier bleiben Text-Prüfungen der Screens: Sie ziehen React-Native-Module
+// nach, die in Node nicht existieren. Geprüft wird der Quelltext OHNE
+// Kommentare und auf Aufrufe gebunden. Ob der Screen richtig rendert, sieht
+// dieser Test nicht.
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { code } from './helper/quelltext.js';
 
-const QUELLE = new URL('../mobile/lib/hooks/useAuth.ts', import.meta.url).pathname;
-const text = readFileSync(QUELLE, 'utf-8');
+describe('Konto löschen im Profil', () => {
+  const konto = code('mobile/app/(visitor)/settings/account.tsx');
 
-/** Schneidet den Rumpf von `deleteAccount` heraus. */
-function deleteAccountRumpf() {
-  const start = text.indexOf('deleteAccount:');
-  expect(start, 'deleteAccount fehlt in useAuth.ts').toBeGreaterThan(-1);
-  // Bis zum Ende des zurückgegebenen Objekts — deleteAccount ist der letzte
-  // Eintrag; ein späterer Eintrag würde hier mit erfasst, was den Test nur
-  // strenger macht, nicht falsch.
-  return text.slice(start);
-}
-
-describe('Kontolöschung', () => {
-  it('prüft das Passwort, bevor gelöscht wird', () => {
-    const rumpf = deleteAccountRumpf();
-    const prüfung = rumpf.indexOf('authWithPassword');
-    const löschung = rumpf.indexOf(".delete(id)");
-
-    expect(prüfung, 'keine Passwortprüfung in deleteAccount').toBeGreaterThan(-1);
-    expect(löschung, 'kein Löschaufruf in deleteAccount').toBeGreaterThan(-1);
-    expect(prüfung).toBeLessThan(löschung);
+  it('reicht das eingegebene Passwort an deleteAccount weiter', () => {
+    // Ohne das Passwort schlüge die Prüfung in deleteAccount immer fehl —
+    // oder, schlimmer, jemand reichte einen festen Wert durch.
+    expect(konto).toMatch(/const\s*\{[^}]*\bdeleteAccount\b[^}]*\}\s*=\s*useAuth\(\)/);
+    expect(konto).toMatch(/await deleteAccount\(deletePw\)/);
   });
 
-  it('meldet den Push-Token vor dem Löschen ab', () => {
-    const rumpf = deleteAccountRumpf();
-    const abmeldung = rumpf.indexOf('unregisterPushToken');
-    const löschung = rumpf.indexOf(".delete(id)");
-
-    expect(abmeldung, 'kein unregisterPushToken in deleteAccount').toBeGreaterThan(-1);
-    expect(abmeldung).toBeLessThan(löschung);
-  });
-
-  it('räumt Auth-Store und Query-Cache nach dem Löschen', () => {
-    const rumpf = deleteAccountRumpf();
-    const löschung = rumpf.indexOf(".delete(id)");
-    const authWeg = rumpf.indexOf('authStore.clear()');
-    const cacheWeg = rumpf.indexOf('queryClient.clear()');
-
-    expect(authWeg, 'authStore wird nicht geleert').toBeGreaterThan(löschung);
-    expect(cacheWeg, 'queryClient wird nicht geleert').toBeGreaterThan(löschung);
-  });
-
-  it('lässt einen fehlgeschlagenen Push-Abmeldeversuch das Löschen nicht verhindern', () => {
-    // Ein Gerät ohne Netz muss sein Konto trotzdem löschen können. Der Aufruf
-    // steht deshalb in einem try/catch — ohne das bräche die ganze Funktion ab.
-    const rumpf = deleteAccountRumpf();
-    const abschnitt = rumpf.slice(0, rumpf.indexOf(".delete(id)"));
-    expect(abschnitt).toMatch(/try\s*\{[\s\S]*unregisterPushToken[\s\S]*\}\s*catch/);
+  it('fragt ohne eingegebenes Passwort gar nicht erst', () => {
+    const i = konto.indexOf('const confirmDelete');
+    expect(i).toBeGreaterThan(-1);
+    expect(konto.slice(i, i + 200)).toMatch(/if \(!deletePw\)\s*\{[\s\S]*?return;/);
   });
 });
 
-describe('Passwort vergessen', () => {
-  it('ist in useAuth vorhanden und nutzt die PocketBase-Route', () => {
-    expect(text).toMatch(/requestPasswordReset:\s*async/);
-    expect(text).toMatch(/collection\('users'\)\.requestPasswordReset/);
+describe('Passwort vergessen im Login', () => {
+  const login = code('mobile/app/(auth)/login.tsx');
+
+  it('ruft requestPasswordReset mit der eingegebenen Adresse auf', () => {
+    expect(login).toMatch(/const\s*\{[^}]*\brequestPasswordReset\b[^}]*\}\s*=\s*useAuth\(\)/);
+    expect(login).toMatch(/await requestPasswordReset\(next\)/);
   });
 
-  it('wird im Login-Screen angeboten', () => {
-    const login = readFileSync(
-      new URL('../mobile/app/(auth)/login.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    expect(login).toContain('requestPasswordReset');
-    expect(login).toContain('Passwort vergessen?');
+  it('bietet den Link sichtbar an', () => {
+    expect(login).toMatch(/onPress=\{onForgotPassword\}/);
+    expect(login).toContain("'Passwort vergessen?'");
   });
 
   it('verrät nicht, ob es zu einer Adresse ein Konto gibt', () => {
     // Die Rückmeldung muss gleich lauten, ob die Adresse bekannt ist oder
     // nicht — sonst ließe sich über den Login-Screen herausfinden, wer
-    // Kundin des Ladens ist.
-    const login = readFileSync(
-      new URL('../mobile/app/(auth)/login.tsx', import.meta.url).pathname,
-      'utf-8',
-    );
-    expect(login).toMatch(/Falls es ein Konto/);
+    // Kundin des Ladens ist. Die Erfolgsmeldung folgt direkt auf den Aufruf.
+    const i = login.indexOf('await requestPasswordReset(next)');
+    expect(login.slice(i, i + 300)).toMatch(/'Falls es ein Konto mit dieser Adresse gibt/);
   });
 });
