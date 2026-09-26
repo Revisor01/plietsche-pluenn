@@ -11,12 +11,11 @@
 // (ExponentPushToken[…] bzw. ExpoPushToken[…], darin nur Buchstaben, Ziffern,
 // Binde- und Unterstriche). Was nicht so aussieht, könnte ohnehin nie eine
 // Nachricht empfangen.
-const EXPO_TOKEN_RE = /^Expo(?:nent)?PushToken\[[A-Za-z0-9_-]+\]$/;
-
-function assertExpoToken(token) {
-  if (!EXPO_TOKEN_RE.test(token)) throw new ApiError(400, 'Ungueltiger Token');
-  return token;
-}
+//
+// Die Prüfung steht in JEDEM Handler selbst: PocketBase führt Handler in einer
+// eigenen Umgebung aus, ein oben in der Datei deklarierter Helfer ist darin
+// nicht sichtbar. So war es bis 26.09.2026 — Anmelden und Abmelden scheiterten
+// ausnahmslos mit "ReferenceError: assertExpoToken is not defined".
 
 // POST /api/pp/push/register — upsert the caller's Expo push token.
 // Body: { expo_token, platform? }
@@ -29,7 +28,9 @@ routerAdd('POST', '/api/pp/push/register', (c) => {
   const data = $apis.requestInfo(c).data;
   const token = `${data.expo_token || ''}`.trim();
   if (!token) throw new ApiError(400, 'Kein Token');
-  assertExpoToken(token);
+  if (!/^Expo(?:nent)?PushToken\[[A-Za-z0-9_-]+\]$/.test(token)) {
+    throw new ApiError(400, 'Ungueltiger Token');
+  }
   const platform = `${data.platform || 'ios'}`.trim();
 
   const dao = $app.dao();
@@ -56,7 +57,9 @@ routerAdd('POST', '/api/pp/push/unregister', (c) => {
   const data = $apis.requestInfo(c).data;
   const token = `${data.expo_token || ''}`.trim();
   if (!token) throw new ApiError(400, 'Kein Token');
-  assertExpoToken(token);
+  if (!/^Expo(?:nent)?PushToken\[[A-Za-z0-9_-]+\]$/.test(token)) {
+    throw new ApiError(400, 'Ungueltiger Token');
+  }
   const dao = $app.dao();
   try {
     const rec = dao.findFirstRecordByFilter('push_devices', `expo_token = "${token}" && user = "${auth.id}"`);

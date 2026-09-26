@@ -7,31 +7,6 @@
 //   - Item QR  → take item (item points) + first scan of the day also checks in.
 // Privacy: items get taken_at but NO user reference.
 
-// Abzeichen prüfen und dabei zählen, was sie an Punkten gebracht haben.
-//
-// checkBadges kann Punkte gutschreiben (Stufenbonus, Einzelabzeichen). Diese
-// Punkte standen bisher nur in points_total, nicht im `points` der Antwort:
-// Die App meldete beim ersten Besuch „+10 Punkte", während der Kontostand um
-// 510 sprang — eine Differenz, die niemand erklären konnte, genau in dem
-// Moment, in dem das Abzeichen aufgeht.
-//
-// `points` bleibt unverändert, was es ist — ausgelieferte App-Versionen lesen
-// und zeigen genau dieses Feld, und eine Antwortform ist ein Vertrag. Der
-// Bonus kommt als ZUSÄTZLICHES Feld dazu; neue Felder hinzuzufügen ist
-// erlaubt, und eine künftige App-Version kann ihn addieren.
-//
-// Gemessen wird an points_total vorher/nachher statt an einer Rückgabe von
-// checkBadges: Der Stand wird aus points_log neu gerechnet (recomputeTotal),
-// die Differenz ist deshalb genau das, was hier dazugekommen ist — auch wenn
-// mehrere Abzeichen gleichzeitig aufgehen.
-function awardBadgesAndCountBonus(lib, user, userId) {
-  const vorher = $app.dao().findRecordById('users', userId).get('points_total') || 0;
-  lib.checkBadges(user);
-  const nachher = $app.dao().findRecordById('users', userId).get('points_total') || 0;
-  const diff = nachher - vorher;
-  return diff > 0 ? diff : 0;
-}
-
 routerAdd('POST', '/api/pp/scan', (c) => {
   const lib = require(`${__hooks}/lib/points.js`);
   const auth = c.get('authRecord');
@@ -92,7 +67,7 @@ routerAdd('POST', '/api/pp/scan', (c) => {
       if (stepperPts > 0) {
         lib.awardPoints(user, stepperPts, 'checkin', `${itemsCount} Teile mitgenommen`, null);
       }
-      const bonusPts = awardBadgesAndCountBonus(lib, user, auth.id);
+      const bonusPts = lib.awardBadgesAndCountBonus(user, auth.id);
       const fresh = $app.dao().findRecordById('users', auth.id);
       return c.json(200, {
         type: 'checkin',
@@ -105,7 +80,7 @@ routerAdd('POST', '/api/pp/scan', (c) => {
     }
 
     const res = lib.doCheckin(user, now, { lat, lng, distance, itemsCount });
-    const bonusPts = awardBadgesAndCountBonus(lib, user, auth.id);
+    const bonusPts = lib.awardBadgesAndCountBonus(user, auth.id);
     const fresh = $app.dao().findRecordById('users', auth.id);
     return c.json(200, {
       type: 'checkin',
@@ -160,7 +135,7 @@ routerAdd('POST', '/api/pp/scan', (c) => {
   item.set('taken_at', now.toISOString());
   $app.dao().saveRecord(item);
 
-  const bonusPts = awardBadgesAndCountBonus(lib, user, auth.id);
+  const bonusPts = lib.awardBadgesAndCountBonus(user, auth.id);
   const fresh = $app.dao().findRecordById('users', auth.id);
   return c.json(200, {
     type: 'item',

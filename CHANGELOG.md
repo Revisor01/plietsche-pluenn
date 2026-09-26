@@ -22,6 +22,8 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Mitteilungen lassen sich auf Android einzeln einstellen:** Serie und Punkte, Aktionen und Ankündigungen, Abzeichen und Ränge sowie Sonstiges sind jetzt vier getrennte Arten in den Android-Systemeinstellungen. Jede kann dort für sich stummgeschaltet werden, oder ihren eigenen Ton bekommen — unabhängig von den Schaltern in der App.
 
 ### Behoben
+- **Mitteilungen erreichen neue Geräte wieder.** Seit Mitte September scheiterte jede Anmeldung eines Geräts für Mitteilungen, ebenso das Abmelden beim Ausloggen — neue Geräte bekamen deshalb nichts. Auch das Einchecken an der Tür und das Scannen eines Teils brachen mit einer Fehlermeldung ab, obwohl die Punkte schon gebucht waren. Ursache war eine Hilfsfunktion, die der Server an dieser Stelle nicht sehen konnte.
+- **Registrierung vergibt keine Sonderrechte mehr.** Wer die Schnittstelle direkt ansprach statt über die App, konnte sich beim Anlegen eines Kontos selbst Admin-Rechte oder ein Punkteguthaben geben. Neue Konten starten jetzt immer als Besucher:in bei null Punkten.
 - **E-Mail-Adresse ändern funktioniert jetzt wirklich.** Die App meldete „Wir haben dir eine E-Mail geschickt", verschickt wurde aber nie etwas — im Backend war kein Mailversand eingerichtet. Die Bestätigungsmail kommt jetzt an.
 - **Schaufenster-Knopf war farblich verdreht:** In der Teile-Übersicht leuchtete der Stern-Knopf kräftig bei genau den Teilen, die **nicht** im Schaufenster stehen — die Farbe zeigte also die Aufforderung statt des Zustands. Jetzt ist er kräftig, solange das Teil im Schaufenster liegt.
 

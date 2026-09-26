@@ -8,12 +8,13 @@
 //
 // PocketBase cron uses standard 5-field cron expressions (server local time).
 
-// Wie oft eine Nachricht erneut versucht wird, bevor sie abgehakt wird. Ohne
-// Grenze liefe der Job jede Minute gegen dieselbe unerreichbare Adresse.
-const MAX_SEND_ATTEMPTS = 5;
-
 // ── 1. Deliver scheduled push messages ─────────────────────────
 cronAdd('push-scheduled', '* * * * *', () => {
+  // Wie oft eine Nachricht erneut versucht wird, bevor sie abgehakt wird. Ohne
+  // Grenze liefe der Job jede Minute gegen dieselbe unerreichbare Adresse.
+  // Steht im Handler, weil PocketBase ihn in einer eigenen Umgebung ausführt —
+  // eine Konstante oben in der Datei wäre dort nicht definiert.
+  const MAX_SEND_ATTEMPTS = 5;
   const push = require(`${__hooks}/lib/push.js`);
   const dao = $app.dao();
   const nowIso = new Date().toISOString().replace('T', ' ');
