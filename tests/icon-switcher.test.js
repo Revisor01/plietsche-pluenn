@@ -31,6 +31,25 @@ describe('Die vier Symbole', () => {
     expect(plugin[1].map((i) => i.name)).toEqual(['Ring', 'Sand', 'Scheibe', 'Dunkel']);
   });
 
+  it('haben jedes eine Android-Fassung mit Vordergrund und Hintergrundfarbe', () => {
+    // Das Plugin trägt für JEDES Symbol einen Eintrag ins Android-Manifest ein,
+    // erzeugt die Bilddateien dazu aber nur, wenn es eine Android-Angabe gibt.
+    // Fehlt sie, bricht der Android-Build ab ("resource mipmap/ic_launcher_ring
+    // not found") — so geschehen vom 18. bis 26.09.2026, bemerkt erst beim
+    // nächsten Play-Build.
+    const cfg = JSON.parse(lies('../mobile/app.json'));
+    const plugin = cfg.expo.plugins.find(
+      (p) => Array.isArray(p) && p[0] === 'expo-alternate-app-icons',
+    );
+    for (const icon of plugin[1]) {
+      expect(icon.android, `${icon.name}: Android-Angabe fehlt`).toEqual({
+        foregroundImage: `./assets/icons/android/${icon.name.toLowerCase()}.png`,
+        backgroundColor: expect.stringMatching(/^#[0-9a-f]{6}$/),
+      });
+      expect(existsSync(pfad(`../mobile/${icon.android.foregroundImage}`)), `${icon.name}: Datei fehlt`).toBe(true);
+    }
+  });
+
   it('tragen das dunkelgrüne als Vorgabe', () => {
     // Das Haupticon ist das, was ohne Zutun erscheint — es muss mit der
     // dunkelgrünen Datei übereinstimmen.

@@ -58,19 +58,35 @@
         [
           {
             "name": "Ring",
-            "ios": "./assets/icons/ring.png"
+            "ios": "./assets/icons/ring.png",
+            "android": {
+              "foregroundImage": "./assets/icons/android/ring.png",
+              "backgroundColor": "#6fc3bb"
+            }
           },
           {
             "name": "Sand",
-            "ios": "./assets/icons/sand.png"
+            "ios": "./assets/icons/sand.png",
+            "android": {
+              "foregroundImage": "./assets/icons/android/sand.png",
+              "backgroundColor": "#f5f1e6"
+            }
           },
           {
             "name": "Scheibe",
-            "ios": "./assets/icons/scheibe.png"
+            "ios": "./assets/icons/scheibe.png",
+            "android": {
+              "foregroundImage": "./assets/icons/android/scheibe.png",
+              "backgroundColor": "#f5f1e6"
+            }
           },
           {
             "name": "Dunkel",
-            "ios": "./assets/icons/dunkel.png"
+            "ios": "./assets/icons/dunkel.png",
+            "android": {
+              "foregroundImage": "./assets/icons/android/dunkel.png",
+              "backgroundColor": "#0d2b26"
+            }
           }
         ]
       ]
