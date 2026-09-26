@@ -1,16 +1,19 @@
-// Prüft den Harness selbst: Zeitstempel-Vergleiche.
+// Prüft den Harness selbst: Datumsfelder.
 //
-// Warum es diese Tests gibt: Die Hooks speichern Zeitstempel mit
-// `toISOString()` (Trenner "T"), bauen Filtergrenzen aber mit
-// `.replace('T', ' ')` (Trenner Leerzeichen) — so, wie PocketBase Datumsfelder
-// schreibt. Vergleicht man diese beiden Formen als Zeichenketten, gewinnt der
-// gespeicherte Wert immer, sobald der Datumsteil gleich ist: "T" ist 0x54,
-// das Leerzeichen 0x20.
+// PocketBase speichert Datumsfelder in der Form "2026-09-09 22:00:00.000Z"
+// (Leerzeichen statt "T") — egal, in welcher Form der Hook sie setzt. Im
+// Filter vergleicht SQLite sie als TEXT, nicht als Zeitpunkt.
 //
-// Folge: Ein Test an der Tagesgrenze wäre rot, obwohl die Produktion richtig
-// rechnet — PocketBase vergleicht Datumsfelder als Datum, nicht als Text. Wer
-// so einen Test sieht, weicht im Zweifel die Erwartung auf und verdeckt damit
-// einen echten Fehler. Deshalb wird der Harness hier festgenagelt.
+// Früher verglich der Harness als Zeitpunkt und bewahrte die T-Form beim
+// Speichern. Das war gutmütiger als PocketBase: Ein Hook, der die Filtergrenze
+// in T-Form baut (`toISOString()` ohne `.replace('T', ' ')`), lief im Test
+// richtig und fand in Produktion nichts — "T" (0x54) ist größer als das
+// Leerzeichen (0x20), am selben Tag liegt jede T-Grenze hinter jedem
+// gespeicherten Wert. Gemessen gegen PocketBase 0.22.21: Grenze
+// "2026-09-26T09:00:00.000Z" gegen gespeichertes 10:00 → 0 Treffer.
+//
+// Jetzt bringt der Harness Datumswerte beim Setzen in PB-Form und vergleicht
+// als Text. Ein Hook mit T-Grenze fällt im Test durch, wie in Produktion.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -23,40 +26,77 @@ function visit(checkinAt) {
   return new FakeRecord('visits', { user: 'u1', checkin_at: checkinAt });
 }
 
-describe('Harness: Zeitstempel-Vergleich', () => {
-  it('vergleicht über die Trennerformen hinweg als Zeitpunkt, nicht als Text', () => {
-    // Gespeichert mit "T", Grenze mit Leerzeichen — dieselbe Sekunde.
-    const rec = visit('2026-09-09T21:59:00.000Z');
-    expect(matchesFilter(rec, 'checkin_at >= "2026-09-09 22:00:00.000Z"')).toBe(false);
+describe('Harness: Datumsfelder werden in PocketBase-Form gespeichert', () => {
+  it('macht aus der T-Form die Form mit Leerzeichen', () => {
+    expect(visit('2026-09-09T21:59:00.000Z').get('checkin_at')).toBe('2026-09-09 21:59:00.000Z');
   });
 
-  it('erkennt einen Wert nach der Grenze', () => {
-    const rec = visit('2026-09-09T22:00:01.000Z');
-    expect(matchesFilter(rec, 'checkin_at >= "2026-09-09 22:00:00.000Z"')).toBe(true);
+  it('lässt die PocketBase-Form unverändert', () => {
+    expect(visit('2026-09-09 21:59:00.000Z').get('checkin_at')).toBe('2026-09-09 21:59:00.000Z');
+  });
+
+  it('nimmt ein Date-Objekt an', () => {
+    expect(visit(new Date('2026-09-09T21:59:00.000Z')).get('checkin_at')).toBe('2026-09-09 21:59:00.000Z');
+  });
+
+  it('rechnet eine Zeitzonenangabe nach UTC um', () => {
+    expect(visit('2026-09-10T00:30:00+02:00').get('checkin_at')).toBe('2026-09-09 22:30:00.000Z');
+  });
+
+  it('lässt ein leeres Datum leer', () => {
+    expect(visit('').get('checkin_at')).toBe('');
+  });
+
+  it('wirft bei einem Wert, der kein Datum ist', () => {
+    // Bewusste Abweichung: PocketBase machte daraus still den Leerwert.
+    expect(() => visit('gestern')).toThrow(/visits\.checkin_at ist kein Datum/);
+  });
+});
+
+describe('Harness: Datumsvergleich im Filter als Text', () => {
+  it('findet mit einer Grenze in PB-Form den späteren Besuch', () => {
+    const rec = visit('2026-09-26T10:00:00.000Z');
+    expect(matchesFilter(rec, 'checkin_at >= "2026-09-26 09:00:00.000Z"')).toBe(true);
+  });
+
+  it('findet mit einer Grenze in T-Form nichts — wie PocketBase', () => {
+    // Derselbe Besuch, dieselbe Grenze, nur mit "T": 'T' > ' ', der Vergleich
+    // geht am selben Tag immer gegen den Besuch aus.
+    const rec = visit('2026-09-26T10:00:00.000Z');
+    expect(matchesFilter(rec, 'checkin_at >= "2026-09-26T09:00:00.000Z"')).toBe(false);
+  });
+
+  it('vergleicht eine Grenze in T-Form an einem anderen Tag trotzdem richtig', () => {
+    // Die Falle greift nur am selben Tag — bei verschiedenen Tagen entscheidet
+    // schon der Datumsteil. Genau deshalb fällt sie in Stichproben selten auf.
+    const rec = visit('2026-09-27T10:00:00.000Z');
+    expect(matchesFilter(rec, 'checkin_at >= "2026-09-26T09:00:00.000Z"')).toBe(true);
   });
 
   it('erkennt Gleichstand auf die Millisekunde als erfüllt', () => {
     const rec = visit('2026-09-09T22:00:00.000Z');
     expect(matchesFilter(rec, 'checkin_at >= "2026-09-09 22:00:00.000Z"')).toBe(true);
-  });
-
-  it('vergleicht <= ebenfalls als Zeitpunkt', () => {
-    const rec = visit('2026-09-09T22:00:01.000Z');
-    expect(matchesFilter(rec, 'checkin_at <= "2026-09-09 22:00:00.000Z"')).toBe(false);
+    expect(matchesFilter(rec, 'checkin_at <= "2026-09-09 22:00:00.000Z"')).toBe(true);
   });
 
   it('trennt Tage korrekt: gestern Abend zählt nicht zu heute', () => {
     // Der Fall aus hasVisitToday(): Besuch gestern 23:00 Ortszeit (= 21:00 UTC),
     // Tagesgrenze heute 00:00 Ortszeit (= gestern 22:00 UTC).
     const gesternAbend = visit('2026-09-09T21:00:00.000Z');
-    const heuteGrenze = '2026-09-09 22:00:00.000Z';
-    expect(matchesFilter(gesternAbend, `checkin_at >= "${heuteGrenze}"`)).toBe(false);
+    expect(matchesFilter(gesternAbend, 'checkin_at >= "2026-09-09 22:00:00.000Z"')).toBe(false);
   });
 
   it('zählt einen Besuch nach Mitternacht Ortszeit zu heute', () => {
     const heuteFrueh = visit('2026-09-09T22:30:00.000Z');
-    const heuteGrenze = '2026-09-09 22:00:00.000Z';
-    expect(matchesFilter(heuteFrueh, `checkin_at >= "${heuteGrenze}"`)).toBe(true);
+    expect(matchesFilter(heuteFrueh, 'checkin_at >= "2026-09-09 22:00:00.000Z"')).toBe(true);
+  });
+
+  it('vergleicht ein leeres Datum als Leerstring', () => {
+    // Der Filter aus dem Push-Cronjob: `sent_at = ""` für noch nicht Versandtes.
+    const offen = new FakeRecord('push_messages', { title: 't', body: 'b' });
+    const raus = new FakeRecord('push_messages', { title: 't', body: 'b', sent_at: '2026-09-09T22:00:00.000Z' });
+    expect(matchesFilter(offen, 'sent_at = ""')).toBe(true);
+    expect(matchesFilter(raus, 'sent_at = ""')).toBe(false);
   });
 
   it('vergleicht reine Zahlenfelder weiterhin numerisch', () => {

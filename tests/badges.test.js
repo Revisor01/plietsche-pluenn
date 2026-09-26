@@ -48,7 +48,9 @@ const GESTUFT = {
 
 function besuche(n, userId = 'u1') {
   return Array.from({ length: n }, (_, i) => ({
-    id: `v${i}`,
+    // Die ID traegt die Person: Besuche zweier Personen in einer Fixture
+    // duerfen sich nicht die ID teilen (PocketBase lehnt das ab).
+    id: `v${userId}_${i}`,
     user: userId,
     checkin_at: new Date(2026, 0, 1 + i).toISOString(),
   }));
@@ -317,12 +319,13 @@ describe('checkBadges — gestufte Abzeichen', () => {
           badge: 'b1',
           progress: 5,
           current_tier: 'bronze',
-          unlocked_at: '2026-01-15T10:00:00.000Z',
+          // PocketBase speichert Datumsfelder mit Leerzeichen statt "T".
+          unlocked_at: '2026-01-15 10:00:00.000Z',
         },
       ],
     });
     h.lib.checkBadges(h.records.user);
-    expect(h.rows('user_badges')[0].unlocked_at).toBe('2026-01-15T10:00:00.000Z');
+    expect(h.rows('user_badges')[0].unlocked_at).toBe('2026-01-15 10:00:00.000Z');
   });
 
   it('vergibt keine Stufe, die es nach dem Entfernen eines Rangs nicht mehr gibt', () => {
@@ -380,9 +383,10 @@ describe('checkBadges — Einzel-Abzeichen', () => {
     // Abzeichen zum falschen Zeitpunkt.
     const h = setup({
       badges: [
-        { id: 'b1', name: 'Treue', kind: 'single', trigger_type: 'years_active', trigger_value: 1 },
+        { id: 'b1', slug: 'treue', name: 'Treue', kind: 'single', trigger_type: 'years_active', trigger_value: 1 },
         {
           id: 'b2',
+          slug: 'dabei',
           name: 'Dabei',
           kind: 'single',
           trigger_type: 'action_participation',

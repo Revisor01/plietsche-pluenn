@@ -21,53 +21,55 @@ import { createRequire } from 'node:module';
 const { loadHook } = createRequire(import.meta.url)('./harness.js');
 
 // Irgendein Hook, der den DAO aufspannt — geprüft wird hier nur der DAO selbst.
+// Die Zeilen liegen in `campaigns`: Der Harness kennt nur Sammlungen aus
+// pb_migrations/, und `multiplier` ist dort ein Zahlenfeld.
 function dao(rows) {
-  return loadHook('push.pb.js', { users: [], push_devices: [], probe: rows }).dao;
+  return loadHook('push.pb.js', { users: [], push_devices: [], campaigns: rows }).dao;
 }
 
 describe('Harness: Blätterung (offset)', () => {
   it('überspringt die ersten Datensätze, statt den Parameter zu ignorieren', () => {
     const d = dao([
-      { id: 'p1', n: 1 },
-      { id: 'p2', n: 2 },
-      { id: 'p3', n: 3 },
-      { id: 'p4', n: 4 },
+      { id: 'p1', multiplier: 1 },
+      { id: 'p2', multiplier: 2 },
+      { id: 'p3', multiplier: 3 },
+      { id: 'p4', multiplier: 4 },
     ]);
     // Zweite Seite à zwei Einträgen: PocketBase liefert p3 und p4.
-    const seite2 = d.findRecordsByFilter('probe', 'n > 0', 'n', 2, 2);
+    const seite2 = d.findRecordsByFilter('campaigns', 'multiplier > 0', 'multiplier', 2, 2);
     expect(seite2.map((r) => r.id)).toEqual(['p3', 'p4']);
   });
 
   it('liefert ohne offset weiterhin die erste Seite', () => {
     const d = dao([
-      { id: 'p1', n: 1 },
-      { id: 'p2', n: 2 },
-      { id: 'p3', n: 3 },
+      { id: 'p1', multiplier: 1 },
+      { id: 'p2', multiplier: 2 },
+      { id: 'p3', multiplier: 3 },
     ]);
-    expect(d.findRecordsByFilter('probe', 'n > 0', 'n', 2, 0).map((r) => r.id))
+    expect(d.findRecordsByFilter('campaigns', 'multiplier > 0', 'multiplier', 2, 0).map((r) => r.id))
       .toEqual(['p1', 'p2']);
   });
 
   it('gibt hinter dem Ende eine leere Liste zurück', () => {
-    const d = dao([{ id: 'p1', n: 1 }]);
-    expect(d.findRecordsByFilter('probe', 'n > 0', 'n', 10, 5)).toEqual([]);
+    const d = dao([{ id: 'p1', multiplier: 1 }]);
+    expect(d.findRecordsByFilter('campaigns', 'multiplier > 0', 'multiplier', 10, 5)).toEqual([]);
   });
 
   it('blättert auch ohne Obergrenze: der Rest ab dem offset', () => {
     // Die Hooks rufen fast durchgehend mit limit 0 auf („alles").
     const d = dao([
-      { id: 'p1', n: 1 },
-      { id: 'p2', n: 2 },
-      { id: 'p3', n: 3 },
+      { id: 'p1', multiplier: 1 },
+      { id: 'p2', multiplier: 2 },
+      { id: 'p3', multiplier: 3 },
     ]);
-    expect(d.findRecordsByFilter('probe', 'n > 0', 'n', 0, 1).map((r) => r.id))
+    expect(d.findRecordsByFilter('campaigns', 'multiplier > 0', 'multiplier', 0, 1).map((r) => r.id))
       .toEqual(['p2', 'p3']);
   });
 
   it('scheitert bei einem unsinnigen offset, statt still die erste Seite zu liefern', () => {
-    const d = dao([{ id: 'p1', n: 1 }]);
-    expect(() => d.findRecordsByFilter('probe', 'n > 0', 'n', 0, -1)).toThrow(/offset/);
-    expect(() => d.findRecordsByFilter('probe', 'n > 0', 'n', 0, 1.5)).toThrow(/offset/);
+    const d = dao([{ id: 'p1', multiplier: 1 }]);
+    expect(() => d.findRecordsByFilter('campaigns', 'multiplier > 0', 'multiplier', 0, -1)).toThrow(/offset/);
+    expect(() => d.findRecordsByFilter('campaigns', 'multiplier > 0', 'multiplier', 0, 1.5)).toThrow(/offset/);
   });
 });
 
@@ -82,7 +84,7 @@ describe('Harness: absteigende Sortierung', () => {
       { id: 'b', multiplier: 2 },
       { id: 'c', multiplier: 2 },
     ]);
-    expect(d.findRecordsByFilter('probe', '1=1', '-multiplier', 0, 0).map((r) => r.id))
+    expect(d.findRecordsByFilter('campaigns', '1=1', '-multiplier', 0, 0).map((r) => r.id))
       .toEqual(['a', 'b', 'c']);
   });
 
@@ -92,7 +94,7 @@ describe('Harness: absteigende Sortierung', () => {
       { id: 'gross', multiplier: 3 },
       { id: 'mittel', multiplier: 2 },
     ]);
-    expect(d.findRecordsByFilter('probe', '1=1', '-multiplier', 0, 0).map((r) => r.id))
+    expect(d.findRecordsByFilter('campaigns', '1=1', '-multiplier', 0, 0).map((r) => r.id))
       .toEqual(['gross', 'mittel', 'klein']);
   });
 
@@ -103,7 +105,7 @@ describe('Harness: absteigende Sortierung', () => {
       { id: 'c3', multiplier: 3 },
       { id: 'd2', multiplier: 2 },
     ]);
-    expect(d.findRecordsByFilter('probe', '1=1', '-multiplier', 0, 0).map((r) => r.id))
+    expect(d.findRecordsByFilter('campaigns', '1=1', '-multiplier', 0, 0).map((r) => r.id))
       .toEqual(['a3', 'c3', 'b2', 'd2']);
   });
 
@@ -113,7 +115,7 @@ describe('Harness: absteigende Sortierung', () => {
       { id: 'klein', multiplier: 1 },
       { id: 'mittel', multiplier: 2 },
     ]);
-    expect(d.findRecordsByFilter('probe', '1=1', 'multiplier', 0, 0).map((r) => r.id))
+    expect(d.findRecordsByFilter('campaigns', '1=1', 'multiplier', 0, 0).map((r) => r.id))
       .toEqual(['klein', 'mittel', 'gross']);
   });
 });

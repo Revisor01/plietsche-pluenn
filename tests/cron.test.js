@@ -407,8 +407,8 @@ describe('year-badges', () => {
   }
 
   const TREUE_BADGES = [
-    { id: 'b3', name: 'Drei Jahre dabei', kind: 'single', trigger_type: 'years_active', trigger_value: 3, points_reward: 100 },
-    { id: 'b5', name: 'Fuenf Jahre dabei', kind: 'single', trigger_type: 'years_active', trigger_value: 5, points_reward: 200 },
+    { id: 'b3', slug: 'drei-jahre', name: 'Drei Jahre dabei', kind: 'single', trigger_type: 'years_active', trigger_value: 3, points_reward: 100 },
+    { id: 'b5', slug: 'fuenf-jahre', name: 'Fuenf Jahre dabei', kind: 'single', trigger_type: 'years_active', trigger_value: 5, points_reward: 200 },
   ];
 
   it('ist als taegliche Aufgabe um 3:40 eingetragen', () => {
