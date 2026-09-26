@@ -36,9 +36,49 @@ describe('Neue Person', () => {
     expect(neuerNutzer(h).get('role')).toBe('visitor');
   });
 
-  it('behaelt eine bereits gesetzte Rolle', () => {
+  // Die Registrierung ist offen (createRule ""): Wer die API direkt anspricht,
+  // kann beliebige Felder mitschicken. Bis 26.09.2026 übernahm der Hook eine
+  // mitgeschickte Rolle — gemessen gegen PocketBase 0.22.21: POST ohne
+  // Anmeldung mit role "admin" ergab ein Admin-Konto. Ebenso ließ sich ein
+  // Startguthaben setzen. Beim Anlegen gilt deshalb derselbe Schutz wie beim
+  // Ändern: Rolle, Punktestand und Serie setzt nur der Server.
+  it('wird bei der Registrierung nie Admin, auch wenn es mitgeschickt wird (verbotener Fall)', () => {
     const h = setup();
-    expect(neuerNutzer(h, { role: 'volunteer' }).get('role')).toBe('volunteer');
+    expect(neuerNutzer(h, { role: 'admin' }).get('role')).toBe('visitor');
+    expect(neuerNutzer(h, { role: 'volunteer' }).get('role')).toBe('visitor');
+  });
+
+  it('bekommt kein mitgeschicktes Startguthaben und keine Serie (verbotener Fall)', () => {
+    const h = setup();
+    const rec = neuerNutzer(h, {
+      points_total: 5000,
+      streak_weeks: 9,
+      streak_last_visit: '2026-09-20 10:00:00.000Z',
+    });
+    expect(rec.get('points_total')).toBe(0);
+    expect(rec.get('streak_weeks')).toBe(0);
+    expect(rec.get('streak_last_visit')).toBe('');
+  });
+
+  it('behaelt die Rolle, wenn ein Superuser das Konto anlegt (erlaubter Fall)', () => {
+    const h = setup();
+    const rec = h.newRecord('users', { role: 'admin' });
+    h.fireRecordHook('beforeCreate', 'users', rec, { admin: { id: 'su1' } });
+    expect(rec.get('role')).toBe('admin');
+  });
+
+  it('behaelt die Rolle, wenn ein App-Admin das Konto anlegt (erlaubter Fall)', () => {
+    const h = setup({ users: [{ __name: 'admin', id: 'a1', role: 'admin' }] });
+    const rec = h.newRecord('users', { role: 'volunteer' });
+    h.fireRecordHook('beforeCreate', 'users', rec, { authRecord: h.records.admin });
+    expect(rec.get('role')).toBe('volunteer');
+  });
+
+  it('setzt fuer eine Helferin ohne Admin-Rolle trotzdem visitor (verbotener Fall)', () => {
+    const h = setup({ users: [{ __name: 'helfer', id: 'v1', role: 'volunteer' }] });
+    const rec = h.newRecord('users', { role: 'admin' });
+    h.fireRecordHook('beforeCreate', 'users', rec, { authRecord: h.records.helfer });
+    expect(rec.get('role')).toBe('visitor');
   });
 
   it('startet bei null Punkten und ohne Serie', () => {
@@ -48,28 +88,6 @@ describe('Neue Person', () => {
     const rec = neuerNutzer(h);
     expect(rec.get('points_total')).toBe(0);
     expect(rec.get('streak_weeks')).toBe(0);
-  });
-
-  it('laesst einen mitgeschickten Punktestand stehen — der Schutz liegt in der createRule', () => {
-    // Der Titel sagt bewusst das, was hier tatsaechlich geprueft wird. Vorher
-    // hiess dieser Test "uebernimmt keinen mitgeschickten Punktestand", pruefte
-    // aber, dass er sehr wohl uebernommen wird — wer die Suite ueberflog, las
-    // eine Absicherung, die es an dieser Stelle nicht gibt.
-    //
-    // Der Hook (defaults.pb.js) setzt points_total nur, wenn NICHTS
-    // mitgeschickt wurde (== null). Er ist der Standardwert-Geber, nicht der
-    // Schreibschutz. Gegen ein von Hand gesetztes Startguthaben schuetzen zwei
-    // andere Dinge:
-    //   1. die createRule der users-Sammlung, die die Registrierung auf die
-    //      erlaubten Felder begrenzt — sie gehoert in PocketBase, nicht in den
-    //      Hook, und laesst sich hier nicht pruefen (siehe
-    //      read-rules-migration.test.js fuer die Regeln, die es koennen);
-    //   2. der beforeUpdate-Hook, der jede spaetere Aenderung zurueckdreht —
-    //      das ist unten unter "Schreibschutz" geprueft, verbotener und
-    //      erlaubter Fall.
-    const h = setup();
-    const rec = neuerNutzer(h, { points_total: 5000 });
-    expect(rec.get('points_total')).toBe(5000);
   });
 
   it('setzt den Punktestand auf 0, wenn nichts mitgeschickt wurde', () => {

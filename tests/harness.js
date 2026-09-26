@@ -1067,23 +1067,23 @@ function loadHook(hookFile, store = {}, opts = {}) {
     },
 
     routerAdd: (method, pathSpec, handler) => {
-      routes[`${method} ${pathSpec}`] = handler;
+      routes[`${method} ${pathSpec}`] = isolate(handler);
     },
 
     cronAdd: (name, expr, handler) => {
-      crons[name] = { expr, handler };
+      crons[name] = { expr, handler: isolate(handler) };
     },
 
     // Record-Hooks werden nach Sammlung gesammelt und im Test einzeln mit
     // einem Ereignis aufgerufen (siehe fireRecordHook).
     onRecordBeforeCreateRequest: (handler, collection) => {
-      recordHooks.beforeCreate.push({ collection, handler });
+      recordHooks.beforeCreate.push({ collection, handler: isolate(handler) });
     },
     onRecordBeforeUpdateRequest: (handler, collection) => {
-      recordHooks.beforeUpdate.push({ collection, handler });
+      recordHooks.beforeUpdate.push({ collection, handler: isolate(handler) });
     },
     onRecordAfterUpdateRequest: (handler, collection) => {
-      recordHooks.afterUpdate.push({ collection, handler });
+      recordHooks.afterUpdate.push({ collection, handler: isolate(handler) });
     },
 
     // Der echte Versand geht über $http.send an Expo. Hier wird nur die
@@ -1133,6 +1133,24 @@ function loadHook(hookFile, store = {}, opts = {}) {
     },
   };
   sandbox.globalThis = sandbox;
+
+  // Handler-Scope wie in PocketBase: Die Laufzeit serialisiert jeden Handler
+  // und führt ihn in einer eigenen Umgebung aus. Funktionen und Konstanten,
+  // die oben in der *.pb.js-Datei stehen, sind darin NICHT sichtbar — nur
+  // die Globals der Laufzeit (und was per require() geladen wird).
+  //
+  // Vorher lief die ganze Datei in einem gemeinsamen Kontext, und die
+  // Handler sahen die Helfer der Datei. So blieben drei Fehler grün, die in
+  // Produktion mit "ReferenceError: … is not defined" scheiterten (Scan,
+  // Push-Anmeldung, Zähler des Push-Crons; gemessen gegen PocketBase
+  // 0.22.21 am 26.09.2026). Der Handler wird deshalb aus seinem Quelltext
+  // in einem frischen Kontext mit nur den Laufzeit-Globals neu erzeugt.
+  const laufzeit = { ...sandbox };
+  function isolate(handler) {
+    const ctx = vm.createContext({ ...laufzeit });
+    ctx.globalThis = ctx;
+    return vm.runInContext(`(${handler.toString()})`, ctx);
+  }
 
   const context = vm.createContext(sandbox);
   const file = path.join(HOOKS_DIR, hookFile);

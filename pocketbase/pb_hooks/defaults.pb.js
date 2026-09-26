@@ -5,6 +5,20 @@
 
 onRecordBeforeCreateRequest((e) => {
   const r = e.record;
+  // Die Registrierung ist offen (createRule ""), der Anfragekörper kommt also
+  // von beliebigen Clients. Rolle, Punktestand und Serie setzt deshalb nur der
+  // Server — sonst legte ein POST mit role "admin" ein Admin-Konto an (so bis
+  // 26.09.2026) oder ein Startguthaben, dem die Abzeichen-Vergabe vertraut.
+  // Ausnahme wie beim Ändern: Superuser und App-Admins legen Konten mit Rolle an.
+  const superuser = e.httpContext && e.httpContext.get('admin');
+  const auth = e.httpContext && e.httpContext.get('authRecord');
+  const privileged = !!superuser || (auth && `${auth.get('role')}` === 'admin');
+  if (!privileged) {
+    r.set('role', 'visitor');
+    r.set('points_total', 0);
+    r.set('streak_weeks', 0);
+    r.set('streak_last_visit', '');
+  }
   if (!r.get('role')) r.set('role', 'visitor');
   if (r.get('points_total') == null) r.set('points_total', 0);
   if (r.get('streak_weeks') == null) r.set('streak_weeks', 0);
