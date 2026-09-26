@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Eigene TypeScript-Einstellung fuer die Tests. Ohne sie greift Vite beim
+  // Uebersetzen von mobile/lib/*.ts auf mobile/tsconfig.json zurueck, und die
+  // erbt von expo/tsconfig.base — das liegt nur vor, wenn die App-Abhaengig-
+  // keiten installiert sind. Im CI-Job fuer das Backend sind sie das nicht.
+  tsconfig: 'tests/tsconfig.json',
   test: {
     include: ['tests/**/*.test.js'],
     environment: 'node',
