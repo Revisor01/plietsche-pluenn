@@ -2,11 +2,15 @@
 //
 // Dunkelgrün ist die Vorgabe; die übrigen drei bleiben als Option.
 //
-// Geprüft wird die Quelle: Die Dateien ziehen React-Native-Module nach, die
-// in Node nicht existieren.
+// Dateien und app.json werden echt gelesen. Der Umschalter im Profil wird als
+// Text geprüft, weil der Screen React-Native-Module nachzieht, die in Node
+// nicht existieren — und zwar OHNE Kommentare und auf Aufrufe gebunden, damit
+// ein auskommentierter Aufruf auffällt. Ob der Screen richtig rendert und das
+// Symbol auf dem Gerät wirklich wechselt, sieht dieser Test nicht.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
+import { code } from './helper/quelltext.js';
 
 const lies = (p) => readFileSync(new URL(p, import.meta.url).pathname, 'utf-8');
 const pfad = (p) => new URL(p, import.meta.url).pathname;
@@ -37,15 +41,16 @@ describe('Die vier Symbole', () => {
 });
 
 describe('Der Umschalter im Profil', () => {
-  const konto = lies('../mobile/app/(visitor)/settings/account.tsx');
+  const konto = code('mobile/app/(visitor)/settings/account.tsx');
 
-  it('ist vorhanden', () => {
-    expect(konto).toContain('setAlternateAppIcon');
+  it('ist vorhanden und ruft setAlternateAppIcon auf', () => {
+    expect(konto).toMatch(/import\s*\{[^}]*\bsetAlternateAppIcon\b[^}]*\}\s*from\s*'expo-alternate-app-icons'/);
+    expect(konto).toMatch(/await setAlternateAppIcon\(/);
   });
 
   it('bietet alle vier Gestaltungen an', () => {
     for (const name of ['Ring', 'Sand', 'Scheibe', 'Dunkel']) {
-      expect(konto).toContain(`'${name}'`);
+      expect(konto).toMatch(new RegExp(`name:\\s*'${name}' as const`));
     }
   });
 
@@ -56,7 +61,7 @@ describe('Der Umschalter im Profil', () => {
     //
     // Geprüft wird der Aufruf mit dem Unterscheidungsmerkmal `haupt`: Für
     // den Haupteintrag muss null herausfallen, für die anderen der Name.
-    expect(konto).toMatch(/setAlternateAppIcon\([^)]*haupt\s*\?\s*null\s*:/);
+    expect(konto).toMatch(/await setAlternateAppIcon\(\s*eintrag\.haupt\s*\?\s*null\s*:\s*eintrag\.name\s*\)/);
     // Und der Haupteintrag ist genau einer.
     expect(konto.match(/haupt:\s*true/g) ?? []).toHaveLength(1);
   });
@@ -80,6 +85,6 @@ describe('Der Umschalter im Profil', () => {
   it('prüft, ob das Gerät das überhaupt kann', () => {
     // Auf iPad-Web und älteren Geräten gibt es keine alternativen Symbole;
     // ohne Prüfung liefe der Aufruf in einen Fehler.
-    expect(konto).toContain('supportsAlternateIcons');
+    expect(konto).toMatch(/if \(!supportsAlternateIcons\)\s*\{\s*return/);
   });
 });
