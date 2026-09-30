@@ -29,6 +29,7 @@ export async function scan(params: {
 
 // ── Items: einstellen / freigeben ──────────────────────────────
 import type { Item, Badge } from './types';
+import { restoreStatus } from './itemState';
 
 // ── Badges: Admin-Verwaltung ───────────────────────────────────
 export type BadgeInput = Partial<Omit<Badge, 'id'>>;
@@ -166,4 +167,19 @@ export async function archiveItem(id: string): Promise<Item> {
     is_showcase: false,
     archived_at: new Date().toISOString(),
   })) as unknown as Item;
+}
+
+// Staff: bring an archived item back. A submission that was never approved
+// returns to review instead of being approved on the side (see itemState.ts).
+export async function restoreItem(item: Item): Promise<Item> {
+  return (await pb.collection('items').update(item.id, {
+    status: restoreStatus(item),
+    archived_at: null,
+  })) as unknown as Item;
+}
+
+// Admin: delete an item for good. The server allows this for admins only
+// (items.deleteRule). points_log has no item reference, so no history is lost.
+export async function deleteItem(id: string): Promise<void> {
+  await pb.collection('items').delete(id);
 }

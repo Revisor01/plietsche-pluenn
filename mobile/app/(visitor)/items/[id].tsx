@@ -9,7 +9,8 @@ import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useItem, useCurrentUser } from '../../../lib/hooks/useData';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
-import { updateItem, setShowcase, archiveItem, approveItem } from '../../../lib/api';
+import { updateItem, setShowcase, archiveItem, approveItem, restoreItem, deleteItem } from '../../../lib/api';
+import { isArchived } from '../../../lib/itemState';
 import {
   itemThumb, groupLabel, typeLabel, conditionLabel,
   CATEGORY_GROUPS, CATEGORY_TYPES, GROUPS_WITH_TYPE, categoryGroup, categoryType,
@@ -28,6 +29,7 @@ export default function ItemDetail() {
   const { data: item, refetch } = useItem(id);
   const { data: me } = useCurrentUser();
   const isStaff = me?.role === 'volunteer' || me?.role === 'admin';
+  const isAdmin = me?.role === 'admin';
 
   const [title, setTitle] = useState('');
   const [size, setSize] = useState('');
@@ -197,10 +199,51 @@ export default function ItemDetail() {
     try { await setShowcase(item.id, on); await done(); } catch { setShow(!on); }
   };
 
+  const archived = isArchived(item);
+
   const doArchive = () => {
-    Alert.alert('Archivieren?', `"${item.title}" archivieren?`, [
+    Alert.alert('Archivieren?', `"${item.title}" archivieren? Unter „Archiv" lässt es sich zurückholen.`, [
       { text: 'Abbrechen', style: 'cancel' },
-      { text: 'Archivieren', style: 'destructive', onPress: async () => { await archiveItem(item.id); await done(); goBack(); } },
+      {
+        text: 'Archivieren',
+        style: 'destructive',
+        onPress: async () => {
+          try { await archiveItem(item.id); await done(); goBack(); }
+          catch (e: any) { Alert.alert('Fehler', errorText(e, 'Konnte nicht archivieren.')); }
+        },
+      },
+    ]);
+  };
+
+  const doRestore = async () => {
+    setBusy(true);
+    try {
+      await restoreItem(item);
+      await done();
+    } catch (e: any) {
+      Alert.alert('Fehler', errorText(e, 'Konnte nicht zurückholen.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doDelete = () => {
+    Alert.alert('Endgültig löschen?', `"${item.title}" wird mit Foto und QR-Code gelöscht. Das lässt sich nicht rückgängig machen.`, [
+      { text: 'Abbrechen', style: 'cancel' },
+      {
+        text: 'Löschen',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteItem(item.id);
+            // Kein refetch: das Teil gibt es nicht mehr.
+            await invalidateItems(qc);
+            goBack();
+          } catch (e: any) {
+            Alert.alert('Fehler', errorText(e, 'Konnte nicht löschen.'));
+          }
+        },
+      },
     ]);
   };
 
@@ -228,6 +271,17 @@ export default function ItemDetail() {
           </View>
         </Pressable>
       </View>
+
+      {archived && (
+        <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.md }}>
+          <View style={{ backgroundColor: alpha(PP.err, "subtle"), borderRadius: PP.rField, padding: PP.space.md, flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
+            <View style={{ flex: 1 }}>
+              <PPText weight="semibold" size="base" color={PP.ink}>Im Archiv</PPText>
+            </View>
+            <PPButton size="s" fullWidth={false} loading={busy} onPress={doRestore}>Zurückholen</PPButton>
+          </View>
+        </View>
+      )}
 
       {item.status === 'pending' && (
         <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.md }}>
@@ -317,7 +371,8 @@ export default function ItemDetail() {
 
       <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.xxl, gap: PP.space.md }}>
         <PPButton icon="check" loading={busy} onPress={save}>Speichern</PPButton>
-        <PPButton variant="ghost" onPress={doArchive}>Archivieren</PPButton>
+        {!archived && <PPButton variant="ghost" onPress={doArchive}>Archivieren</PPButton>}
+        {isAdmin && <PPButton variant="ghost" onPress={doDelete}>Endgültig löschen</PPButton>}
       </View>
     </Screen>
   );
