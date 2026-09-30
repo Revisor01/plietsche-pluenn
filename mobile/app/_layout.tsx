@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import { useEffect, useState } from 'react';
 import { View, ScrollView } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, useGlobalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ import { queryClient } from '../lib/queryClient';
 import { useAuth } from '../lib/hooks/useAuth';
 import { initialDeepLink, parseDeepLink, setupNotificationChannels } from '../lib/push';
 import { PP } from '../lib/theme';
+import { entryRedirect } from '../lib/navigation';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -78,6 +79,8 @@ function RootNavigator() {
   const { user, ready, isAuthenticated } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  // ?replay=1: Einführung aus dem Profil noch einmal ansehen.
+  const { replay } = useGlobalSearchParams<{ replay?: string }>();
 
   // Target of a tapped notification, held until the user is actually allowed
   // into the app. Navigating earlier would be overwritten by the auth redirect
@@ -105,18 +108,14 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!ready) return;
-    const group = segments[0];
-    const inAuth = group === '(auth)';
-    const inOnboarding = group === '(onboarding)';
-
-    if (!isAuthenticated && !inAuth) {
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated && !user?.onboarding_complete && !inOnboarding) {
-      router.replace('/(onboarding)/welcome');
-    } else if (isAuthenticated && user?.onboarding_complete && (inAuth || inOnboarding)) {
-      router.replace('/(visitor)');
-    }
-  }, [ready, isAuthenticated, user?.onboarding_complete, segments]);
+    const target = entryRedirect({
+      isAuthenticated,
+      onboardingComplete: !!user?.onboarding_complete,
+      group: segments[0],
+      replay: replay === '1',
+    });
+    if (target) router.replace(target as any);
+  }, [ready, isAuthenticated, user?.onboarding_complete, segments, replay]);
 
   // Consume the pending link once the user is past login/onboarding.
   useEffect(() => {

@@ -9,7 +9,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
 import { pb } from '../../lib/pb';
-import { PPText, PPButton, Card, Pill } from '../../components/ui';
+import { PPText, PPButton, Card, Pill, IconButton } from '../../components/ui';
+import { useOnboardingReplay } from '../../lib/hooks/useOnboardingReplay';
 import { Dots } from '../../components/Dots';
 
 type PermState = 'idle' | 'granted' | 'denied';
@@ -17,6 +18,7 @@ type PermState = 'idle' | 'granted' | 'denied';
 export default function Permissions() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { replay, close } = useOnboardingReplay();
   const qc = useQueryClient();
   const [loc, setLoc] = useState<PermState>('idle');
   const [push, setPush] = useState<PermState>('idle');
@@ -36,6 +38,12 @@ export default function Permissions() {
   };
 
   const finish = async () => {
+    // Beim Wiederholen aus dem Profil ist am Konto nichts zu setzen — zurück
+    // dorthin, wo die Einführung geöffnet wurde.
+    if (replay) {
+      close();
+      return;
+    }
     setFinishing(true);
     try {
       const id = pb.authStore.record?.id;
@@ -51,6 +59,11 @@ export default function Permissions() {
 
   return (
     <View style={{ flex: 1, backgroundColor: PP.bg, paddingHorizontal: PP.space.xxl, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
+      {replay && (
+        <View style={{ position: 'absolute', top: insets.top + 8, right: PP.space.xl, zIndex: 1 }}>
+          <IconButton icon="x" accessibilityLabel="Einführung schließen" onPress={close} />
+        </View>
+      )}
       <View style={{ marginTop: PP.space.md }}>
         <PPText weight="bold" size="xl2" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
           Zwei kleine Bitten

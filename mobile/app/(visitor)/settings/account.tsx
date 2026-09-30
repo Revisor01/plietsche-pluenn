@@ -408,6 +408,14 @@ export default function Account() {
         </PPButton>
       </View>
 
+      <SectionTitle title="Hilfe" />
+      <View style={{ paddingHorizontal: PP.space.xl }}>
+        {/* Die Einführung vom ersten Start, jederzeit noch einmal. replay
+            hält den Einstiegs-Wächter davon ab, sie gleich wieder zu
+            schließen, und „Fertig" ändert dann nichts am Konto. */}
+        <AdminLink icon="info" label="Einführung ansehen" onPress={() => router.push('/(onboarding)/welcome?replay=1')} />
+      </View>
+
       <SectionTitle title="App-Symbol" />
       <View style={{ paddingHorizontal: PP.space.xl }}>
         <SymbolWahl />
