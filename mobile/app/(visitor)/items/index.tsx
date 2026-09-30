@@ -6,8 +6,9 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { useAllItems } from '../../../lib/hooks/useData';
-import { setShowcase, archiveItem, approveItem } from '../../../lib/api';
+import { useAllItems, useCurrentUser } from '../../../lib/hooks/useData';
+import { setShowcase, archiveItem, approveItem, restoreItem, deleteItem } from '../../../lib/api';
+import { filterItems, isArchived, type InventoryFilter } from '../../../lib/itemState';
 import { itemThumb } from '../../../lib/format';
 import { printQrSheet } from '../../../lib/qrsheet';
 import { errorText } from '../../../lib/errors';
@@ -15,29 +16,31 @@ import { invalidateItems } from '../../../lib/queryClient';
 import { Screen, PPHeader, PPText, Card, Pill, IconButton, PPButton } from '../../../components/ui';
 import type { Item } from '../../../lib/types';
 
-type Filter = 'all' | 'showcase' | 'pending' | 'external' | 'taken';
-
-const FILTERS: { key: Filter; label: string }[] = [
+const FILTERS: { key: InventoryFilter; label: string }[] = [
   { key: 'all', label: 'Alle' },
   { key: 'showcase', label: 'Schaufenster' },
   { key: 'pending', label: 'Zu prüfen' },
   { key: 'external', label: 'Extern' },
   { key: 'taken', label: 'Vergeben' },
+  { key: 'archived', label: 'Archiv' },
 ];
 
 function statusPill(item: Item) {
+  // Archiv zuerst: ein archiviertes Teil ist aus dem Bestand, egal was es
+  // vorher war.
+  if (isArchived(item)) return { label: 'archiviert', color: PP.err, bg: alpha(PP.err, "subtle") };
   if (item.taken_at) return { label: 'vergeben', color: PP.ink2, bg: alpha(PP.ink, "subtle") };
   if (item.status === 'pending') return { label: 'zu prüfen', color: PP.warn, bg: alpha(PP.warn, "soft") };
   if (item.is_showcase) return { label: 'Schaufenster', color: PP.teal, bg: alpha(PP.teal, "soft") };
-  if (item.status === 'archived') return { label: 'archiviert', color: PP.err, bg: alpha(PP.err, "subtle") };
   return { label: 'im Laden', color: PP.ink2, bg: alpha(PP.ink, "subtle") };
 }
 
-function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void; onOpen: () => void }) {
+function ItemRow({ item, isAdmin, onChange, onOpen }: { item: Item; isAdmin: boolean; onChange: () => void; onOpen: () => void }) {
   const uri = itemThumb(item);
   const [busy, setBusy] = useState(false);
   const st = statusPill(item);
-  const submitter = (item as any).expand?.created_by?.name as string | undefined;
+  const submitter = item.expand?.created_by?.name;
+  const archived = isArchived(item);
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -49,6 +52,37 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
     } finally {
       setBusy(false);
     }
+  };
+
+  const confirmDelete = () => {
+    Alert.alert('Endgültig löschen?', `"${item.title}" wird mit Foto und QR-Code gelöscht. Das lässt sich nicht rückgängig machen.`, [
+      { text: 'Abbrechen', style: 'cancel' },
+      { text: 'Löschen', style: 'destructive', onPress: () => run(() => deleteItem(item.id)) },
+    ]);
+  };
+
+  // Der Mülleimer archivierte früher ohne Rückfrage — und bei einem schon
+  // archivierten Teil tat er gar nichts. Jetzt fragt er, was passieren soll;
+  // Löschen darf nur ein Admin (items.deleteRule). Ein Dialog, kein zweiter
+  // daraus heraus: verschachtelte Alerts gehen auf iOS gern verloren.
+  const onTrash = () => {
+    if (archived) {
+      confirmDelete();
+      return;
+    }
+    Alert.alert(
+      `"${item.title}" entfernen?`,
+      isAdmin
+        ? 'Archivierte Teile lassen sich unter „Archiv" zurückholen. Endgültig Gelöschtes nicht.'
+        : 'Archivierte Teile lassen sich unter „Archiv" zurückholen.',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Archivieren', onPress: () => run(() => archiveItem(item.id)) },
+        ...(isAdmin
+          ? [{ text: 'Endgültig löschen', style: 'destructive' as const, onPress: () => run(() => deleteItem(item.id)) }]
+          : []),
+      ],
+    );
   };
 
   return (
@@ -102,11 +136,17 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
         </View>
       </Pressable>
 
-      {!item.taken_at && (
-        // Hauptaktion mit Text, Archivieren als roter Icon-Button — bricht
+      {(archived || !item.taken_at) && (
+        // Hauptaktion mit Text, Entfernen als roter Icon-Button — bricht
         // auch bei großer Schrift nicht um.
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.sm }}>
-          {item.status === 'pending' ? (
+          {archived ? (
+            <View style={{ flex: 1 }}>
+              <PPButton size="s" variant="secondary" icon="arrow-left" loading={busy} onPress={() => run(() => restoreItem(item))}>
+                Zurückholen
+              </PPButton>
+            </View>
+          ) : item.status === 'pending' ? (
             <View style={{ flex: 1 }}>
               <PPButton size="s" icon="check" loading={busy} onPress={() => run(() => approveItem(item.id, false))}>
                 Freigeben
@@ -129,15 +169,23 @@ function ItemRow({ item, onChange, onOpen }: { item: Item; onChange: () => void;
               </PPButton>
             </View>
           )}
-          <IconButton
-            icon="trash"
-            accessibilityLabel={`${item.title} archivieren`}
-            accessibilityHint="Das Teil verschwindet aus dem Bestand."
-            tint={PP.err}
-            bg={alpha(PP.err, 'soft')}
-            loading={busy}
-            onPress={() => run(() => archiveItem(item.id))}
-          />
+          {(!archived || isAdmin) && (
+            <IconButton
+              icon="trash"
+              accessibilityLabel={archived ? `${item.title} endgültig löschen` : `${item.title} entfernen`}
+              accessibilityHint={
+                archived
+                  ? 'Das Teil wird nach einer Rückfrage gelöscht.'
+                  : isAdmin
+                    ? 'Fragt, ob das Teil archiviert oder gelöscht werden soll.'
+                    : 'Das Teil wird nach einer Rückfrage archiviert.'
+              }
+              tint={PP.err}
+              bg={alpha(PP.err, 'soft')}
+              loading={busy}
+              onPress={onTrash}
+            />
+          )}
         </View>
       )}
     </Card>
@@ -148,7 +196,9 @@ export default function ItemsInventory() {
   const router = useRouter();
   const qc = useQueryClient();
   const { data: items, refetch } = useAllItems();
-  const [filter, setFilter] = useState<Filter>('all');
+  const { data: me } = useCurrentUser();
+  const isAdmin = me?.role === 'admin';
+  const [filter, setFilter] = useState<InventoryFilter>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [printing, setPrinting] = useState(false);
 
@@ -163,26 +213,15 @@ export default function ItemsInventory() {
     await invalidateItems(qc);
   }, [refetch, qc]);
 
-  const filtered = useMemo(() => {
-    const all = items ?? [];
-    switch (filter) {
-      case 'showcase':
-        return all.filter((i) => i.is_showcase && !i.taken_at);
-      case 'pending':
-        return all.filter((i) => i.status === 'pending');
-      case 'external':
-        return all.filter((i) => i.stays_external && !i.taken_at);
-      case 'taken':
-        return all.filter((i) => !!i.taken_at);
-      default:
-        return all;
-    }
-  }, [items, filter]);
+  const filtered = useMemo(() => filterItems(items ?? [], filter), [items, filter]);
+
+  // Archivierte und mitgenommene Teile brauchen kein Etikett.
+  const needsLabel = (i: Item) => !i.taken_at && !isArchived(i);
 
   // Etiketten für die gerade gefilterte Auswahl — sonst wären es bei „Alle"
   // schnell hunderte Seiten. Bereits mitgenommene Teile brauchen kein Etikett.
   const printSheet = useCallback(async () => {
-    const list = filtered.filter((i) => !i.taken_at);
+    const list = filtered.filter(needsLabel);
     if (!list.length) {
       Alert.alert('Nichts zu drucken', 'In dieser Auswahl gibt es keine Teile, die ein Etikett brauchen.');
       return;
@@ -225,7 +264,7 @@ export default function ItemsInventory() {
 
       {/* Etiketten zum Anheften — das PDF geht in den Teilen-Dialog und von
           dort an den Drucker. */}
-      {filtered.some((i) => !i.taken_at) && (
+      {filtered.some(needsLabel) && (
         <View style={{ paddingHorizontal: PP.space.xl, paddingBottom: PP.space.md }}>
           <PPButton size="s" variant="secondary" icon="tag" loading={printing} onPress={printSheet}>
             QR-Etiketten drucken
@@ -236,7 +275,7 @@ export default function ItemsInventory() {
       <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {filtered.length ? (
           filtered.map((it) => (
-            <ItemRow key={it.id} item={it} onChange={onChange} onOpen={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)/items`)} />
+            <ItemRow key={it.id} item={it} isAdmin={isAdmin} onChange={onChange} onOpen={() => router.push(`/(visitor)/items/${it.id}?from=/(visitor)/items`)} />
           ))
         ) : (
           <Card pad={16}>

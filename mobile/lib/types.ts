@@ -19,6 +19,8 @@ export interface Item {
   taken_at?: string;
   archived_at?: string;
   created_by?: string;
+  brought_awarded?: boolean;
+  expand?: { created_by?: { name?: string; role?: 'visitor' | 'volunteer' | 'admin' } };
   created: string;
   collectionId: string;
   collectionName: string;
