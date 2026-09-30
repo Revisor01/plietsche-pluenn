@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
 import { PP, alpha } from '../../lib/theme';
+import { useExitOnDoubleBack } from '../../lib/hooks/useExitOnDoubleBack';
 import { useCurrentUser, useShowcase, useActiveCampaigns, usePendingItems, useRecentItems, useActiveNeeds, useStore } from '../../lib/hooks/useData';
 import {
   nextTier,
@@ -34,6 +35,8 @@ import { ShowcaseCard } from '../../components/ShowcaseCard';
 
 export default function Home() {
   const router = useRouter();
+  // Android: ein einzelnes Zurück beendet hier nicht mehr sofort die App.
+  useExitOnDoubleBack();
   const qc = useQueryClient();
   const { data: user } = useCurrentUser();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';

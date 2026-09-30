@@ -5,15 +5,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { PP, glow } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
-import { PPText, PPButton } from '../../components/ui';
+import { PPText, PPButton, IconButton } from '../../components/ui';
+import { useOnboardingReplay } from '../../lib/hooks/useOnboardingReplay';
 import { Dots } from '../../components/Dots';
 
 export default function Welcome() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { replay, suffix, close } = useOnboardingReplay();
 
   return (
     <View style={{ flex: 1, backgroundColor: PP.bg, paddingHorizontal: PP.space.xxl, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
+      {replay && (
+        <View style={{ position: 'absolute', top: insets.top + 8, right: PP.space.xl, zIndex: 1 }}>
+          <IconButton icon="x" accessibilityLabel="Einführung schließen" onPress={close} />
+        </View>
+      )}
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: PP.space.xxl }}>
         <LinearGradient
           colors={PP.gradient}
@@ -41,7 +48,7 @@ export default function Welcome() {
       </View>
 
       <View style={{ gap: PP.space.md }}>
-        <PPButton iconRight="arrow-right" onPress={() => router.push('/(onboarding)/how')}>
+        <PPButton iconRight="arrow-right" onPress={() => router.push(`/(onboarding)/how${suffix}` as any)}>
           Los geht's
         </PPButton>
       </View>
