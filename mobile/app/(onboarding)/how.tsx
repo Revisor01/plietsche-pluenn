@@ -5,7 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { PP, alpha } from '../../lib/theme';
 import { Icon, type IconName } from '../../lib/icons';
-import { PPText, PPButton } from '../../components/ui';
+import { PPText, PPButton, IconButton } from '../../components/ui';
+import { useOnboardingReplay } from '../../lib/hooks/useOnboardingReplay';
 import { Dots } from '../../components/Dots';
 
 const STEPS: { icon: IconName; title: string; desc: string }[] = [
@@ -17,9 +18,15 @@ const STEPS: { icon: IconName; title: string; desc: string }[] = [
 export default function How() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { replay, suffix, close } = useOnboardingReplay();
 
   return (
     <View style={{ flex: 1, backgroundColor: PP.bg, paddingHorizontal: PP.space.xxl, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
+      {replay && (
+        <View style={{ position: 'absolute', top: insets.top + 8, right: PP.space.xl, zIndex: 1 }}>
+          <IconButton icon="x" accessibilityLabel="Einführung schließen" onPress={close} />
+        </View>
+      )}
       <View style={{ marginTop: PP.space.md }}>
         <PPText weight="bold" size="xl2" color={PP.ink} style={{ letterSpacing: PP.tracking.title }}>
           So funktioniert's
@@ -60,7 +67,7 @@ export default function How() {
         ))}
       </View>
 
-      <PPButton iconRight="arrow-right" onPress={() => router.push('/(onboarding)/permissions')}>
+      <PPButton iconRight="arrow-right" onPress={() => router.push(`/(onboarding)/permissions${suffix}` as any)}>
         Weiter
       </PPButton>
       <View style={{ paddingTop: PP.space.lg }}>
