@@ -157,7 +157,7 @@ onRecordAfterUpdateRequest((e) => {
       push.send(
         targets,
         'Dein Teil ist freigegeben',
-        `„${r.get('title')}" ist jetzt im Laden — ${pts} Punkte für dich.`,
+        `„${r.get('title')}" ist jetzt im Laden – ${pts} Punkte für dich.`,
         '/(visitor)/points',
         'badge'
       );

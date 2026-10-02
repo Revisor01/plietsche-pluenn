@@ -42,7 +42,7 @@ export default function Welcome() {
             Moin!
           </PPText>
           <PPText size="base" color={PP.ink2} style={{ marginTop: PP.space.sm, lineHeight: PP.fontSizes.base * PP.leading.loose, textAlign: 'center', maxWidth: 280 }}>
-            Schön, dass du da bist. Plietsche Plünn ist der Kleidertausch-Laden deiner Kirchengemeinde — und das hier ist deine App dazu.
+            Schön, dass du da bist. Plietsche Plünn ist der Kleidertausch-Laden deiner Kirchengemeinde – und das hier ist deine App dazu.
           </PPText>
         </View>
       </View>
