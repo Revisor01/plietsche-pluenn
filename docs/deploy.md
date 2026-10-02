@@ -77,7 +77,7 @@ vergessen; die Untergrenze wächst nur, wenn jemand sie bewusst anhebt.
 
 ### Die Nachher-Prüfung
 
-`deploy-verify.py` ruft unangemeldet fünf Endpunkte ab und prüft je Migration
+`deploy-verify.py` ruft unangemeldet fünf Endpunkte ab (mit `ERWARTETER_COMMIT` sechs) und prüft je Migration
 ein Schemamerkmal — nicht „ist die Migration vermerkt", sondern „ist das, was
 sie bewirken sollte, wirksam". Das fängt auch einen Fehlschlag mitten in einer
 Migration ab.
@@ -89,6 +89,7 @@ Migration ab.
 | `GET /api/collections/items/records` | 200, `totalItems: 0` | Die Leseregel auf `items` greift |
 | `GET /api/collections/action_counts/records` | 200, `totalItems: 0` | Die Besitzprüfung greift |
 | `GET /api/health` | 200 | Die Instanz antwortet |
+| `GET /api/pp/version` | 200, `commit` = ausgelieferter Commit | Die geladenen Hooks stammen aus diesem Commit |
 
 **Die Falle, um die es dabei geht:** PocketBase antwortet auf eine Regel, die
 nichts durchlässt, mit **HTTP 200 und einer leeren Liste** — nicht mit 403. Ein
@@ -96,6 +97,15 @@ nichts durchlässt, mit **HTTP 200 und einer leeren Liste** — nicht mit 403. E
 Sammlung für geschlossen: Eine Sammlung ganz ohne Leseregel liefert ebenfalls
 200, nur mit Inhalt. Bei den 200ern wird deshalb zusätzlich `totalItems == 0`
 verlangt.
+
+**Der Commit der Hooks.** Die fünf Schemamerkmale sehen eine Änderung, die
+nur `pb_hooks/` betrifft, nicht: Läuft noch das alte Abbild, stimmt das Schema
+trotzdem. Das Dockerfile schreibt deshalb beim Bauen den Commit nach
+`/pb_hooks/lib/build.js`, `GET /api/pp/version` liefert ihn aus, und der Deploy
+übergibt dem Skript den erwarteten Wert als `ERWARTETER_COMMIT`. Weil die
+Datei in `/pb_hooks` liegt und nicht in einer Umgebungsvariablen, fiele auch
+ein Bind-Mount auf, der die Hooks mit einem alten Stand überdeckt. Von Hand
+ohne die Variable aufgerufen, prüft das Skript nur die Schemamerkmale.
 
 Das Skript wartet mit Wiederholungen auf den Neustart (24 Runden im Abstand von
 fünf Sekunden) — der Webhook antwortet sofort, der Container braucht danach
