@@ -24,3 +24,21 @@ FROM ghcr.io/muchobien/pocketbase:0.22.21
 # Siehe docs/deploy.md, Abschnitt „Einmalige Umstellung".
 COPY pb_hooks /pb_hooks
 COPY pb_migrations /pb_migrations
+
+# Der Commit, aus dem dieses Abbild gebaut ist. GET /api/pp/version liefert
+# ihn aus, und die Nachher-Prüfung des Deploys vergleicht ihn mit dem
+# ausgelieferten (.github/scripts/deploy-verify.py).
+#
+# Er landet als Datei IN /pb_hooks und nicht als Umgebungsvariable: So meldet
+# die Route den Stand der Hooks, die PocketBase tatsächlich geladen hat. Eine
+# Variable hinge am Abbild und bliebe auch dann neu, wenn ein Bind-Mount die
+# Hooks mit einem alten Stand überdeckt.
+#
+# Ohne gültigen Hash bricht der Bau ab. Ein Abbild ohne Commit ließe die
+# Prüfung später nur rätseln, und die Prüfung auf Hex-Zeichen hält den Wert
+# aus dem JavaScript heraus, in das er geschrieben wird.
+ARG PP_COMMIT=""
+RUN case "$PP_COMMIT" in \
+      ''|*[!0-9a-f]*) echo "PP_COMMIT fehlt oder ist kein Commit-Hash: '$PP_COMMIT'" >&2; exit 1 ;; \
+    esac \
+ && printf 'module.exports = { commit: "%s" };\n' "$PP_COMMIT" > /pb_hooks/lib/build.js

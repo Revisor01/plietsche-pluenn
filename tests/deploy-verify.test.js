@@ -79,13 +79,17 @@ afterEach(() => {
  * Ruft das Skript auf und gibt { code, ausgabe } zurück.
  * Ohne Wartezeit zwischen den Runden — sonst dauerte jeder Fehlerfall Minuten.
  */
-async function pruefen(basis, { versuche = 2, abstand = 0 } = {}) {
+async function pruefen(basis, { versuche = 2, abstand = 0, commit } = {}) {
   const umgebung = {
     ...process.env,
     VERIFY_VERSUCHE: String(versuche),
     VERIFY_ABSTAND: String(abstand),
     VERIFY_ZEITLIMIT: '5',
   };
+  // Nur gesetzt, wenn der Test es will — ein Wert aus der Umgebung des
+  // Testlaufs darf das Ergebnis nicht verschieben.
+  delete umgebung.ERWARTETER_COMMIT;
+  if (commit !== undefined) umgebung.ERWARTETER_COMMIT = commit;
   try {
     const { stdout } = await ausfuehren('python3', [SKRIPT, basis], { env: umgebung });
     return { code: 0, ausgabe: stdout };
@@ -238,5 +242,62 @@ describe('Aufruf', () => {
     // „Deploy nicht angekommen" — sonst sucht man den Fehler auf dem Server.
     expect(await aufruf('')).toBe(2);
     expect(await aufruf('pb.example.invalid')).toBe(2);
+  });
+});
+
+describe('Commit der geladenen Hooks', () => {
+  // Bis hierher maß die Prüfung nur Schemamerkmale. Eine Änderung allein an
+  // pb_hooks war damit unsichtbar: Lief noch das alte Abbild, stimmte das
+  // Schema trotzdem, und der Lauf war grün. Mit ERWARTETER_COMMIT vergleicht
+  // das Skript zusätzlich, was GET /api/pp/version meldet.
+  const NEU = '4b6b2babe7d9c11c1f4a76e41e7051364f56c5b1';
+  const ALT = 'b2ddb7339df767707bad46a1b9d14f0be3f363e4';
+
+  const mitVersion = (commit) => ({
+    ...standRichtig(),
+    '/api/pp/version': { status: 200, koerper: { commit } },
+  });
+
+  it('meldet grün, wenn der ausgelieferte Commit läuft', async () => {
+    const basis = await serverStarten(mitVersion(NEU));
+    const { code, ausgabe } = await pruefen(basis, { commit: NEU });
+    expect(code).toBe(0);
+    expect(ausgabe).toContain(`[ok]    /api/pp/version: Commit ${NEU.slice(0, 7)}`);
+    expect(ausgabe).toContain('Alle 6 Merkmale stimmen');
+  });
+
+  it('erkennt den alten Stand, obwohl das Schema stimmt', async () => {
+    // Der Fall, für den es die Route gibt: Schema richtig, Hooks alt.
+    const basis = await serverStarten(mitVersion(ALT));
+    const { code, ausgabe } = await pruefen(basis, { commit: NEU });
+    expect(code).toBe(1);
+    expect(ausgabe).toContain(
+      `[ALT]   /api/pp/version: laeuft auf ${ALT.slice(0, 7)}, erwartet ${NEU.slice(0, 7)}`);
+    expect(ausgabe).toContain('stimmt NICHT mit dem Repo ueberein');
+  });
+
+  it('erkennt Hooks ohne die Route (404)', async () => {
+    const basis = await serverStarten(standRichtig());
+    const { code, ausgabe } = await pruefen(basis, { commit: NEU });
+    expect(code).toBe(1);
+    expect(ausgabe).toContain('[FEHLT] /api/pp/version: HTTP 404, erwartet 200');
+  });
+
+  it('wertet einen leeren Commit nicht als Treffer', async () => {
+    // Leer meldet die Route, wenn lib/build.js fehlt — ein Abbild, das nicht
+    // über den Deploy gebaut wurde.
+    const basis = await serverStarten(mitVersion(''));
+    const { code, ausgabe } = await pruefen(basis, { commit: NEU });
+    expect(code).toBe(1);
+    expect(ausgabe).toContain('[ALT]   /api/pp/version: laeuft auf (leer)');
+  });
+
+  it('bleibt ohne ERWARTETER_COMMIT bei den fünf Schemamerkmalen', async () => {
+    // Der Aufruf von Hand (docs/deploy.md) kennt keinen Commit.
+    const basis = await serverStarten(standRichtig());
+    const { code, ausgabe } = await pruefen(basis);
+    expect(code).toBe(0);
+    expect(ausgabe).toContain('Alle 5 Merkmale stimmen');
+    expect(ausgabe).not.toContain('/api/pp/version');
   });
 });

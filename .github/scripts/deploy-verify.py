@@ -26,6 +26,13 @@
 # jede Leseregel liefert ebenfalls 200, nur eben mit Inhalt. Bei den
 # 200er-Pruefungen wird deshalb zusaetzlich totalItems == 0 verlangt.
 #
+# Schemamerkmale allein sehen eine Aenderung nur an den Hooks nicht: Laeuft
+# noch das alte Abbild, stimmt das Schema trotzdem. Ist ERWARTETER_COMMIT
+# gesetzt (der Deploy setzt ihn auf den ausgelieferten Commit), vergleicht
+# das Skript deshalb zusaetzlich, was GET /api/pp/version meldet. Der Commit
+# steht im Abbild in /pb_hooks, also dort, von wo PocketBase die Hooks laedt.
+# Von Hand aufgerufen ohne die Variable bleibt es bei den Schemamerkmalen.
+#
 # Reine Standardbibliothek — auf dem Runner ist nichts weiter noetig.
 import json
 import os
@@ -41,6 +48,8 @@ import urllib.request
 VERSUCHE = int(os.environ.get('VERIFY_VERSUCHE', '24'))
 ABSTAND = float(os.environ.get('VERIFY_ABSTAND', '5'))
 ZEITLIMIT = float(os.environ.get('VERIFY_ZEITLIMIT', '10'))
+ERWARTETER_COMMIT = os.environ.get('ERWARTETER_COMMIT', '').strip()
+VERSION_PFAD = '/api/pp/version'
 
 # Je Zeile: Pfad, erwarteter Status, erwartete Trefferzahl (None = egal),
 # welche Migration das belegt.
@@ -103,6 +112,26 @@ def trefferzahl(koerper):
     return None
 
 
+def commit_pruefen(basis, soll):
+    """Vergleicht den Commit der geladenen Hooks. Gibt (gut, zeile, erreichbar) zurueck."""
+    status, koerper = abrufen(basis + VERSION_PFAD)
+    if status is None:
+        return False, f'  [warte] {VERSION_PFAD}: keine Antwort ({koerper})', False
+    if status != 200:
+        return False, (f'  [FEHLT] {VERSION_PFAD}: HTTP {status}, erwartet 200'
+                       '  → die geladenen Hooks kennen die Route nicht'), True
+    try:
+        ist = json.loads(koerper).get('commit')
+    except (ValueError, AttributeError):
+        ist = None
+    ist = ist.strip() if isinstance(ist, str) else ''
+    if ist != soll:
+        return False, (f'  [ALT]   {VERSION_PFAD}: laeuft auf {ist[:7] or "(leer)"}, '
+                       f'erwartet {soll[:7]}  → die Hooks sind nicht vom '
+                       'ausgelieferten Commit'), True
+    return True, f'  [ok]    {VERSION_PFAD}: Commit {ist[:7]}', True
+
+
 def eine_runde(basis):
     """Prueft alle Merkmale einmal. Gibt (alles_gut, zeilen, erreichbar) zurueck."""
     zeilen = []
@@ -150,6 +179,12 @@ def eine_runde(basis):
 
         zeilen.append(f'  [ok]    {pfad}: HTTP {status}')
 
+    if ERWARTETER_COMMIT:
+        gut, zeile, antwortet = commit_pruefen(basis, ERWARTETER_COMMIT)
+        zeilen.append(zeile)
+        alles_gut = alles_gut and gut
+        erreichbar = erreichbar and antwortet
+
     return alles_gut, zeilen, erreichbar
 
 
@@ -167,6 +202,8 @@ def main():
         return 2
 
     print(f'Pruefe den ausgelieferten Stand gegen {basis}')
+    if ERWARTETER_COMMIT:
+        print(f'Erwarteter Commit der Hooks: {ERWARTETER_COMMIT}')
 
     zeilen = []
     for versuch in range(1, VERSUCHE + 1):
@@ -175,7 +212,8 @@ def main():
             print(f'\nRunde {versuch}:')
             for zeile in zeilen:
                 print(zeile)
-            print(f'\nAlle {len(PRUEFUNGEN)} Merkmale stimmen. '
+            anzahl = len(PRUEFUNGEN) + (1 if ERWARTETER_COMMIT else 0)
+            print(f'\nAlle {anzahl} Merkmale stimmen. '
                   'Der neue Stand ist angekommen.')
             return 0
 

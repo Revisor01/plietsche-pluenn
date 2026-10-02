@@ -968,9 +968,13 @@ class FakeDao {
 //   Nur Sammlungen und Felder aus dem Schema; `__name` legt einen Zugriff
 //   über h.records.<name> an.
 // opts.realPush: lib/push.js echt laden statt ersetzen (siehe require unten).
+// opts.libs: { 'lib/<datei>.js': exports } — Bibliotheken, die es im Repo
+//   nicht gibt, sondern erst im Abbild (lib/build.js mit dem Commit). Ohne
+//   Eintrag scheitert require() daran wie in einer Instanz ohne die Datei.
 // Rückgabe: { routes, crons, dao, records, call, runCron, failSaveOn, … }
 function loadHook(hookFile, store = {}, opts = {}) {
   const realPush = !!opts.realPush;
+  const extraLibs = opts.libs || {};
   const dao = new FakeDao();
   const named = {};
   for (const [collection, rows] of Object.entries(store)) {
@@ -1125,6 +1129,9 @@ function loadHook(hookFile, store = {}, opts = {}) {
             pushed.push({ targets, title, body, link });
           },
         };
+      }
+      for (const [suffix, exports] of Object.entries(extraLibs)) {
+        if (spec.endsWith(`/${suffix}`)) return exports;
       }
       // Zwischenspeichern: Hook und Test müssen dieselbe Instanz benutzen,
       // sonst arbeiten sie auf verschiedenen Zuständen.

@@ -57,3 +57,6 @@ test-qrcodes.html
 # Backup der alten App-Icons (lokal, nicht im Repo)
 mobile/assets/.icon-backup/
 mobile/assets/.icon-backup-p2/
+
+# Erst im Abbild erzeugt (Dockerfile), Commit fuer GET /api/pp/version
+pocketbase/pb_hooks/lib/build.js
