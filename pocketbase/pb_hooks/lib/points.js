@@ -363,10 +363,10 @@ module.exports = {
       const streak = user.get('streak_weeks') || 0;
       let body = `${points} Punkte gutgeschrieben`;
       if (itemsCount > 0) {
-        body += ` — Check-in und ${itemsCount} ${itemsCount === 1 ? 'Teil' : 'Teile'}`;
+        body += ` – Check-in und ${itemsCount} ${itemsCount === 1 ? 'Teil' : 'Teile'}`;
       }
       if (streak >= 2) {
-        body += `. ${streak} Wochen in Folge — weiter so!`;
+        body += `. ${streak} Wochen in Folge – weiter so!`;
       } else {
         body += '.';
       }
@@ -619,7 +619,7 @@ module.exports = {
         for (const t of tiers) {
           if (TIER_ORDER.indexOf(t.tier) > TIER_ORDER.indexOf(oldTier) && TIER_ORDER.indexOf(t.tier) <= TIER_ORDER.indexOf(newTier)) {
             if (t.reward > 0) {
-              this.awardPoints(user, t.reward, 'badge', `${badge.get('name')} — ${t.tier}`, badge.id);
+              this.awardPoints(user, t.reward, 'badge', `${badge.get('name')} – ${t.tier}`, badge.id);
             }
           }
         }

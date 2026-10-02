@@ -86,7 +86,7 @@ export async function printQrSheet(items: Item[], title = 'QR-Etiketten'): Promi
   .sku { font-size: 7.5pt; font-weight: 700; color: ${PP.teal}; letter-spacing: 0.2pt; }
 </style></head>
 <body>
-  <h1>Plietsche Plünn — ${esc(title)}</h1>
+  <h1>Plietsche Plünn – ${esc(title)}</h1>
   <p class="sub">${items.length} ${items.length === 1 ? 'Etikett' : 'Etiketten'} · an der gestrichelten Linie schneiden</p>
   <div class="sheet">${tags}</div>
 </body></html>`;

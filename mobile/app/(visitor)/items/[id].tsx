@@ -131,7 +131,7 @@ export default function ItemDetail() {
           </Card>
           {item.stays_external ? (
             <Hint icon="map-pin" tone="info">
-              Dieses Teil lagert extern — sprich uns im Laden an, wir stellen den Kontakt her.
+              Dieses Teil lagert extern – sprich uns im Laden an, wir stellen den Kontakt her.
             </Hint>
           ) : (
             <Hint icon="qr-scan" tone="info">

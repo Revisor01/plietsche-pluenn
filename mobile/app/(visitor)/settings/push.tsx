@@ -15,7 +15,7 @@ const ROWS: { key: PrefKey; icon: IconName; title: string; sub: string }[] = [
   { key: 'push_streak_enabled', icon: 'flame', title: 'Streak-Erinnerung', sub: 'Freitags, wenn dein Streak zu reißen droht.' },
   { key: 'push_campaign_enabled', icon: 'megaphone', title: 'Aktionen & Kampagnen', sub: 'Doppelpunkte, Saison-Aktionen.' },
   { key: 'push_badge_enabled', icon: 'medal', title: 'Neue Badges', sub: 'Bei einer Freischaltung.' },
-  { key: 'push_other_enabled', icon: 'bell', title: 'Sonstiges aus dem Laden', sub: 'Selten — nur was wichtig ist.' },
+  { key: 'push_other_enabled', icon: 'bell', title: 'Sonstiges aus dem Laden', sub: 'Selten – nur was wichtig ist.' },
 ];
 
 export default function PushSettings() {

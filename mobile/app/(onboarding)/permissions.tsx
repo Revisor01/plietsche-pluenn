@@ -84,7 +84,7 @@ export default function Permissions() {
         <PermCard
           icon="bell"
           title="Sanfte Erinnerungen"
-          desc="Freitags ein freundlicher Schubs bevor dein Streak reißt — und Bescheid bei Aktionen."
+          desc="Freitags ein freundlicher Schubs bevor dein Streak reißt – und Bescheid bei Aktionen."
           state={push}
           onAsk={askPush}
         />

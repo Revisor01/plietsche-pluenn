@@ -191,7 +191,7 @@ export default function ReviewItems() {
         ) : (
           <Card pad={16}>
             <PPText size="base" color={PP.ink2}>
-              Nichts zu prüfen — alle Vorschläge sind bearbeitet.
+              Nichts zu prüfen – alle Vorschläge sind bearbeitet.
             </PPText>
           </Card>
         )}

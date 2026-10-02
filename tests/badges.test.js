@@ -264,9 +264,9 @@ describe('checkBadges — gestufte Abzeichen', () => {
     // Eine Zeile je Stufe im Verlauf.
     const badgeZeilen = h.rows('points_log').filter((p) => p.kind === 'badge');
     expect(badgeZeilen.map((p) => p.label)).toEqual([
-      'Sammler — bronze',
-      'Sammler — silber',
-      'Sammler — gold',
+      'Sammler – bronze',
+      'Sammler – silber',
+      'Sammler – gold',
     ]);
   });
 

@@ -14,6 +14,7 @@ import { Image } from 'react-native';
 import { Icon, type IconName } from '../../../lib/icons';
 import { useCurrentUser } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
+import { confirmSignOut } from '../../../lib/confirmSignOut';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { errorText } from '../../../lib/errors';
 import {
@@ -71,7 +72,7 @@ function SystemInfo() {
     },
     {
       label: 'Transparenz reduziert',
-      value: reduceTransparency === null ? '–' : reduceTransparency ? 'ja — Glas ist abgeschaltet' : 'nein',
+      value: reduceTransparency === null ? '–' : reduceTransparency ? 'ja – Glas ist abgeschaltet' : 'nein',
     },
   ];
 
@@ -362,7 +363,7 @@ export default function Account() {
           <Card pad={12} style={{ gap: PP.space.sm }}>
             <PPText size="sm" color={PP.ink2}>
               Wir haben dir nach der Anmeldung eine E-Mail geschickt. Schau
-              auch im Spam-Ordner nach — oder fordere sie hier neu an.
+              auch im Spam-Ordner nach – oder fordere sie hier neu an.
             </PPText>
             <PPButton
               size="m"
@@ -450,7 +451,7 @@ export default function Account() {
           die volle Signalwirkung eines Lösch-Buttons. Der vorherige Geister-
           Button mit Zurück-Pfeil las sich wie "eine Ebene zurück". */}
       <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.huge }}>
-        <Pressable onPress={logout} accessibilityRole="button" accessibilityLabel="Abmelden">
+        <Pressable onPress={() => confirmSignOut(logout)} accessibilityRole="button" accessibilityLabel="Abmelden">
           <Card
             pad={14}
             style={{
@@ -502,7 +503,7 @@ export default function Account() {
             </PPText>
             <PPText size="sm" color={PP.ink2}>
               Punktestand, Serie, Abzeichen und alle Besuche werden gelöscht. Teile, die
-              du in den Laden gegeben hast, bleiben dort — ohne Bezug zu dir.
+              du in den Laden gegeben hast, bleiben dort – ohne Bezug zu dir.
             </PPText>
             <Field
               icon="lock"

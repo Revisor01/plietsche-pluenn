@@ -108,7 +108,7 @@ function FilterRow({
         {/* Mehrere Zeilen haben ein "Alle" — für die Sprachausgabe die Zeile dazusagen. */}
         <SelectChip
           label="Alle"
-          a11yLabel={`Alle — ${title}`}
+          a11yLabel={`Alle – ${title}`}
           active={value === null}
           onPress={() => onSelect(null)}
         />

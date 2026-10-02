@@ -215,7 +215,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         <PPText size="sm" color={PP.ink2} style={{ marginTop: PP.space.sm }}>
           {isAction
             ? draft.kind === 'single'
-              ? 'Einmal im Aktionszeitraum dabei gewesen — fertig.'
+              ? 'Einmal im Aktionszeitraum dabei gewesen – fertig.'
               : 'Nach Anzahl der Beiträge zur Aktion. Ziele unten eintragen.'
             : draft.kind === 'single'
               ? 'Gibt es genau einmal.'
@@ -225,7 +225,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
 
       <View>
         <PPText weight="semibold" size="xs" color={PP.ink3} style={{ marginBottom: PP.space.sm, letterSpacing: PP.tracking.label }}>
-          AUSLÖSER — WOFÜR ES VERGEBEN WIRD
+          AUSLÖSER – WOFÜR ES VERGEBEN WIRD
         </PPText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: PP.space.sm }}>
           {TRIGGERS.filter((t) => t.kinds.includes(draft.kind)).map((t) => (
@@ -276,12 +276,12 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         <View style={{ gap: PP.space.sm }}>
           {draft.trigger_type === 'years_active' && (
             <PPText size="sm" color={PP.ink2}>
-              Wird am 31.12. rückwirkend vergeben — nur wenn im Jahr aktiv. „ab" = ab welchem aktiven Jahr (1 = erstes Jahr).
+              Wird am 31.12. rückwirkend vergeben – nur wenn im Jahr aktiv. „ab" = ab welchem aktiven Jahr (1 = erstes Jahr).
             </PPText>
           )}
           {isAction && (
             <PPText size="sm" color={PP.ink2}>
-              Wer während der Aktion dabei war, bekommt es — einmal, ohne Schwelle.
+              Wer während der Aktion dabei war, bekommt es – einmal, ohne Schwelle.
             </PPText>
           )}
           <View style={{ flexDirection: 'row', gap: PP.space.sm }}>
@@ -304,7 +304,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       ) : (
         <View style={{ gap: PP.space.sm }}>
           <PPText weight="semibold" size="xs" color={PP.ink3} style={{ letterSpacing: PP.tracking.label }}>
-            STUFEN — „ab" = ab wie vielen, Bonus = einmalige Punkte
+            STUFEN – „ab" = ab wie vielen, Bonus = einmalige Punkte
           </PPText>
           <PPText size="sm" color={PP.ink2} style={{ marginTop: -2 }}>
             Stufen und Namen kommen aus „Punkte & Ränge". Leer lassen heißt: Die
@@ -341,7 +341,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
         <View style={{ flex: 1 }}>
           <PPText weight="semibold" size="base" color={PP.ink}>Geheim</PPText>
           <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
-            Steht grau als „Geheim" in der Sammlung — Name und Fortschritt
+            Steht grau als „Geheim" in der Sammlung – Name und Fortschritt
             erscheinen erst mit der ersten Stufe.
           </PPText>
         </View>
@@ -394,7 +394,7 @@ export default function BadgeAdmin() {
 
       <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.xs }}>
         <Hint icon="info" tone="info">
-          Abzeichen belohnen Aktivität. „Stufen" steigen mit jedem Ziel und geben dabei einen Bonus; „Einzel" gibt es genau einmal — etwa für Jahres-Treue oder die Teilnahme an einer Aktion. Die Stufen kommen aus „Punkte & Ränge".
+          Abzeichen belohnen Aktivität. „Stufen" steigen mit jedem Ziel und geben dabei einen Bonus; „Einzel" gibt es genau einmal – etwa für Jahres-Treue oder die Teilnahme an einer Aktion. Die Stufen kommen aus „Punkte & Ränge".
         </Hint>
       </View>
 

@@ -15,7 +15,7 @@ import { errorText } from '../../../lib/errors';
 const TEMPLATES: { icon: IconName; title: string; detail: string }[] = [
   { icon: 'door', title: 'Wir haben jetzt geöffnet', detail: 'Komm vorbei!' },
   { icon: 'clock', title: 'Heute geschlossen', detail: '' },
-  { icon: 'shirt', title: 'Neue Ware ist da', detail: 'Frisch eingetroffen — schau rein.' },
+  { icon: 'shirt', title: 'Neue Ware ist da', detail: 'Frisch eingetroffen – schau rein.' },
   { icon: 'sparkles', title: 'Aktion läuft', detail: 'Jetzt mehr Punkte sammeln.' },
 ];
 
@@ -157,7 +157,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
             <View style={{ marginTop: PP.space.sm }}>
               <Hint icon="bell" tone="warn">
                 Diese Ankündigung wird dadurch <PPText weight="bold" size="sm" color={PP.warn}>nicht angezeigt</PPText>,
-                solange die Aktion läuft — die Aktions-Karte deckt das Thema bereits ab. Erst nach Ende der
+                solange die Aktion läuft – die Aktions-Karte deckt das Thema bereits ab. Erst nach Ende der
                 Aktion erscheint sie eigenständig im Aushang. Soll sie sofort sichtbar sein, wähle
                 „Eigenständig".
               </Hint>
@@ -218,7 +218,7 @@ export default function NeedsAdmin() {
 
       <View style={{ paddingHorizontal: PP.space.xl, marginBottom: PP.space.lg }}>
         <Hint icon="info" tone="info">
-          Ankündigungen stehen auf der Startseite ganz oben — für Öffnungszeiten, Hinweise
+          Ankündigungen stehen auf der Startseite ganz oben – für Öffnungszeiten, Hinweise
           oder was gerade gebraucht wird. Wer eine Ankündigung einer laufenden Aktion
           zuordnet, blendet sie damit aus: Die Aktions-Karte deckt das Thema schon ab.
         </Hint>
