@@ -101,6 +101,7 @@ jobs:
             pocketbase/pb_hooks/push.pb.js \
             pocketbase/pb_hooks/defaults.pb.js \
             pocketbase/pb_hooks/cron.pb.js \
+            pocketbase/pb_hooks/version.pb.js \
             pocketbase/pb_hooks/lib/points.js \
             pocketbase/pb_hooks/lib/push.js \
             pocketbase/Dockerfile
@@ -139,6 +140,10 @@ jobs:
           tags: |
             ghcr.io/revisor01/plietsche-pluenn/pocketbase:latest
             ghcr.io/revisor01/plietsche-pluenn/pocketbase:${{ github.sha }}
+          # Landet als lib/build.js in /pb_hooks; GET /api/pp/version liefert
+          # ihn aus, und der Verify unten vergleicht.
+          build-args: |
+            PP_COMMIT=${{ github.sha }}
 
       # Der Webhook stößt in Portainer ein Neu-Ausrollen des Stacks an: Image
       # ziehen, Container neu erstellen. Er antwortet sofort — fertig ist der
@@ -167,4 +172,8 @@ jobs:
       # öffentliche API. Was das Skript im Einzelnen tut und welche Falle es
       # abfängt, steht in seinem Kopf.
       - name: Prüfen, ob der neue Stand angekommen ist
+        # Neben den Schemamerkmalen auch der Commit der geladenen Hooks — eine
+        # Änderung nur an pb_hooks war vorher nicht zu messen.
+        env:
+          ERWARTETER_COMMIT: ${{ github.sha }}
         run: python3 .github/scripts/deploy-verify.py "$BASIS_URL"

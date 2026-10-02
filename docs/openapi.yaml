@@ -83,6 +83,8 @@ tags:
     description: Der universelle Scanner für Check-in und Teile.
   - name: Push
     description: An- und Abmeldung der Geräte für Benachrichtigungen.
+  - name: Betrieb
+    description: Angaben für die Auslieferung, nicht für die App.
 
 security:
   - PocketBaseAuth: []
@@ -380,6 +382,40 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Fehler' }
 
+  /api/pp/version:
+    get:
+      tags: [Betrieb]
+      summary: Commit der geladenen Hooks
+      operationId: version
+      description: |
+        Meldet, aus welchem Commit die Hooks stammen, die PocketBase gerade
+        geladen hat. Die Nachher-Prüfung des Deploys
+        (`.github/scripts/deploy-verify.py`) vergleicht ihn mit dem
+        ausgelieferten Commit — eine Änderung nur an den Hooks ist über
+        Schemamerkmale nicht zu sehen.
+
+        Der Wert steht in `pb_hooks/lib/build.js`, das erst beim Bauen des
+        Abbilds entsteht. Ohne die Datei (lokal, Upstream-Abbild mit
+        eingehängten Hooks) ist `commit` leer.
+
+        Ohne Anmeldung erreichbar; das Repository ist öffentlich, der Commit
+        verrät nichts darüber hinaus.
+      security: []
+      responses:
+        '200':
+          description: Der Commit, oder eine leere Zeichenkette ohne Abbild.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [commit]
+                properties:
+                  commit:
+                    type: string
+                    description: Vollständiger Git-Hash oder leer.
+                    pattern: '^([0-9a-f]{40})?$'
+                    example: 4b6b2babe7d9c11c1f4a76e41e7051364f56c5b1
+
 components:
   securitySchemes:
     PocketBaseAuth:
@@ -388,8 +424,9 @@ components:
       description: |
         Das Auth-Token aus der PocketBase-Anmeldung
         (`POST /api/collections/users/auth-with-password`), gesendet als
-        `Authorization`-Header. Alle hier dokumentierten Routen setzen eine
-        angemeldete Person voraus und antworten sonst mit 401.
+        `Authorization`-Header. Alle hier dokumentierten Routen außer
+        `GET /api/pp/version` setzen eine angemeldete Person voraus und
+        antworten sonst mit 401.
 
   schemas:
     CheckinResult:
