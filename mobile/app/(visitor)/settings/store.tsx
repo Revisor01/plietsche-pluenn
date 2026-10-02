@@ -4,6 +4,7 @@ import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
 import { useStore } from '../../../lib/hooks/useData';
 import { useAuth } from '../../../lib/hooks/useAuth';
+import { confirmSignOut } from '../../../lib/confirmSignOut';
 import { Screen, PPHeader, PPText, Card, Pill, SectionTitle, IconButton, PPButton } from '../../../components/ui';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 
@@ -145,7 +146,7 @@ export default function StoreInfo() {
       </View>
 
       <View style={{ paddingHorizontal: PP.space.xl, marginTop: PP.space.huge }}>
-        <PPButton variant="secondary" icon="arrow-left" onPress={logout}>
+        <PPButton variant="secondary" icon="arrow-left" onPress={() => confirmSignOut(logout)}>
           Abmelden
         </PPButton>
       </View>

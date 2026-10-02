@@ -127,7 +127,7 @@ export default function Home() {
                   E-Mail-Adresse noch nicht bestätigt
                 </PPText>
                 <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
-                  Schau in dein Postfach — auch im Spam-Ordner.
+                  Schau in dein Postfach – auch im Spam-Ordner.
                 </PPText>
               </View>
               <Icon name="chevron-right" size={PP.iconSizes.md} color={PP.ink3} />

@@ -69,7 +69,7 @@ export function conditionLabel(condition?: string): string {
 
 // Badge tier progression: current tier, next tier + bar progress toward it.
 const TIER_NAMES: Record<Tier, string> = {
-  none: '—',
+  none: '–',
   bronze: 'Bronze',
   silber: 'Silber',
   gold: 'Gold',
@@ -177,7 +177,7 @@ export function nextTier(points: number, tiers: TierStep[] = DEFAULT_TIERS) {
   const span = next.at - from;
   const progress = span > 0 ? (points - from) / span : 1;
   return {
-    current: current ? current.name : '—',
+    current: current ? current.name : '–',
     name: next.name,
     remaining: next.at - points,
     progress: Math.max(0, Math.min(1, progress)),
@@ -324,7 +324,7 @@ export function motivationFor(input: MotivationInput): Motivation {
       pill: `Fast ${tierName}`,
       icon: 'medal',
       tone: 'warn',
-      text: `Nur noch ${formatPoints(tierRemaining)} Punkte — dann bist du ${tierName}.`,
+      text: `Nur noch ${formatPoints(tierRemaining)} Punkte – dann bist du ${tierName}.`,
     };
   }
 
@@ -334,7 +334,7 @@ export function motivationFor(input: MotivationInput): Motivation {
       pill: campaignBonus || 'Aktion läuft',
       icon: 'flame',
       tone: 'warn',
-      text: `„${campaignName}" läuft gerade — jetzt vorbeikommen lohnt sich besonders.`,
+      text: `„${campaignName}" läuft gerade – jetzt vorbeikommen lohnt sich besonders.`,
     };
   }
 
@@ -364,7 +364,7 @@ export function motivationFor(input: MotivationInput): Motivation {
       pill: 'Lang nicht gesehen',
       icon: 'sparkles',
       tone: 'sky',
-      text: 'Schön, dass du wieder da bist — im Laden wartet neue Ware auf dich.',
+      text: 'Schön, dass du wieder da bist – im Laden wartet neue Ware auf dich.',
     };
   }
 
@@ -374,7 +374,7 @@ export function motivationFor(input: MotivationInput): Motivation {
       pill: 'Dabei',
       icon: 'sparkles',
       tone: 'teal',
-      text: `Weiter so — mit jedem Besuch kommst du ${tierName} näher.`,
+      text: `Weiter so – mit jedem Besuch kommst du ${tierName} näher.`,
     };
   }
 
