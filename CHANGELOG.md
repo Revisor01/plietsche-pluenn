@@ -14,6 +14,9 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - **Das Symbol passt sich dem Bildschirm an:** Auf einem dunklen Homescreen erscheint es gedämpft statt hell leuchtend, und wer seine Symbole einfärben lässt, bekommt eine dafür gezeichnete Fassung. Auf Android fügt es sich ebenso in eingefärbte Startbildschirme ein.
 
 ### Neu
+- **Teile teilen:** Auf der Seite eines Teils öffnet der Teilen-Knopf oben rechts das Teilen-Menü des Handys, etwa für WhatsApp, Nachrichten oder Mail. Mit geschickt wird ein kurzer Text mit Bezeichnung, Größe, Zustand, für wen es gedacht ist und wo es zu haben ist. Der Text kommt ohne Sternchen-Auszeichnung aus und sieht deshalb in jeder App gleich ordentlich aus. Vergebene oder noch nicht freigegebene Teile lassen sich nicht teilen.
+- **App empfehlen:** Im Profil unter „Hilfe" verschickt „App empfehlen" einen Hinweis auf die App mit den Links für iPhone und Android.
+- **App bewerten:** Im Profil unter „Hilfe" führt „App bewerten" direkt zur Bewertungsseite im App Store oder bei Google Play.
 - **Einführung jederzeit wieder ansehen:** Im Profil führt „Einführung ansehen" noch einmal durch die Seiten vom ersten Start — wie die App funktioniert, und die Bitte um Standort und Mitteilungen. Sie lässt sich jederzeit schließen und ändert nichts an deinem Konto.
 - **Das App-Symbol lässt sich aussuchen:** Im Profil stehen unter „App-Symbol" vier Gestaltungen zur Wahl — dunkelgrün, heller Ring, Sand und Scheibe. Ein Tipp genügt, das Symbol auf dem Startbildschirm wechselt sofort.
 - **E-Mail-Adresse bestätigen:** Nach der Registrierung kommt eine Mail mit einem Bestätigungslink. Solange die Adresse offen ist, erinnert ein Hinweis auf der Startseite daran; im Profil steht der Stand, und die Mail lässt sich dort erneut anfordern. Wer nicht bestätigt, kann die App trotzdem uneingeschränkt nutzen — die Bestätigung hilft nur, das Konto wiederzufinden, wenn das Passwort weg ist.
