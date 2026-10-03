@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Image, Pressable, Alert } from 'react-native';
+import { View, Image, Pressable, Alert, Share } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,10 +7,11 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { PP, alpha } from '../../../lib/theme';
 import { Icon } from '../../../lib/icons';
-import { useItem, useCurrentUser } from '../../../lib/hooks/useData';
+import { useItem, useCurrentUser, useStore } from '../../../lib/hooks/useData';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { updateItem, setShowcase, archiveItem, approveItem, restoreItem, deleteItem } from '../../../lib/api';
 import { isArchived } from '../../../lib/itemState';
+import { canShareItem, itemShareText } from '../../../lib/share';
 import {
   itemThumb, groupLabel, typeLabel, conditionLabel,
   CATEGORY_GROUPS, CATEGORY_TYPES, GROUPS_WITH_TYPE, categoryGroup, categoryType,
@@ -28,6 +29,7 @@ export default function ItemDetail() {
   const goBack = useGoBack();
   const { data: item, refetch } = useItem(id);
   const { data: me } = useCurrentUser();
+  const { data: store } = useStore();
   const isStaff = me?.role === 'volunteer' || me?.role === 'admin';
   const isAdmin = me?.role === 'admin';
 
@@ -67,6 +69,35 @@ export default function ItemDetail() {
     );
   }
 
+  // Teilen über das Menü des Systems (WhatsApp, Nachrichten, Mail …). Nur
+  // Felder, die auch Besucher:innen sehen; der Lagerort bleibt intern.
+  const shareButton = canShareItem(item) ? (
+    <IconButton
+      icon="send"
+      accessibilityLabel={`${item.title} teilen`}
+      accessibilityHint="Öffnet das Teilen-Menü, etwa für WhatsApp oder Nachrichten."
+      onPress={() => {
+        Share.share(
+          {
+            message: itemShareText(
+              {
+                title: item.title,
+                size: item.size,
+                condition: conditionLabel(item.condition),
+                group: groupLabel(item.category),
+                type: typeLabel(item.category),
+                note: item.note,
+                staysExternal: !!item.stays_external,
+              },
+              store,
+            ),
+          },
+          { dialogTitle: 'Teil teilen' },
+        ).catch(() => {});
+      }}
+    />
+  ) : undefined;
+
   // Read-only view for normal users — no editing, just the item as shown in the
   // shop. Staff fall through to the full editor below.
   if (!isStaff) {
@@ -77,6 +108,7 @@ export default function ItemDetail() {
           subtitle={item.sku}
           title={item.title}
           leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
+          trailing={shareButton}
         />
         <View style={{ paddingHorizontal: PP.space.xl }}>
           <View style={{ height: 280, borderRadius: PP.rTile, overflow: 'hidden', backgroundColor: alpha(PP.teal, "subtle"), alignItems: 'center', justifyContent: 'center' }}>
@@ -253,6 +285,7 @@ export default function ItemDetail() {
         subtitle={item.sku}
         title="Teil bearbeiten"
         leading={<IconButton icon="chevron-left" accessibilityLabel="Zurück" onPress={goBack} />}
+        trailing={shareButton}
       />
 
       <SectionTitle title="Foto" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Alert, Pressable, Platform, AccessibilityInfo } from 'react-native';
+import { View, Alert, Pressable, Platform, AccessibilityInfo, Share, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
@@ -12,7 +12,8 @@ import {
 import { PP, alpha } from '../../../lib/theme';
 import { Image } from 'react-native';
 import { Icon, type IconName } from '../../../lib/icons';
-import { useCurrentUser } from '../../../lib/hooks/useData';
+import { useCurrentUser, useStore } from '../../../lib/hooks/useData';
+import { appRecommendationText, reviewUrls } from '../../../lib/share';
 import { useAuth } from '../../../lib/hooks/useAuth';
 import { confirmSignOut } from '../../../lib/confirmSignOut';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
@@ -28,6 +29,25 @@ import {
   IconButton,
   IconTile,
 } from '../../../components/ui';
+
+// App empfehlen: Text mit beiden Store-Links über das Teilen-Menü.
+function recommendApp(store: Parameters<typeof appRecommendationText>[0]) {
+  Share.share({ message: appRecommendationText(store) }, { dialogTitle: 'App empfehlen' }).catch(() => {});
+}
+
+// App bewerten: direkt zur Bewertungsseite im Store, unter Android mit der
+// Webseite als Rückfall, falls die Play-Store-App fehlt (siehe lib/share.ts).
+async function rateApp() {
+  for (const url of reviewUrls(Platform.OS)) {
+    try {
+      await Linking.openURL(url);
+      return;
+    } catch {
+      // nächste Adresse versuchen
+    }
+  }
+  Alert.alert('Store nicht erreichbar', 'Die Bewertungsseite ließ sich nicht öffnen.');
+}
 
 function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   return (
@@ -191,6 +211,7 @@ export default function Account() {
   const router = useRouter();
   const goBack = useGoBack();
   const { data: user, refetch } = useCurrentUser();
+  const { data: store } = useStore();
   const { updateName, updateEmail, updatePassword, logout, deleteAccount, requestVerification } =
     useAuth();
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
@@ -410,11 +431,13 @@ export default function Account() {
       </View>
 
       <SectionTitle title="Hilfe" />
-      <View style={{ paddingHorizontal: PP.space.xl }}>
+      <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {/* Die Einführung vom ersten Start, jederzeit noch einmal. replay
             hält den Einstiegs-Wächter davon ab, sie gleich wieder zu
             schließen, und „Fertig" ändert dann nichts am Konto. */}
         <AdminLink icon="info" label="Einführung ansehen" onPress={() => router.push('/(onboarding)/welcome?replay=1')} />
+        <AdminLink icon="heart" label="App empfehlen" onPress={() => recommendApp(store)} />
+        <AdminLink icon="star" label="App bewerten" onPress={rateApp} />
       </View>
 
       <SectionTitle title="App-Symbol" />
