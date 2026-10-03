@@ -30,6 +30,7 @@ export async function scan(params: {
 // ── Items: einstellen / freigeben ──────────────────────────────
 import type { Item, Badge } from './types';
 import { restoreStatus } from './itemState';
+import { photoPart } from './upload';
 
 // ── Badges: Admin-Verwaltung ───────────────────────────────────
 export type BadgeInput = Partial<Omit<Badge, 'id'>>;
@@ -130,11 +131,8 @@ export async function createItem(input: NewItemInput): Promise<Item> {
   // is_showcase=false regardless, so sending it is safe.
   if (input.is_showcase) form.append('is_showcase', 'true');
   if (input.photoUri) {
-    const name = input.photoUri.split('/').pop() || 'photo.jpg';
-    const ext = (name.split('.').pop() || 'jpg').toLowerCase();
-    const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-    // React Native FormData file shape.
-    form.append('photo', { uri: input.photoUri, name, type: mime } as any);
+    // Als File, nicht in der React-Native-Form { uri } — siehe lib/upload.ts.
+    form.append('photo', photoPart(input.photoUri));
   }
   return (await pb.collection('items').create(form)) as unknown as Item;
 }

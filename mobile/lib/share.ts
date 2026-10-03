@@ -7,8 +7,7 @@
 // Formatierung: reiner Text mit Zeilenumbrüchen, kein *fett* und kein
 // _kursiv_. WhatsApp würde das auszeichnen, iMessage, SMS und Signal zeigen
 // die Sternchen dagegen wörtlich an — und welche App die Person im
-// Teilen-Menü wählt, erfährt die App vorher nicht. Ein Emoji am Titel trägt
-// in allen Apps.
+// Teilen-Menü wählt, erfährt die App vorher nicht. Auch kein Emoji.
 
 export const LINKS = {
   // Die öffentliche Seite des Ladens (web/index.html). In Punycode, weil
@@ -63,7 +62,7 @@ export function itemShareText(item: ShareableItem, store?: ShareableStore): stri
     : `Zum Mitnehmen bei ${ladenName}${adresse ? `, ${adresse}` : ''}.`;
 
   const teil = [
-    `👕 ${nichtLeer(item.title)}`,
+    nichtLeer(item.title),
     eckdaten,
     fuerWen && `Für: ${fuerWen}`,
     nichtLeer(item.note),
@@ -82,6 +81,15 @@ export function appRecommendationText(store?: ShareableStore): string {
     `iPhone: ${LINKS.appStore}`,
     `Android: ${LINKS.playStore}`,
   ].join('\n');
+}
+
+// MIME-Typ eines Fotos für das Teilen-Menü, aus der Dateiendung. PocketBase
+// nimmt nur JPEG, PNG und WebP an (items.photo); alles andere gilt als JPEG.
+export function photoMimeType(filename: string): string {
+  const endung = `${filename}`.split('.').pop()?.toLowerCase() ?? '';
+  if (endung === 'png') return 'image/png';
+  if (endung === 'webp') return 'image/webp';
+  return 'image/jpeg';
 }
 
 // Wohin „App bewerten" führt. Ein Knopf darf laut Apple nicht den
