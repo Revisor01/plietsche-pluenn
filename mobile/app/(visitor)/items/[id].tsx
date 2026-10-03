@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Image, Pressable, Alert, Share } from 'react-native';
+import { View, Image, Pressable, Alert, Share, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,6 +12,8 @@ import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { updateItem, setShowcase, archiveItem, approveItem, restoreItem, deleteItem } from '../../../lib/api';
 import { isArchived } from '../../../lib/itemState';
 import { canShareItem, itemShareText } from '../../../lib/share';
+import { photoPart } from '../../../lib/upload';
+import { File, Paths } from 'expo-file-system';
 import {
   itemThumb, groupLabel, typeLabel, conditionLabel,
   CATEGORY_GROUPS, CATEGORY_TYPES, GROUPS_WITH_TYPE, categoryGroup, categoryType,
@@ -71,30 +73,48 @@ export default function ItemDetail() {
 
   // Teilen über das Menü des Systems (WhatsApp, Nachrichten, Mail …). Nur
   // Felder, die auch Besucher:innen sehen; der Lagerort bleibt intern.
+  //
+  // Das Foto geht unter iOS als Datei mit: Share nimmt dort Text (message)
+  // und Datei (url) zusammen. Unter Android reicht Share nur Text weiter —
+  // Foto und Text zusammen bräuchten dort eine eigene native Bibliothek.
+  // Scheitert das Herunterladen, geht der Text allein raus.
+  const shareItem = async () => {
+    const message = itemShareText(
+      {
+        title: item.title,
+        size: item.size,
+        condition: conditionLabel(item.condition),
+        group: groupLabel(item.category),
+        type: typeLabel(item.category),
+        note: item.note,
+        staysExternal: !!item.stays_external,
+      },
+      store,
+    );
+    let url: string | undefined;
+    if (Platform.OS === 'ios' && item.photo) {
+      try {
+        // Das Original (höchstens 4 MB), unter seinem eigenen Dateinamen —
+        // die Endung sagt iOS, ob es JPEG, PNG oder WebP ist.
+        const foto = await File.downloadFileAsync(
+          pb.files.getURL(item as any, item.photo),
+          new File(Paths.cache, item.photo),
+          { idempotent: true },
+        );
+        url = foto.uri;
+      } catch {
+        // ohne Foto weiter
+      }
+    }
+    await Share.share(url ? { message, url } : { message }, { dialogTitle: 'Teil teilen' }).catch(() => {});
+  };
+
   const shareButton = canShareItem(item) ? (
     <IconButton
       icon="send"
       accessibilityLabel={`${item.title} teilen`}
       accessibilityHint="Öffnet das Teilen-Menü, etwa für WhatsApp oder Nachrichten."
-      onPress={() => {
-        Share.share(
-          {
-            message: itemShareText(
-              {
-                title: item.title,
-                size: item.size,
-                condition: conditionLabel(item.condition),
-                group: groupLabel(item.category),
-                type: typeLabel(item.category),
-                note: item.note,
-                staysExternal: !!item.stays_external,
-              },
-              store,
-            ),
-          },
-          { dialogTitle: 'Teil teilen' },
-        ).catch(() => {});
-      }}
+      onPress={shareItem}
     />
   ) : undefined;
 
@@ -201,10 +221,8 @@ export default function ItemDetail() {
         form.append('location', location.trim());
         form.append('category', category);
         form.append('stays_external', staysExternal ? 'true' : 'false');
-        const name = newPhoto.split('/').pop() || 'photo.jpg';
-        const ext = (name.split('.').pop() || 'jpg').toLowerCase();
-        const mime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-        form.append('photo', { uri: newPhoto, name, type: mime } as any);
+        // Als File, nicht in der React-Native-Form { uri } — siehe lib/upload.ts.
+        form.append('photo', photoPart(newPhoto));
         await pb.collection('items').update(item.id, form);
       } else {
         await updateItem(item.id, {

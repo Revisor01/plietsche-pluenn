@@ -26,7 +26,7 @@ describe('itemShareText', () => {
       [
         'Schau mal, was es bei Plietsche Plünn gibt:',
         '',
-        '👕 Jeansjacke',
+        'Jeansjacke',
         'Größe M · Zustand: Sehr gut',
         'Für: Damen · Oberteile',
         '',
@@ -43,7 +43,7 @@ describe('itemShareText', () => {
       [
         'Schau mal, was es bei Plietsche Plünn gibt:',
         '',
-        '👕 Mütze',
+        'Mütze',
         '',
         'Zum Mitnehmen bei Plietsche Plünn.',
         '',
@@ -69,6 +69,12 @@ describe('itemShareText', () => {
   it('nutzt keine Messenger-Auszeichnung, die anderswo als Sternchen erscheint', () => {
     const text = itemShareText({ ...JACKE, note: 'Kaum getragen' }, LADEN);
     expect(text).not.toMatch(/[*_~`]/);
+  });
+
+  it('kommt ohne Emoji aus', () => {
+    const text = itemShareText({ ...JACKE, note: 'Kaum getragen' }, LADEN);
+    expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+    expect(appRecommendationText(LADEN)).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 
   it('übernimmt die öffentliche Beschreibung', () => {
@@ -117,6 +123,9 @@ describe('Die Screens benutzen es', () => {
     expect(src).toMatch(/Share\.share\(/);
     expect(src).toMatch(/itemShareText\(/);
     expect(src).toMatch(/canShareItem\(item\)/);
+    // Mit Foto: unter iOS als Datei angehängt (Share nimmt dort message + url).
+    expect(src).toMatch(/File\.downloadFileAsync\(/);
+    expect(src).toMatch(/Platform\.OS === 'ios' && item\.photo/);
     // Der Lagerort darf in den Aufruf nicht hineingeraten.
     expect(src).not.toMatch(/itemShareText\([^)]*location/);
   });

@@ -7,8 +7,7 @@
 // Formatierung: reiner Text mit Zeilenumbrüchen, kein *fett* und kein
 // _kursiv_. WhatsApp würde das auszeichnen, iMessage, SMS und Signal zeigen
 // die Sternchen dagegen wörtlich an — und welche App die Person im
-// Teilen-Menü wählt, erfährt die App vorher nicht. Ein Emoji am Titel trägt
-// in allen Apps.
+// Teilen-Menü wählt, erfährt die App vorher nicht. Auch kein Emoji.
 
 export const LINKS = {
   // Die öffentliche Seite des Ladens (web/index.html). In Punycode, weil
@@ -63,7 +62,7 @@ export function itemShareText(item: ShareableItem, store?: ShareableStore): stri
     : `Zum Mitnehmen bei ${ladenName}${adresse ? `, ${adresse}` : ''}.`;
 
   const teil = [
-    `👕 ${nichtLeer(item.title)}`,
+    nichtLeer(item.title),
     eckdaten,
     fuerWen && `Für: ${fuerWen}`,
     nichtLeer(item.note),
