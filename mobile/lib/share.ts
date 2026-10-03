@@ -83,6 +83,15 @@ export function appRecommendationText(store?: ShareableStore): string {
   ].join('\n');
 }
 
+// MIME-Typ eines Fotos für das Teilen-Menü, aus der Dateiendung. PocketBase
+// nimmt nur JPEG, PNG und WebP an (items.photo); alles andere gilt als JPEG.
+export function photoMimeType(filename: string): string {
+  const endung = `${filename}`.split('.').pop()?.toLowerCase() ?? '';
+  if (endung === 'png') return 'image/png';
+  if (endung === 'webp') return 'image/webp';
+  return 'image/jpeg';
+}
+
 // Wohin „App bewerten" führt. Ein Knopf darf laut Apple nicht den
 // System-Dialog (requestReview) auslösen — der erscheint höchstens dreimal im
 // Jahr und in TestFlight nie, der Knopf täte dann sichtbar nichts. Apple

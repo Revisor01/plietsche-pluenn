@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  LINKS, canShareItem, itemShareText, appRecommendationText, reviewUrls,
+  LINKS, canShareItem, itemShareText, appRecommendationText, reviewUrls, photoMimeType,
 } from '../mobile/lib/share.ts';
 import { code } from './helper/quelltext.js';
 
@@ -82,6 +82,19 @@ describe('itemShareText', () => {
   });
 });
 
+describe('photoMimeType', () => {
+  it('erkennt die drei erlaubten Formate an der Endung', () => {
+    expect(photoMimeType('jacke_abc123.jpg')).toBe('image/jpeg');
+    expect(photoMimeType('jacke_abc123.JPEG')).toBe('image/jpeg');
+    expect(photoMimeType('jacke_abc123.png')).toBe('image/png');
+    expect(photoMimeType('jacke_abc123.webp')).toBe('image/webp');
+  });
+
+  it('fällt bei Unbekanntem auf JPEG zurück', () => {
+    expect(photoMimeType('jacke')).toBe('image/jpeg');
+  });
+});
+
 describe('canShareItem', () => {
   it('erlaubt freigegebene Teile und Altbestand ohne Status', () => {
     expect(canShareItem({ status: 'approved' })).toBe(true);
@@ -120,12 +133,17 @@ describe('reviewUrls', () => {
 describe('Die Screens benutzen es', () => {
   it('Detailseite: Teilen-Knopf über das System-Menü, nur für verfügbare Teile', () => {
     const src = code('mobile/app/(visitor)/items/[id].tsx');
-    expect(src).toMatch(/Share\.share\(/);
     expect(src).toMatch(/itemShareText\(/);
     expect(src).toMatch(/canShareItem\(item\)/);
-    // Mit Foto: unter iOS als Datei angehängt (Share nimmt dort message + url).
+    // Mit Foto: auf beiden Plattformen als Datei angehängt, über
+    // react-native-share (das Share von React Native nimmt unter Android
+    // nur Text). Kein Zweig nach Plattform.
+    expect(src).toMatch(/from 'react-native-share'/);
+    expect(src).toMatch(/RNShare\.open\(/);
     expect(src).toMatch(/File\.downloadFileAsync\(/);
-    expect(src).toMatch(/Platform\.OS === 'ios' && item\.photo/);
+    expect(src).toMatch(/if \(item\.photo\)/);
+    expect(src).not.toMatch(/Platform\.OS === 'ios' && item\.photo/);
+    expect(src).toMatch(/failOnCancel: false/);
     // Der Lagerort darf in den Aufruf nicht hineingeraten.
     expect(src).not.toMatch(/itemShareText\([^)]*location/);
   });

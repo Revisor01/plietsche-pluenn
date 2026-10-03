@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Image, Pressable, Alert, Share, Platform } from 'react-native';
+import { View, Image, Pressable, Alert } from 'react-native';
+import RNShare from 'react-native-share';
 import { useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -11,7 +12,7 @@ import { useItem, useCurrentUser, useStore } from '../../../lib/hooks/useData';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { updateItem, setShowcase, archiveItem, approveItem, restoreItem, deleteItem } from '../../../lib/api';
 import { isArchived } from '../../../lib/itemState';
-import { canShareItem, itemShareText } from '../../../lib/share';
+import { canShareItem, itemShareText, photoMimeType } from '../../../lib/share';
 import { photoPart } from '../../../lib/upload';
 import { File, Paths } from 'expo-file-system';
 import {
@@ -74,10 +75,10 @@ export default function ItemDetail() {
   // Teilen über das Menü des Systems (WhatsApp, Nachrichten, Mail …). Nur
   // Felder, die auch Besucher:innen sehen; der Lagerort bleibt intern.
   //
-  // Das Foto geht unter iOS als Datei mit: Share nimmt dort Text (message)
-  // und Datei (url) zusammen. Unter Android reicht Share nur Text weiter —
-  // Foto und Text zusammen bräuchten dort eine eigene native Bibliothek.
-  // Scheitert das Herunterladen, geht der Text allein raus.
+  // Das Foto geht als Datei mit, auf iOS und Android gleich. Dafür
+  // react-native-share: Das Share von React Native reicht unter Android nur
+  // Text weiter. Scheitert das Herunterladen, geht der Text allein raus.
+  // Abbrechen im Menü ist kein Fehler (failOnCancel: false).
   const shareItem = async () => {
     const message = itemShareText(
       {
@@ -91,22 +92,27 @@ export default function ItemDetail() {
       },
       store,
     );
-    let url: string | undefined;
-    if (Platform.OS === 'ios' && item.photo) {
+    let anhang: { url: string; type: string } | undefined;
+    if (item.photo) {
       try {
         // Das Original (höchstens 4 MB), unter seinem eigenen Dateinamen —
-        // die Endung sagt iOS, ob es JPEG, PNG oder WebP ist.
+        // die Endung sagt dem System, ob es JPEG, PNG oder WebP ist.
         const foto = await File.downloadFileAsync(
           pb.files.getURL(item as any, item.photo),
           new File(Paths.cache, item.photo),
           { idempotent: true },
         );
-        url = foto.uri;
+        anhang = { url: foto.uri, type: photoMimeType(item.photo) };
       } catch {
         // ohne Foto weiter
       }
     }
-    await Share.share(url ? { message, url } : { message }, { dialogTitle: 'Teil teilen' }).catch(() => {});
+    await RNShare.open({
+      title: 'Teil teilen',
+      message,
+      ...anhang,
+      failOnCancel: false,
+    }).catch(() => {});
   };
 
   const shareButton = canShareItem(item) ? (
