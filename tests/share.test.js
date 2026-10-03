@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  LINKS, canShareItem, itemShareText, appRecommendationText, reviewUrls,
+  LINKS, canShareItem, itemShareText, appRecommendationText, reviewUrls, photoMimeType,
 } from '../mobile/lib/share.ts';
 import { code } from './helper/quelltext.js';
 
@@ -26,7 +26,7 @@ describe('itemShareText', () => {
       [
         'Schau mal, was es bei Plietsche Plünn gibt:',
         '',
-        '👕 Jeansjacke',
+        'Jeansjacke',
         'Größe M · Zustand: Sehr gut',
         'Für: Damen · Oberteile',
         '',
@@ -43,7 +43,7 @@ describe('itemShareText', () => {
       [
         'Schau mal, was es bei Plietsche Plünn gibt:',
         '',
-        '👕 Mütze',
+        'Mütze',
         '',
         'Zum Mitnehmen bei Plietsche Plünn.',
         '',
@@ -71,8 +71,27 @@ describe('itemShareText', () => {
     expect(text).not.toMatch(/[*_~`]/);
   });
 
+  it('kommt ohne Emoji aus', () => {
+    const text = itemShareText({ ...JACKE, note: 'Kaum getragen' }, LADEN);
+    expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+    expect(appRecommendationText(LADEN)).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+
   it('übernimmt die öffentliche Beschreibung', () => {
     expect(itemShareText({ ...JACKE, note: 'Kaum getragen' }, LADEN)).toContain('Kaum getragen');
+  });
+});
+
+describe('photoMimeType', () => {
+  it('erkennt die drei erlaubten Formate an der Endung', () => {
+    expect(photoMimeType('jacke_abc123.jpg')).toBe('image/jpeg');
+    expect(photoMimeType('jacke_abc123.JPEG')).toBe('image/jpeg');
+    expect(photoMimeType('jacke_abc123.png')).toBe('image/png');
+    expect(photoMimeType('jacke_abc123.webp')).toBe('image/webp');
+  });
+
+  it('fällt bei Unbekanntem auf JPEG zurück', () => {
+    expect(photoMimeType('jacke')).toBe('image/jpeg');
   });
 });
 
@@ -114,9 +133,17 @@ describe('reviewUrls', () => {
 describe('Die Screens benutzen es', () => {
   it('Detailseite: Teilen-Knopf über das System-Menü, nur für verfügbare Teile', () => {
     const src = code('mobile/app/(visitor)/items/[id].tsx');
-    expect(src).toMatch(/Share\.share\(/);
     expect(src).toMatch(/itemShareText\(/);
     expect(src).toMatch(/canShareItem\(item\)/);
+    // Mit Foto: auf beiden Plattformen als Datei angehängt, über
+    // react-native-share (das Share von React Native nimmt unter Android
+    // nur Text). Kein Zweig nach Plattform.
+    expect(src).toMatch(/from 'react-native-share'/);
+    expect(src).toMatch(/RNShare\.open\(/);
+    expect(src).toMatch(/File\.downloadFileAsync\(/);
+    expect(src).toMatch(/if \(item\.photo\)/);
+    expect(src).not.toMatch(/Platform\.OS === 'ios' && item\.photo/);
+    expect(src).toMatch(/failOnCancel: false/);
     // Der Lagerort darf in den Aufruf nicht hineingeraten.
     expect(src).not.toMatch(/itemShareText\([^)]*location/);
   });
