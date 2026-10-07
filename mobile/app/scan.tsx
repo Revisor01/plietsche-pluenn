@@ -13,7 +13,7 @@ import { scan, type ScanResult } from '../lib/api';
 import { useStore } from '../lib/hooks/useData';
 import { errorText } from '../lib/errors';
 import { QRScanner, CameraGate } from '../components/QRScanner';
-import { PPText, PPButton, GradientCard, Stepper } from '../components/ui';
+import { PPText, PPButton, GradientCard, Stepper, Hint } from '../components/ui';
 
 // One universal scanner: the server decides door-check-in vs item-take.
 export default function Scan() {
@@ -29,7 +29,16 @@ export default function Scan() {
   const [extraBusy, setExtraBusy] = useState(false);
   const [doorSecret, setDoorSecret] = useState<string | null>(null);
   const { data: store } = useStore();
-  const maxItems = store?.max_items_take ?? 7;
+  // Obergrenze des Steppers. Der Server prüft die Tagessumme über alle Scans
+  // (Tür und QR); der Stepper kennt nur die Höchstzahl selbst. Bei
+  // „Unbegrenzt" ein Deckel, damit das Plus nicht ins Endlose zählt.
+  // Ausgelieferte App-Versionen kennen items_take_unlimited nicht: Ihr
+  // Stepper stoppt weiter bei max_items_take — die harmlose Richtung, es
+  // lässt sich dort nur weniger eintragen als erlaubt, nie mehr.
+  const UNLIMITED_STEPPER_MAX = 99;
+  const unlimited = store?.items_take_unlimited === true;
+  const maxItems = unlimited ? UNLIMITED_STEPPER_MAX : store?.max_items_take ?? 7;
+  const [extraError, setExtraError] = useState<string | null>(null);
 
   // Harte Zeitgrenze für die Standortermittlung. Drinnen im Laden hat das
   // Gerät oft keine GPS-Sicht; getCurrentPositionAsync wartet dann ohne
@@ -82,6 +91,7 @@ export default function Scan() {
   const addExtraItems = async () => {
     if (!doorSecret || extraItems === 0) return;
     setExtraBusy(true);
+    setExtraError(null);
     try {
       const coords = await getCoords();
       const res = await scan({ qr_code: doorSecret, items_count: extraItems, ...coords });
@@ -91,8 +101,11 @@ export default function Scan() {
       setResult((r) => (r ? { ...r, points: (r.points ?? 0) + (res.points ?? 0), points_total: res.points_total } : r));
       setDoorSecret(null);
       setExtraItems(0);
-    } catch {
-      // keep sheet open on failure
+    } catch (e: any) {
+      // Sheet bleibt offen. Die Meldung zeigen — etwa „Höchstens 7 Teile pro
+      // Besuch. Heute gehen noch 2 Teile.", wenn heute schon Teile per QR
+      // gescannt wurden. Vorher schlug das still fehl.
+      setExtraError(errorText(e, 'Konnte die Teile nicht gutschreiben.'));
     } finally {
       setExtraBusy(false);
     }
@@ -103,6 +116,7 @@ export default function Scan() {
     setError(null);
     setDoorSecret(null);
     setExtraItems(0);
+    setExtraError(null);
   };
 
   return (
@@ -230,9 +244,16 @@ export default function Scan() {
                         accessibilityLabel="Teile ohne QR mitgenommen"
                       />
                     </View>
-                    <PPText size="xs" color={PP.ink3} style={{ textAlign: 'center', marginTop: PP.space.sm }}>
-                      Höchstens {maxItems} Teile pro Besuch.
-                    </PPText>
+                    {!unlimited && (
+                      <PPText size="xs" color={PP.ink3} style={{ textAlign: 'center', marginTop: PP.space.sm }}>
+                        Höchstens {maxItems} Teile pro Besuch.
+                      </PPText>
+                    )}
+                    {extraError && (
+                      <View style={{ marginTop: PP.space.md }}>
+                        <Hint icon="info" tone="warn">{extraError}</Hint>
+                      </View>
+                    )}
                     {extraItems > 0 && (
                       <View style={{ marginTop: PP.space.lg }}>
                         <PPButton icon="plus" loading={extraBusy} onPress={addExtraItems}>
