@@ -402,8 +402,7 @@ alle Handys nach dem Upgrade stillschweigend abgemeldet.
 > Damit ist ab dem **21.10.2026** jeder alte Token abgelaufen, und
 > `pb_hooks/compat.pb.js` kann entfernt werden.
 >
-> Noch offen: die Zeitzone der nächtlichen Aufgaben im Container
-> (siehe „Offene Punkte" unten).
+> Zeitzone im Container nachgemessen (siehe „Offene Punkte" unten).
 
 ### Zurückrollen
 
@@ -477,6 +476,10 @@ Höchstwert 3 bekommt 429, eine andere IP im selben Fenster nicht.
   Fachlich unkritisch (Tagesgrenzen rechnet die Fachlogik aus
   `store.timezone`), aber vor und nach dem Upgrade mit `date` im Container
   gegenprüfen.
+  **Gemessen 07.10.2026 nach dem Upgrade:** `date` im Container zeigt
+  20:37 CEST bei 18:37 UTC, `TZ=Europe/Berlin`, `/usr/share/zoneinfo` ist
+  vorhanden. Die Aufgaben laufen damit ab jetzt um 3:05, 3:20 und 3:40
+  Berliner Zeit.
 - **Fehlermeldungen bekommen einen Punkt.** 0.40 macht aus jeder
   `ApiError`-Meldung einen Satz: „Du bist nicht im Laden" kommt als „Du bist
   nicht im Laden." an (gemessen). Die App zeigt den Text wörtlich; ihre

@@ -60,3 +60,6 @@ mobile/assets/.icon-backup-p2/
 
 # Erst im Abbild erzeugt (Dockerfile), Commit fuer GET /api/pp/version
 pocketbase/pb_hooks/lib/build.js
+
+# Protokolle des Playwright-Browserwerkzeugs
+.playwright-mcp/
