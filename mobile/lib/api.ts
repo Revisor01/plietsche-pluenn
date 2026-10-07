@@ -71,6 +71,9 @@ export interface PointConfig {
   pts_take: number;
   pts_bring: number;
   max_items_take: number;
+  // Schalter „Unbegrenzt": keine Höchstzahl mitgenommener Teile. Optional,
+  // damit ein Speichern ohne das Feld den Schalter nicht anfasst.
+  items_take_unlimited?: boolean;
 }
 export async function savePointConfig(storeId: string, cfg: PointConfig): Promise<void> {
   await pb.collection('store').update(storeId, cfg);

@@ -7,7 +7,7 @@ import { Icon } from '../../../lib/icons';
 import { useStore } from '../../../lib/hooks/useData';
 import { saveTiers, savePointConfig } from '../../../lib/api';
 import { DEFAULT_TIERS, tierColor } from '../../../lib/format';
-import { Screen, PPHeader, PPText, Field, PPButton, SectionTitle, IconButton, Hint } from '../../../components/ui';
+import { Screen, PPHeader, PPText, Field, PPButton, SectionTitle, IconButton, Hint, Toggle } from '../../../components/ui';
 import { useGoBack } from '../../../lib/hooks/useGoBack';
 import { errorText } from '../../../lib/errors';
 
@@ -30,6 +30,7 @@ export default function TiersAdmin() {
   const [ptsTake, setPtsTake] = useState('');
   const [ptsBring, setPtsBring] = useState('');
   const [maxTake, setMaxTake] = useState('');
+  const [unlimited, setUnlimited] = useState(false);
 
   // Dynamic ranks.
   const [ranks, setRanks] = useState<Rank[]>([]);
@@ -43,6 +44,7 @@ export default function TiersAdmin() {
     setPtsTake(String(s.pts_take ?? 5));
     setPtsBring(String(s.pts_bring ?? 5));
     setMaxTake(String(s.max_items_take ?? 7));
+    setUnlimited(s.items_take_unlimited === true);
 
     const tiers = s.tiers_json?.length ? s.tiers_json : DEFAULT_TIERS;
     setRanks(tiers.map((t: any) => ({ name: String(t.name ?? ''), at: String(t.at ?? '') })));
@@ -60,8 +62,10 @@ export default function TiersAdmin() {
     const pc = parseNum(ptsCheckin);
     const pt = parseNum(ptsTake);
     const pb = parseNum(ptsBring);
+    // Bei „Unbegrenzt" ist das Feld ausgeblendet; die Zahl bleibt gespeichert
+    // und gilt wieder, sobald der Schalter aus ist.
     const mt = parseNum(maxTake, 1);
-    if (parseNum(maxTake) < 1) {
+    if (!unlimited && parseNum(maxTake) < 1) {
       Alert.alert('Maximale Teile', 'Es muss mindestens 1 Teil pro Besuch erlaubt sein.');
       return;
     }
@@ -86,7 +90,13 @@ export default function TiersAdmin() {
 
     setBusy(true);
     try {
-      await savePointConfig(store.id, { pts_checkin: pc, pts_take: pt, pts_bring: pb, max_items_take: mt });
+      await savePointConfig(store.id, {
+        pts_checkin: pc,
+        pts_take: pt,
+        pts_bring: pb,
+        max_items_take: mt,
+        items_take_unlimited: unlimited,
+      });
       await saveTiers(store.id, tiers);
       await refetch();
       await qc.invalidateQueries({ queryKey: ['store'] });
@@ -133,16 +143,29 @@ export default function TiersAdmin() {
           keyboardType="number-pad"
           placeholder="5"
         />
-        <Field
-          label="Maximale Teile pro Besuch"
-          value={maxTake}
-          onChangeText={setMaxTake}
-          keyboardType="number-pad"
-          placeholder="7"
-        />
-        <PPText size="sm" color={PP.ink2} style={{ marginTop: -2 }}>
-          Mehr Teile können pro Besuch nicht mitgenommen bzw. gescannt werden.
-        </PPText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.md }}>
+          <View style={{ flex: 1 }}>
+            <PPText weight="semibold" size="base" color={PP.ink}>Unbegrenzt mitnehmen</PPText>
+            <PPText size="sm" color={PP.ink2} style={{ marginTop: 2 }}>
+              An: Es gibt keine Höchstzahl an Teilen pro Besuch.
+            </PPText>
+          </View>
+          <Toggle value={unlimited} onChange={setUnlimited} accessibilityLabel="Unbegrenzt mitnehmen" />
+        </View>
+        {!unlimited && (
+          <>
+            <Field
+              label="Maximale Teile pro Besuch"
+              value={maxTake}
+              onChangeText={setMaxTake}
+              keyboardType="number-pad"
+              placeholder="7"
+            />
+            <PPText size="sm" color={PP.ink2} style={{ marginTop: -2 }}>
+              Gilt für den ganzen Tag: Gezählt werden alle Teile, die jemand an der Tür einträgt oder einzeln scannt.
+            </PPText>
+          </>
+        )}
       </View>
 
       {/* ── SEKTION 2: Ränge ── */}

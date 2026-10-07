@@ -126,4 +126,7 @@ export interface Store {
   pts_take?: number;
   pts_bring?: number;
   max_items_take?: number;
+  // Keine Höchstzahl mitgenommener Teile. Fehlt auf Servern ohne die
+  // Migration — dann gilt max_items_take.
+  items_take_unlimited?: boolean;
 }
