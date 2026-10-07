@@ -12,7 +12,7 @@
 
 services:
   pocketbase:
-    image: ghcr.io/muchobien/pocketbase:0.22.21
+    image: ghcr.io/muchobien/pocketbase:0.40.4
     container_name: plietsche-pocketbase
     restart: unless-stopped
     command:

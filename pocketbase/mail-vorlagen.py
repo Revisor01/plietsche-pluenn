@@ -1,23 +1,44 @@
 # -*- coding: utf-8 -*-
-"""Gestaltete Mail-Vorlagen fuer PocketBase.
+"""Gestaltete Mail-Vorlagen fuer PocketBase (ab 0.40).
 
 Mailprogramme koennen kein <style>-Blatt und kein Flexbox. Deshalb:
 Tabellen statt divs, jede Regel inline am Element, feste Pixelbreiten.
 Outlook rendert ueber Word — dort faellt border-radius weg, der Knopf
 bleibt eckig, aber lesbar.
+
+Einspielen (Superuser-Token noetig, NICHT ins Repo):
+
+    python3 pocketbase/mail-vorlagen.py > /tmp/vorlagen.json
+    curl -X PATCH "$PB_URL/api/collections/users" \
+         -H "Authorization: $SUPERUSER_TOKEN" \
+         -H "Content-Type: application/json" --data @/tmp/vorlagen.json
+
+Seit PocketBase 0.23 haengen die Vorlagen an der Auth-Sammlung (`users`),
+nicht mehr unter `meta` in /api/settings. Ein PATCH auf /api/settings mit
+`meta.verificationTemplate` wird von 0.40 stillschweigend ignoriert.
 """
 
+import json
+
 TEAL, MINT, SKY = "#27b092", "#79c4b0", "#80b4e2"
-# {ACTION_URL} ist Pflicht — PocketBase weist eine Vorlage ohne diesen
-# Platzhalter ab. Der Knopf zeigt deshalb darauf; wohin er fuehrt, steuert
-# appUrl in den Einstellungen. Steht dort die Webseite, ergibt sich
+# Wohin der Knopf fuehrt. Unter PocketBase 0.22 war {ACTION_URL} Pflicht und
+# wurde aus `actionUrl` in den Einstellungen gebaut; 0.40 kennt diesen
+# Platzhalter nicht mehr — der Link steht jetzt direkt in der Vorlage, aus
+# {APP_URL} und {TOKEN}. Die Form bleibt dieselbe wie bisher,
 #   https://plietsche-pluenn.de/_/#/auth/confirm-verification/<token>
-# und die Seite /konto liest Fall und Token aus dieser Adresse.
+# denn die Seite /konto (web/konto.html) liest Fall und Token genau aus
+# dieser Adresse, und Mails, die vor dem Upgrade verschickt wurden, zeigen
+# ebenfalls dorthin. appUrl in den Einstellungen muss auf die Webseite zeigen.
+LINK = {
+    "verificationTemplate": "{APP_URL}/_/#/auth/confirm-verification/{TOKEN}",
+    "resetPasswordTemplate": "{APP_URL}/_/#/auth/confirm-password-reset/{TOKEN}",
+    "confirmEmailChangeTemplate": "{APP_URL}/_/#/auth/confirm-email-change/{TOKEN}",
+}
 
 INK, INK2, INK3 = "#1A2E2C", "#5A6B6A", "#657473"
 BG, FLAECHE, LINIE = "#F4F7F4", "#FFFFFF", "#E5EDEB"
 
-def mail(vorspann, knopf, nachsatz, hinweis=None):
+def mail(link, vorspann, knopf, nachsatz, hinweis=None):
     hinweis_block = ""
     if hinweis:
         hinweis_block = f"""
@@ -61,7 +82,7 @@ def mail(vorspann, knopf, nachsatz, hinweis=None):
             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="background-color:{TEAL};border-radius:10px;">
-                  <a href="{{ACTION_URL}}" target="_blank" rel="noopener"
+                  <a href="{link}" target="_blank" rel="noopener"
                      style="display:inline-block;padding:14px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">
                     {knopf}
                   </a>
@@ -93,6 +114,7 @@ VORLAGEN = {
     "verificationTemplate": {
         "subject": "Bitte bestätige deine E-Mail-Adresse",
         "body": mail(
+            LINK["verificationTemplate"],
             "schön, dass du dabei bist. Bestätige bitte einmal kurz deine "
             "E-Mail-Adresse — dann können wir dir helfen, wenn du dein Passwort "
             "vergisst.",
@@ -106,6 +128,7 @@ VORLAGEN = {
     "resetPasswordTemplate": {
         "subject": "Neues Passwort für Plietsche Plünn",
         "body": mail(
+            LINK["resetPasswordTemplate"],
             "du möchtest dein Passwort zurücksetzen. Mit dem Knopf darunter "
             "kannst du dir ein neues setzen.",
             "Neues Passwort setzen",
@@ -116,6 +139,7 @@ VORLAGEN = {
     "confirmEmailChangeTemplate": {
         "subject": "Neue E-Mail-Adresse bestätigen",
         "body": mail(
+            LINK["confirmEmailChangeTemplate"],
             "du möchtest die E-Mail-Adresse deines Kontos ändern. Bestätige das "
             "bitte mit dem Knopf darunter.",
             "Adresse bestätigen",
@@ -124,3 +148,8 @@ VORLAGEN = {
         ),
     },
 }
+
+
+if __name__ == "__main__":
+    # Ausgabe ist der Koerper fuer PATCH /api/collections/users (siehe oben).
+    print(json.dumps(VORLAGEN, ensure_ascii=False, indent=2))

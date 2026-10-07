@@ -35,6 +35,18 @@ describe('Anmelden', () => {
     expect(err.status).toBe(401);
   });
 
+  it('weist einen Superuser mit 401 ab (er hat kein Konto in users)', () => {
+    const h = setup();
+    let err;
+    try {
+      h.call(REGISTER, { body: { expo_token: TOKEN }, admin: { id: 'su1' } });
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(401);
+    expect(h.rows('push_devices')).toHaveLength(0);
+  });
+
   it('weist einen leeren Token mit 400 ab', () => {
     const h = setup();
     let err;

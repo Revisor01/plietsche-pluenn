@@ -8,6 +8,9 @@ export default defineConfig({
   tsconfig: 'tests/tsconfig.json',
   test: {
     include: ['tests/**/*.test.js'],
+    // Die Tests gegen das echte Binary haben eine eigene Konfiguration
+    // (vitest.integration.config.mjs, npm run test:integration).
+    exclude: ['tests/integration/**', '**/node_modules/**'],
     environment: 'node',
     // Die Suite läuft in UTC — so, wie der Container in Produktion läuft.
     //

@@ -17,10 +17,10 @@
 //
 // Lokal (Upstream-Abbild, eingehängte Hooks) fehlt die Datei; dann ist der
 // Commit leer.
-routerAdd('GET', '/api/pp/version', (c) => {
+routerAdd('GET', '/api/pp/version', (e) => {
   let commit = '';
   try {
     commit = `${require(`${__hooks}/lib/build.js`).commit || ''}`;
   } catch (_) {}
-  return c.json(200, { commit });
+  return e.json(200, { commit });
 });

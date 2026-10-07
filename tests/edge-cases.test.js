@@ -143,14 +143,11 @@ describe('Hoechstzahl mitgenommener Teile, genau an der Grenze', () => {
     expect(res.body.points).toBe(5);
   });
 
-  it('laesst nach 6 Teilen heute auch das 8. und 9. Teil zu — die Grenze gilt nur je Scan', () => {
-    // FACHLICH FRAGWUERDIG: Der CHANGELOG sagt „Maximal 7 Teile pro Besuch:
-    // Mehr Teile lassen sich beim Scannen/Eintragen nicht gutschreiben."
-    // Tatsaechlich prueft scan.pb.js nur die Zahl im einzelnen Aufruf
-    // (rawCount > cfg.maxItemsTake), nicht die Summe des Tages. Wer schon
-    // eingecheckt ist, kann den Tuer-Code erneut scannen und bekommt weitere
-    // Teile gutgeschrieben. Der Besuch selbst behaelt dabei seine 6 — die
-    // zusaetzlichen Teile stehen nur im Punkteverlauf.
+  it('lehnt nach 6 Teilen heute das 8. und 9. Teil ab — die Grenze gilt pro Tag', () => {
+    // Bis 26.09.2026 galt die Grenze nur je Scan: Wer schon eingecheckt war,
+    // scannte den Tuer-Code erneut und bekam weitere Teile gutgeschrieben.
+    // Entscheidung des Betreibers: Die Hoechstzahl gilt pro Besuch, also pro
+    // Tag in der Ladenzeitzone, ueber alle Scans.
     amZeitpunkt(JETZT);
     const h = scanSetup({
       visits: [
@@ -162,16 +159,15 @@ describe('Hoechstzahl mitgenommener Teile, genau an der Grenze', () => {
         },
       ],
     });
-    const res = scan(h, { qr_code: DOOR, items_count: 3 });
-    expect(res.status).toBe(200);
-    expect(res.body.points).toBe(15);
+    const err = scanFehler(h, { qr_code: DOOR, items_count: 3 });
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Höchstens 7 Teile pro Besuch. Heute geht noch 1 Teil.');
+    expect(h.rows('points_log')).toHaveLength(0);
     expect(h.rows('visits')).toHaveLength(1);
     expect(h.rows('visits')[0].items_count).toBe(6);
   });
 
-  it('zaehlt gescannte Teile nicht gegen die Hoechstzahl', () => {
-    // Gleiche Luecke von der anderen Seite: Nach 7 Teilen per Zaehler geht
-    // ein Teil mit eigenem QR-Code ohne Pruefung durch.
+  it('zaehlt gescannte Teile gegen die Hoechstzahl: nach 7 Teilen bleibt das Teil offen', () => {
     amZeitpunkt(JETZT);
     const h = scanSetup({
       visits: [
@@ -184,9 +180,154 @@ describe('Hoechstzahl mitgenommener Teile, genau an der Grenze', () => {
       ],
       items: [{ id: 'i1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
     });
-    const res = scan(h, { qr_code: 'PP-0001' });
+    const err = scanFehler(h, { qr_code: 'PP-0001' });
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Höchstens 7 Teile pro Besuch. Für heute ist die Grenze erreicht.');
+    expect(h.rows('items')[0].taken_at).toBe('');
+    expect(h.rows('points_log')).toHaveLength(0);
+  });
+});
+
+// ── 1b. Tagesgrenze ueber alle Scans ─────────────────────────────
+//
+// Gezaehlt wird, was die Person heute (Ladenzeitzone) mitgenommen hat: die
+// Zaehler-Teile aus dem Besuch des Tages (visits.items_count, jetzt auch beim
+// zweiten Tuer-Scan fortgeschrieben) plus jedes per QR gescannte Teil
+// (points_log mit kind = "scan" — das Teil selbst traegt keinen Personenbezug).
+
+describe('Hoechstzahl pro Tag, ueber alle Scans', () => {
+  const teil = (n) => ({
+    id: `i${n}`,
+    sku: `PP-000${n}`,
+    qr_code: `PP-000${n}`,
+    title: `Teil ${n}`,
+    points: 30,
+    status: 'approved',
+  });
+
+  it('zweiter Tuer-Scan am selben Tag ueber die Grenze: 400, nichts gebucht', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup();
+    expect(scan(h, { qr_code: DOOR }).status).toBe(200);
+    const zweiter = scan(h, { qr_code: DOOR, items_count: 5 });
+    expect(zweiter.status).toBe(200);
+    expect(zweiter.body.points).toBe(25);
+    expect(h.rows('visits')[0].items_count).toBe(5);
+    const logVorher = h.rows('points_log').length;
+    const standVorher = h.rows('users')[0].points_total;
+
+    const err = scanFehler(h, { qr_code: DOOR, items_count: 3 });
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Höchstens 7 Teile pro Besuch. Heute gehen noch 2 Teile.');
+    expect(h.rows('points_log')).toHaveLength(logVorher);
+    expect(h.rows('users')[0].points_total).toBe(standVorher);
+    expect(h.rows('visits')).toHaveLength(1);
+    expect(h.rows('visits')[0].items_count).toBe(5);
+  });
+
+  it('QR-Teil als 8. Teil des Tages: 400, das Teil bleibt offen', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup({ items: [teil(1), teil(2), teil(3)] });
+    expect(scan(h, { qr_code: 'PP-0001' }).status).toBe(200);
+    expect(scan(h, { qr_code: 'PP-0002' }).status).toBe(200);
+    // Zwei per QR, dazu 5 per Zaehler = 7.
+    expect(scan(h, { qr_code: DOOR, items_count: 5 }).status).toBe(200);
+    const logVorher = h.rows('points_log').length;
+
+    const err = scanFehler(h, { qr_code: 'PP-0003' });
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Höchstens 7 Teile pro Besuch. Für heute ist die Grenze erreicht.');
+    expect(h.rows('items').find((r) => r.id === 'i3').taken_at).toBe('');
+    expect(h.rows('points_log')).toHaveLength(logVorher);
+  });
+
+  it('genau an der Grenze geht es: 3 per QR und 4 per Zaehler', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup({ items: [teil(1), teil(2), teil(3)] });
+    for (const n of [1, 2, 3]) expect(scan(h, { qr_code: `PP-000${n}` }).status).toBe(200);
+    const res = scan(h, { qr_code: DOOR, items_count: 4 });
     expect(res.status).toBe(200);
-    expect(res.body.item_points).toBe(30);
+    expect(res.body.points).toBe(20);
+    expect(h.rows('visits')[0].items_count).toBe(4);
+  });
+
+  it('der Zaehler beim ersten Tuer-Scan zaehlt ebenfalls mit', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup({ items: [teil(1)] });
+    expect(scan(h, { qr_code: DOOR, items_count: 7 }).status).toBe(200);
+    const err = scanFehler(h, { qr_code: 'PP-0001' });
+    expect(err.status).toBe(400);
+    expect(h.rows('items')[0].taken_at).toBe('');
+  });
+
+  it('am naechsten Tag ist wieder frei — Tagesgrenze ist Mitternacht im Laden', () => {
+    // JETZT ist 12:00 Uhr in Buesum (UTC+2). 23:30 Uhr am Vortag ist
+    // 21:30 UTC — gestern. 00:30 Uhr heute ist 22:30 UTC des Vortags — heute.
+    amZeitpunkt(JETZT);
+    const gestern = scanSetup({
+      visits: [{ id: 'v1', user: 'user1', checkin_at: '2026-09-25T21:30:00.000Z', items_count: 7 }],
+    });
+    expect(scan(gestern, { qr_code: DOOR, items_count: 7 }).status).toBe(200);
+
+    const heuteFrueh = scanSetup({
+      visits: [{ id: 'v1', user: 'user1', checkin_at: '2026-09-25T22:30:00.000Z', items_count: 7 }],
+    });
+    const err = scanFehler(heuteFrueh, { qr_code: DOOR, items_count: 1 });
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Höchstens 7 Teile pro Besuch. Für heute ist die Grenze erreicht.');
+  });
+
+  it('gescannte Teile von gestern zaehlen heute nicht', () => {
+    amZeitpunkt('2026-09-25T19:00:00.000Z'); // Vortag, 21:00 Uhr im Laden
+    const items = [1, 2, 3, 4, 5, 6, 7, 8].map(teil);
+    const h = scanSetup({ items });
+    for (const n of [1, 2, 3, 4, 5, 6, 7]) expect(scan(h, { qr_code: `PP-000${n}` }).status).toBe(200);
+    expect(scanFehler(h, { qr_code: 'PP-0008' }).status).toBe(400);
+
+    vi.setSystemTime(new Date(JETZT));
+    expect(scan(h, { qr_code: 'PP-0008' }).status).toBe(200);
+  });
+
+  it('unbegrenzt: 20 Teile per Zaehler und danach ein QR-Teil gehen durch', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup({ store: { items_take_unlimited: true }, items: [teil(1)] });
+    const res = scan(h, { qr_code: DOOR, items_count: 20 });
+    expect(res.status).toBe(200);
+    expect(res.body.points).toBe(10 + 20 * 5);
+    expect(h.rows('visits')[0].items_count).toBe(20);
+    const nochmal = scan(h, { qr_code: DOOR, items_count: 20 });
+    expect(nochmal.status).toBe(200);
+    expect(nochmal.body.points).toBe(100);
+    expect(h.rows('visits')[0].items_count).toBe(40);
+    expect(scan(h, { qr_code: 'PP-0001' }).status).toBe(200);
+  });
+
+  it('Schalter aus: dieselben 20 Teile werden abgelehnt', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup({ store: { items_take_unlimited: false } });
+    const err = scanFehler(h, { qr_code: DOOR, items_count: 20 });
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Höchstens 7 Teile pro Besuch.');
+    expect(h.rows('visits')).toHaveLength(0);
+  });
+
+  it('die Rueckfall-Hoechstzahl gilt auch fuer die Tagessumme', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup({ store: { max_items_take: 0 } });
+    const max = h.lib.DEFAULT_MAX_ITEMS_TAKE;
+    expect(max).toBe(7);
+    expect(scan(h, { qr_code: DOOR, items_count: max - 1 }).status).toBe(200);
+    const err = scanFehler(h, { qr_code: DOOR, items_count: 2 });
+    expect(err.status).toBe(400);
+    expect(err.message).toBe(`Höchstens ${max} Teile pro Besuch. Heute geht noch 1 Teil.`);
+  });
+
+  it('andere Personen zaehlen nicht mit', () => {
+    amZeitpunkt(JETZT);
+    const h = scanSetup({
+      visits: [{ id: 'v9', user: 'andere', checkin_at: iso(new Date(JETZT).getTime() - 3600000), items_count: 7 }],
+    });
+    expect(scan(h, { qr_code: DOOR, items_count: 7 }).status).toBe(200);
   });
 });
 
@@ -385,6 +526,7 @@ describe('Laden-Datensatz fehlt oder ist nicht gepflegt', () => {
       takePerItem: h.lib.POINTS.takePerItem,
       bringPerItem: h.lib.POINTS.bringPerItem,
       maxItemsTake: h.lib.DEFAULT_MAX_ITEMS_TAKE,
+      itemsTakeUnlimited: false,
     });
   });
 
@@ -400,6 +542,7 @@ describe('Laden-Datensatz fehlt oder ist nicht gepflegt', () => {
       takePerItem: h.lib.POINTS.takePerItem,
       bringPerItem: h.lib.POINTS.bringPerItem,
       maxItemsTake: h.lib.DEFAULT_MAX_ITEMS_TAKE,
+      itemsTakeUnlimited: false,
     });
   });
 
@@ -407,7 +550,19 @@ describe('Laden-Datensatz fehlt oder ist nicht gepflegt', () => {
     const h = loadHook('scan.pb.js', {
       store: [{ pts_checkin: 12, pts_take: 3, pts_bring: 8, max_items_take: 4 }],
     });
-    expect(h.lib.config()).toEqual({ checkin: 12, takePerItem: 3, bringPerItem: 8, maxItemsTake: 4 });
+    expect(h.lib.config()).toEqual({
+      checkin: 12,
+      takePerItem: 3,
+      bringPerItem: 8,
+      maxItemsTake: 4,
+      itemsTakeUnlimited: false,
+    });
+  });
+
+  it('config() liefert den Schalter „Unbegrenzt" mit', () => {
+    const h = loadHook('scan.pb.js', { store: [{ max_items_take: 4, items_take_unlimited: true }] });
+    expect(h.lib.config().itemsTakeUnlimited).toBe(true);
+    expect(h.lib.config().maxItemsTake).toBe(4);
   });
 
   it('ein Scan mit leeren Feldern rechnet mit den Rueckfallwerten', () => {
@@ -460,7 +615,7 @@ describe('Freigabe eines eingereichten Teils, einreichendes Konto ohne Rolle', (
     // aus, bleibt das Teil unbezahlt, aber auch nicht als bezahlt markiert:
     // Eine spaetere Freigabe nach Nachtragen der Rolle zahlt dann noch.
     const h = setup('');
-    h.fireRecordHook('afterUpdate', 'items', h.records.teil);
+    h.fireRecordHook('updateRequest', 'items', h.records.teil);
     expect(h.records.person.get('points_total')).toBe(0);
     expect(h.rows('points_log')).toHaveLength(0);
     expect(h.records.teil.get('brought_awarded')).toBe(false);
@@ -468,7 +623,7 @@ describe('Freigabe eines eingereichten Teils, einreichendes Konto ohne Rolle', (
 
   it('Gegenprobe: mit Rolle visitor gibt es die Bring-Punkte', () => {
     const h = setup('visitor');
-    h.fireRecordHook('afterUpdate', 'items', h.records.teil);
+    h.fireRecordHook('updateRequest', 'items', h.records.teil);
     expect(h.records.person.get('points_total')).toBe(5);
     expect(h.records.teil.get('brought_awarded')).toBe(true);
   });

@@ -76,6 +76,22 @@ describe('Anmeldung und Eingabe', () => {
     );
   });
 
+  it('weist einen Superuser mit 401 ab, statt nach seinem Konto zu suchen', () => {
+    // Ab PocketBase 0.23 ist auch ein Superuser e.auth — aber ohne Konto in
+    // `users`. Unter 0.22 war authRecord fuer ihn leer, die Route antwortete
+    // 401; so bleibt es. Nichts wird gebucht.
+    const h = setup();
+    let err;
+    try {
+      h.call(ROUTE, { body: { qr_code: DOOR }, admin: { id: 'su1' } });
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(401);
+    expect(err.message).toBe('Nicht angemeldet');
+    expect(h.rows('visits')).toHaveLength(0);
+  });
+
   it('weist einen leeren QR-Code mit 400 ab', () => {
     const h = setup();
     let err;
@@ -886,17 +902,21 @@ describe('Punkte aus Abzeichen in der Antwort', () => {
 });
 
 describe('Teilschreibung: das Teil laesst sich nicht als mitgenommen speichern', () => {
-  // Die Route schreibt nacheinander, ohne Transaktion: Besuch, Punkte fuers
-  // Einchecken, Punkte fuers Teil, Punktestand — und erst ganz am Ende
-  // taken_at am Teil. Scheitert dieser letzte Schreibvorgang (etwa „database
-  // is locked" unter Last), ist alles davor schon gespeichert.
+  // Bis 26.09.2026 schrieb die Route nacheinander, ohne Transaktion: Besuch,
+  // Punkte fuers Einchecken, Punkte fuers Teil, Punktestand — und erst ganz am
+  // Ende taken_at am Teil. Scheiterte dieser letzte Schreibvorgang (etwa
+  // „database is locked" unter Last), war alles davor schon gespeichert: Die
+  // Punkte blieben, das Teil blieb verfuegbar und zahlte beim naechsten Scan
+  // ein zweites Mal. Dieser Test hielt damals genau das fest (Befund offen).
   //
-  // Dieser Test haelt fest, was HEUTE passiert — nicht, was passieren sollte.
-  // Befund offen: Punkte bleiben gutgeschrieben, das Teil bleibt verfuegbar
-  // und bringt beim naechsten Scan ein zweites Mal Punkte.
+  // Seit dem Umstieg auf PocketBase 0.40 laeuft der ganze Scan in einer
+  // Transaktion ($app.runInTransaction). Gewollte Verhaltensaenderung: Scheitert
+  // ein Schritt, wird NICHTS gebucht — kein Besuch, keine Punkte, das Teil
+  // bleibt offen, und die App bekommt den Fehler. Der zweite Scan zahlt dann
+  // genau einmal.
   const TEIL = { id: 'item1', sku: 'PP-0001', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' };
 
-  it('behaelt die Punkte, laesst das Teil offen und zahlt beim zweiten Scan erneut', () => {
+  it('bucht nichts, laesst das Teil offen und zahlt beim zweiten Scan genau einmal', () => {
     const h = setup({ items: [TEIL] });
     const aus = h.failSaveOn('items', (r) => r.get('taken_at') !== '', 'database is locked');
 
@@ -904,26 +924,84 @@ describe('Teilschreibung: das Teil laesst sich nicht als mitgenommen speichern',
       'database is locked'
     );
 
-    // Was nach dem Fehler gespeichert ist:
+    // Nach dem Fehler ist nichts gespeichert — auch nicht die Schritte, die
+    // vor dem gescheiterten liefen.
+    expect(h.rows('visits')).toHaveLength(0);
+    expect(h.rows('points_log')).toEqual([]);
+    expect(h.records.user.get('points_total')).toBe(0);
+    expect(h.records.user.get('streak_weeks')).toBe(0);
+    expect(h.rows('items')[0].taken_at).toBe('');
+
+    // Die App zeigt einen Fehler; die Person scannt noch einmal, jetzt klappt
+    // das Speichern — und weil nichts gebucht war, ist es wieder der erste
+    // Scan des Tages, samt Check-in.
+    aus();
+    const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    expect(res.status).toBe(200);
+    expect(res.body.item_points).toBe(30);
+    expect(res.body.checkin_points).toBe(10);
+    expect(res.body.did_checkin).toBe(true);
+    expect(res.body.points_total).toBe(40);
+
+    // Ein Teil, einmal bezahlt.
     expect(h.rows('visits')).toHaveLength(1);
     expect(h.rows('points_log').map((p) => [p.kind, p.points])).toEqual([
       ['checkin', 10],
       ['scan', 30],
     ]);
     expect(h.records.user.get('points_total')).toBe(40);
-    expect(h.rows('items')[0].taken_at).toBe('');
-
-    // Die App zeigt einen Fehler; die Person scannt noch einmal, jetzt klappt
-    // das Speichern.
-    aus();
-    const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
-    expect(res.status).toBe(200);
-    expect(res.body.item_points).toBe(30);
-    expect(res.body.did_checkin).toBe(false);
-
-    // Ein Teil, zweimal bezahlt.
-    expect(h.rows('points_log').filter((p) => p.kind === 'scan')).toHaveLength(2);
-    expect(h.records.user.get('points_total')).toBe(70);
     expect(h.rows('items')[0].taken_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
+
+  it('meldet einen Fehler mit Status unveraendert, auch wenn er in der Transaktion faellt', () => {
+    // Die Abweisungen (hier: ausserhalb des Radius) entstehen innerhalb der
+    // Transaktion. Sie muessen mit ihrem Status bei der App ankommen, nicht
+    // als allgemeiner Fehler — und duerfen nichts hinterlassen.
+    const h = setup({ items: [TEIL] });
+    let err;
+    try {
+      h.call(ROUTE, { body: { qr_code: 'PP-0001', gps_lat: STORE_LAT + 0.01, gps_lng: STORE_LNG }, authRecord: auth(h) });
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).toBe(400);
+    expect(err.message).toBe('Du bist nicht im Laden');
+    expect(h.rows('visits')).toHaveLength(0);
+    expect(h.rows('points_log')).toEqual([]);
+  });
+
+  it('schickt die Check-in-Bestaetigung erst nach dem Festschreiben', () => {
+    // Eine Mitteilung „10 Punkte gutgeschrieben" zu einer Buchung, die
+    // zurueckgerollt wird, waere falsch. Scheitert der Scan, geht nichts an
+    // Expo; klappt er, genau eine Nachricht. Mit dem echten Push-Versand —
+    // nur die Anfrage an Expo ist gestellt.
+    const h = loadHook(
+      'scan.pb.js',
+      {
+        store: [{ lat: STORE_LAT, lng: STORE_LNG, pts_checkin: 10, pts_take: 5, max_items_take: 7 }],
+        store_secrets: [{ checkin_qr_secret: DOOR }],
+        users: [{ __name: 'user', id: 'user1', role: 'visitor', push_streak_enabled: true }],
+        push_devices: [{ id: 'dev1', user: 'user1', expo_token: 'ExponentPushToken[abc]', platform: 'ios' }],
+        items: [TEIL],
+        visits: [],
+        points_log: [],
+        campaigns: [],
+        action_counts: [],
+        badges: [],
+        user_badges: [],
+      },
+      { realPush: true }
+    );
+    const aus = h.failSaveOn('items', (r) => r.get('taken_at') !== '', 'database is locked');
+    expect(() => h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) })).toThrow(
+      'database is locked'
+    );
+    expect(h.httpCalls).toHaveLength(0);
+
+    aus();
+    h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
+    expect(h.httpCalls).toHaveLength(1);
+    const nachricht = JSON.parse(h.httpCalls[0].body);
+    expect(nachricht.map((m) => [m.to, m.body])).toEqual([['ExponentPushToken[abc]', '10 Punkte gutgeschrieben.']]);
   });
 });

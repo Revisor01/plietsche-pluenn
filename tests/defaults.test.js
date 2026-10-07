@@ -27,7 +27,7 @@ function setup(extra = {}) {
 describe('Neue Person', () => {
   function neuerNutzer(h, felder = {}) {
     const rec = h.newRecord('users', felder);
-    h.fireRecordHook('beforeCreate', 'users', rec);
+    h.fireRecordHook('createRequest', 'users', rec);
     return rec;
   }
 
@@ -63,21 +63,21 @@ describe('Neue Person', () => {
   it('behaelt die Rolle, wenn ein Superuser das Konto anlegt (erlaubter Fall)', () => {
     const h = setup();
     const rec = h.newRecord('users', { role: 'admin' });
-    h.fireRecordHook('beforeCreate', 'users', rec, { admin: { id: 'su1' } });
+    h.fireRecordHook('createRequest', 'users', rec, { admin: { id: 'su1' } });
     expect(rec.get('role')).toBe('admin');
   });
 
   it('behaelt die Rolle, wenn ein App-Admin das Konto anlegt (erlaubter Fall)', () => {
     const h = setup({ users: [{ __name: 'admin', id: 'a1', role: 'admin' }] });
     const rec = h.newRecord('users', { role: 'volunteer' });
-    h.fireRecordHook('beforeCreate', 'users', rec, { authRecord: h.records.admin });
+    h.fireRecordHook('createRequest', 'users', rec, { authRecord: h.records.admin });
     expect(rec.get('role')).toBe('volunteer');
   });
 
   it('setzt fuer eine Helferin ohne Admin-Rolle trotzdem visitor (verbotener Fall)', () => {
     const h = setup({ users: [{ __name: 'helfer', id: 'v1', role: 'volunteer' }] });
     const rec = h.newRecord('users', { role: 'admin' });
-    h.fireRecordHook('beforeCreate', 'users', rec, { authRecord: h.records.helfer });
+    h.fireRecordHook('createRequest', 'users', rec, { authRecord: h.records.helfer });
     expect(rec.get('role')).toBe('visitor');
   });
 
@@ -118,7 +118,7 @@ describe('Schreibschutz auf Punktestand und Serie', () => {
   function versuchAenderung(h, aenderungen, opts) {
     const rec = h.newRecord('users', Object.assign({ id: 'u1' }, aenderungen));
     rec.id = 'u1';
-    h.fireRecordHook('beforeUpdate', 'users', rec, opts);
+    h.fireRecordHook('updateRequest', 'users', rec, opts);
     return rec;
   }
 
@@ -189,7 +189,7 @@ describe('Schreibschutz auf Punktestand und Serie', () => {
     const h = setup({ users: [adminSelbst] });
     const rec = h.newRecord('users', { points_total: 9999 });
     rec.id = 'a1';
-    h.fireRecordHook('beforeUpdate', 'users', rec, { authRecord: h.records.admin });
+    h.fireRecordHook('updateRequest', 'users', rec, { authRecord: h.records.admin });
     expect(rec.get('points_total')).toBe(10);
   });
 });
@@ -197,7 +197,7 @@ describe('Schreibschutz auf Punktestand und Serie', () => {
 describe('Neues Teil', () => {
   function neuesTeil(h, felder = {}, opts = {}) {
     const rec = h.newRecord('items', felder);
-    h.fireRecordHook('beforeCreate', 'items', rec, opts);
+    h.fireRecordHook('createRequest', 'items', rec, opts);
     return rec;
   }
 
@@ -310,7 +310,7 @@ describe('Neues Teil', () => {
 
 describe('Punkte fuers Bringen bei der Freigabe', () => {
   function freigabe(h, itemName) {
-    h.fireRecordHook('afterUpdate', 'items', h.records[itemName]);
+    h.fireRecordHook('updateRequest', 'items', h.records[itemName]);
   }
 
   it('schreibt der einreichenden Person Punkte gut', () => {

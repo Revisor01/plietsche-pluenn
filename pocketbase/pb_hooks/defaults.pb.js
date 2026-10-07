@@ -2,17 +2,30 @@
 
 // Apply field defaults that PocketBase select/number fields can't express,
 // and auto-generate item SKU + QR code on create.
+//
+// Ab PocketBase 0.23 sind das Request-Hooks mit Kette: Was vor e.next()
+// steht, läuft VOR dem Speichern und landet im Datensatz; e.next() prüft und
+// speichert; was danach steht, läuft auf dem gespeicherten Stand. Wer e.next()
+// vergisst, speichert nichts.
+//
+// Rechte: e.hasSuperuserAuth() ist der PocketBase-Superuser (unter 0.22
+// httpContext.get('admin')). e.auth ist die angemeldete Person — bei einem
+// Superuser aber dessen Datensatz aus `_superusers`, ohne Rolle und ohne
+// Konto in `users`.
+//
+// Lesen und Schreiben über e.app: Läuft die Anfrage als Teil eines Stapels
+// (Batch-API), ist das die Transaktion; $app würde darin blockieren.
 
-onRecordBeforeCreateRequest((e) => {
+onRecordCreateRequest((e) => {
   const r = e.record;
   // Die Registrierung ist offen (createRule ""), der Anfragekörper kommt also
   // von beliebigen Clients. Rolle, Punktestand und Serie setzt deshalb nur der
   // Server — sonst legte ein POST mit role "admin" ein Admin-Konto an (so bis
   // 26.09.2026) oder ein Startguthaben, dem die Abzeichen-Vergabe vertraut.
   // Ausnahme wie beim Ändern: Superuser und App-Admins legen Konten mit Rolle an.
-  const superuser = e.httpContext && e.httpContext.get('admin');
-  const auth = e.httpContext && e.httpContext.get('authRecord');
-  const privileged = !!superuser || (auth && `${auth.get('role')}` === 'admin');
+  const superuser = e.hasSuperuserAuth();
+  const auth = e.auth && !e.auth.isSuperuser() ? e.auth : null;
+  const privileged = superuser || (!!auth && `${auth.get('role')}` === 'admin');
   if (!privileged) {
     r.set('role', 'visitor');
     r.set('points_total', 0);
@@ -30,41 +43,47 @@ onRecordBeforeCreateRequest((e) => {
   r.set('push_campaign_enabled', true);
   r.set('push_badge_enabled', true);
   r.set('push_other_enabled', false);
+
+  e.next();
 }, 'users');
 
 // Score fields are server-owned. PocketBase auth collections let a user PATCH
 // their own record, which would otherwise allow setting points_total or
 // streak_weeks by hand — and badge awarding trusts those values. Any client
-// request that tries to change them is reverted to the stored value; server-side
-// code writes via dao().saveRecord() and never passes through this hook.
-onRecordBeforeUpdateRequest((e) => {
+// request that tries to change them is reverted to the stored value;
+// server-side code writes via $app.save…() and never passes through this
+// request hook.
+onRecordUpdateRequest((e) => {
   const r = e.record;
-  let stored;
+  let stored = null;
   try {
-    stored = $app.dao().findRecordById('users', r.id);
-  } catch (_) {
-    return;
-  }
-  // Admins keep manual correction rights (e.g. fixing a miscount): both the
-  // PocketBase superuser and an app admin editing someone else's record.
-  const superuser = e.httpContext && e.httpContext.get('admin');
-  if (superuser) return;
-  const auth = e.httpContext && e.httpContext.get('authRecord');
-  if (auth && `${auth.get('role')}` === 'admin' && auth.id !== r.id) return;
+    stored = e.app.findRecordById('users', r.id);
+  } catch (_) {}
 
-  for (const f of ['points_total', 'streak_weeks', 'streak_last_visit', 'role']) {
-    r.set(f, stored.get(f));
+  if (stored) {
+    // Admins keep manual correction rights (e.g. fixing a miscount): both the
+    // PocketBase superuser and an app admin editing someone else's record.
+    const superuser = e.hasSuperuserAuth();
+    const auth = e.auth && !e.auth.isSuperuser() ? e.auth : null;
+    const adminOnOther = !!auth && `${auth.get('role')}` === 'admin' && auth.id !== r.id;
+    if (!superuser && !adminOnOther) {
+      for (const f of ['points_total', 'streak_weeks', 'streak_last_visit', 'role']) {
+        r.set(f, stored.get(f));
+      }
+    }
   }
+
+  e.next();
 }, 'users');
 
-onRecordBeforeCreateRequest((e) => {
+onRecordCreateRequest((e) => {
   const r = e.record;
   // Readable SKU: PP-0001 ... derived from the highest existing number (not the
   // row count — deletions would otherwise cause collisions on the unique index).
   if (!r.get('sku')) {
     let next = 1;
     try {
-      const last = $app.dao().findRecordsByFilter('items', 'sku != ""', '-sku', 1, 0);
+      const last = e.app.findRecordsByFilter('items', 'sku != ""', '-sku', 1, 0);
       if (last.length) {
         const m = `${last[0].get('sku')}`.match(/(\d+)/);
         if (m) next = parseInt(m[1], 10) + 1;
@@ -83,8 +102,10 @@ onRecordBeforeCreateRequest((e) => {
   if (!r.get('points')) r.set('points', 30);
   if (r.get('is_showcase') == null) r.set('is_showcase', false);
 
-  // Track who created the item.
-  const auth = e.httpContext && e.httpContext.get('authRecord');
+  // Track who created the item. Ein Superuser hat kein Konto in `users` —
+  // sein Datensatz gehört nicht in die Relation (unter 0.22 war authRecord
+  // für ihn leer, und so bleibt es: kein created_by, Status wie Besucherin).
+  const auth = e.auth && !e.auth.isSuperuser() ? e.auth : null;
   if (auth && !r.get('created_by')) r.set('created_by', auth.id);
 
   // Approval flow: staff items are approved immediately; visitor submissions
@@ -96,21 +117,33 @@ onRecordBeforeCreateRequest((e) => {
 
   // Visitor submissions never go straight into the public showcase.
   if (!isStaff) r.set('is_showcase', false);
+
+  e.next();
 }, 'items');
 
 // "Bringen": when a staff member approves a visitor's submitted item, the
 // submitter earns bring points — once per item (brought_awarded flag).
-onRecordAfterUpdateRequest((e) => {
+//
+// Nach e.next(), also auf dem gespeicherten Stand — wie unter 0.22
+// onRecordAfterUpdateRequest. Bewusst ein Request-Hook und nicht
+// onRecordAfterUpdateSuccess: Der liefe bei JEDEM Speichern eines Teils, auch
+// bei serverseitigen (der Scan setzt taken_at). Ein freigegebenes Besucher-Teil
+// ohne brought_awarded — etwa aus der Zeit vor den Bring-Punkten — zahlte dann
+// beim Mitnehmen plötzlich Punkte an die Person, die es gebracht hat.
+onRecordUpdateRequest((e) => {
+  e.next();
+
   const lib = require(`${__hooks}/lib/points.js`);
+  const app = e.app;
+  const L = lib.withApp(app);
   const r = e.record;
   if (`${r.get('status')}` !== 'approved') return;
   if (r.get('brought_awarded')) return;
   const submitterId = `${r.get('created_by') || ''}`.trim();
   if (!submitterId) return;
 
-  const dao = $app.dao();
   let submitter;
-  try { submitter = dao.findRecordById('users', submitterId); } catch (_) { return; }
+  try { submitter = app.findRecordById('users', submitterId); } catch (_) { return; }
   // Only visitor-submitted items count as "brought" (staff-created stock doesn't).
   const role = `${submitter.get('role')}`;
   if (role !== 'visitor') return;
@@ -122,29 +155,29 @@ onRecordAfterUpdateRequest((e) => {
   let campLabel = '';
   if (campId) {
     try {
-      const camp = dao.findRecordById('campaigns', campId);
-      mult = lib.campaignMult(camp, 'bring');
+      const camp = app.findRecordById('campaigns', campId);
+      mult = L.campaignMult(camp, 'bring');
       campLabel = `${camp.get('name') || ''}`.trim();
     } catch (_) {}
   }
 
-  const base = lib.config().bringPerItem;
+  const base = L.config().bringPerItem;
   const pts = Math.round(base * mult);
   const label =
     mult > 1 && campLabel
       ? `Teil gebracht (${campLabel} ×${mult}): ${r.get('title')}`
       : `Teil gebracht: ${r.get('title')}`;
-  lib.awardPoints(submitter, pts, 'bring', label, r.id);
+  L.awardPoints(submitter, pts, 'bring', label, r.id);
 
   // Teilnahme mitzählen — nur wenn die Aktion aufs Bringen auch Bonus gibt
   // (siehe lib.bumpActionCount). Treibt die Aktions-Abzeichen.
   if (campId) {
     try {
-      lib.bumpActionCount(submitter, dao.findRecordById('campaigns', campId), 'bring', 1);
+      L.bumpActionCount(submitter, app.findRecordById('campaigns', campId), 'bring', 1);
     } catch (_) {}
   }
 
-  lib.checkBadges(submitter);
+  L.checkBadges(submitter);
 
   // Tell the submitter their item went through — approval happens later, so
   // without this they'd never learn the points landed.
@@ -164,7 +197,8 @@ onRecordAfterUpdateRequest((e) => {
     }
   } catch (_) {}
 
-  // Flag so re-approval doesn't pay twice. Update via dao to avoid re-triggering.
+  // Flag so re-approval doesn't pay twice. Direkt gespeichert: Das löst nur
+  // die Modell-Hooks aus, nicht diesen Request-Hook — kein erneuter Durchlauf.
   r.set('brought_awarded', true);
-  dao.saveRecord(r);
+  app.saveNoValidate(r);
 }, 'items');

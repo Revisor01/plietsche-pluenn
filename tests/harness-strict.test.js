@@ -1,4 +1,5 @@
-// Prüft den Harness selbst: Wo er so streng ist wie PocketBase 0.22.21.
+// Prüft den Harness selbst: Wo er so streng ist wie PocketBase (bis
+// 26.09.2026 gemessen an 0.22.21, seitdem an 0.40.4).
 //
 // Ein Audit hat den Harness gegen echtes PocketBase gemessen und zwei Stellen
 // gefunden, an denen er gutmütiger war als das Original — Tests liefen grün,
@@ -29,6 +30,9 @@ function setup(store = {}) {
 // ── T-5: Filter ────────────────────────────────────────────────
 
 describe('Harness-Filter: was PocketBase ablehnt', () => {
+  // Bewusste Abweichung: PocketBase 0.40 liest einen leeren Filter als „alle"
+  // (gemessen 26.09.2026). Für die Hooks ist er immer ein Fehler — siehe
+  // harness.js, Abschnitt Filter.
   it('lehnt einen leeren Filter ab', () => {
     const h = setup({ items: [{ id: 'i1', sku: 'PP-0001', title: 'Jacke' }] });
     expect(() => h.dao.findRecordsByFilter('items', '', '', 0, 0)).toThrow(
@@ -206,32 +210,51 @@ describe('Harness-Schema: aus pb_migrations/ abgeleitet', () => {
     expect(schema.push_messages.fields.send_attempts.type).toBe('number');
   });
 
-  it('löst die Sammlungs-ID einer Migration auf', () => {
-    // 1782637408_updated_store.js spricht `store` mit der Produktions-ID an.
-    expect(schema.store.id).toBe('8hdpqi33x65ptii');
+  it('löst eine Sammlung auch über ihre ID auf', () => {
+    // Relationen und manche Migrationen sprechen Sammlungen über die ID an.
+    // Welche das ist, legt der Snapshot fest (in Produktion schreibt er sie
+    // auf den Bestand um) — deshalb hier nicht als fester Wert.
+    expect(schema.store.id).toMatch(/^\w+$/);
+    expect(Object.values(schema).find((c) => c.id === schema.store.id).name).toBe('store');
     expect(schema.store.fields.timezone.type).toBe('text');
   });
 
-  it('gibt Auth-Sammlungen ihre Systemfelder', () => {
+  it('gibt Auth-Sammlungen ihre Systemfelder (Stand 0.40)', () => {
+    // Ab 0.23 sind created/updated eigene Felder vom Typ autodate, das
+    // Passwort ein Feld vom Typ password; passwordHash und die
+    // last…SentAt-Spalten von 0.22 gibt es nicht mehr.
     expect(schema.users.type).toBe('auth');
     const typen = {};
-    for (const f of ['id', 'created', 'updated', 'email', 'username', 'verified', 'emailVisibility', 'tokenKey', 'passwordHash', 'lastResetSentAt', 'lastVerificationSentAt']) {
+    for (const f of ['id', 'created', 'updated', 'email', 'username', 'verified', 'emailVisibility', 'tokenKey', 'password']) {
       typen[f] = schema.users.fields[f].type;
     }
     expect(typen).toEqual({
       id: 'text',
-      created: 'date',
-      updated: 'date',
+      created: 'autodate',
+      updated: 'autodate',
       email: 'email',
       username: 'text',
       verified: 'bool',
       emailVisibility: 'bool',
       tokenKey: 'text',
-      passwordHash: 'text',
-      lastResetSentAt: 'date',
-      lastVerificationSentAt: 'date',
+      password: 'password',
     });
+    expect(schema.users.fields.passwordHash).toBe(undefined);
+    expect(schema.users.fields.lastResetSentAt).toBe(undefined);
     expect(schema.items.fields.email).toBe(undefined);
+    // Auch Basis-Sammlungen tragen created/updated jetzt als Feld.
+    expect(schema.items.fields.created.type).toBe('autodate');
+  });
+
+  it('liest die Indizes der Auth-Sammlung selbst, samt Teilindex', () => {
+    // Früher standen die drei im Harness von Hand; seit 0.40 stehen sie im
+    // Snapshot. E-Mail ist ein Teilindex (WHERE email != ''): Leerwerte zählen
+    // nicht.
+    expect(schema.users.unique).toEqual([
+      { columns: ['username'], skipEmpty: false },
+      { columns: ['email'], skipEmpty: true },
+      { columns: ['tokenKey'], skipEmpty: false },
+    ]);
   });
 
   it('liest die UNIQUE-Indizes', () => {
@@ -291,7 +314,7 @@ describe('Harness-DAO: unbekannte Sammlungen', () => {
   it('findCollectionByNameOrId wirft', () => {
     const h = setup();
     expect(() => h.dao.findCollectionByNameOrId('gibtsnicht')).toThrow('sql: no rows in result set');
-    expect(h.dao.findCollectionByNameOrId('8hdpqi33x65ptii').name).toBe('store');
+    expect(h.dao.findCollectionByNameOrId(loadSchema().store.id).name).toBe('store');
   });
 
   it('findRecordsByFilter und findFirstRecordByFilter werfen', () => {
@@ -441,5 +464,110 @@ describe('Harness-DAO: gestellte Speicherfehler (failSaveOn)', () => {
   it('wirft bei einer unbekannten Sammlung', () => {
     const h = setup();
     expect(() => h.failSaveOn('probe')).toThrow('sql: no rows in result set');
+  });
+});
+
+// ── Transaktionen (runInTransaction) ────────────────────────────
+//
+// Der Scan bucht seit 0.40 in einer Transaktion. Der Harness muss dafür
+// zurückrollen können — und die zwei Fallen von PocketBase nachbilden: $app
+// statt txApp zum Schreiben blockiert (eine einzige Schreibverbindung), $app
+// zum Lesen sieht den Stand von vor der Transaktion.
+
+describe('Harness-App: runInTransaction', () => {
+  it('schreibt fest, wenn nichts scheitert', () => {
+    const h = setup({ items: [{ id: 'i1', sku: 'A', title: 'Jacke' }] });
+    h.app.runInTransaction((txApp) => {
+      const i1 = txApp.findRecordById('items', 'i1');
+      i1.set('title', 'Mantel');
+      txApp.saveNoValidate(i1);
+    });
+    expect(h.rows('items')[0].title).toBe('Mantel');
+  });
+
+  it('rollt alles zurück, wenn ein Schritt scheitert — auch die davor', () => {
+    const h = setup({ items: [{ id: 'i1', sku: 'A', title: 'Jacke' }] });
+    h.failSaveOn('items', (r) => r.get('title') === 'Kaputt', 'database is locked');
+    expect(() =>
+      h.app.runInTransaction((txApp) => {
+        const i1 = txApp.findRecordById('items', 'i1');
+        i1.set('title', 'Mantel');
+        txApp.saveNoValidate(i1);
+        txApp.saveNoValidate(txApp.findRecordById('items', 'i1'));
+        const neu = h.newRecord('items', { id: 'i2', sku: 'B', title: 'Kaputt' });
+        txApp.saveNoValidate(neu);
+      })
+    ).toThrow('database is locked');
+    expect(h.rows('items').map((r) => [r.id, r.title])).toEqual([['i1', 'Jacke']]);
+    expect(h.dao.saved).toHaveLength(0);
+  });
+
+  it('reicht den Fehler unverändert weiter', () => {
+    const h = setup();
+    const fehler = new h.ApiError(409, 'Schon mitgenommen');
+    let gefangen;
+    try {
+      h.app.runInTransaction(() => {
+        throw fehler;
+      });
+    } catch (e) {
+      gefangen = e;
+    }
+    expect(gefangen).toBe(fehler);
+  });
+
+  it('lässt $app innerhalb der Transaktion nicht schreiben', () => {
+    const h = setup({ items: [{ id: 'i1', sku: 'A', title: 'Jacke' }] });
+    expect(() =>
+      h.app.runInTransaction(() => {
+        h.app.saveNoValidate(h.dao.findRecordById('items', 'i1'));
+      })
+    ).toThrow('Harness: $app.saveNoValidate während einer laufenden Transaktion');
+  });
+
+  it('zeigt $app innerhalb der Transaktion den Stand von vorher, txApp den neuen', () => {
+    const h = setup({ items: [{ id: 'i1', sku: 'A', title: 'Jacke' }] });
+    let ueberApp;
+    let ueberTx;
+    h.app.runInTransaction((txApp) => {
+      const i1 = txApp.findRecordById('items', 'i1');
+      i1.set('title', 'Mantel');
+      txApp.saveNoValidate(i1);
+      ueberApp = h.app.findRecordById('items', 'i1').get('title');
+      ueberTx = txApp.findRecordById('items', 'i1').get('title');
+    });
+    expect(ueberApp).toBe('Jacke');
+    expect(ueberTx).toBe('Mantel');
+  });
+});
+
+// ── Record-Hooks als Kette (e.next) ─────────────────────────────
+
+describe('Harness: Record-Request-Hooks', () => {
+  it('speichert erst mit e.next() und zeigt danach den gespeicherten Stand', () => {
+    // defaults.pb.js setzt die Rolle vor e.next(); was ein Hook erst danach
+    // setzt, ohne selbst zu speichern, ist in PocketBase verloren.
+    const h = loadHook('defaults.pb.js', { users: [] });
+    const rec = h.newRecord('users', { role: 'admin' });
+    h.fireRecordHook('createRequest', 'users', rec);
+    expect(h.rows('users')).toHaveLength(1);
+    expect(h.rows('users')[0].role).toBe('visitor');
+    expect(rec.get('role')).toBe('visitor');
+  });
+
+  it('füllt beim Anlegen, was PocketBase selbst erzeugt (username, tokenKey)', () => {
+    const h = loadHook('defaults.pb.js', { users: [] });
+    const a = h.fireRecordHook('createRequest', 'users', h.newRecord('users', {}));
+    const b = h.fireRecordHook('createRequest', 'users', h.newRecord('users', {}));
+    expect(a.get('username')).toMatch(/^users\d{6}$/);
+    expect(a.get('username')).not.toBe(b.get('username'));
+    expect(a.get('tokenKey')).toHaveLength(50);
+  });
+
+  it('kennt nur die Phasen von PocketBase 0.40', () => {
+    const h = loadHook('defaults.pb.js', { users: [] });
+    expect(() => h.fireRecordHook('beforeCreate', 'users', h.newRecord('users', {}))).toThrow(
+      'Harness: unbekannte Phase beforeCreate'
+    );
   });
 });
