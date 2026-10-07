@@ -25,7 +25,7 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 | Navigation | Expo Router (dateibasiert, typisierte Routen) | 57.0 |
 | Server-State | TanStack Query | 5.101 |
 | Client-State | lokales `useState` (keine eigene Bibliothek) | — |
-| Backend | PocketBase (Go, eingebettetes SQLite) | 0.22.21 |
+| Backend | PocketBase (Go, eingebettetes SQLite) | 0.40.4 |
 | Backend-Logik | JavaScript-Hooks (Goja-Runtime) | ES5-kompatibel |
 | Container | Docker Compose hinter Traefik | — |
 | Build | EAS CLI, lokale Xcode-Archive | ≥ 12.0 |
@@ -72,8 +72,12 @@ react-native-svg · react-native-qrcode-svg · qrcode · @react-native-community
 
 **Schrift:** Work Sans (400/500/600/700), lokal gebündelt
 
-> Die JS-SDK-Version muss zur PocketBase-Server-Hauptversion passen — deshalb ist
-> `pocketbase` exakt auf 0.22.1 festgenagelt.
+> `pocketbase` (JS-SDK) ist exakt auf 0.22.1 festgenagelt — die Version in den
+> ausgelieferten Apps. Seit dem Server-Upgrade auf 0.40.4 (26.09.2026) spricht
+> dieses SDK mit einem neueren Server. Die Wege, die die App nutzt (Anmeldung,
+> Registrierung, Listen mit Filter, eigene Routen), prüfen die
+> Integrationstests (`npm run test:integration`) mit genau diesem SDK gegen das
+> echte 0.40.4-Binary.
 
 **Bekannte Meldungen aus `npm audit`:** 14 Hinweise, davon zwei hoch, keine kritischen.
 Alle betreffen ausschließlich Entwicklungswerkzeuge (`react-devtools-core`, `@expo/cli`,

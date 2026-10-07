@@ -35,8 +35,8 @@ info:
     **Zugriff auf die Besuche (`visits`):** Lesen bleibt bei der eigenen
     Person (und `admin`), Anlegen ist über die API für niemanden möglich
     (`createRule: null`). Besuche entstehen ausschließlich serverseitig in
-    `POST /api/pp/scan`; der Hook schreibt mit dem Admin-DAO und braucht die
-    Regel nicht.
+    `POST /api/pp/scan`; der Hook schreibt serverseitig (`$app` bzw. die
+    Transaktion `txApp`) und braucht die Regel nicht.
 
     **Behoben am 14.09.2026:** `visits.createRule` stand auf
     `user = @request.auth.id`. Jedes Konto konnte sich damit beliebig viele
@@ -121,6 +121,29 @@ paths:
 
         **Datenschutz:** Ein mitgenommenes Teil bekommt einen Zeitstempel, aber
         keinen Verweis auf die Person, die es geholt hat.
+
+        **Alles oder nichts:** Ein Scan schreibt in einer Transaktion. Scheitert
+        ein Schritt, ist nichts gebucht — kein Besuch, keine Punkte, das Teil
+        bleibt verfügbar — und die Antwort ist ein Fehler. Die Bestätigung per
+        Push geht erst nach dem Festschreiben raus.
+
+        **Behoben am 26.09.2026:** Zuvor wurde nacheinander gespeichert, das
+        Teil zuletzt. Scheiterte dieser letzte Schritt, blieben Besuch und
+        Punkte gebucht und das Teil verfügbar; beim nächsten Scan zahlte es ein
+        zweites Mal.
+
+        **Höchstzahl mitgenommener Teile pro Besuch:** `store.max_items_take`
+        (Standardwert 7) gilt pro Tag in der Ladenzeitzone, über alle Scans
+        dieses Tages. Gezählt werden die Teile per Zähler (`items_count`, beim
+        ersten und bei jedem weiteren Türscan) und jedes per Code gescannte
+        Teil. Würde ein Scan die Grenze überschreiten, antwortet die Route mit
+        400, und nichts ist gebucht — ein gescanntes Teil bleibt verfügbar.
+        Steht `store.items_take_unlimited` auf `true`, gibt es keine Grenze.
+        Die Antwortformen bleiben unverändert.
+
+        **Geändert am 26.09.2026:** Bis dahin galt die Grenze nur je Aufruf.
+        Ein erneuter Türscan am selben Tag erlaubte wieder bis zu N Teile, und
+        per Code gescannte Teile zählten gar nicht.
       requestBody:
         required: true
         content:
@@ -152,8 +175,10 @@ paths:
                   minimum: 0
                   description: |
                     Zahl der ohne eigenen Code mitgenommenen Teile. Wird nur beim
-                    Check-in über den Türcode ausgewertet und ist auf
-                    `store.max_items_take` begrenzt (Standardwert 7).
+                    Check-in über den Türcode ausgewertet. Zusammen mit allen
+                    heute schon mitgenommenen Teilen höchstens
+                    `store.max_items_take` (Standardwert 7); ohne Grenze, wenn
+                    `store.items_take_unlimited` gesetzt ist.
                   example: 3
             examples:
               checkin:
@@ -219,14 +244,26 @@ paths:
           description: |
             Fehlerhafte Anfrage. Tritt auf bei fehlendem Code
             („Kein QR-Code"), außerhalb des Geofence („Du bist nicht im Laden")
-            oder zu vielen nachgetragenen Teilen („Höchstens N Teile pro
-            Besuch.").
+            oder wenn der Scan die Höchstzahl der heute mitgenommenen Teile
+            überschreiten würde („Höchstens N Teile pro Besuch."). Ist heute
+            schon etwas mitgenommen, folgt ein Nachsatz: „Heute gehen noch X
+            Teile." bzw. „Für heute ist die Grenze erreicht." Der erste Satz
+            bleibt unverändert — ausgelieferte Apps zeigen die Meldung wörtlich.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Fehler' }
               examples:
                 ausserhalb:
                   value: { status: 400, message: 'Du bist nicht im Laden' }
+                zuVieleTeile:
+                  summary: Grenze in einem Scan überschritten
+                  value: { status: 400, message: 'Höchstens 7 Teile pro Besuch.' }
+                zuVieleTeileHeute:
+                  summary: Zweiter Türscan am selben Tag, 5 von 7 schon mitgenommen
+                  value: { status: 400, message: 'Höchstens 7 Teile pro Besuch. Heute gehen noch 2 Teile.' }
+                grenzeErreicht:
+                  summary: Teil scannen, 7 von 7 schon mitgenommen
+                  value: { status: 400, message: 'Höchstens 7 Teile pro Besuch. Für heute ist die Grenze erreicht.' }
         '401':
           description: Nicht angemeldet.
           content:
@@ -425,8 +462,16 @@ components:
         Das Auth-Token aus der PocketBase-Anmeldung
         (`POST /api/collections/users/auth-with-password`), gesendet als
         `Authorization`-Header. Alle hier dokumentierten Routen außer
-        `GET /api/pp/version` setzen eine angemeldete Person voraus und
-        antworten sonst mit 401.
+        `GET /api/pp/version` setzen eine angemeldete Person voraus und antworten sonst mit 401. Ein Superuser
+        zählt dabei nicht als angemeldete Person (er hat kein Konto in
+        `users`) und bekommt ebenfalls 401.
+
+        **Übergang nach dem Upgrade auf PocketBase 0.40:** Token, die noch
+        PocketBase 0.22 ausgestellt hat (Typ `authRecord`), werden bis zu
+        ihrem Ablauf weiter angenommen — richtig signiert, nicht abgelaufen,
+        Konto in `users`. Das gilt für alle Routen, auch die CRUD-Routen.
+        Spätestens 30 Tage nach dem Upgrade ist jeder alte Token abgelaufen;
+        danach entfällt diese Übergangsregel.
 
   schemas:
     CheckinResult:

@@ -14,13 +14,20 @@
 // antworten, und der Testlauf hängt. Das Skript wird deshalb asynchron
 // aufgerufen und der Server liegt daneben.
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { execFile } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 const ausfuehren = promisify(execFile);
+
+// Jeder Test startet zwei Prozesse (Stub-Server und Python-Skript) und das
+// Skript fragt je Runde sechs Pfade ab. Allein dauert ein Test 1 bis 2 s; auf
+// einem ausgelasteten Rechner (gemessen am 26.09.2026 bei Last 44) bis knapp
+// 5 s — genau die Vorgabe von Vitest. Die Zeitgrenze sagt hier nichts über
+// das Skript aus, nur über die Maschine; deshalb großzügiger.
+vi.setConfig({ testTimeout: 20_000 });
 
 const SKRIPT = resolve(import.meta.dirname, '../.github/scripts/deploy-verify.py');
 const STUB = resolve(import.meta.dirname, 'helper/pb-stub.mjs');
@@ -31,11 +38,17 @@ function standRichtig() {
   return {
     '/api/collections/store_secrets/records': {
       status: 403,
-      koerper: { code: 403, message: 'Only superusers can perform this action.' },
+      koerper: { status: 403, message: 'Only superusers can perform this action.', data: {} },
     },
     '/api/collections/store/records': { status: 200, koerper: leereListe },
     '/api/collections/items/records': { status: 200, koerper: leereListe },
     '/api/collections/action_counts/records': { status: 200, koerper: leereListe },
+    // Seit PocketBase 0.23 heißen die Superuser eine Sammlung. Unangemeldet
+    // ist sie geschlossen (403); unter 0.22 gab es sie nicht (404).
+    '/api/collections/_superusers/records': {
+      status: 403,
+      koerper: { status: 403, message: 'Only superusers can perform this action.', data: {} },
+    },
     '/api/health': {
       status: 200,
       koerper: { message: 'API is healthy.', code: 200, data: { canBackup: true } },
@@ -99,11 +112,11 @@ async function pruefen(basis, { versuche = 2, abstand = 0, commit } = {}) {
 }
 
 describe('Erfolg nur bei vollständiger Übereinstimmung', () => {
-  it('meldet grün, wenn alle fünf Merkmale stimmen', async () => {
+  it('meldet grün, wenn alle sechs Merkmale stimmen', async () => {
     const basis = await serverStarten(standRichtig());
     const { code, ausgabe } = await pruefen(basis);
     expect(code).toBe(0);
-    expect(ausgabe).toContain('Alle 5 Merkmale stimmen');
+    expect(ausgabe).toContain('Alle 6 Merkmale stimmen');
   });
 });
 
@@ -143,6 +156,39 @@ describe('Fehlendes Schemamerkmal', () => {
     expect(code).toBe(1);
     expect(ausgabe).toContain(
       '[FEHLT] /api/collections/store_secrets/records: HTTP 200, erwartet 403');
+  });
+});
+
+describe('PocketBase-Version', () => {
+  it('erkennt eine Instanz, die noch auf 0.22 läuft', async () => {
+    // Das Upgrade auf 0.40 hat kein anderes unangemeldet sichtbares
+    // Schemamerkmal: Die Regeln der eigenen Sammlungen sind vorher und
+    // nachher dieselben. Läuft nach dem Deploy noch das alte Abbild, gäbe es
+    // ohne diese Zeile fünfmal grün. Unter 0.22 kennt PocketBase die Sammlung
+    // _superusers nicht und antwortet mit 404.
+    const stand = standRichtig();
+    delete stand['/api/collections/_superusers/records'];
+    const basis = await serverStarten(stand);
+
+    const { code, ausgabe } = await pruefen(basis);
+    expect(code).toBe(1);
+    expect(ausgabe).toContain(
+      '[FEHLT] /api/collections/_superusers/records: HTTP 404, erwartet 403');
+    expect(ausgabe).toContain('PocketBase 0.40');
+  });
+
+  it('erkennt eine offene _superusers-Sammlung', async () => {
+    const stand = standRichtig();
+    stand['/api/collections/_superusers/records'] = {
+      status: 200,
+      koerper: { page: 1, perPage: 30, totalItems: 1, totalPages: 1, items: [] },
+    };
+    const basis = await serverStarten(stand);
+
+    const { code, ausgabe } = await pruefen(basis);
+    expect(code).toBe(1);
+    expect(ausgabe).toContain(
+      '[FEHLT] /api/collections/_superusers/records: HTTP 200, erwartet 403');
   });
 });
 
@@ -204,7 +250,7 @@ describe('Langsam startender Server', () => {
 
     const { code, ausgabe } = await pruefen(basis, { versuche: 5 });
     expect(code).toBe(0);
-    expect(ausgabe).toContain('Alle 5 Merkmale stimmen');
+    expect(ausgabe).toContain('Alle 6 Merkmale stimmen');
   });
 
   it('gibt nach der letzten Runde auf, wenn der Stand falsch bleibt', async () => {
@@ -263,7 +309,7 @@ describe('Commit der geladenen Hooks', () => {
     const { code, ausgabe } = await pruefen(basis, { commit: NEU });
     expect(code).toBe(0);
     expect(ausgabe).toContain(`[ok]    /api/pp/version: Commit ${NEU.slice(0, 7)}`);
-    expect(ausgabe).toContain('Alle 6 Merkmale stimmen');
+    expect(ausgabe).toContain('Alle 7 Merkmale stimmen');
   });
 
   it('erkennt den alten Stand, obwohl das Schema stimmt', async () => {
@@ -292,12 +338,12 @@ describe('Commit der geladenen Hooks', () => {
     expect(ausgabe).toContain('[ALT]   /api/pp/version: laeuft auf (leer)');
   });
 
-  it('bleibt ohne ERWARTETER_COMMIT bei den fünf Schemamerkmalen', async () => {
+  it('bleibt ohne ERWARTETER_COMMIT bei den sechs Schemamerkmalen', async () => {
     // Der Aufruf von Hand (docs/deploy.md) kennt keinen Commit.
     const basis = await serverStarten(standRichtig());
     const { code, ausgabe } = await pruefen(basis);
     expect(code).toBe(0);
-    expect(ausgabe).toContain('Alle 5 Merkmale stimmen');
+    expect(ausgabe).toContain('Alle 6 Merkmale stimmen');
     expect(ausgabe).not.toContain('/api/pp/version');
   });
 });

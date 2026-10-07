@@ -5,9 +5,11 @@
   "description": "Tests für die PocketBase-Backend-Logik von Plietsche Plünn",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mjs"
   },
   "devDependencies": {
+    "pocketbase": "0.22.1",
     "vitest": "^5.0.0"
   },
   "engines": {

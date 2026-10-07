@@ -13,9 +13,32 @@
 # bei jedem Deploy eine neue PocketBase-Version einziehen, ohne dass sich im
 # Repo etwas geändert hätte — Migrationen und Hooks sind aber gegen genau
 # diese Version geschrieben.
-FROM ghcr.io/muchobien/pocketbase:0.22.21
+#
+# 0.40.4 (seit 26.09.2026, vorher 0.22.21). Muss zur Version in
+# tests/integration/pocketbase-binary.mjs passen — die Integrationstests
+# prüfen Hooks und Migrationen gegen genau dieses Binary.
+#
+# Was sich am Basis-Abbild gegenüber 0.22.21 geändert hat (nachgelesen in der
+# Abbild-Konfiguration auf ghcr.io):
+#   - Einstiegspunkt ist jetzt /usr/local/bin/entrypoint.sh statt des
+#     Binarys. Beginnt das erste Argument mit „-" (bei uns
+#     --encryptionEnv=…), setzt das Skript „serve --http=0.0.0.0:8090
+#     --dir=/pb_data --publicDir=/pb_public --hooksDir=/pb_hooks" davor —
+#     dieselben Pfade wie bisher. Der Stack muss dafür nicht angepasst werden.
+#   - Migrationen: kein --migrationsDir, PocketBase nimmt wie bisher
+#     /pb_data/../pb_migrations = /pb_migrations (gemessen mit 0.40.4).
+#   - Neu ist das Paket tzdata. Das 0.22.21-Abbild installierte nur
+#     ca-certificates, und keines der beiden Binarys bettet Zeitzonendaten
+#     ein. TZ=Europe/Berlin aus dem Stack dürfte deshalb bisher ins Leere
+#     gegangen sein (Go fällt dann auf UTC zurück) und wirkt ab jetzt —
+#     die nächtlichen Aufgaben laufen dann nach Berliner Uhr. Abgeleitet aus
+#     dem Abbild, nicht in Produktion gemessen; siehe docs/deploy.md.
+#   - Optional legen PB_ADMIN_EMAIL/PB_ADMIN_PASSWORD beim Start einen
+#     Superuser an. Nutzen wir nicht.
+FROM ghcr.io/muchobien/pocketbase:0.40.4
 
-# Hooks und Migrationen gehören ab hier zum Abbild.
+# Hooks und Migrationen gehören ab hier zum Abbild. pb_migrations_022/ (die
+# alten 0.22-Migrationen) bewusst NICHT — sie laufen unter 0.40 nicht.
 #
 # WICHTIG für den Stack: Solange /pb_hooks und /pb_migrations als Bind-Mount
 # vom Host eingehängt sind, überdecken die Host-Verzeichnisse diese Dateien

@@ -1,6 +1,6 @@
 # Wie das Backend ausgeliefert wird
 
-Stand: 14.09.2026.
+Stand: 26.09.2026 (Upgrade auf PocketBase 0.40, siehe unten).
 
 Das PocketBase-Backend läuft als Container auf `server.godsapp.de`, Stack
 `plietsche-pb` in Portainer. Ausgeliefert wird automatisch bei jedem Push auf
@@ -42,18 +42,24 @@ ausrollen.
 
 | Datei | Wofür |
 |---|---|
-| `pocketbase/Dockerfile` | Setzt auf `ghcr.io/muchobien/pocketbase:0.22.21` auf und kopiert `pb_hooks/` und `pb_migrations/` hinein. Die Version des Basis-Abbilds bleibt gepinnt. |
+| `pocketbase/Dockerfile` | Setzt auf `ghcr.io/muchobien/pocketbase:0.40.4` auf und kopiert `pb_hooks/` und `pb_migrations/` hinein. Die Version des Basis-Abbilds bleibt gepinnt. `pb_migrations_022/` kommt nicht hinein. |
 | `docker-compose.portainer.yml` | Der Stack, der in Produktion läuft. Eigenes Abbild, **nur `pb_data` gemountet**. |
 | `docker-compose.yml` | Lokale und dokumentarische Fassung: fremdes Abbild, Hooks als Bind-Mount. Läuft in Produktion **nicht**. |
 | `.github/workflows/deploy.yml` | Der Ablauf oben. |
 | `.github/scripts/deploy-verify.py` | Die Nachher-Prüfung. |
 | `tests/deploy-verify.test.js` | Deren Tests. |
+| `tests/integration/` | Tests gegen das echte PocketBase-Binary in der Version des Abbilds (`npm run test:integration`). |
 
 ### Das Test-Gate
 
 Die Backend-Tests laufen als eigener Job **in derselben Workflow-Datei**, und
 der Deploy-Job hängt per `needs` daran — ohne `always()`. Rote Tests, kein
-Deploy.
+Deploy. Zum Gate gehören zwei Läufe: `npm test` (die Fachlogik im Harness)
+und `npm run test:integration` (Migrationen, Hooks, Leseregeln und die
+Antwortformen der eigenen Routen gegen das echte Binary, 0.40.4). Der zweite
+fängt, was der Harness nicht sehen kann — etwa eine Migration, die unter der
+gepinnten PocketBase-Version nicht durchläuft und die Instanz nicht mehr
+hochkommen lässt.
 
 Der naheliegende Weg über `workflow_run` an `tests.yml` wurde bewusst nicht
 genommen: Er startet einen zweiten, entkoppelten Lauf, der in der Oberfläche
@@ -65,7 +71,10 @@ Preis; sie brauchen unter einer Minute.
 ### Die Vollständigkeitsprüfung
 
 Vor dem Push ins Register wird geprüft, ob alle sechs Hook-Dateien vorhanden
-und nicht leer sind und ob mindestens 19 Migrationen im Build-Kontext liegen.
+und nicht leer sind, ob der Sammlungs-Snapshot
+(`pb_migrations/1790500000_collections_snapshot.js`) da ist und ob mindestens
+drei Migrationen im Build-Kontext liegen. (Bis zum Upgrade auf 0.40 waren es
+mindestens 19 Einzelmigrationen; die liegen jetzt in `pb_migrations_022/`.)
 Das ist der Gedanke der Hennstedt-Seite („mindestens 50 Seiten gebaut, sonst
 `exit 1`"): Ein unvollständiger Build fällt sonst nicht auf. Fehlt eine
 Hook-Datei, startet PocketBase trotzdem und meldet sich gesund — es rechnet nur
@@ -77,7 +86,7 @@ vergessen; die Untergrenze wächst nur, wenn jemand sie bewusst anhebt.
 
 ### Die Nachher-Prüfung
 
-`deploy-verify.py` ruft unangemeldet fünf Endpunkte ab (mit `ERWARTETER_COMMIT` sechs) und prüft je Migration
+`deploy-verify.py` ruft unangemeldet sechs Endpunkte ab (mit `ERWARTETER_COMMIT` sieben) und prüft je Migration
 ein Schemamerkmal — nicht „ist die Migration vermerkt", sondern „ist das, was
 sie bewirken sollte, wirksam". Das fängt auch einen Fehlschlag mitten in einer
 Migration ab.
@@ -88,6 +97,7 @@ Migration ab.
 | `GET /api/collections/store/records` | 200, `totalItems: 0` | `store` verlangt eine Anmeldung |
 | `GET /api/collections/items/records` | 200, `totalItems: 0` | Die Leseregel auf `items` greift |
 | `GET /api/collections/action_counts/records` | 200, `totalItems: 0` | Die Besitzprüfung greift |
+| `GET /api/collections/_superusers/records` | 403 | PocketBase 0.40 läuft. Unter 0.22 gibt es die Sammlung nicht (404) — ohne diese Zeile wäre ein Deploy, das noch auf dem alten Abbild steht, fünfmal grün |
 | `GET /api/health` | 200 | Die Instanz antwortet |
 | `GET /api/pp/version` | 200, `commit` = ausgelieferter Commit | Die geladenen Hooks stammen aus diesem Commit |
 
@@ -98,7 +108,7 @@ Sammlung für geschlossen: Eine Sammlung ganz ohne Leseregel liefert ebenfalls
 200, nur mit Inhalt. Bei den 200ern wird deshalb zusätzlich `totalItems == 0`
 verlangt.
 
-**Der Commit der Hooks.** Die fünf Schemamerkmale sehen eine Änderung, die
+**Der Commit der Hooks.** Die sechs Schemamerkmale sehen eine Änderung, die
 nur `pb_hooks/` betrifft, nicht: Läuft noch das alte Abbild, stimmt das Schema
 trotzdem. Das Dockerfile schreibt deshalb beim Bauen den Commit nach
 `/pb_hooks/lib/build.js`, `GET /api/pp/version` liefert ihn aus, und der Deploy
@@ -216,8 +226,31 @@ Neuinstallation nicht mitgeliefert.
 | Zugangsdaten | `PLIETSCHE_MAIL_USER` / `PLIETSCHE_MAIL_PASS` in `~/.claude/secrets.env` |
 | Absendername | Plietsche Plünn |
 
-Die drei Vorlagen (Passwort zurücksetzen, Adresse bestätigen, Willkommen) sind
-auf Deutsch hinterlegt — PocketBase liefert sie ab Werk auf Englisch aus.
+Die drei Vorlagen (Passwort zurücksetzen, Adresse bestätigen, Adresswechsel
+bestätigen) sind auf Deutsch hinterlegt — PocketBase liefert sie ab Werk auf
+Englisch aus. Die Quelle ist `pocketbase/mail-vorlagen.py`.
+
+Seit PocketBase 0.40 hängen die Vorlagen an der Sammlung `users`, nicht mehr
+unter `meta` in den Einstellungen. Einspielen:
+
+```bash
+python3 pocketbase/mail-vorlagen.py > /tmp/vorlagen.json
+curl -X PATCH "https://pb.xn--plietsche-plnn-rsb.de/api/collections/users" \
+     -H "Authorization: <Superuser-Token>" \
+     -H "Content-Type: application/json" --data @/tmp/vorlagen.json
+```
+
+Der alte Weg (`PATCH /api/settings` mit `meta.verificationTemplate`) antwortet
+unter 0.40 mit 200 und **ändert nichts** — gemessen am 26.09.2026.
+
+Beim Upgrade übernimmt PocketBase die Vorlagen selbst: Es setzt den
+bisherigen `actionUrl` an die Stelle von `{ACTION_URL}`. Das Ergebnis ist
+Byte für Byte das, was das Skript heute erzeugt (gemessen), die Links haben
+weiter die Form `<appUrl>/_/#/auth/confirm-<fall>/<token>`, und
+`web/konto.html` versteht sie unverändert.
+
+Die englische Mail „Login from a new location", die 0.40 bei jeder Anmeldung
+von einem neuen Gerät verschickt, schaltet `1790500200_settings.js` ab.
 
 **Nach einer Neuinstallation der Instanz zu prüfen:** SMTP eingeschaltet,
 Absender gesetzt, Vorlagen auf Deutsch. Sonst verspricht die App eine Mail,
@@ -245,7 +278,188 @@ angefangen hat.
 einen Tag mit dem Commit-SHA. In Portainer das Abbild im Stack auf
 `ghcr.io/revisor01/plietsche-pluenn/pocketbase:<sha>` setzen und ausrollen.
 
+> **Nicht über die Grenze 0.22 → 0.40 hinweg.** Ein Abbild von vor dem
+> Upgrade startet auf der gehobenen Datenbank zwar und meldet sich gesund,
+> aber niemand kann sich mehr anmelden. Zurück geht es dort nur über eine
+> Sicherung — siehe „Upgrade auf 0.40".
+
 **Was es bewusst nicht gibt: einen automatischen Rückwärtsgang.** Migrationen
 sind nicht folgenlos umkehrbar. Schlägt der Verify fehl, bleibt der Stand
 stehen und der Lauf ist rot — ein Container, der steht, ist besser als ein
 Schema, das jemand halb zurückgedreht hat.
+
+## Upgrade auf 0.40
+
+PocketBase 0.22.21 → 0.40.4. Gemessen am 26.09.2026 mit beiden Binarys auf
+einer Kopie, die wie Produktion aufgebaut war: alle 20 alten Migrationen,
+verschlüsselte Einstellungen, deutsche Mail-Vorlagen, Anmeldedauer 30 Tage,
+Konten, Teile, ein Check-in. **Gegen die Produktion selbst ist nichts davon
+gemessen.**
+
+### Was sich im Repo ändert
+
+- Die 20 alten Migrationen liegen in `pocketbase/pb_migrations_022/` (mit
+  README, warum sie bleiben). Sie laufen unter 0.40 nicht mehr.
+- `pb_migrations/` enthält drei Dateien:
+  - `1790500000_collections_snapshot.js` — das ganze Schema als
+    Sammlungs-Snapshot, wie es die offizielle Upgrade-Anleitung vorsieht.
+    **Er schreibt vor dem Import die IDs auf den Bestand um.** Die alten
+    Migrationen haben Sammlungen und Felder mit zufälligen IDs angelegt;
+    Produktion hat andere IDs als der Snapshot. Ohne das Umschreiben bricht
+    der Import ab — gemessen: `failed to save collection "items": UNIQUE
+    constraint failed: _collections.name`, der Server kommt nicht hoch.
+    Außerdem enthält er nur Schema (Regeln, Felder, Indizes, Anmeldeart),
+    keine Einstellungen: Mail-Vorlagen und Token-Laufzeiten der Produktion
+    bleiben unangetastet.
+  - `1790500100_seed.js` — Laden, Türgeheimnis, Abzeichen für eine frische
+    Installation. Greift je Sammlung nur, wenn sie leer ist.
+  - `1790500200_settings.js` — schaltet die Mail „Login from a new location"
+    ab; setzt auf einer frischen Installation den Bestätigungslink auf eine
+    Woche (die Mail verspricht das) und die Anmeldung auf 30 Tage wie in
+    Produktion. Beides nur, wenn noch die 0.40-Vorgabe dasteht.
+- `pocketbase/Dockerfile`: `ghcr.io/muchobien/pocketbase:0.40.4`. Das Abbild
+  hat einen neuen Einstiegspunkt (`entrypoint.sh`); mit unseren Argumenten
+  ergibt sich derselbe Aufruf wie bisher (`serve --dir=/pb_data
+  --hooksDir=/pb_hooks`, Migrationen aus `/pb_migrations`). **Der Stack in
+  Portainer muss nicht angepasst werden.**
+- `deploy-verify.py` prüft zusätzlich `/api/collections/_superusers/records`
+  auf 403 — das Merkmal, dass wirklich 0.40 läuft.
+
+### Messergebnisse
+
+| Fall | Ergebnis |
+|---|---|
+| Frische Installation (leeres `pb_data`) | Alle drei Migrationen laufen, 13 Sammlungen, Laden und Türgeheimnis (32 Zeichen, zufällig) und vier Abzeichen angelegt. Gesund nach 0,3 bis 2,5 s. Schema feldweise wie bei der gehobenen Kopie; Unterschiede nur in Einstellungen (Laufzeit von Datei-Token, OAuth2-Feldzuordnung, OAuth2 ist aus). |
+| Kopie der 0.22-Datenbank, **ein** Start mit dem neuen Abbild (wie in Produktion) | System-Upgrade und unsere drei Migrationen in einem Start, gesund nach 0,1 bis 2,9 s (fünf Läufe). Schema feldweise gegen den reinen Upgrade-Stand: **1 Abweichung** — `users.authAlert.enabled` true → false, gewollt. Sammlungs- und Feld-IDs: **0 Abweichungen**. Mail-Vorlagen, Anmeldedauer (30 Tage), Datensätze je Sammlung, Türgeheimnis: unverändert. |
+| Dieselbe Kopie zweistufig (erst ohne Migrationen, dann mit) | Identisch mit dem einstufigen Fall. |
+| Snapshot ein zweites Mal auf dieselbe Datenbank | 0 Abweichungen — er ist idempotent. |
+| Snapshot **ohne** ID-Umschreibung auf der Kopie | Abbruch, Server startet nicht (siehe oben). |
+| 0.22 auf der gehobenen Datenbank | Startet, `/api/health` 200 — aber Einstellungen weg (`no such column: key`), Anmeldung schlägt fehl („Failed to authenticate"). |
+| Rückweg per Sicherung | `pb_data` leeren, Sicherung auspacken, 0.22 starten: Anmeldung und Punktestand wieder da. |
+
+Die gehobene Datenbank verlangt denselben `PB_ENCRYPTION_KEY` wie bisher. Ohne
+ihn bricht schon das System-Upgrade ab (`failed to fetch old settings:
+invalid settings db data or missing encryption key`), und der Server startet
+nicht.
+
+### Ablauf für die Produktion
+
+1. **Sicherung über die API, vorher.** Noch unter 0.22:
+   ```bash
+   TOKEN=$(curl -s -X POST "$PB/api/admins/auth-with-password" \
+     -H 'Content-Type: application/json' \
+     -d '{"identity":"<admin>","password":"<passwort>"}' | jq -r .token)
+   curl -f -X POST "$PB/api/backups" -H "Authorization: $TOKEN" \
+     -H 'Content-Type: application/json' -d '{"name":"vor_040.zip"}'
+   ```
+   Die Datei liegt danach in `/opt/stacks/plietsche-pb/pb_data/backups/`.
+   Zusätzlich vom Server wegkopieren — sie liegt sonst im selben Verzeichnis,
+   das das Upgrade verändert.
+2. **Schema der Produktion gegen den Snapshot vergleichen**, bevor
+   ausgerollt wird: `GET /api/collections` (Superuser) exportieren und
+   feldweise gegen `1790500000_collections_snapshot.js` halten. Der Snapshot
+   stammt aus einer Datenbank, die mit den Migrationen des Repos aufgebaut
+   wurde. Hat jemand in Produktion am Schema etwas im Adminbereich geändert,
+   das nicht in einer Migration steht, setzt der Import es auf den Stand des
+   Repos zurück (Regeln, Feldoptionen). Zusätzliche Felder und Sammlungen
+   bleiben erhalten — gelöscht wird nichts.
+3. **Ausrollen wie immer** (Push auf `main` bzw. Workflow von Hand). Beim
+   ersten Start mit dem neuen Abbild passiert in einem Durchgang:
+   PocketBase hebt die Datenbank auf 0.40 (System-Migrationen `…_v0.23_migrate*`
+   und folgende; die Admins werden zu `_superusers`, die Einstellungen
+   wandern zum Teil in die Sammlung `users`), danach laufen unsere drei
+   Migrationen. Die 20 alten stehen weiter in `_migrations`; das stört nicht.
+4. **Verify** läuft automatisch; `_superusers` → 403 belegt 0.40.
+5. **Von Hand nachsehen** (Superuser, Adminbereich unter `/_/`):
+   Anmeldung mit dem bisherigen Admin-Konto (es ist jetzt ein Superuser),
+   SMTP an, Vorlagen auf Deutsch, `users` → „Auth alert" aus.
+   In der App: anmelden, Punkte und Abzeichen sichtbar, ein Scan.
+
+**Bestehende Anmeldungen in der App.** 0.40 weist Token aus 0.22 ab: Ein
+vor dem Upgrade ausgestellter Token bekommt danach 401 (gemessen). Grund ist
+allein der Typ im Token (`authRecord` statt `auth`) — der Signaturschlüssel
+(tokenKey des Kontos + Anmeldegeheimnis) wandert beim Upgrade unverändert
+mit, **sofern `PB_ENCRYPTION_KEY` gesetzt ist**; nur dann kann das Upgrade die
+alten Einstellungen lesen (nachgerechnet: HMAC mit dem übernommenen
+Geheimnis ergibt genau die Signatur des alten Tokens). Die Middleware
+`pb_hooks/compat.pb.js` nimmt die alten Token für den Übergang an;
+`tests/integration/alte-token.test.js` prüft das gegen das echte Binary
+(angenommen, falsche Signatur 401, abgelaufen 401). Ohne diese Datei wären
+alle Handys nach dem Upgrade stillschweigend abgemeldet.
+
+### Zurückrollen
+
+**Nur per Sicherung.** Das Abbild von vorher auf der gehobenen Datenbank
+startet und meldet sich gesund, aber es kann niemand mehr anmelden (siehe
+Messung). Der Verify fällt dabei durch (`_superusers` → 404), ein
+automatischer Rückweg ist das also nicht.
+
+1. Stack stoppen.
+2. Inhalt von `/opt/stacks/plietsche-pb/pb_data/` beiseitelegen (nicht
+   löschen, bis der Rückweg geprüft ist), die Sicherung dorthin auspacken:
+   `unzip vor_040.zip -d /opt/stacks/plietsche-pb/pb_data/`.
+3. Im Stack das Abbild auf den SHA-Tag vor dem Upgrade setzen und ausrollen.
+4. Alles, was nach der Sicherung geschrieben wurde (Check-ins, Punkte), ist
+   damit weg. Deshalb das Upgrade nicht während der Öffnungszeiten.
+
+### Rate-Limiting — vorbereitet, nicht eingeschaltet
+
+PocketBase 0.40 bringt ein Rate-Limit mit, ab Werk aus. Es zählt je IP. Hinter
+unserem Weg (Apache → Traefik → Container) sieht PocketBase ohne weitere
+Einstellung **nur die IP des Proxys** — alle Nutzer:innen teilten sich ein
+Kontingent, und ein voller Laden sperrte sich beim Anmelden selbst aus.
+Gemessen: `remoteIP` und `userIP` im Log sind ohne `trustedProxy` beide die
+Adresse der Gegenstelle.
+
+Deshalb ist es **nicht** per Migration eingeschaltet. Vorgehen:
+
+1. **Messen, welcher Kopf die echte IP trägt.** Der Apache-vHost setzt
+   `RequestHeader set X-Real-IP %{REMOTE_ADDR}s` (überschreibt, was der
+   Client schickt — nicht fälschbar). Ob Traefik den Kopf durchreicht, hängt
+   an `forwardedHeaders.trustedIPs` seines Einstiegspunkts: Vertraut Traefik
+   dem Apache nicht, ersetzt es `X-Real-Ip` und `X-Forwarded-For` durch die
+   eigene Sicht. Probe: `trustedProxy.headers = ["X-Real-IP"]` setzen, von
+   einem bekannten Anschluss eine Anfrage schicken, im Log (`/_/#/logs`) das
+   Feld `userIP` ansehen. Steht dort die eigene öffentliche IP, stimmt es.
+   Steht dort eine 127.x/172.x-Adresse, muss zuerst Traefik angepasst werden.
+2. **Nicht `X-Forwarded-For` mit `useLeftmostIP`.** Der linkste Eintrag kommt
+   vom Client und ist frei fälschbar.
+3. **Erst dann** einschalten, mit vorsichtigen Regeln (Einstellungen →
+   Rate limits):
+
+   | Label | Zielgruppe | Fenster | Höchstens | Warum |
+   |---|---|---|---|---|
+   | `users:authWithPassword` | `@guest` | 60 s | 20 | Passwort-Raten bremsen. 20, weil das WLAN im Laden für viele Handys eine einzige IP ist. |
+   | `users:requestPasswordReset` | alle | 300 s | 5 | Mail-Flut an fremde Adressen verhindern. |
+
+   Die Voreinstellungen von 0.40 (`*:auth` 2 in 3 s, `*:create` 20 in 5 s)
+   sind für einen vollen Laden hinter einer IP zu knapp — nicht einfach das
+   Häkchen setzen.
+
+Die Label-Schreibweise ist gegen 0.40.4 gemessen: Die Einstellungen werden mit
+200 angenommen, der vierte Login-Versuch derselben `X-Real-IP` bei
+Höchstwert 3 bekommt 429, eine andere IP im selben Fenster nicht.
+
+### Empfehlung, nicht umgesetzt
+
+- **MFA für Superuser** (`_superusers` → MFA, zweiter Faktor per OTP-Mail).
+  Nicht per Migration: Auf einer frischen Installation ohne Mailversand würde
+  sie den Adminbereich versperren. Nach dem Upgrade von Hand einschalten,
+  sobald SMTP geprüft ist.
+- **`migrate history-sync`** räumt die 20 alten Einträge aus `_migrations`.
+  Nicht nötig, ändert nichts am Verhalten.
+
+### Offene Punkte, die in Produktion zu messen sind
+
+- **Zeitzone der nächtlichen Aufgaben.** Das 0.40-Abbild bringt erstmals
+  `tzdata` mit; das 0.22-Abbild hatte keine Zeitzonendaten, und keines der
+  Binarys bettet sie ein. `TZ=Europe/Berlin` im Stack wirkt damit
+  vermutlich erst ab jetzt — die Aufgaben um 3:05, 3:20 und 3:40 liefen dann
+  bisher nach UTC (5:05 Berliner Sommerzeit) und künftig nach Berliner Uhr.
+  Fachlich unkritisch (Tagesgrenzen rechnet die Fachlogik aus
+  `store.timezone`), aber vor und nach dem Upgrade mit `date` im Container
+  gegenprüfen.
+- **Fehlermeldungen bekommen einen Punkt.** 0.40 macht aus jeder
+  `ApiError`-Meldung einen Satz: „Du bist nicht im Laden" kommt als „Du bist
+  nicht im Laden." an (gemessen). Die App zeigt den Text wörtlich; ihre
+  Deutsch-Erkennung trifft weiterhin.

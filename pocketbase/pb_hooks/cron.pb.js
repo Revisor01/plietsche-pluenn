@@ -16,11 +16,12 @@ cronAdd('push-scheduled', '* * * * *', () => {
   // eine Konstante oben in der Datei wäre dort nicht definiert.
   const MAX_SEND_ATTEMPTS = 5;
   const push = require(`${__hooks}/lib/push.js`);
-  const dao = $app.dao();
   const nowIso = new Date().toISOString().replace('T', ' ');
   let due;
   try {
-    due = dao.findRecordsByFilter('push_messages', `sent_at = "" && scheduled_at <= "${nowIso}"`, 'scheduled_at', 20, 0);
+    due = $app.findRecordsByFilter('push_messages', 'sent_at = "" && scheduled_at <= {:now}', 'scheduled_at', 20, 0, {
+      now: nowIso,
+    });
   } catch (_) {
     return;
   }
@@ -45,12 +46,12 @@ cronAdd('push-scheduled', '* * * * *', () => {
       // Nach der letzten Wiederholung abhaken, sonst läuft der Job jede Minute
       // weiter dagegen. Dass es nicht geklappt hat, steht am Zähler.
       if (attempts >= MAX_SEND_ATTEMPTS) msg.set('sent_at', new Date().toISOString());
-      dao.saveRecord(msg);
+      $app.saveNoValidate(msg);
       continue;
     }
 
     msg.set('sent_at', new Date().toISOString());
-    dao.saveRecord(msg);
+    $app.saveNoValidate(msg);
   }
 });
 
@@ -59,12 +60,11 @@ cronAdd('push-scheduled', '* * * * *', () => {
 // Anyone who hasn't visited in > 1 full week loses their streak.
 cronAdd('streak-reset', '5 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
-  const dao = $app.dao();
   const now = new Date();
   const thisWeek = lib.isoWeek(now);
   let users;
   try {
-    users = dao.findRecordsByFilter('users', 'streak_weeks > 0', '', 0, 0);
+    users = $app.findRecordsByFilter('users', 'streak_weeks > 0', '', 0, 0);
   } catch (_) {
     return;
   }
@@ -72,7 +72,7 @@ cronAdd('streak-reset', '5 3 * * *', () => {
     const last = `${u.get('streak_last_visit')}`.trim();
     if (!last) {
       u.set('streak_weeks', 0);
-      dao.saveRecord(u);
+      $app.saveNoValidate(u);
       // user_badges.progress is a cache — without this the old streak count
       // stays visible ("1/2 Wochen in Folge") even though the streak is gone.
       try { lib.checkBadges(u); } catch (_) {}
@@ -85,7 +85,7 @@ cronAdd('streak-reset', '5 3 * * *', () => {
     // Vorjahres, sodass eine ausgelassene 53. Woche als Lücke gilt.
     if (thisWeek !== lastWeek && !lib.isWeekAdjacent(lastWeek, thisWeek)) {
       u.set('streak_weeks', 0);
-      dao.saveRecord(u);
+      $app.saveNoValidate(u);
       try { lib.checkBadges(u); } catch (_) {}
     }
   }
@@ -102,27 +102,26 @@ cronAdd('streak-reset', '5 3 * * *', () => {
 // Läuft deshalb über LAUFENDE und beendete Aktionen, nicht nur beendete.
 cronAdd('action-badges', '20 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
-  const dao = $app.dao();
   let camps;
   try {
-    camps = dao.findRecordsByFilter('campaigns', `badge != ""`, '', 0, 0);
+    camps = $app.findRecordsByFilter('campaigns', 'badge != ""', '', 0, 0);
   } catch (_) {
     return;
   }
   for (const camp of camps) {
     const badgeId = `${camp.get('badge')}`;
     let badge;
-    try { badge = dao.findRecordById('badges', badgeId); } catch (_) { continue; }
+    try { badge = $app.findRecordById('badges', badgeId); } catch (_) { continue; }
 
     // Gestufte Badges laufen ausschließlich über computeProgress/checkBadges —
     // grantBadge würde sie sofort auf Gold setzen und die Stufen überspringen.
     if (`${badge.get('kind')}` === 'tiered') {
       let counts = [];
       try {
-        counts = dao.findRecordsByFilter('action_counts', `campaign = "${camp.id}" && count > 0`, '', 0, 0);
+        counts = $app.findRecordsByFilter('action_counts', 'campaign = {:camp} && count > 0', '', 0, 0, { camp: camp.id });
       } catch (_) {}
       for (const c of counts) {
-        try { lib.checkBadges(dao.findRecordById('users', `${c.get('user')}`)); } catch (_) {}
+        try { lib.checkBadges($app.findRecordById('users', `${c.get('user')}`)); } catch (_) {}
       }
       continue;
     }
@@ -131,12 +130,12 @@ cronAdd('action-badges', '20 3 * * *', () => {
     const grant = (uid) => {
       if (!uid || seen[uid]) return;
       seen[uid] = true;
-      try { lib.grantBadge(dao.findRecordById('users', uid), badge); } catch (_) {}
+      try { lib.grantBadge($app.findRecordById('users', uid), badge); } catch (_) {}
     };
 
     // a) Wer der Aktion ein Teil beigesteuert hat.
     try {
-      const counts = dao.findRecordsByFilter('action_counts', `campaign = "${camp.id}" && count > 0`, '', 0, 0);
+      const counts = $app.findRecordsByFilter('action_counts', 'campaign = {:camp} && count > 0', '', 0, 0, { camp: camp.id });
       for (const c of counts) grant(`${c.get('user')}`);
     } catch (_) {}
 
@@ -144,12 +143,13 @@ cronAdd('action-badges', '20 3 * * *', () => {
     const start = `${camp.get('starts_at')}`.replace('T', ' ');
     const end = `${camp.get('ends_at')}`.replace('T', ' ');
     try {
-      const visits = dao.findRecordsByFilter(
+      const visits = $app.findRecordsByFilter(
         'visits',
-        `checkin_at >= "${start}" && checkin_at <= "${end}"`,
+        'checkin_at >= {:start} && checkin_at <= {:end}',
         '',
         0,
-        0
+        0,
+        { start, end }
       );
       for (const v of visits) grant(`${v.get('user')}`);
     } catch (_) {}
@@ -162,7 +162,6 @@ cronAdd('action-badges', '20 3 * * *', () => {
 // reached. A year with no visits breaks the count (it's "years active", total).
 cronAdd('year-badges', '40 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
-  const dao = $app.dao();
   const now = new Date();
   // Datum in der Ladenzeitzone, nicht in der des Servers.
   const heute = lib.storeParts(now);
@@ -170,16 +169,16 @@ cronAdd('year-badges', '40 3 * * *', () => {
 
   let badges;
   try {
-    badges = dao.findRecordsByFilter('badges', `kind = "single" && trigger_type = "years_active"`, '', 0, 0);
+    badges = $app.findRecordsByFilter('badges', 'kind = "single" && trigger_type = "years_active"', '', 0, 0);
   } catch (_) { return; }
   if (!badges.length) return;
 
   let users;
-  try { users = dao.findRecordsByFilter('users', '1=1', '', 0, 0); } catch (_) { return; }
+  try { users = $app.findRecordsByFilter('users', '1=1', '', 0, 0); } catch (_) { return; }
 
   for (const u of users) {
     let visits;
-    try { visits = dao.findRecordsByFilter('visits', `user = "${u.id}"`, '', 0, 0); } catch (_) { continue; }
+    try { visits = $app.findRecordsByFilter('visits', 'user = {:user}', '', 0, 0, { user: u.id }); } catch (_) { continue; }
     const years = {};
     for (const v of visits) {
       const d = new Date(`${v.get('checkin_at')}`);

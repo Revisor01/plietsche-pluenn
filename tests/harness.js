@@ -1,35 +1,52 @@
 // Testumgebung für PocketBase-Hooks.
 //
 // PocketBase führt die Hooks in einer eigenen JavaScript-Umgebung aus (Goja,
-// kein Node). Globale Funktionen wie routerAdd, cronAdd, $app, $apis, ApiError
-// oder Record stellt die Laufzeit bereit — in einem Node-Test gibt es sie nicht.
+// kein Node). Globale Funktionen wie routerAdd, cronAdd, $app, ApiError oder
+// Record stellt die Laufzeit bereit — in einem Node-Test gibt es sie nicht.
 //
-// Dieser Harness baut sie nach: ein DAO im Speicher mit den Sammlungen, die die
-// Hooks lesen, dazu die Globals. Die Hook-Datei wird über das vm-Modul in diese
-// Umgebung geladen; die dabei registrierten Routen und Cronjobs landen in einer
-// Liste und lassen sich einzeln aufrufen. Ohne laufende Instanz, ohne Docker.
+// Dieser Harness baut sie nach: eine App im Speicher mit den Sammlungen, die
+// die Hooks lesen, dazu die Globals. Die Hook-Datei wird über das vm-Modul in
+// diese Umgebung geladen; die dabei registrierten Routen, Middlewares,
+// Record-Hooks und Cronjobs landen in Listen und lassen sich einzeln
+// aufrufen. Ohne laufende Instanz, ohne Docker.
 //
-// Maßstab ist PocketBase 0.22.21, wie es auf dem Server läuft. Ein gutmütiger
-// Harness macht Tests grün, die in Produktion scheitern würden — deshalb
-// verhält er sich an den Stellen, an denen die Hooks sich auf PocketBase
-// verlassen, so streng wie das Original:
+// Maßstab ist PocketBase 0.40.4 (JSVM-Schnittstelle ab 0.23: $app.save,
+// $app.findRecordsByFilter, e.auth, e.requestInfo().body, e.next(), …). Nur
+// was die Hooks benutzen, ist nachgebaut — ein Aufruf der alten Schnittstelle
+// ($app.dao(), c.get('authRecord'), onRecordBeforeCreateRequest) scheitert
+// hier wie in Produktion.
+//
+// Ein gutmütiger Harness macht Tests grün, die in Produktion scheitern würden
+// — deshalb verhält er sich an den Stellen, an denen die Hooks sich auf
+// PocketBase verlassen, so streng wie das Original:
 //
 //   - Das Schema (Sammlungen, Felder, Feldtypen, UNIQUE-Indizes) kommt aus
-//     pocketbase/pb_migrations/, nicht aus einer Liste im Test. Unbekannte
-//     Sammlungen und Felder fallen auf.
+//     dem Sammlungs-Snapshot in pocketbase/pb_migrations/ und den Migrationen
+//     danach, nicht aus einer Liste im Test. Unbekannte Sammlungen und Felder
+//     fallen auf.
 //   - Filter werden geparst wie in PocketBase: leerer Filter, unbekanntes Feld
-//     oder ein unquotierter Wert rechts sind Fehler.
+//     oder ein unquotierter Wert rechts sind Fehler. Platzhalter {:name}
+//     brauchen einen Wert.
 //   - Datumsfelder werden in PocketBase-Form gespeichert
 //     ("2026-09-26 10:00:00.000Z") und im Filter als TEXT verglichen, wie
 //     SQLite es tut.
 //   - Lesen liefert eine frische Kopie des gespeicherten Stands. Was ein Hook
-//     an einem Datensatz ändert, ist erst nach saveRecord für andere sichtbar.
-//   - saveRecord kann scheitern: UNIQUE-Verletzung oder ein im Test
-//     gestellter Fehler (failSaveOn).
+//     an einem Datensatz ändert, ist erst nach dem Speichern für andere
+//     sichtbar.
+//   - Speichern kann scheitern: UNIQUE-Verletzung oder ein im Test gestellter
+//     Fehler (failSaveOn).
+//   - runInTransaction rollt bei einem Fehler ALLES zurück. Wer innerhalb der
+//     Transaktion über $app statt txApp schreibt, bekommt einen Fehler (in
+//     PocketBase wartet das auf die eigene Schreibverbindung); wer über $app
+//     liest, sieht den Stand vor der Transaktion.
+//   - Record-Hooks laufen als Kette: Erst e.next() speichert. Was ein Hook
+//     danach am Datensatz ändert, ohne selbst zu speichern, ist verloren —
+//     der Test sieht den gespeicherten Stand.
 
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const crypto = require('node:crypto');
 
 const HOOKS_DIR = path.join(__dirname, '..', 'pocketbase', 'pb_hooks');
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'pocketbase', 'pb_migrations');
@@ -38,156 +55,278 @@ const MIGRATIONS_DIR = path.join(__dirname, '..', 'pocketbase', 'pb_migrations')
 const NO_ROWS = 'sql: no rows in result set';
 const BAD_FILTER = 'invalid or empty filter expression';
 
-// ── Schema aus den Migrationen ─────────────────────────────────
-//
-// Die Migrationen werden in einer nachgebauten Migrationsumgebung ausgeführt
-// (wie in read-rules-migration.test.js), nicht geparst: Sie bauen Felder über
-// Hilfsfunktionen, Schleifen und nachträgliche addField-Aufrufe zusammen — ein
-// Parser müsste all das nachvollziehen und läge beim nächsten Umbau falsch.
-// Ausgeführt ergibt sich der Endstand von selbst.
-//
-// Nachgebaut ist nur, was die Migrationen aufrufen: Dao (Sammlungen finden,
-// speichern, löschen), Collection, SchemaField, Record und $security. Die
-// Datensatz-Aufrufe der Seed-Migrationen laufen ins Leere — hier interessiert
-// nur die Form der Sammlungen, nicht ihr Inhalt.
+// Das Anmeldegeheimnis der Sammlung `users` im Harness (users.authToken.secret).
+// Tests, die Token signieren, benutzen denselben Wert.
+const USERS_TOKEN_SECRET = 'harness-users-authtoken-secret-0123456789';
 
-// Sammlungs-IDs, auf die sich eine Migration wörtlich bezieht. Die
-// Verwaltungsoberfläche schreibt ihre Migrationen mit der ID statt dem Namen
-// (1782637408_updated_store.js: "8hdpqi33x65ptii" ist `store` in Produktion).
-const KNOWN_COLLECTION_IDS = { store: '8hdpqi33x65ptii', users: '_pb_users_auth_' };
+// ── Schema aus dem Sammlungs-Snapshot ──────────────────────────
+//
+// Seit PocketBase 0.40 beschreibt ein einziger Snapshot das Schema
+// (*_collections_snapshot.js, app.importCollections). Migrationen davor
+// stammen aus der 0.22-Zeit und sind durch ihn ersetzt; Migrationen danach
+// bauen darauf auf.
+//
+// Die Dateien werden in einer nachgebauten Migrationsumgebung AUSGEFÜHRT,
+// nicht geparst: Der Snapshot schreibt vor dem Import IDs um, spätere
+// Migrationen fügen Felder über collection.fields.add() hinzu — ein Parser
+// müsste all das nachvollziehen und läge beim nächsten Umbau falsch.
+//
+// Nachgebaut ist nur, was Migrationen aufrufen: Sammlungen finden, importieren,
+// speichern, löschen; Collection mit fields; Feldklassen; Record und
+// $security. Datensätze gibt es hier nicht — Seed-Migrationen laufen ins
+// Leere, hier interessiert nur die Form der Sammlungen.
 
-// Systemfelder, die PocketBase 0.22 jeder Sammlung mitgibt. Sie stehen in
-// keiner Migration, die Hooks und die Filter dürfen sie aber benutzen.
-const BASE_SYSTEM_FIELDS = { id: 'text', created: 'date', updated: 'date' };
-const AUTH_SYSTEM_FIELDS = {
-  username: 'text',
-  email: 'email',
-  emailVisibility: 'bool',
-  verified: 'bool',
-  tokenKey: 'text',
-  passwordHash: 'text',
-  lastResetSentAt: 'date',
-  lastVerificationSentAt: 'date',
-  lastLoginAlertSentAt: 'date',
-};
-// Die Indizes, die PocketBase für Auth-Sammlungen selbst anlegt. Leerwerte
-// zählen nicht: E-Mail ist `WHERE email != ''`, Benutzername und tokenKey
-// füllt PocketBase beim Anlegen selbst aus — im Harness bleiben sie leer.
-const AUTH_UNIQUE = [['username'], ['email'], ['tokenKey']];
+// Felder, die PocketBase jeder Auth-Sammlung selbst gibt, falls eine
+// Migration sie nicht nennt (der Snapshot nennt sie).
+const AUTH_SYSTEM_FIELDS = [
+  { name: 'id', type: 'text', system: true, required: true, primaryKey: true },
+  { name: 'password', type: 'password', system: true, required: true, hidden: true },
+  { name: 'tokenKey', type: 'text', system: true, required: true, hidden: true, autogeneratePattern: '[a-zA-Z0-9]{50}' },
+  { name: 'email', type: 'email', system: true },
+  { name: 'emailVisibility', type: 'bool', system: true },
+  { name: 'verified', type: 'bool', system: true },
+];
 
 function parseUniqueIndex(sql) {
   const m = `${sql}`.match(
-    /^\s*CREATE\s+UNIQUE\s+INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"']?\w+[`"']?\s+ON\s+[`"']?(\w+)[`"']?\s*\(([^)]*)\)/i
+    /^\s*CREATE\s+UNIQUE\s+INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"']?\w+[`"']?\s+ON\s+[`"']?(\w+)[`"']?\s*\(([^)]*)\)\s*(.*)$/i
   );
   if (!m) return null;
-  return m[2]
+  const columns = m[2]
     .split(',')
     .map((c) => c.trim().replace(/[`"']/g, '').split(/\s+/)[0])
     .filter(Boolean);
+  // Teilindex `WHERE spalte != ''`: Leerwerte zählen nicht (E-Mail bei users).
+  const skipEmpty = /WHERE\s+[`"']?\w+[`"']?\s*!=\s*''/i.test(m[3] || '');
+  return { columns, skipEmpty };
 }
 
 let schemaCache = null;
+
+function migrationFiles() {
+  const files = fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.js'))
+    .sort();
+  let start = -1;
+  files.forEach((f, i) => {
+    if (/_collections_snapshot\.js$/.test(f)) start = i;
+  });
+  if (start < 0) {
+    throw new Error(
+      'Harness: kein *_collections_snapshot.js in pocketbase/pb_migrations/ — ' +
+        'das Schema für PocketBase 0.40 fehlt.'
+    );
+  }
+  return files.slice(start);
+}
 
 function loadSchema() {
   if (schemaCache) return schemaCache;
 
   let idCount = 0;
-  const genId = () => `mig${String(++idCount).padStart(12, '0')}`;
+  const genId = (prefix) => `${prefix}${String(++idCount).padStart(10, '0')}`;
 
-  class StubSchema {
-    constructor(fields) {
-      this._fields = [];
-      (fields || []).forEach((f) => this.addField(f));
+  class Field {
+    constructor(data) {
+      Object.assign(this, data || {});
+      if (!this.id) this.id = genId(`${this.type || 'field'}`);
     }
-    getFieldByName(name) {
-      return this._fields.find((f) => f.name === name) || null;
+    getId() {
+      return this.id;
     }
-    getFieldById(id) {
-      return this._fields.find((f) => f.id === id) || null;
+    getName() {
+      return this.name;
     }
-    // PocketBase ersetzt ein Feld mit derselben ID. Zusätzlich wird hier ein
-    // gleichnamiges Feld ersetzt: 1782637408_updated_store.js legt tiers_json
-    // mit der Produktions-ID erneut an, die hier eine andere ist — in
-    // Produktion ist es dasselbe Feld.
-    addField(field) {
-      if (!field.id) field.id = genId();
-      const i = this._fields.findIndex((f) => f.id === field.id || f.name === field.name);
-      if (i >= 0) this._fields[i] = field;
-      else this._fields.push(field);
-    }
-    removeField(id) {
-      this._fields = this._fields.filter((f) => f.id !== id);
-    }
-    fields() {
-      return this._fields.slice();
+    type_() {
+      return this.type;
     }
   }
+  // Die typisierten Feldklassen der JSVM (new TextField({...}) usw.).
+  const typed = {};
+  for (const [cls, type] of Object.entries({
+    TextField: 'text',
+    NumberField: 'number',
+    BoolField: 'bool',
+    EmailField: 'email',
+    URLField: 'url',
+    EditorField: 'editor',
+    DateField: 'date',
+    AutodateField: 'autodate',
+    SelectField: 'select',
+    JSONField: 'json',
+    FileField: 'file',
+    RelationField: 'relation',
+    PasswordField: 'password',
+    GeoPointField: 'geoPoint',
+  })) {
+    typed[cls] = class extends Field {
+      constructor(data) {
+        super(Object.assign({}, data, { type }));
+      }
+    };
+  }
 
-  class SchemaField {
-    constructor(def) {
-      Object.assign(this, def || {});
-      if (!this.options) this.options = {};
+  class FieldsList {
+    constructor(list) {
+      this._list = [];
+      (list || []).forEach((f) => this.add(f));
+    }
+    add(...fields) {
+      for (const raw of fields) {
+        const f = raw instanceof Field ? raw : new Field(raw);
+        const i = this._list.findIndex((x) => x.id === f.id || x.name === f.name);
+        if (i >= 0) this._list[i] = f;
+        else this._list.push(f);
+      }
+    }
+    getByName(name) {
+      return this._list.find((f) => f.name === name) || null;
+    }
+    getById(id) {
+      return this._list.find((f) => f.id === id) || null;
+    }
+    removeByName(name) {
+      this._list = this._list.filter((f) => f.name !== name);
+    }
+    removeById(id) {
+      this._list = this._list.filter((f) => f.id !== id);
+    }
+    fieldNames() {
+      return this._list.map((f) => f.name);
+    }
+    asArray() {
+      return this._list.slice();
+    }
+    get length() {
+      return this._list.length;
     }
   }
 
   class Collection {
     constructor(data) {
-      Object.assign(this, data || {});
-      this.id = this.id || KNOWN_COLLECTION_IDS[this.name] || genId();
+      const d = Object.assign({}, data || {});
+      const fields = d.fields || [];
+      delete d.fields;
+      Object.assign(this, d);
       this.type = this.type || 'base';
-      this.schema = new StubSchema((data && data.schema) || []);
+      this.id = this.id || genId('pbc_');
       this.indexes = (data && data.indexes) || [];
+      this.fields = new FieldsList(fields);
+      this._ensureSystemFields();
+    }
+    _ensureSystemFields() {
+      if (!this.fields.getByName('id')) {
+        this.fields._list.unshift(new Field({ name: 'id', type: 'text', system: true, required: true, primaryKey: true }));
+      }
+      if (this.type === 'auth') {
+        for (const f of AUTH_SYSTEM_FIELDS) if (!this.fields.getByName(f.name)) this.fields.add(new Field(f));
+        // Die Optionen einer Auth-Sammlung mit den Vorgaben von PocketBase —
+        // Migrationen stellen sie um (1790500200_settings.js etwa authAlert).
+        for (const [key, def] of Object.entries({
+          authAlert: { enabled: true, emailTemplate: { subject: '', body: '' } },
+          authToken: { duration: 604800 },
+          passwordResetToken: { duration: 1800 },
+          emailChangeToken: { duration: 1800 },
+          verificationToken: { duration: 259200 },
+          fileToken: { duration: 180 },
+          passwordAuth: { enabled: true, identityFields: ['email'] },
+          oauth2: { enabled: false },
+          otp: { enabled: false, duration: 180, length: 8 },
+          mfa: { enabled: false, duration: 1800 },
+          verificationTemplate: { subject: '', body: '' },
+          resetPasswordTemplate: { subject: '', body: '' },
+          confirmEmailChangeTemplate: { subject: '', body: '' },
+        })) {
+          this[key] = Object.assign({}, def, this[key] || {});
+        }
+      }
+    }
+    isAuth() {
+      return this.type === 'auth';
     }
   }
 
-  // PocketBase bringt die Auth-Sammlung `users` mit `name` und `avatar` mit;
-  // 1700000000_init_schema.js ergänzt nur, was fehlt.
-  const collections = [
-    new Collection({
-      name: 'users',
-      type: 'auth',
-      schema: [
-        new SchemaField({ name: 'name', type: 'text' }),
-        new SchemaField({ name: 'avatar', type: 'file', options: { maxSelect: 1 } }),
-      ],
-    }),
-  ];
-
+  const collections = [];
   const find = (nameOrId) => {
     const c = collections.find((x) => x.name === nameOrId || x.id === nameOrId);
     if (!c) throw new Error(NO_ROWS);
     return c;
   };
+  const upsert = (col) => {
+    const i = collections.findIndex((x) => x.id === col.id || x.name === col.name);
+    if (i >= 0) collections[i] = col;
+    else collections.push(col);
+  };
 
-  class Dao {
-    findCollectionByNameOrId(nameOrId) {
-      return find(nameOrId);
-    }
-    saveCollection(col) {
-      const i = collections.findIndex((x) => x.id === col.id);
-      if (i >= 0) collections[i] = col;
-      else collections.push(col);
-      return col;
-    }
-    deleteCollection(col) {
-      const i = collections.findIndex((x) => x.id === col.id);
-      if (i >= 0) collections.splice(i, 1);
-    }
+  const migApp = {
+    findCollectionByNameOrId: (nameOrId) => find(nameOrId),
+    // importCollections(liste, deleteMissing): wie PocketBase — vorhandene
+    // Sammlungen (über ID, sonst Namen) werden mit dem Import überlagert;
+    // Felder, die der Import nicht nennt, bleiben ohne deleteMissing stehen.
+    importCollections: (list, deleteMissing) => {
+      const imported = [];
+      for (const raw of list || []) {
+        let existing = null;
+        try {
+          existing = find(raw.id) || null;
+        } catch (_) {
+          try {
+            existing = find(raw.name);
+          } catch (_) {
+            existing = null;
+          }
+        }
+        const col = new Collection(raw);
+        if (existing && !deleteMissing) {
+          for (const f of existing.fields.asArray()) {
+            if (!col.fields.getById(f.id) && !col.fields.getByName(f.name)) col.fields.add(f);
+          }
+        }
+        if (existing) {
+          const i = collections.indexOf(existing);
+          collections.splice(i, 1);
+        }
+        upsert(col);
+        imported.push(col);
+      }
+      if (deleteMissing) {
+        for (const c of collections.slice()) {
+          if (!imported.includes(c) && !c.system) collections.splice(collections.indexOf(c), 1);
+        }
+      }
+    },
+    save: (model) => {
+      if (model instanceof Collection) upsert(model);
+    },
+    saveNoValidate: (model) => {
+      if (model instanceof Collection) upsert(model);
+    },
+    delete: (model) => {
+      if (model instanceof Collection) {
+        const i = collections.indexOf(model);
+        if (i >= 0) collections.splice(i, 1);
+      }
+    },
     // Datensätze: gibt es in dieser Umgebung nicht.
-    findFirstRecordByFilter() {
+    findFirstRecordByFilter: () => {
       throw new Error(NO_ROWS);
-    }
-    findRecordsByFilter() {
-      return [];
-    }
-    findRecordsByExpr() {
-      return [];
-    }
-    saveRecord() {}
-    deleteRecord() {}
-  }
+    },
+    findFirstRecordByData: () => {
+      throw new Error(NO_ROWS);
+    },
+    findRecordById: () => {
+      throw new Error(NO_ROWS);
+    },
+    findRecordsByFilter: () => [],
+    countRecords: () => 0,
+    runInTransaction: (fn) => fn(migApp),
+  };
 
   class Record {
+    constructor(collection) {
+      this._collection = collection;
+    }
     set() {}
     get() {
       return null;
@@ -202,9 +341,9 @@ function loadSchema() {
     Number,
     Error,
     JSON,
-    Dao,
     Collection,
-    SchemaField,
+    Field,
+    ...typed,
     Record,
     $security: { randomString: (n) => 'x'.repeat(n || 8) },
     migrate: null,
@@ -212,11 +351,7 @@ function loadSchema() {
   sandbox.globalThis = sandbox;
   const context = vm.createContext(sandbox);
 
-  const files = fs
-    .readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith('.js'))
-    .sort();
-  for (const f of files) {
+  for (const f of migrationFiles()) {
     const file = path.join(MIGRATIONS_DIR, f);
     let up = null;
     sandbox.migrate = (u) => {
@@ -224,27 +359,40 @@ function loadSchema() {
     };
     vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
     if (typeof up !== 'function') throw new Error(`Harness: Migration ${f} registriert kein up()`);
-    up({});
+    up(migApp);
   }
 
   const schema = {};
   for (const col of collections) {
-    const isAuth = col.type === 'auth';
+    // Systemsammlungen (_superusers, _mfas, …) benutzen die Hooks nicht.
+    if (col.system || `${col.name}`.startsWith('_')) continue;
     const fields = {};
-    for (const [name, type] of Object.entries(BASE_SYSTEM_FIELDS)) fields[name] = { name, type, system: true };
-    if (isAuth) {
-      for (const [name, type] of Object.entries(AUTH_SYSTEM_FIELDS)) fields[name] = { name, type, system: true };
-    }
-    for (const f of col.schema.fields()) {
-      fields[f.name] = { name: f.name, type: f.type, options: f.options || {} };
+    for (const f of col.fields.asArray()) {
+      fields[f.name] = {
+        name: f.name,
+        type: f.type,
+        system: !!f.system,
+        required: !!f.required,
+        max: f.max,
+        min: f.min,
+        values: f.values,
+        maxSelect: f.maxSelect,
+        autogeneratePattern: f.autogeneratePattern || '',
+      };
     }
     const unique = [];
     for (const sql of col.indexes || []) {
-      const cols = parseUniqueIndex(sql);
-      if (cols) unique.push({ columns: cols, skipEmpty: false });
+      const idx = parseUniqueIndex(sql);
+      if (idx) unique.push(idx);
     }
-    if (isAuth) for (const cols of AUTH_UNIQUE) unique.push({ columns: cols, skipEmpty: true });
-    schema[col.name] = { id: col.id, name: col.name, type: col.type, fields, unique };
+    schema[col.name] = {
+      id: col.id,
+      name: col.name,
+      type: col.type,
+      fields,
+      unique,
+      authToken: col.type === 'auth' ? { secret: USERS_TOKEN_SECRET, duration: (col.authToken || {}).duration } : undefined,
+    };
   }
 
   schemaCache = schema;
@@ -253,17 +401,16 @@ function loadSchema() {
 
 function collectionSchema(nameOrId) {
   const schema = loadSchema();
-  const hit =
-    schema[nameOrId] || Object.values(schema).find((c) => c.id === nameOrId);
+  const key = nameOrId && typeof nameOrId === 'object' ? nameOrId.name : nameOrId;
+  const hit = schema[key] || Object.values(schema).find((c) => c.id === key);
   return hit || null;
 }
 
 function requireCollection(name) {
   const c = collectionSchema(name);
   if (!c) {
-    throw new Error(
-      `${NO_ROWS} (Harness: Sammlung "${name}" gibt es laut pb_migrations/ nicht)`
-    );
+    const label = name && typeof name === 'object' ? name.name : name;
+    throw new Error(`${NO_ROWS} (Harness: Sammlung "${label}" gibt es laut pb_migrations/ nicht)`);
   }
   return c;
 }
@@ -350,17 +497,23 @@ function kindOf(type) {
     case 'bool':
       return 'bool';
     case 'date':
+    case 'autodate':
       return 'date';
     case 'json':
+    case 'geoPoint':
       return 'json';
     default:
-      // text, email, url, editor, select, relation, file — in diesem Schema
-      // alle mit maxSelect 1, also ein einzelner Text.
+      // text, email, url, editor, password, select, relation, file — in
+      // diesem Schema alle mit maxSelect 1, also ein einzelner Text.
       return 'text';
   }
 }
 
 function prepareValue(def, value, where) {
+  // Mehrfachfelder (maxSelect > 1) speichert PocketBase als Liste. Im Schema
+  // gibt es keine; kommt eines dazu, soll das hier auffallen statt still als
+  // Text gespeichert zu werden.
+  if (def.maxSelect > 1) throw new Error(`Harness: Mehrfachfeld ${where} ist nicht nachgebildet`);
   switch (kindOf(def.type)) {
     case 'number':
       return toPbNumber(value);
@@ -398,7 +551,8 @@ function clone(v) {
 
 // ── Datensatz ──────────────────────────────────────────────────
 // Bildet die Record-Schnittstelle nach, die die Hooks tatsächlich benutzen:
-// get(feld), set(feld, wert), id und isNew().
+// get(feld), set(feld, wert), id, isNew(), isSuperuser(), collection() und
+// tokenKey().
 let idCounter = 0;
 function nextId(prefix) {
   idCounter += 1;
@@ -429,6 +583,24 @@ class FakeRecord {
 
   isNew() {
     return this._new;
+  }
+
+  // Ein Konto aus `users` ist nie Superuser (die stehen in _superusers).
+  isSuperuser() {
+    return false;
+  }
+
+  collection() {
+    return {
+      id: this._schema.id,
+      name: this._schema.name,
+      type: this._schema.type,
+      authToken: this._schema.authToken ? Object.assign({}, this._schema.authToken) : undefined,
+    };
+  }
+
+  tokenKey() {
+    return this.get('tokenKey');
   }
 
   get(field) {
@@ -475,7 +647,8 @@ class FakeRecord {
 
 // ── Filter ─────────────────────────────────────────────────────
 //
-// Nachgebaut wie PocketBase 0.22 (search.FilterData → fexpr): Ein Ausdruck aus
+// Nachgebaut wie PocketBase (search.FilterData → fexpr; gemessen an 0.22.21 und
+// 0.40.4, in diesen Punkten gleich): Ein Ausdruck aus
 // Vergleichen `links OP rechts`, verknüpft mit && und ||, Klammern erlaubt.
 // Jeder Operand ist
 //   - eine Zahl, true/false, null,
@@ -484,7 +657,14 @@ class FakeRecord {
 //   - oder ein Feldname der Sammlung.
 // Alles andere ist ein Fehler — auch ein unquotierter Wert rechts
 // (`status = pending`): PocketBase liest ihn als Feldnamen, findet keinen und
-// lehnt den Filter ab. Ebenso ein leerer Filter und ein unbekanntes Feld.
+// lehnt den Filter ab. Ebenso ein unbekanntes Feld (0.40.4: „invalid filter
+// expression: invalid right operand "pending" - unknown field").
+//
+// Bewusste Abweichung beim LEEREN Filter: 0.22 lehnte ihn ab, 0.40 liest ihn
+// als „kein Filter" und liefert alle Datensätze (gemessen am 26.09.2026). In
+// den Hooks ist ein leerer Filter immer ein Fehler — ein zusammengesetzter
+// Ausdruck, dem ein Teil fehlt —, und „alle Datensätze" wäre die gefährlichste
+// Antwort darauf. Der Harness lehnt ihn deshalb weiter ab.
 //
 // Verglichen wird wie in SQLite: Zahlen- und Wahrheitsfelder mit numerischer
 // Affinität, alle anderen (auch Datumsfelder!) als TEXT. Ein Datum in T-Form
@@ -772,33 +952,85 @@ function applySort(rows, sort, schema) {
   });
 }
 
-// ── DAO ────────────────────────────────────────────────────────
+// ── Speicher ───────────────────────────────────────────────────
 //
 // Gespeichert werden Zeilen (einfache Objekte in PB-Form), nicht die
 // Datensatz-Objekte selbst. Jedes Lesen liefert eine frische Kopie — wie
 // PocketBase, das jedes Mal aus der Datenbank lädt. Was ein Hook an einem
 // geladenen Datensatz ändert, ohne ihn zu speichern, sieht niemand sonst; und
 // wer einen veralteten Datensatz speichert, überschreibt die ganze Zeile.
+//
+// FakeDao ist der Speicher, den die TESTS sehen (h.dao): Er hat die Methoden
+// der 0.40-App und zusätzlich saveRecord/deleteRecord als Kurzform für
+// Fixtures. Die Hooks sehen ihn nie direkt, sondern nur über appFacade() —
+// dort gibt es ausschließlich die 0.40-Schnittstelle.
+
+// Wert für ein Feld mit autogeneratePattern (username, tokenKey). PocketBase
+// füllt sie beim Anlegen zufällig; hier fortlaufend, damit zwei Datensätze
+// nie zufällig kollidieren. Unterstützt, was im Schema vorkommt: Literale,
+// Zeichenklassen [...] und Wiederholungen {n}.
+let autogenCounter = 0;
+function autogenerate(pattern) {
+  autogenCounter += 1;
+  let n = autogenCounter;
+  let out = '';
+  const re = /\[([^\]]+)\](?:\{(\d+)\})?|\\?(.)/g;
+  let m;
+  while ((m = re.exec(pattern))) {
+    if (m[1]) {
+      const chars = [];
+      const spec = m[1];
+      for (let i = 0; i < spec.length; i++) {
+        if (spec[i + 1] === '-' && spec[i + 2]) {
+          for (let c = spec.charCodeAt(i); c <= spec.charCodeAt(i + 2); c++) chars.push(String.fromCharCode(c));
+          i += 2;
+        } else {
+          chars.push(spec[i]);
+        }
+      }
+      const count = Number(m[2] || 1);
+      let part = '';
+      for (let i = 0; i < count; i++) {
+        part = chars[n % chars.length] + part;
+        n = Math.floor(n / chars.length);
+      }
+      out += part;
+    } else {
+      out += m[3];
+    }
+  }
+  return out;
+}
+
 class FakeDao {
   constructor() {
-    this.tables = {};   // { sammlung: [ zeile, … ] }
-    this.saved = [];    // Reihenfolge der Schreibvorgänge, für Assertions
+    this.tables = {}; // { sammlung: [ zeile, … ] }
+    this.saved = []; // Reihenfolge der Schreibvorgänge, für Assertions
     this.deleted = [];
     this._saveFailures = [];
+    // Während einer Transaktion: der festgeschriebene Stand von davor.
+    this._tx = null;
+    // Gesetzt, solange $app (nicht txApp) während einer Transaktion liest.
+    this._readView = null;
   }
 
-  _table(collection) {
+  _view() {
+    return this._readView || this.tables;
+  }
+
+  _table(collection, view) {
     const schema = requireCollection(collection);
-    if (!this.tables[schema.name]) this.tables[schema.name] = [];
-    return this.tables[schema.name];
+    const tables = view || this.tables;
+    if (!tables[schema.name]) tables[schema.name] = [];
+    return tables[schema.name];
   }
 
   _load(collection, row) {
     return FakeRecord._load(collection, row);
   }
 
-  _all(collection) {
-    return this._table(collection).map((row) => this._load(collection, row));
+  _all(collection, view) {
+    return this._table(collection, view || this._view()).map((row) => this._load(collection, row));
   }
 
   // Zeile aus einem Datensatz: alle Felder des Schemas.
@@ -823,13 +1055,22 @@ class FakeDao {
     }
   }
 
-  // Zeile einfügen, ohne die Fehlerquellen von saveRecord — für die
+  // Felder mit autogeneratePattern füllen, wie PocketBase beim Anlegen.
+  _autogenerate(schema, record) {
+    for (const def of Object.values(schema.fields)) {
+      if (def.name === 'id' || !def.autogeneratePattern) continue;
+      if (record.get(def.name) === '') record._data[def.name] = autogenerate(def.autogeneratePattern);
+    }
+  }
+
+  // Zeile einfügen, ohne die Fehlerquellen des Speicherns — für die
   // Ausgangsdaten eines Tests. UNIQUE wird trotzdem geprüft: Eine Fixture,
   // die PocketBase so gar nicht speichern könnte, prüft einen Zustand, den
   // es in Produktion nicht gibt.
   _seed(record) {
     const schema = record._schema;
     const table = this._table(schema.name);
+    this._autogenerate(schema, record);
     const row = this._rowOf(record);
     const now = toPbDate(new Date(), 'jetzt');
     if (!row.created) row.created = now;
@@ -848,11 +1089,14 @@ class FakeDao {
   findCollectionByNameOrId(nameOrId) {
     const schema = collectionSchema(nameOrId);
     if (!schema) throw new Error(NO_ROWS);
-    return { id: schema.id, name: schema.name, type: schema.type };
+    const col = { id: schema.id, name: schema.name, type: schema.type };
+    if (schema.authToken) col.authToken = Object.assign({}, schema.authToken);
+    col.isAuth = () => schema.type === 'auth';
+    return col;
   }
 
   findRecordById(collection, id) {
-    const row = this._table(collection).find((r) => r.id === `${id}`);
+    const row = this._table(collection, this._view()).find((r) => r.id === `${id}`);
     // PocketBase wirft, wenn nichts gefunden wird — die Hooks verlassen sich
     // darauf und fangen den Fehler ab.
     if (!row) throw new Error(NO_ROWS);
@@ -860,9 +1104,10 @@ class FakeDao {
   }
 
   // Der Filter wird VOR dem Lesen geprüft, wie in PocketBase: Ein kaputter
-  // Filter scheitert auch auf einer leeren Sammlung.
-  findFirstRecordByFilter(collection, filter, params) {
-    const pred = compileFilter(collection, filter, params);
+  // Filter scheitert auch auf einer leeren Sammlung. Platzhalterwerte kommen
+  // als letzte Argumente (…params), wie in PocketBase auch mehrere.
+  findFirstRecordByFilter(collection, filter, ...params) {
+    const pred = compileFilter(collection, filter, mergeParams(params));
     const hit = this._all(collection).find(pred);
     if (!hit) throw new Error(NO_ROWS);
     return hit;
@@ -878,17 +1123,13 @@ class FakeDao {
     return hit;
   }
 
-  // PocketBase nimmt fünf Parameter (plus optionale Platzhalterwerte), der
-  // Harness nahm bisher vier: `offset` fiel still unter den Tisch. Alle
-  // Aufrufe in den Hooks übergeben ihn (heute durchgehend mit 0), und ein
-  // Test, der sich auf Blätterung verlässt, hätte etwas anderes geprüft als
-  // die Produktion — grün, während die falsche Seite gelesen wird.
-  //
   // Reihenfolge wie in PocketBase: erst filtern, dann sortieren, dann `offset`
-  // überspringen, dann auf `limit` kürzen.
-  findRecordsByFilter(collection, filter, sort, limit, offset, params) {
+  // überspringen, dann auf `limit` kürzen. `offset` wird ernst genommen — ein
+  // Test, der sich auf Blätterung verlässt, prüft sonst etwas anderes als die
+  // Produktion.
+  findRecordsByFilter(collection, filter, sort, limit, offset, ...params) {
     const schema = requireCollection(collection);
-    const pred = compileFilter(collection, filter, params);
+    const pred = compileFilter(collection, filter, mergeParams(params));
     const rows = applySort(this._all(collection).filter(pred), sort, schema);
     const skip = Number(offset || 0);
     if (!Number.isInteger(skip) || skip < 0) {
@@ -899,8 +1140,8 @@ class FakeDao {
     return limit && limit > 0 ? page.slice(0, limit) : page;
   }
 
-  // Fehlerquelle für Tests: Jeder saveRecord auf `collection`, für den
-  // `predicate(record)` wahr ist (ohne Prädikat: jeder), scheitert mit
+  // Fehlerquelle für Tests: Jedes Speichern auf `collection`, für das
+  // `predicate(record)` wahr ist (ohne Prädikat: jedes), scheitert mit
   // `message`. Damit lässt sich prüfen, was ein Hook hinterlässt, wenn ein
   // Schreibvorgang mitten in einer Folge scheitert. Rückgabe: Funktion, die
   // die Fehlerquelle wieder entfernt.
@@ -917,12 +1158,15 @@ class FakeDao {
     };
   }
 
-  saveRecord(record) {
+  // $app.saveNoValidate: speichern ohne Feldprüfung — wie unter 0.22
+  // dao.saveRecord. Die Hooks schreiben so (siehe lib/points.js).
+  saveNoValidate(record) {
     const schema = record._schema;
     for (const f of this._saveFailures) {
       if (f.collection === schema.name && f.predicate(record)) throw new Error(f.message);
     }
     const table = this._table(schema.name);
+    if (record.isNew()) this._autogenerate(schema, record);
     const row = this._rowOf(record);
     const i = table.findIndex((r) => r.id === row.id);
     const now = toPbDate(new Date(), 'jetzt');
@@ -954,12 +1198,180 @@ class FakeDao {
     return record;
   }
 
-  deleteRecord(record) {
+  // $app.save: mit Feldprüfung, wie PocketBase ab 0.23. Nachgebildet sind
+  // Pflichtfelder, Höchstlänge von Text und die erlaubten Werte eines
+  // Auswahlfelds — genug, damit ein Hook, der auf save umstellt, im Test an
+  // denselben Stellen scheitert wie in Produktion.
+  save(record) {
+    const schema = record._schema;
+    const problems = [];
+    for (const def of Object.values(schema.fields)) {
+      if (def.system || def.type === 'autodate' || def.type === 'password') continue;
+      const v = record.get(def.name);
+      const empty = v === '' || v === null || v === undefined || v === 0 || v === false;
+      if (def.required && empty) problems.push(`${def.name}: cannot be blank`);
+      if (typeof v === 'string' && def.max && ['text', 'editor', 'email', 'url'].includes(def.type) && v.length > def.max) {
+        problems.push(`${def.name}: must be at most ${def.max} characters`);
+      }
+      if (def.type === 'select' && v !== '' && Array.isArray(def.values) && !def.values.includes(v)) {
+        problems.push(`${def.name}: invalid value ${JSON.stringify(v)}`);
+      }
+    }
+    if (problems.length) throw new Error(`Harness: Validierung ${schema.name}: ${problems.join('; ')}`);
+    return this.saveNoValidate(record);
+  }
+
+  delete(record) {
     const table = this._table(record.collectionName);
     const i = table.findIndex((r) => r.id === record.id);
     if (i >= 0) table.splice(i, 1);
     this.deleted.push(record);
   }
+
+  // Kurzformen für Tests und Fixtures (die alten Namen).
+  saveRecord(record) {
+    return this.saveNoValidate(record);
+  }
+
+  deleteRecord(record) {
+    return this.delete(record);
+  }
+}
+
+function mergeParams(list) {
+  const out = {};
+  let any = false;
+  for (const p of list || []) {
+    if (p && typeof p === 'object') {
+      Object.assign(out, p);
+      any = true;
+    }
+  }
+  return any ? out : undefined;
+}
+
+// Die App, wie ein Hook sie sieht: $app (tx = false) oder txApp (tx = true).
+// Nur die 0.40-Methoden, die die Hooks benutzen.
+function appFacade(dao, tx) {
+  const deadlock = (what) =>
+    new Error(
+      `Harness: $app.${what} während einer laufenden Transaktion. In PocketBase wartet das auf ` +
+        'die einzige Schreibverbindung, die die Transaktion selbst hält — txApp benutzen.'
+    );
+  // Lesen über $app während einer Transaktion: eigene Verbindung, also der
+  // festgeschriebene Stand von vor der Transaktion.
+  const read = (fn) => {
+    if (tx || !dao._tx) return fn();
+    dao._readView = dao._tx.committed;
+    try {
+      return fn();
+    } finally {
+      dao._readView = null;
+    }
+  };
+  const write = (what, fn) => {
+    if (!tx && dao._tx) throw deadlock(what);
+    return fn();
+  };
+
+  const app = {
+    findCollectionByNameOrId: (nameOrId) => dao.findCollectionByNameOrId(nameOrId),
+    findRecordById: (collection, id) => read(() => dao.findRecordById(collection, id)),
+    findFirstRecordByFilter: (collection, filter, ...params) =>
+      read(() => dao.findFirstRecordByFilter(collection, filter, ...params)),
+    findFirstRecordByData: (collection, field, value) =>
+      read(() => dao.findFirstRecordByData(collection, field, value)),
+    findRecordsByFilter: (collection, filter, sort, limit, offset, ...params) =>
+      read(() => dao.findRecordsByFilter(collection, filter, sort, limit, offset, ...params)),
+    save: (record) => write('save', () => dao.save(record)),
+    saveNoValidate: (record) => write('saveNoValidate', () => dao.saveNoValidate(record)),
+    delete: (record) => write('delete', () => dao.delete(record)),
+    isTransactional: () => tx,
+    // Alles oder nichts: Wirft fn, wird der Stand von vorher wiederhergestellt
+    // und der Fehler weitergereicht. Eine Transaktion in der Transaktion
+    // (txApp.runInTransaction) läuft in derselben mit.
+    runInTransaction: (fn) => {
+      if (tx) return fn(app);
+      if (dao._tx) throw deadlock('runInTransaction');
+      const before = {
+        tables: structuredClone(dao.tables),
+        saved: dao.saved.length,
+        deleted: dao.deleted.length,
+      };
+      dao._tx = { committed: structuredClone(dao.tables) };
+      try {
+        fn(appFacade(dao, true));
+        dao._tx = null;
+      } catch (err) {
+        dao.tables = before.tables;
+        dao.saved.length = before.saved;
+        dao.deleted.length = before.deleted;
+        dao._tx = null;
+        throw err;
+      }
+    },
+  };
+  return app;
+}
+
+// Ein Superuser, wie e.auth ihn ab 0.23 liefert: Datensatz aus _superusers,
+// ohne Rolle, ohne Konto in `users`.
+function superuserRecord(admin) {
+  const id = (admin && admin.id) || 'superuser00001';
+  return {
+    id,
+    collectionName: '_superusers',
+    isSuperuser: () => true,
+    get: (field) => (field === 'id' ? id : null),
+    collection: () => ({ id: 'pbc_3142635823', name: '_superusers', type: 'auth' }),
+  };
+}
+
+// ── JWT wie $security.parseJWT / parseUnverifiedJWT ─────────────
+function b64urlJson(part) {
+  return JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+}
+
+function parseUnverifiedJWT(token) {
+  const parts = `${token}`.split('.');
+  if (parts.length !== 3) throw new Error('token is malformed');
+  try {
+    return b64urlJson(parts[1]);
+  } catch (_) {
+    throw new Error('token is malformed');
+  }
+}
+
+// HS256 prüfen und den Ablauf (exp, Sekunden) — wie PocketBase.
+function parseJWT(token, key) {
+  const parts = `${token}`.split('.');
+  if (parts.length !== 3) throw new Error('token is malformed');
+  let header;
+  try {
+    header = b64urlJson(parts[0]);
+  } catch (_) {
+    throw new Error('token is malformed');
+  }
+  if (header.alg !== 'HS256') throw new Error('token signature is invalid: signing method is invalid');
+  const expected = crypto.createHmac('sha256', `${key}`).update(`${parts[0]}.${parts[1]}`).digest();
+  const given = Buffer.from(parts[2], 'base64url');
+  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) {
+    throw new Error('token signature is invalid: signature is invalid');
+  }
+  const claims = b64urlJson(parts[1]);
+  if (claims.exp !== undefined && Number(claims.exp) * 1000 <= Date.now()) {
+    throw new Error('token has invalid claims: token is expired');
+  }
+  return claims;
+}
+
+// Einen Token signieren (für Tests).
+function signJWT(claims, key) {
+  const enc = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const head = enc({ alg: 'HS256', typ: 'JWT' });
+  const body = enc(claims);
+  const sig = crypto.createHmac('sha256', `${key}`).update(`${head}.${body}`).digest('base64url');
+  return `${head}.${body}.${sig}`;
 }
 
 // ── Umgebung aufbauen und Hook laden ───────────────────────────
@@ -971,7 +1383,7 @@ class FakeDao {
 // opts.libs: { 'lib/<datei>.js': exports } — Bibliotheken, die es im Repo
 //   nicht gibt, sondern erst im Abbild (lib/build.js mit dem Commit). Ohne
 //   Eintrag scheitert require() daran wie in einer Instanz ohne die Datei.
-// Rückgabe: { routes, crons, dao, records, call, runCron, failSaveOn, … }
+// Rückgabe: { routes, crons, dao, app, records, call, runCron, failSaveOn, … }
 function loadHook(hookFile, store = {}, opts = {}) {
   const realPush = !!opts.realPush;
   const extraLibs = opts.libs || {};
@@ -1016,26 +1428,36 @@ function loadHook(hookFile, store = {}, opts = {}) {
     {
       get(_, key) {
         if (typeof key !== 'string' || !collectionSchema(key)) return undefined;
-        return dao._all(key);
+        return dao._all(key, dao.tables);
       },
     }
   );
 
+  const app = appFacade(dao, false);
   const routes = {};
+  const middlewares = [];
   const crons = {};
   const pushed = [];
-  const httpCalls = [];    // die an Expo gestellten Anfragen
+  const httpCalls = []; // die an Expo gestellten Anfragen
   const httpResponses = []; // gestellte Antworten, der Reihe nach
   const libCache = {};
-  const recordHooks = { beforeCreate: [], beforeUpdate: [], afterUpdate: [] };
+  const recordHooks = { createRequest: [], updateRequest: [] };
 
+  // Fehlerklassen der JSVM. Der Status steht in `status`, wie in PocketBase.
   class ApiError extends Error {
-    constructor(status, message) {
+    constructor(status, message, data) {
       super(message);
       this.status = status;
       this.message = message;
+      this.data = data || {};
     }
   }
+  const errorClass = (status) =>
+    class extends ApiError {
+      constructor(message, data) {
+        super(status, message, data);
+      }
+    };
 
   const sandbox = {
     console,
@@ -1053,6 +1475,12 @@ function loadHook(hookFile, store = {}, opts = {}) {
 
     __hooks: HOOKS_DIR,
     ApiError,
+    BadRequestError: errorClass(400),
+    UnauthorizedError: errorClass(401),
+    ForbiddenError: errorClass(403),
+    NotFoundError: errorClass(404),
+    TooManyRequestsError: errorClass(429),
+    InternalServerError: errorClass(500),
 
     // Record-Konstruktor: new Record(collection[, daten]) — die Hooks setzen
     // die Felder danach einzeln per set().
@@ -1061,33 +1489,35 @@ function loadHook(hookFile, store = {}, opts = {}) {
       return new FakeRecord(name, data || {});
     },
 
-    $app: {
-      dao: () => dao,
-    },
+    $app: app,
 
-    $apis: {
-      // Wird pro Aufruf über den Kontext gefüllt (siehe call()).
-      requestInfo: (c) => ({ data: c.__body || {} }),
+    $security: {
+      parseUnverifiedJWT,
+      parseJWT,
+      randomString: (n) => crypto.randomBytes(n || 8).toString('hex').slice(0, n || 8),
     },
 
     routerAdd: (method, pathSpec, handler) => {
       routes[`${method} ${pathSpec}`] = isolate(handler);
     },
 
+    // Globale Middlewares: laufen vor jedem Routen-Handler, in der
+    // Reihenfolge ihrer Registrierung, und reichen mit e.next() weiter.
+    routerUse: (...handlers) => {
+      for (const handler of handlers) middlewares.push(isolate(handler));
+    },
+
     cronAdd: (name, expr, handler) => {
       crons[name] = { expr, handler: isolate(handler) };
     },
 
-    // Record-Hooks werden nach Sammlung gesammelt und im Test einzeln mit
-    // einem Ereignis aufgerufen (siehe fireRecordHook).
-    onRecordBeforeCreateRequest: (handler, collection) => {
-      recordHooks.beforeCreate.push({ collection, handler: isolate(handler) });
+    // Record-Request-Hooks, gesammelt nach Sammlung (Tags). Aufgerufen im
+    // Test über fireRecordHook.
+    onRecordCreateRequest: (handler, ...tags) => {
+      recordHooks.createRequest.push({ tags, handler: isolate(handler) });
     },
-    onRecordBeforeUpdateRequest: (handler, collection) => {
-      recordHooks.beforeUpdate.push({ collection, handler: isolate(handler) });
-    },
-    onRecordAfterUpdateRequest: (handler, collection) => {
-      recordHooks.afterUpdate.push({ collection, handler: isolate(handler) });
+    onRecordUpdateRequest: (handler, ...tags) => {
+      recordHooks.updateRequest.push({ tags, handler: isolate(handler) });
     },
 
     // Der echte Versand geht über $http.send an Expo. Hier wird nur die
@@ -1163,8 +1593,45 @@ function loadHook(hookFile, store = {}, opts = {}) {
   const file = path.join(HOOKS_DIR, hookFile);
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
 
+  // Das Anfrage-Ereignis (core.RequestEvent), soweit die Hooks es benutzen.
+  function requestEvent({ body = {}, authRecord = null, admin = null, headers = {} } = {}) {
+    const lowered = {};
+    for (const [k, v] of Object.entries(headers || {})) lowered[k.toLowerCase()] = `${v}`;
+    const e = {
+      auth: admin ? superuserRecord(admin) : authRecord,
+      app,
+      request: {
+        header: { get: (name) => lowered[`${name}`.toLowerCase()] || '' },
+      },
+      requestInfo: () => ({ body: body, headers: lowered, query: {}, auth: e.auth }),
+      hasSuperuserAuth: () => !!(e.auth && e.auth.isSuperuser && e.auth.isSuperuser()),
+      next: () => {
+        throw new Error('Harness: e.next() ohne weiteren Handler');
+      },
+    };
+    return e;
+  }
+
+  // Kette ausführen: Jeder Handler reicht mit e.next() weiter, am Ende steht
+  // `final`. Rückgabe: ob `final` erreicht wurde.
+  function runChain(e, handlers, final) {
+    let reached = false;
+    let i = -1;
+    const step = () => {
+      i += 1;
+      if (i < handlers.length) return handlers[i](e);
+      reached = true;
+      return final();
+    };
+    e.next = step;
+    step();
+    return reached;
+  }
+
   return {
     dao,
+    // Die App, wie die Hooks sie als $app sehen.
+    app,
     // Die Fachlogik-Bibliothek in derselben Umgebung — für Tests der reinen
     // Rechenlogik. Als Objekt zurückgegeben, damit die this-Bindung der
     // Methoden erhalten bleibt (points.js ruft sich intern über this auf).
@@ -1174,6 +1641,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
     push: sandbox.require(`${HOOKS_DIR}/lib/push.js`),
     records,
     routes,
+    middlewares,
     crons,
     pushed,
     // Die an Expo gestellten Anfragen und die Warteschlange der Antworten.
@@ -1185,47 +1653,59 @@ function loadHook(hookFile, store = {}, opts = {}) {
     // Siehe FakeDao.failSaveOn.
     failSaveOn: (collection, predicate, message) => dao.failSaveOn(collection, predicate, message),
 
-    // Route aufrufen. Gibt { status, body } zurück; ein ApiError wird
-    // durchgereicht, damit der Test ihn mit expect(...).toThrow prüfen kann.
-    call(routeKey, { body = {}, authRecord = null, admin = null } = {}) {
+    // Route aufrufen: erst die globalen Middlewares (routerUse), dann der
+    // Handler. Gibt { status, body } zurück; ein ApiError wird durchgereicht,
+    // damit der Test ihn mit expect(...).toThrow prüfen kann.
+    //   authRecord: angemeldetes Konto (e.auth)
+    //   admin:      Superuser (e.auth ist dann sein _superusers-Datensatz)
+    //   headers:    Anfrage-Köpfe, etwa Authorization
+    call(routeKey, { body = {}, authRecord = null, admin = null, headers = {} } = {}) {
       const handler = routes[routeKey];
       if (!handler) throw new Error(`Harness: Route ${routeKey} nicht registriert`);
-
       let result;
-      const c = {
-        __body: body,
-        get: (key) => {
-          if (key === 'authRecord') return authRecord;
-          if (key === 'admin') return admin;
-          return null;
-        },
-        json: (status, payload) => {
-          result = { status, body: payload };
-          return result;
-        },
+      const e = requestEvent({ body, authRecord, admin, headers });
+      e.json = (status, payload) => {
+        result = { status, body: payload };
+        return result;
       };
-      handler(c);
+      runChain(e, middlewares, () => handler(e));
       return result;
     },
 
-    // Record-Hook aufrufen: die fuer die Sammlung registrierten Handler in
-    // Reihenfolge, mit einem nachgebauten Ereignis. In den Update-Phasen ist
-    // der Datensatz — wie in PocketBase — kein neuer mehr.
+    // Nur die Middlewares durchlaufen und das Ereignis zurückgeben — für
+    // Tests, die prüfen, wen eine Middleware als angemeldet einträgt.
+    runMiddlewares({ authRecord = null, admin = null, headers = {} } = {}) {
+      const e = requestEvent({ authRecord, admin, headers });
+      const reached = runChain(e, middlewares, () => {});
+      if (!reached) throw new Error('Harness: eine Middleware hat e.next() nicht aufgerufen');
+      return e;
+    },
+
+    // Record-Request-Hook aufrufen, wie PocketBase bei POST/PATCH auf
+    // /api/collections/<sammlung>/records:
+    //   phase 'createRequest' | 'updateRequest'
+    // Die registrierten Handler der Sammlung laufen als Kette; das letzte
+    // e.next() speichert den Datensatz (ohne weitere Hooks). Danach trägt
+    // `record` den GESPEICHERTEN Stand: Setzt ein Hook ein Feld erst nach
+    // e.next() und speichert nicht selbst, ist die Änderung weg — wie in
+    // PocketBase.
     fireRecordHook(phase, collection, record, { authRecord = null, admin = null } = {}) {
-      if (phase === 'beforeUpdate' || phase === 'afterUpdate') record._new = false;
-      const event = {
-        record,
-        httpContext: {
-          get: (key) => {
-            if (key === 'authRecord') return authRecord;
-            if (key === 'admin') return admin;
-            return null;
-          },
-        },
-      };
-      for (const hook of recordHooks[phase]) {
-        if (hook.collection === collection) hook.handler(event);
+      if (!recordHooks[phase]) throw new Error(`Harness: unbekannte Phase ${phase}`);
+      if (phase === 'updateRequest') record._new = false;
+      const e = requestEvent({ authRecord, admin });
+      e.record = record;
+      e.collection = dao.findCollectionByNameOrId(collection);
+      const handlers = recordHooks[phase]
+        .filter((h) => !h.tags.length || h.tags.includes(collection))
+        .map((h) => h.handler);
+      const reached = runChain(e, handlers, () => dao.saveNoValidate(record));
+      if (!reached) {
+        throw new Error('Harness: e.next() wurde nicht aufgerufen — PocketBase speichert den Datensatz dann nicht');
       }
+      const row = dao._table(collection).find((r) => r.id === record.id);
+      record._data = {};
+      for (const [k, v] of Object.entries(row)) if (k !== 'id') record._data[k] = clone(v);
+      record._new = false;
       return record;
     },
 
@@ -1269,5 +1749,7 @@ module.exports = {
   FakeRecord,
   matchesFilter,
   toPbDate,
+  signJWT,
+  USERS_TOKEN_SECRET,
   HOOKS_DIR,
 };

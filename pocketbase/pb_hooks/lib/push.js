@@ -1,5 +1,10 @@
 // Expo push helper for Plietsche Plünn.
 // Sends to https://exp.host/--/api/v2/push/send and prunes dead tokens.
+//
+// Arbeitet immer über $app und gehört deshalb NICHT in eine Transaktion:
+// Darin würde das Löschen toter Token auf die Schreibverbindung warten, die
+// die Transaktion selbst hält. Der Scan sammelt seine Bestätigung darum und
+// sendet erst nach dem Festschreiben (lib/points.js, withApp).
 
 const EXPO_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -36,7 +41,6 @@ module.exports = {
   // Collect Expo push tokens for the users a message targets, honouring each
   // user's per-category opt-in flag. Returns [{token, userId}].
   collectTokens(segment, role, category) {
-    const dao = $app.dao();
     // Map message category → user opt-in flag.
     const flag =
       category === 'streak' ? 'push_streak_enabled'
@@ -46,7 +50,7 @@ module.exports = {
 
     let users;
     try {
-      users = dao.findRecordsByFilter('users', '1=1', '', 0, 0);
+      users = $app.findRecordsByFilter('users', '1=1', '', 0, 0);
     } catch (_) {
       return [];
     }
@@ -69,7 +73,7 @@ module.exports = {
 
       let devices;
       try {
-        devices = dao.findRecordsByFilter('push_devices', `user = "${u.id}"`, '', 0, 0);
+        devices = $app.findRecordsByFilter('push_devices', 'user = {:user}', '', 0, 0, { user: u.id });
       } catch (_) {
         devices = [];
       }
@@ -93,7 +97,7 @@ module.exports = {
     if (!user.get(flag)) return [];
     let devices;
     try {
-      devices = $app.dao().findRecordsByFilter('push_devices', `user = "${user.id}"`, '', 0, 0);
+      devices = $app.findRecordsByFilter('push_devices', 'user = {:user}', '', 0, 0, { user: user.id });
     } catch (_) {
       return [];
     }
@@ -122,7 +126,6 @@ module.exports = {
   // docs/push-channels.md.
   send(targets, title, body, deepLink, category) {
     if (!targets.length) return { sent: 0, failed: 0 };
-    const dao = $app.dao();
     const ch = channelFor(category);
     const messages = targets.map((t) => ({
       to: t.token,
@@ -154,7 +157,7 @@ module.exports = {
             sent++;
           } else if (ticket && ticket.details && ticket.details.error === 'DeviceNotRegistered') {
             // Prune the dead token.
-            try { dao.deleteRecord(dao.findRecordById('push_devices', batch[j]._deviceId || targets[i + j].deviceId)); } catch (_) {}
+            try { $app.delete($app.findRecordById('push_devices', batch[j]._deviceId || targets[i + j].deviceId)); } catch (_) {}
           }
         }
       } catch (_) {

@@ -55,7 +55,14 @@ VERSION_PFAD = '/api/pp/version'
 # welche Migration das belegt.
 #
 # Die Sollwerte sind am 14.09.2026 unangemeldet gegen die laufende Instanz
-# gemessen, nicht geschaetzt.
+# gemessen, nicht geschaetzt. Seit dem Upgrade auf PocketBase 0.40 prueft
+# tests/integration/migrations.test.js dieselben Werte gegen das echte
+# 0.40.4-Binary (26.09.2026: alle unveraendert).
+#
+# Die Migrationsnamen in der Spalte „belegt" sind die der urspruenglichen
+# 0.22-Migrationen (heute unter pocketbase/pb_migrations_022/). Unter 0.40
+# legt der Sammlungs-Snapshot 1790500000_collections_snapshot.js dasselbe an;
+# die Namen bleiben stehen, weil sie sagen, WARUM die Regel so ist.
 PRUEFUNGEN = (
     # listRule = null → die Sammlung existiert und ist ueber die API fuer
     # niemanden lesbar. Hier ist 403 die richtige Erwartung, und sie ist
@@ -74,6 +81,14 @@ PRUEFUNGEN = (
      '1782710000_tighten_read_rules — die Leseregel auf items greift'),
     ('/api/collections/action_counts/records', 200, 0,
      '1782710000_tighten_read_rules — die Besitzpruefung auf action_counts greift'),
+
+    # Laeuft PocketBase 0.40? Das Upgrade aendert an den Regeln der eigenen
+    # Sammlungen nichts — die Zeilen darueber waeren auch mit dem alten
+    # Abbild gruen. Die Superuser sind seit 0.23 eine eigene Sammlung,
+    # unangemeldet geschlossen (403). Unter 0.22 gibt es sie nicht (404).
+    ('/api/collections/_superusers/records', 403, None,
+     'PocketBase 0.40 laeuft — die Sammlung _superusers existiert und ist '
+     'geschlossen (unter 0.22 gibt es sie nicht)'),
 
     # Zum Schluss: laeuft die Instanz ueberhaupt. Alleine wertlos, zusammen
     # mit den Zeilen darueber die Abgrenzung „erreichbar, aber falsch" gegen

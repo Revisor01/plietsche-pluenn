@@ -10,7 +10,10 @@ const POINTS = {
   selfEntryBonus: 10, // extra per self-entered (approved) item, on top of bringPerItem
 };
 
-const DEFAULT_MAX_ITEMS_TAKE = 7; // internal rule: max items taken per visit
+// Höchstzahl mitgenommener Teile pro Besuch (= pro Tag in der Ladenzeitzone,
+// über alle Scans), wenn store.max_items_take nicht gepflegt ist. Mit
+// store.items_take_unlimited gibt es gar keine Grenze.
+const DEFAULT_MAX_ITEMS_TAKE = 7;
 
 // Rückfall-Radius des Geofence in Metern, wenn auf dem store-Datensatz nichts
 // gepflegt ist. Wie die Punktwerte gehört auch dieser Standard an eine Stelle.
@@ -62,6 +65,31 @@ module.exports = {
   DEFAULT_GEOFENCE_RADIUS_M,
   DEFAULT_STORE_TZ,
 
+  // ── Über welche App gelesen und geschrieben wird ─────────────────
+  //
+  // Standard ist $app. Innerhalb von $app.runInTransaction((txApp) => …) muss
+  // ALLES über txApp laufen: PocketBase hat für Schreibzugriffe genau eine
+  // Verbindung, und die hält die Transaktion. Ein $app.save() darin wartet auf
+  // sich selbst; ein $app.find…() liest an der Transaktion vorbei den alten
+  // Stand (awardBadgesAndCountBonus sähe die eben gebuchten Punkte nicht).
+  //
+  // withApp(txApp) gibt deshalb eine Sicht auf diese Bibliothek zurück, deren
+  // Methoden über txApp gehen — auch untereinander, denn sie rufen sich über
+  // `this` auf. `afterCommit` sammelt, was erst nach dem Festschreiben laufen
+  // darf: die Push-Bestätigung. Eine Nachricht „10 Punkte gutgeschrieben" zu
+  // einer Buchung, die danach zurückgerollt wird, wäre falsch — und der
+  // HTTP-Aufruf an Expo hielte die Schreibverbindung bis zu 30 s fest.
+  app() {
+    return this._app || $app;
+  },
+
+  withApp(app, afterCommit) {
+    const bound = Object.create(this);
+    bound._app = app;
+    bound._afterCommit = afterCommit || null;
+    return bound;
+  },
+
   // Zeitzone des Ladens. Konfigurierbar auf dem store-Datensatz, damit ein
   // Umzug oder ein zweiter Standort keine Codeänderung braucht.
   //
@@ -74,7 +102,7 @@ module.exports = {
     if (tzCache.value && now - tzCache.at < TZ_CACHE_MS) return tzCache.value;
     let tz = DEFAULT_STORE_TZ;
     try {
-      const s = $app.dao().findFirstRecordByFilter('store', '1=1');
+      const s = this.app().findFirstRecordByFilter('store', '1=1');
       tz = (s ? `${s.get('timezone') || ''}`.trim() : '') || DEFAULT_STORE_TZ;
     } catch (_) {
       tz = DEFAULT_STORE_TZ;
@@ -127,7 +155,7 @@ module.exports = {
   config() {
     let s;
     try {
-      s = $app.dao().findFirstRecordByFilter('store', '1=1');
+      s = this.app().findFirstRecordByFilter('store', '1=1');
     } catch (_) {
       s = null;
     }
@@ -140,7 +168,103 @@ module.exports = {
       takePerItem: val('pts_take', POINTS.takePerItem),
       bringPerItem: val('pts_bring', POINTS.bringPerItem),
       maxItemsTake: val('max_items_take', DEFAULT_MAX_ITEMS_TAKE),
+      // Schalter „Unbegrenzt" (Migration 1790500300). Fehlt das Feld, ist es aus.
+      itemsTakeUnlimited: !!(s && s.get('items_take_unlimited') === true),
     };
+  },
+
+  // ── Höchstzahl mitgenommener Teile pro Tag ───────────────────────
+  //
+  // Die Grenze gilt pro Besuch, und ein Besuch ist ein Tag in der
+  // Ladenzeitzone — dieselbe Grenze wie beim Check-in-Bonus. Gezählt wird
+  // ALLES, was die Person an diesem Tag mitgenommen hat:
+  //
+  //   - Teile per Zähler: visits.items_count des Tagesbesuchs. Beim ersten
+  //     Tür-Scan setzt doCheckin den Wert, jeder weitere Tür-Scan am selben
+  //     Tag zählt ihn hoch (addItemsToTodaysVisit). Bis 26.09.2026 blieb er
+  //     beim zweiten Scan stehen — und die App bucht den Zähler immer mit
+  //     einem zweiten Scan.
+  //   - Teile per QR-Code: ein points_log-Eintrag mit kind = "scan" je Teil.
+  //     Das Teil selbst trägt keinen Personenbezug (Datenschutz), der
+  //     Punkteverlauf schon — und awardPoints schreibt ihn auch bei 0 Punkten.
+  //
+  // Beide Quellen schreibt nur der Server (Regeln null für Nutzer:innen), und
+  // beide sind Zahlen bzw. Zeilen — anders als die Beschriftung „N Teile
+  // mitgenommen" im Punkteverlauf, die man zerlegen müsste und die bei einem
+  // Aktionsfaktor, der die Punkte auf 0 rundet, gar nicht geschrieben wird.
+  //
+  // Aufruf innerhalb der Scan-Transaktion: Zwei gleichzeitige Scans laufen
+  // nacheinander, der zweite sieht die Buchung des ersten.
+  itemsTakenToday(userId, now) {
+    const start = this.storeDayStart(now).toISOString().replace('T', ' ');
+    const app = this.app();
+    let total = 0;
+    try {
+      const visits = app.findRecordsByFilter(
+        'visits',
+        'user = {:user} && checkin_at >= {:start}',
+        '',
+        0,
+        0,
+        { user: userId, start }
+      );
+      for (const v of visits) total += v.get('items_count') || 0;
+    } catch (_) {}
+    try {
+      const scans = app.findRecordsByFilter(
+        'points_log',
+        'user = {:user} && kind = "scan" && created >= {:start}',
+        '',
+        0,
+        0,
+        { user: userId, start }
+      );
+      total += scans.length;
+    } catch (_) {}
+    return total;
+  },
+
+  // Wirft 400, wenn `adding` weitere Teile die Tagesgrenze überschreiten.
+  //
+  // Der Satz „Höchstens N Teile pro Besuch." ist der, den ausgelieferte Apps
+  // kennen und anzeigen (mobile/lib/errors.ts reicht deutsche Meldungen
+  // durch); er bleibt vorn stehen. Ist heute schon etwas mitgenommen, sagt
+  // der Nachsatz, wie viel noch geht — sonst wirkte „Höchstens 7" bei einem
+  // Scan von 3 Teilen unverständlich.
+  assertItemsTakeAllowed(userId, now, adding, cfg) {
+    cfg = cfg || this.config();
+    if (cfg.itemsTakeUnlimited) return;
+    const max = cfg.maxItemsTake;
+    const taken = this.itemsTakenToday(userId, now);
+    if (taken + adding <= max) return;
+    let msg = `Höchstens ${max} Teile pro Besuch.`;
+    if (taken > 0) {
+      const left = Math.max(0, max - taken);
+      msg +=
+        left === 0
+          ? ' Für heute ist die Grenze erreicht.'
+          : ` Heute ${left === 1 ? 'geht' : 'gehen'} noch ${left} ${left === 1 ? 'Teil' : 'Teile'}.`;
+    }
+    throw new ApiError(400, msg);
+  },
+
+  // Zähler-Teile eines weiteren Tür-Scans am selben Tag in den Tagesbesuch
+  // schreiben, damit itemsTakenToday sie beim nächsten Scan mitzählt.
+  addItemsToTodaysVisit(userId, now, n) {
+    if (!n || n <= 0) return;
+    const start = this.storeDayStart(now).toISOString().replace('T', ' ');
+    const app = this.app();
+    let visit;
+    try {
+      visit = app.findFirstRecordByFilter('visits', 'user = {:user} && checkin_at >= {:start}', {
+        user: userId,
+        start,
+      });
+    } catch (_) {
+      return;
+    }
+    visit.set('items_count', (visit.get('items_count') || 0) + n);
+    app.saveNoValidate(visit);
   },
 
   // Per-type multiplier for an active campaign. type ∈ 'visit' | 'take' | 'bring'.
@@ -179,9 +303,14 @@ module.exports = {
     const iso = now.toISOString().replace('T', ' ');
     let rows;
     try {
-      rows = $app
-        .dao()
-        .findRecordsByFilter('campaigns', `starts_at <= "${iso}" && ends_at >= "${iso}"`, '-multiplier', 0, 0);
+      rows = this.app().findRecordsByFilter(
+        'campaigns',
+        'starts_at <= {:now} && ends_at >= {:now}',
+        '-multiplier',
+        0,
+        0,
+        { now: iso }
+      );
     } catch (_) {
       return null;
     }
@@ -219,15 +348,15 @@ module.exports = {
   // keeps points_total self-healing: it can never drift from points_log, even
   // across multiple awardPoints() calls in one request or a stale user object.
   awardPoints(user, points, kind, label, refId) {
-    const dao = $app.dao();
-    const col = dao.findCollectionByNameOrId('points_log');
+    const app = this.app();
+    const col = app.findCollectionByNameOrId('points_log');
     const rec = new Record(col);
     rec.set('user', user.id);
     rec.set('points', points);
     rec.set('kind', kind);
     rec.set('label', label || '');
     if (refId) rec.set('ref_id', refId);
-    dao.saveRecord(rec);
+    app.saveNoValidate(rec);
 
     this.recomputeTotal(user);
   },
@@ -235,16 +364,16 @@ module.exports = {
   // Recompute points_total as the sum of all points_log rows for this user.
   // Mutates the passed user object in place and persists it.
   recomputeTotal(user) {
-    const dao = $app.dao();
+    const app = this.app();
     let total = 0;
     try {
-      const rows = dao.findRecordsByFilter('points_log', `user = "${user.id}"`);
+      const rows = app.findRecordsByFilter('points_log', 'user = {:user}', '', 0, 0, { user: user.id });
       for (const r of rows) total += r.get('points') || 0;
     } catch (_) {
       total = user.get('points_total') || 0;
     }
     user.set('points_total', total);
-    dao.saveRecord(user);
+    app.saveNoValidate(user);
   },
 
   // Has the user already created a visit today? (no double check-in bonus)
@@ -253,9 +382,14 @@ module.exports = {
     const start = this.storeDayStart(now);
     const startIso = start.toISOString().replace('T', ' ');
     try {
-      const rows = $app
-        .dao()
-        .findRecordsByFilter('visits', `user = "${userId}" && checkin_at >= "${startIso}"`, '-checkin_at', 1);
+      const rows = this.app().findRecordsByFilter(
+        'visits',
+        'user = {:user} && checkin_at >= {:start}',
+        '-checkin_at',
+        1,
+        0,
+        { user: userId, start: startIso }
+      );
       return rows.length > 0;
     } catch (_) {
       return false;
@@ -275,19 +409,22 @@ module.exports = {
     if (this.campaignMult(camp, type) <= 1) return; // kein Bonus → keine Teilnahme
     const n = Math.max(0, parseInt(amount == null ? 1 : amount, 10));
     if (!n) return;
-    const dao = $app.dao();
+    const app = this.app();
     try {
       let cnt;
       try {
-        cnt = dao.findFirstRecordByFilter('action_counts', `user = "${user.id}" && campaign = "${camp.id}"`);
+        cnt = app.findFirstRecordByFilter('action_counts', 'user = {:user} && campaign = {:camp}', {
+          user: user.id,
+          camp: camp.id,
+        });
       } catch (_) {
-        cnt = new Record(dao.findCollectionByNameOrId('action_counts'));
+        cnt = new Record(app.findCollectionByNameOrId('action_counts'));
         cnt.set('user', user.id);
         cnt.set('campaign', camp.id);
         cnt.set('count', 0);
       }
       cnt.set('count', (cnt.get('count') || 0) + n);
-      dao.saveRecord(cnt);
+      app.saveNoValidate(cnt);
     } catch (_) {}
   },
 
@@ -301,9 +438,10 @@ module.exports = {
     const camp = this.findActiveCampaign(now, user);
     const multVisit = this.campaignMult(camp, 'visit');
     const multTake = this.campaignMult(camp, 'take');
-    // Hard cap: never award / record more than the configured max items taken.
+    // Hard cap: never award / record more than the configured max items taken
+    // (die Tagessumme prüft der Aufrufer vorher mit assertItemsTakeAllowed).
     const rawCount = Math.max(0, parseInt(opts.itemsCount || 0, 10));
-    const itemsCount = Math.min(rawCount, cfg.maxItemsTake);
+    const itemsCount = cfg.itemsTakeUnlimited ? rawCount : Math.min(rawCount, cfg.maxItemsTake);
 
     // Race guard: another request may have created today's visit between the
     // caller's check and here. If so, only count extra stepper items, no bonus.
@@ -314,10 +452,11 @@ module.exports = {
       }
       // Der Besuch zählt hier nicht noch einmal — die Teile schon.
       if (camp && itemsCount > 0) this.bumpActionCount(user, camp, 'take', itemsCount);
+      this.addItemsToTodaysVisit(user.id, now, itemsCount);
       return { points: stepperOnly, visitId: null, deduped: true };
     }
 
-    const visitsCol = $app.dao().findCollectionByNameOrId('visits');
+    const visitsCol = this.app().findCollectionByNameOrId('visits');
     const visit = new Record(visitsCol);
     visit.set('user', user.id);
     visit.set('checkin_at', now.toISOString());
@@ -332,7 +471,7 @@ module.exports = {
     const checkinPts = Math.round(cfg.checkin * multVisit);
     const stepperPts = Math.round(itemsCount * cfg.takePerItem * multTake);
     visit.set('points_awarded', checkinPts + stepperPts);
-    $app.dao().saveRecord(visit);
+    this.app().saveNoValidate(visit);
 
     this.awardPoints(user, checkinPts, 'checkin', 'Check-In im Laden', visit.id);
     if (stepperPts > 0) {
@@ -354,6 +493,13 @@ module.exports = {
   // (2+ weeks — "1 week in a row" isn't a streak worth celebrating).
   // Never throws: a failed push must not roll back a valid check-in.
   pushCheckinConfirmation(user, points, itemsCount) {
+    // In einer Transaktion: erst nach dem Festschreiben senden (siehe withApp).
+    // Dann über die ungebundene Bibliothek, also wieder über $app.
+    if (this._afterCommit) {
+      const base = module.exports;
+      this._afterCommit.push(() => base.pushCheckinConfirmation(user, points, itemsCount));
+      return;
+    }
     try {
       if (points <= 0) return;
       const push = require(`${__hooks}/lib/push.js`);
@@ -396,9 +542,9 @@ module.exports = {
   streakFromVisits(user) {
     let visits;
     try {
-      visits = $app.dao().findRecordsByFilter(
-        'visits', `user = "${user.id}"`, '-checkin_at', 0, 0
-      );
+      visits = this.app().findRecordsByFilter('visits', 'user = {:user}', '-checkin_at', 0, 0, {
+        user: user.id,
+      });
     } catch (_) {
       return 0;
     }
@@ -475,7 +621,7 @@ module.exports = {
       }
     }
     user.set('streak_last_visit', visitDate.toISOString());
-    $app.dao().saveRecord(user);
+    this.app().saveNoValidate(user);
   },
 
   // Wie viele Stufen es überhaupt gibt — so viele Ränge unter „Punkte & Ränge"
@@ -484,7 +630,7 @@ module.exports = {
   // dem Entfernen eines Rangs nicht mehr anzeigt.
   tierSlotCount() {
     try {
-      const s = $app.dao().findFirstRecordByFilter('store', '1=1');
+      const s = this.app().findFirstRecordByFilter('store', '1=1');
       const t = this.asArray(s ? s.get('tiers_json') : null);
       // Nur ein echtes Array zaehlt. Ohne Raenge bleibt es bei fuenf Stufen —
       // eine leere Liste ist „nichts gepflegt", nicht „keine Stufen".
@@ -559,27 +705,30 @@ module.exports = {
   // einer eigenen Umgebung aus, oben in der Hook-Datei deklarierte Helfer
   // sind darin nicht sichtbar ("ReferenceError: … is not defined").
   awardBadgesAndCountBonus(user, userId) {
-    const vorher = $app.dao().findRecordById('users', userId).get('points_total') || 0;
+    const vorher = this.app().findRecordById('users', userId).get('points_total') || 0;
     this.checkBadges(user);
-    const nachher = $app.dao().findRecordById('users', userId).get('points_total') || 0;
+    const nachher = this.app().findRecordById('users', userId).get('points_total') || 0;
     const diff = nachher - vorher;
     return diff > 0 ? diff : 0;
   },
 
   checkBadges(user) {
-    const dao = $app.dao();
+    const app = this.app();
     let badges;
     try {
-      badges = dao.findRecordsByFilter('badges', '1=1');
+      badges = app.findRecordsByFilter('badges', '1=1', '', 0, 0);
     } catch (_) {
       return;
     }
     for (const badge of badges) {
       let ub;
       try {
-        ub = dao.findFirstRecordByFilter('user_badges', `user = "${user.id}" && badge = "${badge.id}"`);
+        ub = app.findFirstRecordByFilter('user_badges', 'user = {:user} && badge = {:badge}', {
+          user: user.id,
+          badge: badge.id,
+        });
       } catch (_) {
-        const col = dao.findCollectionByNameOrId('user_badges');
+        const col = app.findCollectionByNameOrId('user_badges');
         ub = new Record(col);
         ub.set('user', user.id);
         ub.set('badge', badge.id);
@@ -606,7 +755,7 @@ module.exports = {
           ub.set('current_tier', 'gold');
           ub.set('unlocked_at', new Date().toISOString());
         }
-        dao.saveRecord(ub);
+        app.saveNoValidate(ub);
         continue;
       }
 
@@ -627,20 +776,23 @@ module.exports = {
         // First unlock timestamp = when bronze (or first tier) was reached.
         if (`${ub.get('unlocked_at')}`.trim() === '') ub.set('unlocked_at', new Date().toISOString());
       }
-      dao.saveRecord(ub);
+      app.saveNoValidate(ub);
     }
   },
 
   // Explicitly grant a single badge to a user (idempotent). Used by the
   // years-active year-end routine and action-participation grants.
   grantBadge(user, badge) {
-    const dao = $app.dao();
+    const app = this.app();
     let ub;
     try {
-      ub = dao.findFirstRecordByFilter('user_badges', `user = "${user.id}" && badge = "${badge.id}"`);
+      ub = app.findFirstRecordByFilter('user_badges', 'user = {:user} && badge = {:badge}', {
+        user: user.id,
+        badge: badge.id,
+      });
       if (`${ub.get('current_tier') || 'none'}` !== 'none') return false; // already granted
     } catch (_) {
-      const col = dao.findCollectionByNameOrId('user_badges');
+      const col = app.findCollectionByNameOrId('user_badges');
       ub = new Record(col);
       ub.set('user', user.id);
       ub.set('badge', badge.id);
@@ -648,25 +800,26 @@ module.exports = {
     ub.set('progress', 1);
     ub.set('current_tier', 'gold');
     ub.set('unlocked_at', new Date().toISOString());
-    dao.saveRecord(ub);
+    app.saveNoValidate(ub);
     const bonus = badge.get('points_reward') || 0;
     if (bonus > 0) this.awardPoints(user, bonus, 'badge', `${badge.get('name')}`, badge.id);
     return true;
   },
 
   computeProgress(user, badge) {
-    const dao = $app.dao();
+    const app = this.app();
     const type = badge.get('trigger_type');
+    const own = { user: user.id };
     try {
       if (type === 'visits') {
-        return dao.findRecordsByFilter('visits', `user = "${user.id}"`, '', 0, 0).length;
+        return app.findRecordsByFilter('visits', 'user = {:user}', '', 0, 0, own).length;
       }
       if (type === 'scans') {
-        return dao.findRecordsByFilter('points_log', `user = "${user.id}" && kind = "scan"`, '', 0, 0).length;
+        return app.findRecordsByFilter('points_log', 'user = {:user} && kind = "scan"', '', 0, 0, own).length;
       }
       if (type === 'items_brought') {
         // Count approved brought items (one bring-points_log row per item).
-        return dao.findRecordsByFilter('points_log', `user = "${user.id}" && kind = "bring"`, '', 0, 0).length;
+        return app.findRecordsByFilter('points_log', 'user = {:user} && kind = "bring"', '', 0, 0, own).length;
       }
       if (type === 'streak_weeks') {
         // Derived from actual visits, not from users.streak_weeks: that field is
@@ -679,7 +832,10 @@ module.exports = {
         const campId = `${badge.get('campaign') || ''}`.trim();
         if (!campId) return 0;
         try {
-          const rec = dao.findFirstRecordByFilter('action_counts', `user = "${user.id}" && campaign = "${campId}"`);
+          const rec = app.findFirstRecordByFilter('action_counts', 'user = {:user} && campaign = {:camp}', {
+            user: user.id,
+            camp: campId,
+          });
           return rec.get('count') || 0;
         } catch (_) {
           return 0;

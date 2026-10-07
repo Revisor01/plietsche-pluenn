@@ -39,6 +39,40 @@ jobs:
       - name: Tests
         run: npm test
 
+  # Dieselben Hooks und Migrationen, aber gegen das echte PocketBase-Binary
+  # statt gegen den Harness. Fängt, was der Harness nicht sehen kann: eine
+  # Migration, die unter der gepinnten Version nicht durchläuft, eine
+  # Leseregel, die anders greift, einen Filter der App, der plötzlich andere
+  # Datensätze liefert, eine Antwortform, die sich verschoben hat. Genau das
+  # hängt an einem Versionssprung wie 0.22 → 0.40.
+  #
+  # Das Binary wird von GitHub-Releases geladen und per SHA256 geprüft
+  # (tests/integration/pocketbase-binary.mjs); der Cache spart den Download.
+  integration:
+    name: Echte Laufzeit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # Vor dem Cache: npm ci leert node_modules/ und damit auch den Cache-Ordner.
+      - run: npm ci
+
+      # Der Schlüssel hängt an der Datei mit Version und Prüfsummen — ändert
+      # sich die gepinnte Version, wird neu geladen.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.cache/pocketbase
+          key: pocketbase-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tests/integration/pocketbase-binary.mjs') }}
+
+      - name: Integrationstests
+        run: npm run test:integration
+
   app:
     name: App-Typprüfung
     runs-on: ubuntu-latest

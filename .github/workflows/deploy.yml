@@ -57,7 +57,8 @@ jobs:
   #      Feinheit, die still das Falsche ausliefert.
   #
   # Dass die Backend-Tests damit zweimal laufen (hier und in tests.yml), ist
-  # der Preis. Sie brauchen unter einer Minute.
+  # der Preis. Sie brauchen unter einer Minute, die Integrationstests gegen
+  # das echte Binary (lokal gemessen) etwa 10 bis 30 Sekunden.
   tests:
     name: Backend-Hooks
     runs-on: ubuntu-latest
@@ -74,6 +75,19 @@ jobs:
 
       - name: Tests
         run: npm test
+
+      # Dieselben Dateien gegen das echte PocketBase-Binary in der Version des
+      # Abbilds. Der Harness prüft die Fachlogik, nicht ob PocketBase unsere
+      # Migrationen und Hooks überhaupt annimmt — beim Sprung auf 0.40 wäre
+      # genau das die Stelle, an der ein Deploy die Instanz nicht mehr
+      # hochkommen lässt.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.cache/pocketbase
+          key: pocketbase-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tests/integration/pocketbase-binary.mjs') }}
+
+      - name: Integrationstests (echte Laufzeit)
+        run: npm run test:integration
 
   deploy:
     name: Abbild bauen und ausliefern
@@ -116,9 +130,17 @@ jobs:
           # Die Migrationen einzeln aufzuzählen hieße, diese Liste bei jeder
           # neuen Migration nachzuziehen — sie würde vergessen. Geprüft wird
           # deshalb die Anzahl gegen eine Untergrenze, wie bei den Seiten der
-          # Hennstedt-Seite. Beim Schreiben waren es 19.
+          # Hennstedt-Seite.
+          #
+          # Seit PocketBase 0.40 ersetzt EIN Sammlungs-Snapshot die 20 alten
+          # Migrationen (die liegen in pb_migrations_022/ und kommen nicht ins
+          # Abbild). Der Snapshot ist die eine Datei, ohne die eine frische
+          # Instanz kein Schema hätte — er wird deshalb namentlich geprüft,
+          # der Rest über die Anzahl. Beim Schreiben waren es 3.
+          [ -s pocketbase/pb_migrations/1790500000_collections_snapshot.js ] \
+            || { echo "Der Sammlungs-Snapshot fehlt"; exit 1; }
           n=$(find pocketbase/pb_migrations -name '*.js' -type f | wc -l)
-          [ "$n" -ge 19 ] || { echo "Nur $n Migrationen gefunden – erwartet werden mindestens 19"; exit 1; }
+          [ "$n" -ge 3 ] || { echo "Nur $n Migrationen gefunden – erwartet werden mindestens 3"; exit 1; }
           echo "$n Migrationen und alle Hook-Dateien sind da"
 
       - name: Bei GHCR anmelden
