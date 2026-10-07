@@ -26,14 +26,14 @@
 // Er wird dadurch NICHT verlängert: auth-refresh gibt unter 0.40 einen Token
 // ohne "refreshable"-Angabe unverändert zurück (gemessen: Antwort 200 mit
 // demselben alten Token). Die App ruft auth-refresh ohnehin nicht auf — wie
-// unter 0.22 gilt ein Token 30 Tage ab der Anmeldung; danach meldet
+// unter 0.22 gilt ein Token 14 Tage ab der Anmeldung; danach meldet
 // authStore.isValid ihn als abgelaufen, und die App führt zur Anmeldung, die
 // einen Token im 0.40-Format ausstellt.
 //
-// ENTFERNEN: Die Anmeldedauer (users.authToken.duration) ist 30 Tage. 30 Tage
-// nach dem Upgrade in Produktion ist jeder alte Token abgelaufen; dann kann
-// diese Datei ersatzlos weg (Datum des Upgrades + 30 Tage, in docs/deploy.md
-// vermerken).
+// ENTFERNEN: Die Anmeldedauer in Produktion (users.authToken.duration) ist
+// 14 Tage (1209600 s, gemessen nach dem Upgrade am 07.10.2026 und ebenso in
+// der Sicherung davor). Das Upgrade lief am 07.10.2026; ab dem 21.10.2026 ist
+// jeder alte Token abgelaufen, und diese Datei kann ersatzlos weg.
 //
 // Alles im Handler: PocketBase führt ihn in einer eigenen Umgebung aus.
 
