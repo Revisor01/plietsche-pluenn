@@ -387,6 +387,24 @@ Geheimnis ergibt genau die Signatur des alten Tokens). Die Middleware
 (angenommen, falsche Signatur 401, abgelaufen 401). Ohne diese Datei wären
 alle Handys nach dem Upgrade stillschweigend abgemeldet.
 
+> **Ausgeführt am 07.10.2026** (Commit `829d4bc`, ein Mittwoch, Laden zu).
+> Vorher: Sicherung `vor_040_20261007.zip` über die API, zusätzlich lokal
+> abgelegt; Schema der Produktion feldweise gegen den Snapshot verglichen —
+> einzige Abweichung die drei `users`-Indizes, die 0.40 ausdrücklich anlegt.
+> Nachher gemessen: `/api/pp/version` meldet `829d4bc`, `_superusers` 403,
+> Superuser-Anmeldung mit dem bisherigen Admin-Konto, SMTP an, Vorlagen
+> deutsch, `authAlert` aus, Datenbestand wie in der Sicherung (27 Teile),
+> Anmeldung und Punkte in der App, Türgeheimnis für Besucher nicht lesbar.
+>
+> **Anmeldedauer 14 Tage, nicht 30.** Die Produktion stand schon vor dem
+> Upgrade auf 1209600 s (aus der Sicherung gelesen); die Annahme „30 Tage"
+> oben stammte aus der Testkopie. Das Upgrade hat den Wert übernommen.
+> Damit ist ab dem **21.10.2026** jeder alte Token abgelaufen, und
+> `pb_hooks/compat.pb.js` kann entfernt werden.
+>
+> Noch offen: die Zeitzone der nächtlichen Aufgaben im Container
+> (siehe „Offene Punkte" unten).
+
 ### Zurückrollen
 
 **Nur per Sicherung.** Das Abbild von vorher auf der gehobenen Datenbank

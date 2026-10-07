@@ -80,7 +80,8 @@ describe('Migrationen auf leerem pb_data', () => {
     expect(res.body.authAlert.enabled).toBe(false);
     // Die Bestätigungsmail verspricht eine Woche.
     expect(res.body.verificationToken.duration).toBe(604800);
-    // Anmeldung 30 Tage, wie in Produktion (0.40 ab Werk: 5 Tage).
+    // Anmeldung 30 Tage auf einer frischen Installation (0.40 ab Werk: 5 Tage).
+    // Produktion steht auf 14 Tagen; die Migration lässt einen gepflegten Wert stehen.
     expect(res.body.authToken.duration).toBe(2592000);
   });
 

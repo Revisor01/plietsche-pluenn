@@ -25,8 +25,9 @@
 //   (Gemessen 26.09.2026: frisch 86400, nach Upgrade von 0.22 604800.)
 //
 // Anmeldung 30 Tage gültig (Sammlung `users`)
-//   Produktion meldet 30 Tage an (2592000 s, unter 0.22 eingestellt und vom
-//   Upgrade übernommen). Eine frische 0.40-Installation setzt 5 Tage (432000 s);
+//   Gedacht war: Produktion meldet 30 Tage an. Gemessen am 07.10.2026 sind es
+//   dort 14 Tage (1209600 s, schon vor dem Upgrade so und von ihm übernommen);
+//   die Bedingung unten hat den Wert richtig stehen lassen. Eine frische 0.40-Installation setzt 5 Tage (432000 s);
 //   die App erneuert ihren Token nicht, eine Testinstanz verhielte sich dann
 //   anders als Produktion. Gleiche Bedingung wie oben: nur, wenn noch die
 //   0.40-Vorgabe dasteht. (Gemessen 26.09.2026: frisch 432000.)

@@ -470,7 +470,7 @@ components:
         PocketBase 0.22 ausgestellt hat (Typ `authRecord`), werden bis zu
         ihrem Ablauf weiter angenommen — richtig signiert, nicht abgelaufen,
         Konto in `users`. Das gilt für alle Routen, auch die CRUD-Routen.
-        Spätestens 30 Tage nach dem Upgrade ist jeder alte Token abgelaufen;
+        Spätestens 14 Tage nach dem Upgrade (07.10.2026) ist jeder alte Token abgelaufen;
         danach entfällt diese Übergangsregel.
 
   schemas:
