@@ -381,11 +381,12 @@ allein der Typ im Token (`authRecord` statt `auth`) — der Signaturschlüssel
 (tokenKey des Kontos + Anmeldegeheimnis) wandert beim Upgrade unverändert
 mit, **sofern `PB_ENCRYPTION_KEY` gesetzt ist**; nur dann kann das Upgrade die
 alten Einstellungen lesen (nachgerechnet: HMAC mit dem übernommenen
-Geheimnis ergibt genau die Signatur des alten Tokens). Die Middleware
-`pb_hooks/compat.pb.js` nimmt die alten Token für den Übergang an;
-`tests/integration/alte-token.test.js` prüft das gegen das echte Binary
-(angenommen, falsche Signatur 401, abgelaufen 401). Ohne diese Datei wären
-alle Handys nach dem Upgrade stillschweigend abgemeldet.
+Geheimnis ergibt genau die Signatur des alten Tokens). Eine Middleware
+(`pb_hooks/compat.pb.js`) hat die alten Token für den Übergang angenommen.
+**Entfernt am 07.10.2026**, noch am Tag des Upgrades: Produktion hatte nur
+Testkonten, eine Übergangszeit war nicht nötig. Seitdem prüft
+`tests/integration/alte-token.test.js` gegen das echte Binary, dass ein
+alter Token nichts mehr öffnet und eine frische Anmeldung schon.
 
 > **Ausgeführt am 07.10.2026** (Commit `829d4bc`, ein Mittwoch, Laden zu).
 > Vorher: Sicherung `vor_040_20261007.zip` über die API, zusätzlich lokal
@@ -399,8 +400,8 @@ alle Handys nach dem Upgrade stillschweigend abgemeldet.
 > **Anmeldedauer 14 Tage, nicht 30.** Die Produktion stand schon vor dem
 > Upgrade auf 1209600 s (aus der Sicherung gelesen); die Annahme „30 Tage"
 > oben stammte aus der Testkopie. Das Upgrade hat den Wert übernommen.
-> Damit ist ab dem **21.10.2026** jeder alte Token abgelaufen, und
-> `pb_hooks/compat.pb.js` kann entfernt werden.
+> Die Übergangsregel für alte Token (`compat.pb.js`) ist noch am selben Tag
+> entfernt worden, weil es nur Testkonten gab.
 >
 > Zeitzone im Container nachgemessen (siehe „Offene Punkte" unten).
 
