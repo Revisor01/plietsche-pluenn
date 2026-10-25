@@ -5,222 +5,188 @@
 <h1 align="center">Plietsche Plünn</h1>
 
 <p align="center">
-  Die App für den Kleidertausch-Laden.<br>
-  Vorbeikommen, mitnehmen, bringen — und dafür Punkte sammeln.
+  Die App für den Kleidertausch-Laden —<br>
+  vorbeikommen, mitnehmen, bringen und dafür Punkte sammeln.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iOS%2016.4%2B%20%C2%B7%20Android-blue?logo=apple" alt="Platform">
-  <img src="https://img.shields.io/badge/Version-1.0.0-green" alt="Version">
+  <img src="https://img.shields.io/badge/Plattform-iOS%2016.4%2B%20%C2%B7%20Android%207%2B-blue" alt="Plattform">
+  <img src="https://img.shields.io/itunes/v/6784690448?label=App%20Store&color=green" alt="Version im App Store">
   <img src="https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo" alt="Expo">
-  <img src="https://img.shields.io/badge/TypeScript-6.0-3178c6?logo=typescript" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Backend-PocketBase%200.40-b8dbe4" alt="PocketBase">
-  <img src="https://img.shields.io/badge/Tracking-Keins-brightgreen" alt="Kein Tracking">
+  <img src="https://img.shields.io/github/license/Revisor01/plietsche-pluenn" alt="Lizenz">
 </p>
-
----
 
 ## Worum es geht
 
-Ein Kleidertausch-Laden lebt davon, dass Menschen wiederkommen — und dass sie nicht nur
-nehmen, sondern auch bringen. Genau das macht diese App sichtbar: Jeder Besuch, jedes
-mitgenommene und jedes gebrachte Teil zählt Punkte. Aus Punkten werden Ränge, aus
-Regelmäßigkeit werden Abzeichen.
+Ein Kleidertausch-Laden lebt davon, dass Menschen wiederkommen — und dass sie
+nicht nur nehmen, sondern auch bringen. Die App macht genau das sichtbar: Jeder
+Besuch, jedes mitgenommene und jedes gebrachte Teil zählt Punkte. Aus Punkten
+werden Ränge, aus Regelmäßigkeit werden Abzeichen.
 
-Das Team verwaltet den Bestand, prüft eingereichte Teile und kann Aktionen fahren, in
-denen einzelne Handlungen mehr zählen. Alles läuft über ein selbst gehostetes Backend.
+Das Team verwaltet den Bestand, prüft eingereichte Teile und fährt Aktionen, in
+denen einzelne Handlungen mehr zählen. Die Daten liegen auf einem selbst
+betriebenen Server; es gibt keinen Cloud-Dienst dazwischen.
 
 ## Funktionen
 
 ### Für Besucher:innen
 
-- **Check-in per QR-Code** — Ein Scan an der Ladentür, ein Besuch gezählt. Der Standort
-  wird optional geprüft, damit der Check-in wirklich vor Ort passiert.
-- **Teile mitnehmen** — QR-Code am Kleidungsstück scannen, Punkte werden gutgeschrieben.
-  Wer ohne Code mitnimmt, trägt die Anzahl nach.
-- **Punkte, Ränge, Fortschritt** — Punktestand als Ring mit Rang und Abstand zum
-  nächsten. Der Text darunter passt sich der Lage an: kurz vor dem Aufstieg, laufende
-  Aktion, gefährdete Serie oder längere Abwesenheit.
-- **Abzeichen in Stufen** — Bronze bis Diamant, für Besuche, mitgenommene und gebrachte
-  Teile, Wochen in Folge, Jahre Treue und Aktionsteilnahme. Jede Stufe zahlt einen Bonus.
-- **Punkte-Historie** — Nach Tagen gruppiert, filterbar nach Check-ins, Teilen und
-  Abzeichen.
-- **Im Laden stöbern** — Alle verfügbaren Teile mit Foto, Größe und Punktwert. Filter
-  nach Zielgruppe, Art, Größe und Aufbewahrung.
-- **Schaufenster** — Kuratierte Highlights des Teams.
-- **Teile einreichen** — Foto, Größe, Zustand und die Angabe, ob das Teil in den Laden
-  kommt oder extern bleibt. Nach der Freigabe durch das Team gibt es Punkte.
-- **Aushang** — Laufende Aktionen und Ankündigungen auf der Startseite.
-- **Benachrichtigungen nach Wahl** — Vier getrennte Kategorien, jede einzeln abschaltbar.
-- **Laden-Info** — Öffnungszeiten, Adresse mit Routenstart, Telefonnummer.
+- **Check-in per QR-Code** — ein Scan an der Ladentür, ein Besuch gezählt; auf
+  Wunsch prüft die App, ob man wirklich vor Ort ist
+- **Teile mitnehmen** — Code am Kleidungsstück scannen oder die Anzahl eintragen
+- **Punkte, Ränge, Abzeichen** — Fortschritt als Ring, Abzeichen in Stufen von
+  Bronze bis Diamant, Punkteverlauf nach Tagen
+- **Im Laden stöbern** — alle verfügbaren Teile mit Foto, Größe und Punktwert,
+  Filter nach Zielgruppe, Art, Größe und „Neu“; dazu das Schaufenster des Teams
+- **Teile einreichen** — Foto, Größe und Zustand; nach der Freigabe gibt es Punkte
+- **Teilen, empfehlen, bewerten** — Teile per Teilen-Menü weitergeben
+- **Mitteilungen nach Wahl** — vier Arten, jede einzeln abschaltbar
+- **Konto selbst verwalten** — Passwort zurücksetzen, Konto löschen
 
 ### Für das Team
 
-- **Freigaben** — Eingereichte Teile prüfen, bearbeiten und freigeben, wahlweise direkt
-  ins Schaufenster. Offene Vorgänge sind auf der Startseite nicht zu übersehen.
-- **Inventar** — Alle Teile mit Status, Filtern und QR-Vorschau. Etiketten lassen sich
-  direkt aus der Detailansicht drucken.
-- **Teile direkt einstellen** — Ohne Freigabeschleife, inklusive internem Lagerort.
-- **Aushang pflegen** — Ankündigungen mit Schnellvorlagen, Farbwahl und optionalem
-  Sofort-Push.
+- **Freigaben** — eingereichte Teile prüfen, bearbeiten, ins Schaufenster heben
+- **Inventar** — alle Teile mit Status, Filtern und Etikettendruck
+- **Aushang** — Ankündigungen mit Vorlagen und optionaler Sofort-Mitteilung
 
-### Für Admins
+### Für die Leitung
 
-- **Aktionen** — Zeitraum, Farbe und drei getrennte Faktoren: Vorbeikommen, Mitnehmen
-  und Bringen lassen sich unabhängig auf ×1,5, ×2 oder ×3 setzen. Zielgruppe wählbar,
-  etwa nur Inaktive oder nur Personen mit laufender Serie.
-- **Punkte und Ränge** — Punktwerte je Handlung, Höchstzahl der Teile pro Besuch und die
-  komplette Rangleiter frei konfigurierbar.
-- **Abzeichen** — Stufen- und Einzelabzeichen anlegen, mit sechs Auslösern, eigenen
-  Schwellen, Boni und Symbolen.
-
-## Bemerkenswert
-
-- **Zwei Designsprachen, eine Codebasis** — iOS folgt Apples Gestaltungsregeln, Android
-  Material 3. Farben, Schrift und Aufbau sind identisch; unterschiedlich sind Form,
-  Tiefe und Reaktion auf Berührung.
-- **Datenschutz durch Datenmodell** — Ein mitgenommenes Teil speichert keine Referenz
-  auf die Person. Die Verbindung „Person X nahm Teil Y" existiert in der Datenbank
-  schlicht nicht.
-- **Kein Tracking** — Kein Analytics-SDK, kein Crash-Reporter, keine Werbe-IDs.
-- **Ein Scanner für alles** — Der Server erkennt selbst, ob ein Code die Ladentür oder
-  ein Kleidungsstück ist.
-- **Selbstheilendes Punktekonto** — Der Punktestand wird nach jeder Buchung aus dem
-  vollständigen Journal neu summiert statt hochgezählt und kann daher nicht abdriften.
-- **Serverseitige Wahrheit** — Punktestand, Serie und Rolle sind gegen Schreibzugriffe
-  aus der App geschützt. Der Fortschritt bei Serien-Abzeichen wird aus den echten
-  Besuchen abgeleitet, nicht aus einem Zählerfeld.
-
-## Voraussetzungen
-
-- iOS 16.4+ oder Android 7.0+ (API 24)
-- Node 22 LTS für die Entwicklung
-- Eine PocketBase-Instanz (Docker-Compose liegt bei)
+- **Aktionen** — Zeitraum und getrennte Faktoren für Vorbeikommen, Mitnehmen und
+  Bringen, auf Wunsch nur für bestimmte Gruppen
+- **Punkte und Ränge** — Punktwerte, Höchstzahl je Besuch und Rangleiter frei
+  einstellbar
+- **Abzeichen** — eigene Stufen, Auslöser, Schwellen und Boni
 
 ## Installation
 
-### TestFlight
+**[Im App Store laden »](https://apps.apple.com/app/id6784690448)** ·
+**[Bei Google Play »](https://play.google.com/store/apps/details?id=de.godsapp.plietschepluenn)**
 
-Die iOS-Version läuft aktuell als geschlossene Beta. Version 1.0 ist zur Einreichung
-vorbereitet.
+Die App gehört zu einem bestimmten Laden: Nach dem Start legt man ein Konto an
+und checkt beim nächsten Besuch an der Tür ein. Wer einen eigenen Laden damit
+betreiben will, braucht einen eigenen Server, siehe
+[Selbst betreiben](#selbst-betreiben).
 
-### Aus dem Quelltext
+## Bildschirmfotos
+
+| Start | Laden | Teil | Abzeichen |
+|-------|-------|------|-----------|
+| <img src="design/store/ios/01-start.png" alt="Start" width="200"> | <img src="design/store/ios/02-laden.png" alt="Laden" width="200"> | <img src="design/store/ios/04-detail.png" alt="Teil" width="200"> | <img src="design/store/ios/08-abzeichen.png" alt="Abzeichen" width="200"> |
+
+## Versionen
+
+Was sich wann geändert hat, steht in [CHANGELOG.md](CHANGELOG.md) — aus Sicht
+der Nutzer:innen geschrieben.
+
+## Selbst betreiben
+
+Das Backend ist [PocketBase](https://pocketbase.io) mit eigenen Hooks und
+Migrationen. Nötig sind Docker und für die App Node 22.
+
+**1. Backend starten.** Hooks und Migrationen werden beim Start eingelesen, das
+Schema legt sich selbst an. PocketBase verschlüsselt seine Einstellungen mit
+einem Schlüssel aus genau 32 Zeichen.
 
 ```bash
 git clone https://github.com/Revisor01/plietsche-pluenn.git
-cd plietsche-pluenn/mobile
-npm install
-npx expo start --dev-client
+cd plietsche-pluenn
+docker run -d --name plietsche-pb -p 8090:8090 \
+  -e PB_ENCRYPTION_KEY=$(openssl rand -hex 16) \
+  -v "$PWD/pb_data:/pb_data" \
+  -v "$PWD/pocketbase/pb_hooks:/pb_hooks" \
+  -v "$PWD/pocketbase/pb_migrations:/pb_migrations" \
+  ghcr.io/muchobien/pocketbase:0.40.4 \
+  --encryptionEnv=PB_ENCRYPTION_KEY --http=0.0.0.0:8090
+# Probe: curl http://localhost:8090/api/health
 ```
 
-Erfordert ein installiertes Dev-Client-Build. Die Backend-URL wird über
-`EXPO_PUBLIC_PB_URL` gesetzt.
+Den Schlüssel aufheben: Ohne ihn lassen sich die gespeicherten Einstellungen
+nach einem Neustart nicht mehr lesen.
 
-### Backend
+**2. Verwaltung einrichten.** Beim ersten Start schreibt PocketBase einen Link
+zum Anlegen des Superuser-Kontos ins Log (`docker logs plietsche-pb`). Unter
+`http://localhost:8090/_/` lassen sich danach im Datensatz `store`
+Öffnungszeiten, Adresse und Standort des Ladens pflegen und im Datensatz
+`users` einem Konto die Rolle `volunteer` (Team) oder `admin` (Leitung) geben.
+
+**3. App starten.** Die App spricht den Server an, den `EXPO_PUBLIC_PB_URL`
+nennt; ohne die Variable kommt keine Anmeldung zustande (Vorlage:
+`mobile/.env.example`). Ein Handy im selben Netz erreicht den Rechner über
+seine lokale Adresse.
 
 ```bash
-docker compose up -d
+cd mobile
+npm install --legacy-peer-deps
+EXPO_PUBLIC_PB_URL=http://<adresse-des-rechners>:8090 npx expo start
 ```
 
-Migrationen und Hooks liegen in `pocketbase/pb_migrations/` und `pocketbase/pb_hooks/`
-und werden beim Start automatisch angewandt. Die Zugangsdaten kommen aus
-`pocketbase/.env.secrets` (nicht im Repository).
+Mitteilungen laufen über den Push-Dienst von Expo und brauchen ein eigenes
+Expo-Projekt mit Zugangsdaten für Apple und Google; ohne sie funktioniert alles
+andere, es wird nur nichts zugestellt.
 
-Das ist die Fassung für den eigenen Rechner. In Produktion läuft
-`docker-compose.portainer.yml`: ein eigenes Abbild, in dem Hooks und
-Migrationen stecken, gebaut und ausgeliefert bei jedem Push auf `main`; den
-Ablauf beschreibt [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
-
-In den App Store und zu Google Play kommt die App über die Workflows
-`testflight.yml`, `play-internal.yml` und `release.yml` in `.github/workflows/`.
+**Tests.** `npm test` im Wurzelverzeichnis prüft die Hooks;
+`npm run test:integration` lädt eine echte PocketBase herunter und prüft
+Migrationen und Zugriffsregeln gegen sie.
 
 ## Aufbau
 
 ```
 plietsche-pluenn
-├── mobile/                    — Expo-App (iOS + Android)
-│   ├── app/                   — Bildschirme, dateibasiertes Routing
-│   │   ├── (auth)/            — Anmeldung, Registrierung
-│   │   ├── (onboarding)/      — Einführung, Berechtigungen
-│   │   ├── (visitor)/         — Hauptbereich inkl. Team- und Admin-Ansichten
-│   │   └── scan.tsx           — Scanner als Vollbild-Modal
-│   ├── components/            — UI-Bausteine, Tab-Leiste, Scanner
-│   └── lib/                   — Design-Tokens, API, Hooks, Push, Formatierung
+├── mobile/              — die App (Expo / React Native, TypeScript)
+│   ├── app/             — Bildschirme, dateibasiertes Routing
+│   ├── components/      — Bausteine, Tab-Leiste, Scanner
+│   └── lib/             — Design-Tokens, API, Hooks, Mitteilungen
 ├── pocketbase/
-│   ├── pb_hooks/              — Scanner-Endpunkt, Punkte- und Abzeichenlogik,
-│   │                            Push-Versand, Cron-Jobs
-│   ├── pb_migrations/         — Schema und Startdaten
-│   └── Dockerfile             — Abbild für die Auslieferung
-├── design/                    — Design-Referenz und Entwurfsvorlagen
-├── docs/                      — API-Beschreibung und Auslieferung
-├── docker-compose.yml         — lokal
-└── docker-compose.portainer.yml — Produktion
+│   ├── pb_hooks/        — Scanner, Punkte- und Abzeichenlogik, Versand, Zeitpläne
+│   ├── pb_migrations/   — Schema und Startdaten
+│   └── Dockerfile       — Abbild mit Hooks und Migrationen
+├── tests/               — Hook-Tests und Integrationstests
+├── web/                 — Landingpage
+├── design/              — Gestaltung und Store-Bilder
+└── docs/                — API (openapi.yaml), Mitteilungs-Kanäle
 ```
 
-**Grundentscheidungen:**
+Technischer Steckbrief mit Versionen, Datenmodell und Berechtigungen:
+[TECH.md](TECH.md). Die API beschreibt [docs/openapi.yaml](docs/openapi.yaml).
 
-- Dateibasiertes Routing mit typisierten Routen
-- Serverdaten über TanStack Query, kein manueller Cache
-- Geschäftslogik ausschließlich im Backend — die App zeigt an, sie rechnet nicht
-- Design-Tokens zentral in `lib/theme.ts`, keine festen Werte in den Bildschirmen
-- Keine Fremd-SDKs für Analytik oder Absturzberichte
+**Worauf es beim Bauen ankommt:**
+- **Die Wahrheit liegt auf dem Server.** Punktestand, Serie und Rolle sind gegen
+  Schreibzugriffe aus der App geschützt; die App zeigt an, sie rechnet nicht.
+- **Das Punktekonto heilt sich selbst.** Der Stand wird nach jeder Buchung aus
+  dem vollständigen Journal neu summiert und kann nicht abdriften.
+- **Datenschutz durch das Datenmodell.** Ein mitgenommenes Teil speichert keinen
+  Verweis auf die Person; „Person X nahm Teil Y“ gibt es in der Datenbank nicht.
+- **Zwei Designsprachen, eine Codebasis.** iOS folgt Apples Gestaltungsregeln,
+  Android Material 3; Farben, Schrift und Aufbau sind gleich.
+- **Ausgelieferte Apps nie brechen.** Versionen in den Stores lesen die API mit;
+  Antwortformen ändern sich nur additiv (siehe [CLAUDE.md](CLAUDE.md)).
 
-## Technische Details
+## Mitmachen
 
-Vollständiger Steckbrief mit Versionen, Abhängigkeiten, Datenmodell und Berechtigungen:
-[TECH.md](TECH.md)
-
-## Änderungen
-
-Siehe [CHANGELOG.md](CHANGELOG.md).
-
-## Lizenz
-
-[GNU Affero General Public License v3.0](LICENSE) — wer die App oder das
-Backend betreibt, muss seine Änderungen ebenfalls offenlegen.
-
----
+Fehlermeldungen und Vorschläge sind willkommen — gern als
+[Issue](https://github.com/Revisor01/plietsche-pluenn/issues). Sicherheitslücken
+bitte vertraulich melden, wie in [SECURITY.md](SECURITY.md) beschrieben. Pull
+Requests laufen durch Tests und einen Secret-Scan; die Grundsätze für Beiträge
+stehen in [CLAUDE.md](CLAUDE.md).
 
 ## Datenschutz
 
-### Verantwortlich
+Keine Analysewerkzeuge, keine Werbung, keine Absturzberichte an Dritte. Die App
+spricht nur mit dem Server des Ladens und, für Mitteilungen, mit dem Push-Dienst
+von Expo. Gespeichert werden Konto, Punkte, Besuche und eingereichte Teile; beim
+Check-in nur der Abstand zum Laden, nicht der Standort. Anmeldedaten liegen im
+Schlüsselbund des Geräts.
 
-Simon Luthe
-Süderstraße 18
-25779 Hennstedt
+Die vollständige Erklärung steht unter
+[simonluthe.de/apps/plietschepluenn/datenschutz](https://simonluthe.de/apps/plietschepluenn/datenschutz/).
 
-E-Mail: mail@simonluthe.de
-Web: [simonluthe.de](https://simonluthe.de)
+## Lizenz
 
-### Verarbeitete Daten
+Plietsche Plünn steht unter der
+[GNU Affero General Public License v3.0](LICENSE): Wer App oder Backend für
+andere betreibt, legt auch seine Änderungen offen.
 
-Auf dem eigenen Server gespeichert:
+## Kontakt
 
-- Name und E-Mail-Adresse für das Konto
-- Punktestand, Besuche und Abzeichen-Fortschritt
-- Eingereichte Teile mit Foto und Beschreibung
-- Beim Check-in: Koordinaten und Abstand zum Laden, sofern die Berechtigung erteilt wurde
-- Geräte-Token für Benachrichtigungen, sofern zugestimmt
-
-Auf dem Gerät: Anmeldedaten in der System-Schlüsselverwaltung.
-
-### Was bewusst nicht gespeichert wird
-
-- **Keine Zuordnung zwischen Person und mitgenommenem Teil.** Ein vergebenes Teil trägt
-  nur einen Zeitstempel.
-- Das Punktekonto führt lediglich eine Textnotiz, keinen Verweis auf das Teil.
-- Wer ein Teil selbst in den Laden bringt, gibt keine Adresse an.
-
-### Kein Tracking
-
-Keine Analysewerkzeuge, keine Werbung, keine Drittanbieter-SDKs, die Daten sammeln.
-Die App verbindet sich ausschließlich mit dem Backend des Ladens und — beim Versand von
-Benachrichtigungen — mit dem Push-Dienst von Expo.
-
-### Rechte
-
-Auskunft, Berichtigung und Löschung über die oben genannte Adresse. Benachrichtigungen
-lassen sich jederzeit in der App abschalten; das Geräte-Token wird dabei serverseitig
-entfernt.
-
-*Stand: August 2026*
+Pastor Simon Luthe · [mail@simonluthe.de](mailto:mail@simonluthe.de) ·
+[simonluthe.de](https://simonluthe.de)
