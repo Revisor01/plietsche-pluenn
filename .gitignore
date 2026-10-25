@@ -44,9 +44,6 @@ pocketbase/pb_data/
 pocketbase/pocketbase
 pocketbase/*.zip
 
-# Claude Code
-.claude/
-
 # Backup tarballs
 *.zip
 *.tar.gz
@@ -61,5 +58,27 @@ mobile/assets/.icon-backup-p2/
 # Erst im Abbild erzeugt (Dockerfile), Commit fuer GET /api/pp/version
 pocketbase/pb_hooks/lib/build.js
 
-# Protokolle des Playwright-Browserwerkzeugs
+# --- Arbeitsnotizen und lokale Konfiguration (gehoeren nicht ins Repo) ---
+.planning/
+.claude/
+CLAUDE.local.md
+HANDOFF*.md
+UEBERGABE*.md
+*review-notes*.md
 .playwright-mcp/
+
+# --- Zugangsdaten und Schluessel ---
+.env
+.env.*
+!.env.example
+*.env
+secrets*
+*.p8
+*.p12
+*.mobileprovision
+*.jks
+release.keystore
+*service-account*.json
+
+# --- System ---
+.DS_Store
