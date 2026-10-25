@@ -128,13 +128,11 @@ und werden beim Start automatisch angewandt. Die Zugangsdaten kommen aus
 
 Das ist die Fassung für den eigenen Rechner. In Produktion läuft
 `docker-compose.portainer.yml`: ein eigenes Abbild, in dem Hooks und
-Migrationen stecken, gebaut und ausgeliefert bei jedem Push auf `main`. Wie das
-abläuft, was einmalig umzustellen ist und wie man im Störfall von Hand
-ausliefert, steht in [`docs/deploy.md`](docs/deploy.md).
+Migrationen stecken, gebaut und ausgeliefert bei jedem Push auf `main`; den
+Ablauf beschreibt [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-Wie die App selbst in den App Store und zu Google Play kommt — und wann eine
-Fassung als Entwurf statt sofort freigegeben hochgeladen wird — steht in
-[`docs/store-release.md`](docs/store-release.md).
+In den App Store und zu Google Play kommt die App über die Workflows
+`testflight.yml`, `play-internal.yml` und `release.yml` in `.github/workflows/`.
 
 ## Aufbau
 

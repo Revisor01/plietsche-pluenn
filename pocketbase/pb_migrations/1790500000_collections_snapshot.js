@@ -2584,6 +2584,6 @@ migrate((app) => {
   return app.importCollections(snapshot, false);
 }, (app) => {
   // Kein Rückweg. Das Schema wieder abzubauen hieße, Daten zu löschen.
-  // Zurück geht es nur über eine Sicherung (siehe docs/deploy.md).
+  // Zurück geht es nur über eine Sicherung.
   return null;
 });

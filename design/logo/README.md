@@ -26,7 +26,7 @@ Eine **Glasscheibe** auf dem Marken-Verlauf, darauf das **P mit hochgestellter
 gebrochenes Weiß `#fffffb`.
 
 Seit dem 18.09.2026 liegen **alle neun Fassungen** vor — je eine für jede
-Erscheinung, die iOS und Android kennen. Sie kommen fertig aus Claude Design
+Erscheinung, die iOS und Android kennen. Sie kommen fertig aus dem Entwurfswerkzeug
 und werden hier **nicht abgeleitet**, sondern eingesetzt.
 
 ### Die Quellen
