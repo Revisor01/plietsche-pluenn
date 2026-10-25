@@ -2,7 +2,7 @@
 // Icon-Größen und Schatten. In Screens und Komponenten nie hart kodieren:
 // `PP.<token>` für Farben und Maße, `alpha(farbe, stufe)` für getönte Flächen.
 //
-// Grundlage: docs/audit/theme.md (Bestandsaufnahme 14.09.2026).
+// Grundlage: Bestandsaufnahme der Farben und Maße vom 14.09.2026.
 
 import { Platform, StyleSheet } from 'react-native';
 import type { IconName } from './icons';

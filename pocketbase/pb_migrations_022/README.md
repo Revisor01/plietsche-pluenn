@@ -29,8 +29,8 @@ anderen Datenbank bricht sie ab; übergeht man das, scheitert sie danach an
   sind (`1782710000_tighten_read_rules.js`), weshalb `points_log` keinen
   Verweis auf ein Teil trägt (`1700000000_init_schema.js`). Der Snapshot zeigt
   nur das Ergebnis.
-- **Verweise.** Die Prüfberichte unter `docs/audit/` und
-  `.github/scripts/deploy-verify.py` nennen diese Dateien beim Namen.
+- **Verweise.** `.github/scripts/deploy-verify.py` nennt diese Dateien beim
+  Namen.
 - **Produktion kennt sie.** In der Tabelle `_migrations` der laufenden Instanz
   stehen alle 20 als ausgeführt. Das stört 0.40 nicht, aber wer dort
   nachsieht, soll die Dateien finden.

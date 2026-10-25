@@ -14,7 +14,7 @@ name: Veröffentlichen
 #   - Android: Geht in die Produktionsspur; Google startet die Pruefung selbst.
 #     Bei Freigabe "draft" landet die Fassung stattdessen als Entwurf in der
 #     Play Console und wird dort von Hand freigegeben — so muss die allererste
-#     Veroeffentlichung laufen, siehe docs/store-release.md.
+#     Veroeffentlichung laufen.
 
 on:
   workflow_dispatch:

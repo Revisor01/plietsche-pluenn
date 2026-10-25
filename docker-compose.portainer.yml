@@ -1,5 +1,5 @@
-# Der Stack, der in Produktion läuft (Portainer, Stack `plietsche-pb` auf
-# server.godsapp.de). Diese Datei ist die Quelle für den Stack-Inhalt.
+# Die Fassung, die in Produktion läuft (Portainer). Diese Datei ist die Quelle
+# für den Stack-Inhalt.
 #
 # Unterschied zur docker-compose.yml daneben:
 #
@@ -15,13 +15,8 @@
 #                                es bei jedem Push auf main und stößt den
 #                                Portainer-Webhook an; der Server zieht selbst.
 #
-# ACHTUNG beim einmaligen Umschalten: Der bisherige Stack mountet pb_hooks und
-# pb_migrations vom Host. Diese beiden Mounts würden die Dateien im Abbild
-# überdecken — der Container liefe dann weiter auf dem Stand, der in
-# /opt/stacks/plietsche-pb/ liegt, und die ganze Automatik wäre wirkungslos.
-# Deshalb steht hier nur noch pb_data. Siehe docs/deploy.md.
-#
-# Routing unverändert: Apache → 127.0.0.1:8888 (Traefik) → Container.
+# Gemountet wird nur pb_data. Mounts auf pb_hooks oder pb_migrations würden die
+# Dateien im Abbild überdecken, und der Container liefe auf einem alten Stand.
 
 services:
   pocketbase:
@@ -44,18 +39,16 @@ services:
       # Bind-Mount auf /pb_hooks oder /pb_migrations würde sie überdecken.
       #
       # Absoluter Pfad, nicht `./pb_data`: Portainer legt den Stack in einem
-      # eigenen Arbeitsverzeichnis ab (gemessen: /data/compose/264/v2), nicht
-      # in /opt/stacks/plietsche-pb. Ein relativer Pfad zeigte dort auf ein
-      # leeres Verzeichnis — PocketBase legte eine neue, leere Datenbank an,
-      # und der gesamte Bestand wäre nicht mehr eingebunden.
+      # eigenen Arbeitsverzeichnis ab; ein relativer Pfad bände eine leere,
+      # neue Datenbank ein.
       - /opt/stacks/plietsche-pb/pb_data:/pb_data
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8090/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-    # Grenzen, damit dieser Stack die Maschine nicht mitreisst. Auf demselben
-    # Host laufen Authentik, Nextcloud, Traefik und Portainer.
+    # Grenzen, damit dieser Stack die Maschine nicht mitreisst; der Host ist
+    # geteilt.
     #
     # Das Protokoll ist der praktisch wichtigere Teil: Ohne max-size waechst
     # die JSON-Datei unbegrenzt, bis die Platte voll ist — und dann steht

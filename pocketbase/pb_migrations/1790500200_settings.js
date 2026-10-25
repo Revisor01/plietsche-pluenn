@@ -33,12 +33,11 @@
 //   0.40-Vorgabe dasteht. (Gemessen 26.09.2026: frisch 432000.)
 //
 // Bewusst NICHT hier:
-//   - Rate-Limiting. Hinter Apache → Traefik sieht PocketBase ohne passenden
+//   - Rate-Limiting. Hinter dem Reverse Proxy sieht PocketBase ohne passenden
 //     trustedProxy-Eintrag nur die IP des Proxys; alle Nutzer:innen teilten
 //     sich dann ein Kontingent, und ein Laden voller Leute beim Einchecken
 //     sperrte sich selbst aus. Einschalten erst, wenn gemessen ist, welcher
-//     Kopf die echte IP trägt. Vorgehen und Regelvorschlag: docs/deploy.md,
-//     Abschnitt „Upgrade auf 0.40".
+//     Kopf die echte IP trägt.
 //   - MFA/OTP für Superuser. Empfohlen, aber eine Migration ist der falsche
 //     Ort: Sie würde bei einer frischen Installation zuschlagen, bevor
 //     überhaupt ein Mailversand eingerichtet ist, und damit den Zugang zum

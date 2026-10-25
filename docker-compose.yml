@@ -7,8 +7,7 @@
 # dem Hooks und Migrationen stecken, und nur pb_data als Mount. Der Grund
 # steht dort im Kopf.
 #
-# Routes via Traefik label → pb.plietsche-plünn.de (Punycode host).
-# Apache → 127.0.0.1:8888 (Traefik) → this container.
+# Routing über das Traefik-Label auf pb.plietsche-plünn.de (Punycode).
 
 services:
   pocketbase:

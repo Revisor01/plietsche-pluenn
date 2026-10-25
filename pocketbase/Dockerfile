@@ -32,7 +32,7 @@
 #     ein. TZ=Europe/Berlin aus dem Stack dürfte deshalb bisher ins Leere
 #     gegangen sein (Go fällt dann auf UTC zurück) und wirkt ab jetzt —
 #     die nächtlichen Aufgaben laufen dann nach Berliner Uhr. Abgeleitet aus
-#     dem Abbild, nicht in Produktion gemessen; siehe docs/deploy.md.
+#     dem Abbild, nicht in Produktion gemessen.
 #   - Optional legen PB_ADMIN_EMAIL/PB_ADMIN_PASSWORD beim Start einen
 #     Superuser an. Nutzen wir nicht.
 FROM ghcr.io/muchobien/pocketbase:0.40.4
@@ -44,7 +44,6 @@ FROM ghcr.io/muchobien/pocketbase:0.40.4
 # vom Host eingehängt sind, überdecken die Host-Verzeichnisse diese Dateien
 # und der Container läuft weiter auf dem alten Stand. In
 # docker-compose.portainer.yml wird deshalb nur noch pb_data gemountet.
-# Siehe docs/deploy.md, Abschnitt „Einmalige Umstellung".
 COPY pb_hooks /pb_hooks
 COPY pb_migrations /pb_migrations
 

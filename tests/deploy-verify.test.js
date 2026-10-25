@@ -339,7 +339,7 @@ describe('Commit der geladenen Hooks', () => {
   });
 
   it('bleibt ohne ERWARTETER_COMMIT bei den sechs Schemamerkmalen', async () => {
-    // Der Aufruf von Hand (docs/deploy.md) kennt keinen Commit.
+    // Der Aufruf von Hand kennt keinen Commit.
     const basis = await serverStarten(standRichtig());
     const { code, ausgabe } = await pruefen(basis);
     expect(code).toBe(0);
