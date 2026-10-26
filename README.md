@@ -10,6 +10,10 @@
 </p>
 
 <p align="center">
+  <b>Deutsch</b> · <a href="README.en.md">English</a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Plattform-iOS%2016.4%2B%20%C2%B7%20Android%207%2B-blue" alt="Plattform">
   <img src="https://img.shields.io/itunes/v/6784690448?label=App%20Store&color=green" alt="Version im App Store">
   <img src="https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo" alt="Expo">
@@ -162,7 +166,7 @@ Fehlermeldungen und Vorschläge sind willkommen — gern als
 [Issue](https://github.com/Revisor01/plietsche-pluenn/issues). Sicherheitslücken
 bitte vertraulich melden, wie in [SECURITY.md](SECURITY.md) beschrieben. Pull
 Requests laufen durch Tests und einen Secret-Scan; die Grundsätze für Beiträge
-stehen in [CLAUDE.md](CLAUDE.md).
+stehen in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Datenschutz
 
@@ -179,7 +183,8 @@ Die vollständige Erklärung steht unter
 
 Plietsche Plünn steht unter der
 [GNU Affero General Public License v3.0](LICENSE): Wer App oder Backend für
-andere betreibt, legt auch seine Änderungen offen.
+andere betreibt, legt auch seine Änderungen offen. Für Beiträge gilt
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Kontakt
 
