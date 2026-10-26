@@ -90,21 +90,16 @@ einem Schlüssel aus genau 32 Zeichen.
 ```bash
 git clone https://github.com/Revisor01/plietsche-pluenn.git
 cd plietsche-pluenn
-docker run -d --name plietsche-pb -p 8090:8090 \
-  -e PB_ENCRYPTION_KEY=$(openssl rand -hex 16) \
-  -v "$PWD/pb_data:/pb_data" \
-  -v "$PWD/pocketbase/pb_hooks:/pb_hooks" \
-  -v "$PWD/pocketbase/pb_migrations:/pb_migrations" \
-  ghcr.io/muchobien/pocketbase:0.40.4 \
-  --encryptionEnv=PB_ENCRYPTION_KEY --http=0.0.0.0:8090
+echo "PB_ENCRYPTION_KEY=$(openssl rand -hex 16)" > .env
+docker compose up -d
 # Probe: curl http://localhost:8090/api/health
 ```
 
-Den Schlüssel aufheben: Ohne ihn lassen sich die gespeicherten Einstellungen
+Den Schlüssel in `.env` aufheben: Ohne ihn lassen sich die gespeicherten Einstellungen
 nach einem Neustart nicht mehr lesen.
 
 **2. Verwaltung einrichten.** Beim ersten Start schreibt PocketBase einen Link
-zum Anlegen des Superuser-Kontos ins Log (`docker logs plietsche-pb`). Unter
+zum Anlegen des Superuser-Kontos ins Log (`docker compose logs pocketbase`). Unter
 `http://localhost:8090/_/` lassen sich danach im Datensatz `store`
 Öffnungszeiten, Adresse und Standort des Ladens pflegen und im Datensatz
 `users` einem Konto die Rolle `volunteer` (Team) oder `admin` (Leitung) geben.
