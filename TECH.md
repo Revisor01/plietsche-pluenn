@@ -1,6 +1,6 @@
 # Plietsche Plünn — Technischer Steckbrief
 
-Stand: 3. August 2026 · App-Version 1.0.0 (Build 26)
+Stand: 26. Oktober 2026 · App-Version 1.0.0 (Build 33)
 
 ---
 
@@ -23,11 +23,11 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 | | Expo SDK | 57 |
 | Architektur | React Native New Architecture (Fabric, TurboModules) | verpflichtend ab SDK 55 |
 | Navigation | Expo Router (dateibasiert, typisierte Routen) | 57.0 |
-| Server-State | TanStack Query | 5.101 |
+| Server-State | TanStack Query | 5.104 |
 | Client-State | lokales `useState` (keine eigene Bibliothek) | — |
 | Backend | PocketBase (Go, eingebettetes SQLite) | 0.40.4 |
 | Backend-Logik | JavaScript-Hooks (Goja-Runtime) | ES5-kompatibel |
-| Container | Docker Compose hinter Traefik | — |
+| Container | eigenes Docker-Abbild (`pocketbase/Dockerfile`) | — |
 | Build | EAS CLI, lokale Xcode-Archive | ≥ 12.0 |
 
 **Laufzeitanforderung Entwicklung:** Node 22 LTS
@@ -53,17 +53,18 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 
 ## Abhängigkeiten
 
-36 direkte Abhängigkeiten.
+40 direkte Abhängigkeiten.
 
-**Expo-Module (20):** router · camera · location · notifications · secure-store ·
-image-picker · constants · device · font · splash-screen · status-bar · system-ui ·
-linking · blur · glass-effect · linear-gradient · haptics · print · sharing
+**Expo-Module (22):** router · camera · location · notifications · secure-store ·
+image-picker · file-system · constants · device · font · splash-screen · status-bar ·
+system-ui · linking · blur · glass-effect · linear-gradient · haptics · print · sharing ·
+alternate-app-icons · build-properties
 
 **Weitere Bibliotheken:** react-native-reanimated · react-native-worklets ·
 react-native-gesture-handler · react-native-screens · react-native-safe-area-context ·
 react-native-svg · react-native-qrcode-svg · qrcode · @react-native-community/datetimepicker ·
-@expo/vector-icons (Font Awesome 6) · @expo-google-fonts/work-sans · pocketbase-js-sdk ·
-@tanstack/react-query
+react-native-share · @expo/vector-icons (Font Awesome 6) · @expo-google-fonts/work-sans ·
+@expo/metro-runtime · pocketbase-js-sdk · @tanstack/react-query
 
 > `expo-print` + `expo-sharing` + `qrcode` tragen den QR-Etikettenbogen
 > (`lib/qrsheet.ts`): HTML → PDF → Teilen-Dialog. `qrcode` erzeugt die Codes als
@@ -79,10 +80,10 @@ react-native-svg · react-native-qrcode-svg · qrcode · @react-native-community
 > Integrationstests (`npm run test:integration`) mit genau diesem SDK gegen das
 > echte 0.40.4-Binary.
 
-**Bekannte Meldungen aus `npm audit`:** 14 Hinweise, davon zwei hoch, keine kritischen.
-Alle betreffen ausschließlich Entwicklungswerkzeuge (`react-devtools-core`, `@expo/cli`,
-`@expo/fingerprint`) und landen nicht im ausgelieferten App-Bundle — im gebauten Bundle
-ist keines dieser Pakete enthalten.
+**Bekannte Meldungen aus `npm audit`** (26.10.2026): fünf hohe, keine kritischen. Alle
+hängen an zwei Paketen im Expo-Kommandozeilenwerkzeug (`node-forge`, `zod`) und landen
+nicht im ausgelieferten App-Bundle. Für beide gibt es in keiner Expo-Version bis SDK 58
+einen Fix.
 
 **Aktualisierung:** Die meisten Abhängigkeiten sind an das Expo SDK oder die
 PocketBase-Serverversion gebunden und werden nur gemeinsam angehoben
@@ -103,10 +104,11 @@ schlägt Updates im Wesentlichen nur noch für `@tanstack/react-query` vor — s
 
 ## Datenhaltung
 
-**PocketBase mit SQLite**, verschlüsselt über `PB_ENCRYPTION_KEY`. Zwölf Collections:
+**PocketBase mit SQLite**, verschlüsselt über `PB_ENCRYPTION_KEY`. Dreizehn Collections:
 
 `users` · `items` · `visits` · `points_log` · `badges` · `user_badges` ·
-`campaigns` · `action_counts` · `needs` · `push_devices` · `push_messages` · `store`
+`campaigns` · `action_counts` · `needs` · `push_devices` · `push_messages` · `store` ·
+`store_secrets`
 
 Zugriff über PocketBase-Collection-Rules; punkte- und abzeichenrelevante Tabellen sind
 ausschließlich serverseitig beschreibbar.
@@ -126,14 +128,15 @@ ausschließlich serverseitig beschreibbar.
 | `year-badges` | täglich 03:40 | Treue-Abzeichen am 31.12. |
 
 **Eigene Endpunkte:** `POST /api/pp/scan` (universeller Scanner, erkennt Tür- und
-Teile-Codes selbst) · `POST /api/pp/push/register` · `POST /api/pp/push/unregister`
+Teile-Codes selbst) · `POST /api/pp/push/register` · `POST /api/pp/push/unregister` ·
+`GET /api/pp/version` (welcher Commit läuft, für die Prüfung nach dem Deploy)
 
 ---
 
 ## Auslieferung des Backends
 
 Push auf `main` → Tests → Abbild bauen und zu `ghcr.io` schieben →
-Portainer-Webhook → Prüfung gegen die laufende Instanz. Kein SSH aus der CI;
+Webhook → Prüfung gegen die laufende Instanz. Kein SSH aus der CI;
 der Server zieht selbst.
 
 Hooks und Migrationen liegen **im Abbild** (`pocketbase/Dockerfile`), nicht in
@@ -183,11 +186,10 @@ Benachrichtigungen — mit dem Expo-Push-Dienst.
 
 | | |
 |---|---|
-| App-Quelltext | rund 7.800 Zeilen TypeScript |
-| Backend-Quelltext | rund 2.300 Zeilen JavaScript |
+| App-Quelltext | rund 10.300 Zeilen TypeScript |
+| Backend-Quelltext | rund 3.500 Zeilen JavaScript (Hooks und Migrationen) |
 | Bildschirme | 23 |
-| Fremdabhängigkeiten (direkt) | 36 |
-| Commits | 172 |
+| Fremdabhängigkeiten (direkt) | 40 |
 
 ---
 
@@ -197,7 +199,7 @@ Benachrichtigungen — mit dem Expo-Push-Dienst.
 |---|---|
 | Repository | https://github.com/Revisor01/plietsche-pluenn |
 | Lizenz | AGPL-3.0 |
-| iOS | in Vorbereitung zur Einreichung (TestFlight läuft) |
-| Android | noch nicht eingereicht |
+| iOS | im App Store |
+| Android | bei Google Play |
 | Entwicklung | Simon Luthe |
 | Kontakt | mail@simonluthe.de |
