@@ -38,7 +38,6 @@ concurrency:
 
 permissions:
   contents: read
-  packages: write
 
 env:
   BASIS_URL: https://pb.xn--plietsche-plnn-rsb.de
@@ -89,13 +88,13 @@ jobs:
       - name: Integrationstests (echte Laufzeit)
         run: npm run test:integration
 
-  deploy:
-    name: Abbild bauen und ausliefern
+  kontext:
+    name: Build-Kontext prüfen
     runs-on: ubuntu-latest
-    # Ohne always(). Rote Tests, kein Deploy — keine Hintertür.
-    needs: tests
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Vollständigkeitsprüfung vor dem Push, nach dem Vorbild der
       # Hennstedt-Seite („mindestens 50 Seiten gebaut, sonst exit 1").
@@ -143,46 +142,42 @@ jobs:
           [ "$n" -ge 3 ] || { echo "Nur $n Migrationen gefunden – erwartet werden mindestens 3"; exit 1; }
           echo "$n Migrationen und alle Hook-Dateien sind da"
 
-      - name: Bei GHCR anmelden
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  # Ohne always(). Rote Tests, kein Deploy — keine Hintertür.
+  image:
+    name: Abbild
+    needs: [tests, kontext]
+    uses: Revisor01/workflows/.github/workflows/docker-image.yml@9eb921a3c730493b1aea79d5b22bf655356d5e43 # 1.2.0
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: ghcr.io/revisor01/plietsche-pluenn/pocketbase
+      kontext: ./pocketbase
+      # :latest zieht der Stack, der Commit-SHA bleibt als Weg zurück stehen.
+      tags: |
+        type=raw,value=latest
+        type=sha,prefix=,format=long
+      # Landet als lib/build.js in /pb_hooks; GET /api/pp/version liefert ihn aus.
+      build-args: PP_COMMIT=${{ github.sha }}
 
-      # Zwei Tags: :latest zieht der Stack, der Commit-SHA bleibt als
-      # unveränderlicher Stand stehen. Ohne den SHA-Tag gibt es später keinen
-      # Weg zurück auf ein bestimmtes Abbild, weil :latest überschrieben wird.
-      - name: Abbild bauen und schieben
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: ./pocketbase
-          file: ./pocketbase/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/revisor01/plietsche-pluenn/pocketbase:latest
-            ghcr.io/revisor01/plietsche-pluenn/pocketbase:${{ github.sha }}
-          # Landet als lib/build.js in /pb_hooks; GET /api/pp/version liefert
-          # ihn aus, und der Verify unten vergleicht.
-          build-args: |
-            PP_COMMIT=${{ github.sha }}
+  deploy:
+    name: Ausliefern
+    needs: image
+    uses: Revisor01/workflows/.github/workflows/portainer-deploy.yml@9eb921a3c730493b1aea79d5b22bf655356d5e43 # 1.2.0
+    with:
+      pruef-url: https://pb.xn--plietsche-plnn-rsb.de/api/pp/version
+      revision-feld: .commit
+    secrets:
+      webhook: ${{ secrets.PORTAINER_WEBHOOK_URL }}
 
-      # Der Webhook stößt in Portainer ein Neu-Ausrollen des Stacks an: Image
-      # ziehen, Container neu erstellen. Er antwortet sofort — fertig ist der
-      # Container damit nicht, deshalb wartet der Verify-Schritt danach.
-      #
-      # -f, damit ein Fehlerstatus den Lauf rot macht. Ohne das schluckt curl
-      # einen 404 oder 500 stillschweigend, und der Lauf wäre grün, ohne dass
-      # irgendetwas ausgerollt wurde.
-      - name: Portainer-Webhook anstoßen
-        env:
-          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
-        run: |
-          if [ -z "$WEBHOOK_URL" ]; then
-            echo "PORTAINER_WEBHOOK_URL ist nicht hinterlegt – ohne Webhook zieht der Server nichts."
-            exit 1
-          fi
-          curl -f -X POST "$WEBHOOK_URL"
+  verify:
+    name: Neuen Stand prüfen
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
