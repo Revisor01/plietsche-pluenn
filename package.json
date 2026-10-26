@@ -9,7 +9,7 @@
     "test:integration": "vitest run --config vitest.integration.config.mjs"
   },
   "devDependencies": {
-    "pocketbase": "0.22.1",
+    "pocketbase": "0.28.1",
     "vitest": "^5.0.5"
   },
   "engines": {
