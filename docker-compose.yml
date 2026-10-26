@@ -1,13 +1,11 @@
-# Lokale und dokumentarische Fassung: fremdes PocketBase-Abbild, Hooks und
-# Migrationen als Bind-Mount vom Arbeitsverzeichnis. Zum Ausprobieren auf dem
-# eigenen Rechner und um den Aufbau zu beschreiben.
+# Lokale Fassung zum Ausprobieren: fremdes PocketBase-Abbild, Hooks und
+# Migrationen als Bind-Mount aus pocketbase/. Start: docker compose up -d,
+# danach http://localhost:8090/_/.
 #
 # NICHT die Fassung, die in Produktion läuft. Dort gilt
 # docker-compose.portainer.yml: eigenes Abbild aus pocketbase/Dockerfile, in
 # dem Hooks und Migrationen stecken, und nur pb_data als Mount. Der Grund
 # steht dort im Kopf.
-#
-# Routing über das Traefik-Label auf pb.plietsche-plünn.de (Punycode).
 
 services:
   pocketbase:
@@ -18,7 +16,9 @@ services:
       - "--encryptionEnv=PB_ENCRYPTION_KEY"
       - "--http=0.0.0.0:8090"
     environment:
-      PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY}
+      # Genau 32 Zeichen, z. B. openssl rand -hex 16; ohne ihn sind die
+      # gespeicherten Einstellungen nach einem Neustart unlesbar.
+      PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY:?PB_ENCRYPTION_KEY setzen}
       # Nur für die Uhrzeiten der nächtlichen Aufgaben und für Logzeilen.
       # Tagesgrenze, Kalenderwoche und Jahreszahl hängen NICHT hieran — die
       # rechnet die Fachlogik aus der gepflegten Ladenzeitzone (store.timezone).
@@ -26,9 +26,11 @@ services:
       # Punkte, Serien und Abzeichen deshalb trotzdem richtig.
       TZ: Europe/Berlin
     volumes:
-      - ./pb_data:/pb_data
-      - ./pb_hooks:/pb_hooks
-      - ./pb_migrations:/pb_migrations
+      - ./pocketbase/pb_data:/pb_data
+      - ./pocketbase/pb_hooks:/pb_hooks
+      - ./pocketbase/pb_migrations:/pb_migrations
+    ports:
+      - "127.0.0.1:8090:8090"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8090/api/health"]
       interval: 30s
@@ -44,13 +46,3 @@ services:
         max-file: "3"
     mem_limit: 512m
     cpus: 1.0
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.plietsche-pb.rule=Host(`pb.xn--plietsche-plnn-rsb.de`)"
-      - "traefik.http.services.plietsche-pb.loadbalancer.server.port=8090"
-    networks:
-      - traefik
-
-networks:
-  traefik:
-    external: true
