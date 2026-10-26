@@ -50,6 +50,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ### Sonstiges
 - Englische Fassung der README und der Vorlagen für Fehlermeldungen.
 - Die automatischen Prüfungen führen Registrierung, Bestätigungsmail und Kontolöschung jetzt tatsächlich aus und bilden das Backend strenger nach. Grenzfälle bei Punkten, Aktionen und der Teile-Obergrenze sind abgesichert.
+- Android-Fassungen gehen über einen gemeinsamen Upload-Weg zu Google Play. Die Veröffentlichung kennt jetzt einen Probelauf, der alles bis zur Prüfung bei Google durchspielt und nichts veröffentlicht.
 
 ## [1.0.0 (33)] – 2026-09-14
 

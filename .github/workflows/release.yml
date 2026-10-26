@@ -1,5 +1,10 @@
 name: Veröffentlichen
 
+# Ein Probelauf traegt die Marke [Probelauf] im Titel; "Letzte
+# Veroeffentlichung ermitteln" ueberspringt solche Laeufe.
+run-name: >-
+  ${{ inputs.probelauf && '[Probelauf] ' || '' }}Veröffentlichen ${{ inputs.version }}
+
 # Bringt eine Fassung in den App Store und zu Google Play — beide Plattformen
 # in einem Lauf, damit die Staende nicht auseinanderlaufen.
 #
@@ -46,6 +51,10 @@ on:
         description: 'Was ist neu? (leer = aus den Commits erzeugt)'
         required: false
         default: ''
+      probelauf:
+        description: 'Probelauf: Android bauen, hochladen und pruefen, dann verwerfen; iOS entfaellt, nichts wird veroeffentlicht'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -102,7 +111,7 @@ jobs:
   ios:
     name: App Store
     needs: pruefung
-    if: ${{ inputs.plattformen != 'nur Android' }}
+    if: ${{ inputs.plattformen != 'nur Android' && !inputs.probelauf }}
     runs-on: macos-26
     timeout-minutes: 90
     steps:
@@ -258,11 +267,14 @@ jobs:
 
   # ── Android ────────────────────────────────────────────────────
   android:
-    name: Google Play
+    name: Google Play bauen
     needs: pruefung
     if: ${{ inputs.plattformen != 'nur iOS' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    outputs:
+      code: ${{ steps.version.outputs.code }}
+      hinweise: ${{ steps.hinweise.outputs.text }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -298,14 +310,20 @@ jobs:
         working-directory: mobile
         env:
           VERSION_CODE: ${{ steps.version.outputs.code }}
+          PROBELAUF: ${{ inputs.probelauf }}
         run: |
           python3 - <<'PY'
           import json, os, pathlib
           p = pathlib.Path('app.json')
           d = json.loads(p.read_text(encoding='utf-8'))
-          d['expo'].setdefault('android', {})['versionCode'] = int(os.environ['VERSION_CODE'])
+          code = int(os.environ['VERSION_CODE'])
+          if os.environ.get('PROBELAUF') == 'true':
+              # Weit nach oben, damit der Upload nicht an einer vergebenen
+              # Nummer scheitert; der Probelauf verbraucht sie nicht.
+              code += 10000
+          d['expo'].setdefault('android', {})['versionCode'] = code
           p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-          print(f"Version {d['expo']['version']} (versionCode {os.environ['VERSION_CODE']})")
+          print(f"Version {d['expo']['version']} (versionCode {code})")
           PY
 
       - name: Natives Projekt erzeugen
@@ -339,50 +357,98 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         # Der Commit der letzten Veroeffentlichung, als Vergleichspunkt fuer
-        # die Aenderungshinweise. Der Branch gehoert in die Abfrage: Ohne ihn
-        # zaehlt auch ein Lauf von einem Nebenzweig, und in der Produktionsspur
-        # stuenden Hinweise aus einem fremden Bereich.
+        # die Aenderungshinweise; nur dieser Branch, ohne Probelaeufe (die
+        # veroeffentlichen nichts, siehe run-name).
         run: |
           SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=1" \
-            | python3 -c "import json,sys; r=json.load(sys.stdin).get('workflow_runs') or [{}]; print(r[0].get('head_sha',''))")
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=50" \
+            | python3 -c "
+          import json, sys
+          for run in json.load(sys.stdin).get('workflow_runs') or []:
+              if '[Probelauf]' in (run.get('display_title') or ''):
+                  continue
+              print(run.get('head_sha', ''))
+              break
+          ")
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Aenderungshinweise zusammenstellen
+        id: hinweise
         env:
           VORGABE: ${{ inputs.hinweis }}
           SEIT_COMMIT: ${{ steps.vorher.outputs.sha }}
         run: |
-          python3 .github/scripts/release-notes.py play > /tmp/notes.txt
-          cat /tmp/notes.txt
+          python3 .github/scripts/release-notes.py play > "$RUNNER_TEMP/notes.txt"
+          cat "$RUNNER_TEMP/notes.txt"
+          {
+            echo 'text<<HINWEIS_ENDE'
+            cat "$RUNNER_TEMP/notes.txt"
+            echo 'HINWEIS_ENDE'
+          } >> "$GITHUB_OUTPUT"
 
-      - name: In die Produktionsspur stellen
-        env:
-          PLAY_RELEASE_STATUS: ${{ inputs.freigabe }}
+      - name: Paket für den Upload bereitstellen
         run: |
-          AAB=$(ls mobile/android/app/build/outputs/bundle/release/*.aab | head -1)
-          python3 .github/scripts/upload-play.py /tmp/gplay-sa.json "$AAB" \
-            /tmp/notes.txt production commit
+          AAB=$(find mobile/android/app/build/outputs/bundle/release -name '*.aab' | head -1)
+          echo "Paket: $AAB"
+          mkdir -p "$RUNNER_TEMP/aab" && cp "$AAB" "$RUNNER_TEMP/aab/"
 
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aab
+          path: ${{ runner.temp }}/aab/
+          if-no-files-found: error
+          retention-days: 1
+
+  android-upload:
+    # In die Produktionsspur über den Baustein; Anteil 1 heißt wie bisher
+    # sofort an alle. Beim Probelauf wird die Bearbeitung verworfen.
+    needs: [android]
+    uses: Revisor01/workflows/.github/workflows/play-upload.yml@97284908c8f72a4e54b593e2c43b56377eda0606 # 1.4.0
+    with:
+      paket: de.godsapp.plietschepluenn
+      tracks: production
+      status: ${{ inputs.freigabe }}
+      production-anteil: "1"
+      release-notes: ${{ needs.android.outputs.hinweise }}
+      artefakt: aab
+      dry-run: ${{ inputs.probelauf }}
+    secrets:
+      dienstkonto: ${{ secrets.GPLAY_SA_JSON_BASE64 }}
+
+  android-zusammenfassung:
+    needs: [pruefung, android, android-upload]
+    if: ${{ always() && inputs.plattformen != 'nur iOS' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
       - name: Zusammenfassung
-        if: always()
         env:
-          VERSION_CODE: ${{ steps.version.outputs.code }}
+          VERSION: ${{ needs.pruefung.outputs.version }}
+          VERSION_CODE: ${{ needs.android.outputs.code }}
+          UPLOAD: ${{ needs.android-upload.result }}
+          PROBELAUF: ${{ inputs.probelauf }}
           FREIGABE: ${{ inputs.freigabe }}
         run: |
           {
             echo "## Google Play"
             echo ""
-            echo "Version ${{ needs.pruefung.outputs.version }} (versionCode ${VERSION_CODE})"
-            echo "in der Produktionsspur."
-            echo ""
-            if [ "$FREIGABE" = "draft" ]; then
-              echo "Status **Entwurf**: Die Fassung liegt in der Play Console und ist"
-              echo "noch bei niemandem. Dort freigeben — bei der ersten Veroeffentlichung"
-              echo "muessen vorher Store-Eintrag, Inhaltsbewertung und Datenschutzangaben"
-              echo "vollstaendig sein."
+            if [ "$UPLOAD" != "success" ]; then
+              echo "**Nicht hochgeladen** (Upload: ${UPLOAD})."
+            elif [ "$PROBELAUF" = "true" ]; then
+              echo "**Probelauf** — Version ${VERSION} gebaut, hochgeladen und geprüft, dann"
+              echo "verworfen. Nichts veroeffentlicht, Nummer unverbraucht."
             else
-              echo "Status **freigegeben**, sofort fuer alle. Google startet die Pruefung"
-              echo "selbst; bis zur Auslieferung dauert es ueblicherweise einige Stunden."
+              echo "Version ${VERSION} (versionCode ${VERSION_CODE})"
+              echo "in der Produktionsspur."
+              echo ""
+              if [ "$FREIGABE" = "draft" ]; then
+                echo "Status **Entwurf**: Die Fassung liegt in der Play Console und ist"
+                echo "noch bei niemandem. Dort freigeben — bei der ersten Veroeffentlichung"
+                echo "muessen vorher Store-Eintrag, Inhaltsbewertung und Datenschutzangaben"
+                echo "vollstaendig sein."
+              else
+                echo "Status **freigegeben**, sofort fuer alle. Google startet die Pruefung"
+                echo "selbst; bis zur Auslieferung dauert es ueblicherweise einige Stunden."
+              fi
             fi
           } >> "$GITHUB_STEP_SUMMARY"

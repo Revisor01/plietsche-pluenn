@@ -30,10 +30,8 @@ def b64url(daten):
 def oeffne(anfrage, was):
     """urlopen, das einen Fehler lesbar macht.
 
-    Google legt den GRUND in den Antwortkoerper; urllib zeigt nur den
-    Statuscode. Ohne das stand hier ein Python-Stapelabzug im Protokoll, und
-    wer nachsah, wusste nicht, woran es lag — genau der Punkt, den
-    upload-play.py fuer sich schon geloest hat.
+    Google legt den Grund in den Antwortkoerper; urllib zeigt nur den
+    Statuscode, im Protokoll stand sonst nur ein Python-Stapelabzug.
     """
     try:
         return urllib.request.urlopen(anfrage)
