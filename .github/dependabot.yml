@@ -69,6 +69,10 @@ updates:
       include: scope
     labels:
       - dependencies
+    ignore:
+      # Die Integrationstests nutzen das SDK der ausgelieferten Apps
+      # (mobile/package.json); beide Stände werden nur gemeinsam angehoben.
+      - dependency-name: "pocketbase"
 
   # ── GitHub Actions ──────────────────────────────────────────────────────
   - package-ecosystem: github-actions
