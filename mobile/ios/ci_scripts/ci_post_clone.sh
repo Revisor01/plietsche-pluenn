@@ -1,0 +1,52 @@
+#!/bin/bash
+# Xcode Cloud, nach dem Klonen: Abhaengigkeiten, natives Projekt aus app.json,
+# Backend-Adresse, Pods und Pruefung der Signierung, mit denselben Schritten
+# wie der iOS-Release auf GitHub. Ohne sie fehlen node_modules, Pods und Version.
+set -euo pipefail
+
+REPO="${CI_PRIMARY_REPOSITORY_PATH:?Nur fuer Xcode Cloud gedacht.}"
+MOBILE="$REPO/mobile"
+PBXPROJ="$MOBILE/ios/PlietschePlnn.xcodeproj/project.pbxproj"
+cd "$MOBILE"
+
+export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
+LINIE=$(tr -d '[:space:]' < .nvmrc)
+brew install "node@$LINIE" cocoapods
+NODE_PREFIX=$(brew --prefix "node@$LINIE")
+export PATH="$NODE_PREFIX/bin:$PATH"
+HAUPT=$(node -p 'process.versions.node.split(".")[0]')
+[ "$HAUPT" = "$LINIE" ] || { echo "FEHLER: Node $HAUPT statt Linie $LINIE aus .nvmrc."; exit 1; }
+
+# Xcode Cloud vergibt die Build-Nummer. Sie kommt in app.json, aus der prebuild
+# sie ins Projekt schreibt; die Nummer dort ist die Untergrenze.
+# shellcheck disable=SC2016
+node -e '
+const fs = require("fs"); const datei = process.argv[1]; const neu = Number(process.env.CI_BUILD_NUMBER);
+const app = JSON.parse(fs.readFileSync(datei, "utf8")); const alt = Number(app.expo.ios.buildNumber);
+if (!Number.isInteger(neu) || !(neu > alt)) { console.error(`FEHLER: Xcode-Cloud-Build ${process.env.CI_BUILD_NUMBER} liegt nicht ueber buildNumber ${alt}. In App Store Connect unter Xcode Cloud > Settings > Build Number die naechste Nummer hoeher setzen.`); process.exit(1); }
+app.expo.ios.buildNumber = String(neu); fs.writeFileSync(datei, JSON.stringify(app, null, 2) + "\n");
+console.log(`Version ${app.expo.version}, iOS-Build ${neu}`);' "$MOBILE/app.json"
+
+npm ci --legacy-peer-deps
+# Die Adresse wird beim Buendeln fest eingebaut. Sie ist oeffentlich und steht
+# in .env.example, wie im GitHub-Release.
+cp .env.example .env
+
+# Ab Expo 57 raeumt prebuild ohne --no-clean ios/ ab und erzeugt es neu.
+CI=1 npx expo prebuild --platform ios --no-install --no-clean
+/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' ios/PlietschePlnn/Info.plist | grep -qx "$CI_BUILD_NUMBER" \
+  || { echo "FEHLER: Info.plist traegt nicht Build $CI_BUILD_NUMBER."; exit 1; }
+
+cd "$MOBILE/ios"
+for versuch in 1 2 3; do
+  pod install && break
+  [ "$versuch" -lt 3 ] || { echo "FEHLER: pod install nach 3 Versuchen fehlgeschlagen."; exit 1; }
+  sleep 20
+done
+grep -q '^export NODE_BINARY=' .xcode.env.local || { echo "FEHLER: .xcode.env.local nennt kein Node."; exit 1; }
+
+# Xcode Cloud signiert selbst; das Projekt signiert automatisch mit dem Team aus
+# app.json. Eine feste Signierung braucht es hier nicht.
+grep -q 'DEVELOPMENT_TEAM = J459G9CJT5;' "$PBXPROJ" || { echo "FEHLER: DEVELOPMENT_TEAM fehlt in project.pbxproj."; exit 1; }
+if grep -q 'CODE_SIGN_STYLE = Manual;' "$PBXPROJ"; then echo "FEHLER: project.pbxproj signiert manuell."; exit 1; fi
+echo "Signierung automatisch mit Team J459G9CJT5."
