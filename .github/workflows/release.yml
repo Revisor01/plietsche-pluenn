@@ -14,8 +14,8 @@ run-name: >-
 # gebaut wird. Ein Fehlklick allein reicht also nicht.
 #
 # Was danach noch von Hand passiert:
-#   - iOS: Die Fassung wird zur Pruefung eingereicht, nicht automatisch
-#     freigegeben. Apple prueft, danach gibst du sie in App Store Connect frei.
+#   - iOS: Die Fassung landet in App Store Connect. Dort zur Pruefung
+#     einreichen; nach Apples Freigabe gibst du sie frei.
 #   - Android: Geht in die Produktionsspur; Google startet die Pruefung selbst.
 #     Bei Freigabe "draft" landet die Fassung stattdessen als Entwurf in der
 #     Play Console und wird dort von Hand freigegeben — so muss die allererste
@@ -64,9 +64,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  TEAM_ID: J459G9CJT5
   PACKAGE: de.godsapp.plietschepluenn
-  ASC_APP_ID: '6784690448'
 
 jobs:
   # ── Sicherung vor dem Bauen ────────────────────────────────────
@@ -112,157 +110,40 @@ jobs:
     name: App Store
     needs: pruefung
     if: ${{ inputs.plattformen != 'nur Android' && !inputs.probelauf }}
-    runs-on: macos-26
-    timeout-minutes: 90
+    # Xcode Cloud baut den Kopf des Branches, signiert selbst und vergibt die
+    # Build-Nummer; die Workflow-ID steht in der Repo-Variable XCODE_CLOUD_WORKFLOW.
+    uses: Revisor01/workflows/.github/workflows/xcode-cloud.yml@59236255da497972cdac8407c9af45d994ad0fcb # 1.4.1
+    with:
+      workflow-id: ${{ vars.XCODE_CLOUD_WORKFLOW }}
+    secrets:
+      asc-key-id: ${{ secrets.ASC_KEY_ID }}
+      asc-issuer-id: ${{ secrets.ASC_ISSUER_ID }}
+      asc-key-p8: ${{ secrets.ASC_KEY_P8_BASE64 }}
+
+  ios-zusammenfassung:
+    needs: [pruefung, ios]
+    if: ${{ always() && inputs.plattformen != 'nur Android' && !inputs.probelauf }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Neuestes stabiles Xcode waehlen
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -iv beta | sort -V | tail -1)
-          if [ -z "$XCODE" ]; then XCODE=/Applications/Xcode.app; fi
-          sudo xcode-select -s "$XCODE/Contents/Developer"
-          xcodebuild -version
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Abhaengigkeiten installieren
-        working-directory: mobile
-        run: npm ci --legacy-peer-deps
-
-      - name: ASC-API-Key ablegen
-        env:
-          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-        run: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo "$ASC_KEY_P8_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
-          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
-
-      - name: Naechste Build-Nummer ermitteln
-        id: version
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_APP_ID: ${{ env.ASC_APP_ID }}
-        run: python3 .github/scripts/asc-build-number.py >> "$GITHUB_OUTPUT"
-
-      - name: Build-Nummer eintragen
-        working-directory: mobile
-        env:
-          BUILD_NUMMER: ${{ steps.version.outputs.build }}
-        run: |
-          python3 - <<'PY'
-          import json, os, pathlib
-          p = pathlib.Path('app.json')
-          d = json.loads(p.read_text(encoding='utf-8'))
-          d['expo'].setdefault('ios', {})['buildNumber'] = os.environ['BUILD_NUMMER']
-          p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-          print(f"Version {d['expo']['version']} ({os.environ['BUILD_NUMMER']})")
-          PY
-
-      - name: Natives Projekt erzeugen
-        working-directory: mobile
-        run: |
-          echo "EXPO_PUBLIC_PB_URL=https://pb.xn--plietsche-plnn-rsb.de" >> .env
-          npx expo prebuild --platform ios --clean --no-install
-
-      - name: CocoaPods installieren
-        working-directory: mobile/ios
-        run: pod install
-
-      - name: Signing-Keychain einrichten
-        env:
-          P12_BASE64: ${{ secrets.IOS_DIST_P12_BASE64 }}
-          P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
-        run: |
-          echo "$P12_BASE64" | base64 --decode > dist.p12
-          security create-keychain -p ci-build build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p ci-build build.keychain
-          security set-keychain-settings -t 3600 build.keychain
-          security import dist.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k ci-build build.keychain >/dev/null
-          rm dist.p12
-
-      - name: Archiv bauen
-        working-directory: mobile/ios
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          TEAM_ID: ${{ env.TEAM_ID }}
-        run: |
-          set -o pipefail
-          SCHEME=$(ls -d *.xcworkspace | head -1 | sed 's/\.xcworkspace$//')
-          xcodebuild -workspace "$SCHEME.xcworkspace" -scheme "$SCHEME" \
-            -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/App.xcarchive archive \
-            DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -40
-
-      - name: IPA exportieren
-        working-directory: mobile/ios
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          TEAM_ID: ${{ env.TEAM_ID }}
-        run: |
-          set -o pipefail
-          cat > ExportOptions-ci.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>destination</key><string>export</string>
-            <key>method</key><string>app-store-connect</string>
-            <key>signingStyle</key><string>automatic</string>
-            <key>stripSwiftSymbols</key><true/>
-            <key>teamID</key><string>${TEAM_ID}</string>
-            <key>uploadSymbols</key><true/>
-            <key>manageAppVersionAndBuildNumber</key><false/>
-          </dict>
-          </plist>
-          EOF
-          xcodebuild -exportArchive -archivePath build/App.xcarchive \
-            -exportPath build/export -exportOptionsPlist ExportOptions-ci.plist \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -10
-
-      - name: Hochladen
-        working-directory: mobile/ios
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: |
-          IPA=$(ls build/export/*.ipa | head -1)
-          xcrun altool --upload-app -f "$IPA" -t ios \
-            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
-
       - name: Zusammenfassung
-        if: always()
         env:
-          BUILD_NUMMER: ${{ steps.version.outputs.build }}
+          VERSION: ${{ needs.pruefung.outputs.version }}
+          BUILD_NUMMER: ${{ needs.ios.outputs.build-nummer }}
+          ERGEBNIS: ${{ needs.ios.result }}
         run: |
           {
             echo "## App Store"
             echo ""
-            echo "Version ${{ needs.pruefung.outputs.version }}, Build ${BUILD_NUMMER} hochgeladen."
-            echo ""
-            echo "Die Fassung ist **noch nicht veroeffentlicht**: Nach der Verarbeitung"
-            echo "in App Store Connect zur Pruefung einreichen und nach Apples Freigabe"
-            echo "veroeffentlichen."
+            if [ "$ERGEBNIS" != "success" ]; then
+              echo "**Nicht in App Store Connect** (Xcode Cloud: ${ERGEBNIS})."
+            else
+              echo "Version ${VERSION}, Build ${BUILD_NUMMER} liegt in App Store Connect."
+              echo ""
+              echo "Die Fassung ist **noch nicht veroeffentlicht**: Nach der Verarbeitung"
+              echo "in App Store Connect zur Pruefung einreichen und nach Apples Freigabe"
+              echo "veroeffentlichen."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── Android ────────────────────────────────────────────────────

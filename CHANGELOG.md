@@ -4,7 +4,7 @@ Alle nennenswerten Änderungen an Plietsche Plünn (App + Backend) werden hier f
 Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/).
 Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummeriert.
 
-## [Unreleased]
+## [Unreleased] – 1.0.1
 
 ### Geändert
 - **Abmelden fragt vorher nach.** Ein Tipp auf „Abmelden" im Profil oder unter „Der Laden" meldet nicht mehr sofort ab, sondern fragt erst. Versehentlich abgemeldet war bisher schnell passiert, und danach mussten E-Mail und Passwort wieder heraus.
@@ -51,7 +51,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - README, Vorlagen und Hinweise gibt es nur noch auf Deutsch.
 - Die automatischen Prüfungen führen Registrierung, Bestätigungsmail und Kontolöschung jetzt tatsächlich aus und bilden das Backend strenger nach. Grenzfälle bei Punkten, Aktionen und der Teile-Obergrenze sind abgesichert.
 - Android-Fassungen gehen über einen gemeinsamen Upload-Weg zu Google Play. Die Veröffentlichung kennt jetzt einen Probelauf, der alles bis zur Prüfung bei Google durchspielt und nichts veröffentlicht.
-- Die iOS-App kann jetzt auch in Xcode Cloud gebaut werden. Für Nutzer:innen ändert sich nichts.
+- Die iOS-App wird auf einem neuen Weg gebaut und ausgeliefert. Für Nutzer:innen ändert sich nichts.
 
 ## [1.0.0 (33)] – 2026-09-14
 
