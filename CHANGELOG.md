@@ -4,7 +4,7 @@ Alle nennenswerten Änderungen an Plietsche Plünn (App + Backend) werden hier f
 Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/).
 Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummeriert.
 
-## [Unreleased]
+## [Unreleased] – 1.0.1
 
 ### Geändert
 - **Abmelden fragt vorher nach.** Ein Tipp auf „Abmelden" im Profil oder unter „Der Laden" meldet nicht mehr sofort ab, sondern fragt erst. Versehentlich abgemeldet war bisher schnell passiert, und danach mussten E-Mail und Passwort wieder heraus.
