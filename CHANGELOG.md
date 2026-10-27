@@ -54,6 +54,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - Die iOS-App wird auf einem neuen Weg gebaut und ausgeliefert. Für Nutzer:innen ändert sich nichts.
 - Grundbausteine der App auf den neuesten Stand gebracht; zwei gemeldete Sicherheitslücken in den Entwicklungswerkzeugen sind damit geschlossen. Für Nutzer:innen ändert sich nichts.
 - Der Server läuft auf einer neueren Fehlerbehebungs-Fassung seiner Datenbank. Für Nutzer:innen ändert sich nichts.
+- Bau und Prüfung laufen mit der aktuellen Langzeit-Version der Laufzeitumgebung.
 
 ## [1.0.0 (33)] – 2026-09-14
 

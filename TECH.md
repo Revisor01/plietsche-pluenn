@@ -30,7 +30,7 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 | Container | eigenes Docker-Abbild (`pocketbase/Dockerfile`) | — |
 | Build | iOS in Xcode Cloud, Android mit Gradle in GitHub Actions | — |
 
-**Laufzeitanforderung Entwicklung:** Node 22 LTS
+**Laufzeitanforderung Entwicklung:** Node 26 LTS
 
 ---
 
