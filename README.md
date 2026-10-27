@@ -81,7 +81,7 @@ der Nutzer:innen geschrieben.
 ## Selbst betreiben
 
 Das Backend ist [PocketBase](https://pocketbase.io) mit eigenen Hooks und
-Migrationen. Nötig sind Docker und für die App Node 22.
+Migrationen. Nötig sind Docker und für die App Node 26.
 
 **1. Backend starten.** Hooks und Migrationen werden beim Start eingelesen, das
 Schema legt sich selbst an. PocketBase verschlüsselt seine Einstellungen mit

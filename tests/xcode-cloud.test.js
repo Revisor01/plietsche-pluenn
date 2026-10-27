@@ -52,7 +52,7 @@ describe('Skript nach dem Klonen', () => {
   it('nimmt Node aus .nvmrc, dieselbe Linie wie die Android-Fassungen', () => {
     expect(text).toContain("LINIE=$(tr -d '[:space:]' < .nvmrc)");
     const linie = lesen('mobile/.nvmrc').trim();
-    expect(linie).toBe('22');
+    expect(linie).toBe('26');
     for (const name of ['release.yml', 'play-internal.yml']) {
       expect(lesen(`.github/workflows/${name}`), name).toMatch(new RegExp(`node-version: ${linie}\\n`));
     }
