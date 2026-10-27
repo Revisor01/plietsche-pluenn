@@ -66,6 +66,46 @@ describe('Skript nach dem Klonen', () => {
   });
 });
 
+describe('Sperre für expo-modules-jsi unter Xcode 27', () => {
+  const knoten = text.match(/node -e '\n([^']*)' "\$\(xcodebuild -version/)[1];
+  const pruefe = (xcode, jsi) => {
+    const lauf = spawnSync('node', ['-e', knoten, xcode, jsi], { encoding: 'utf-8' });
+    return { code: lauf.status, aus: lauf.stdout + lauf.stderr };
+  };
+
+  it('prüft nach npm ci und vor prebuild', () => {
+    const stellen = ['npm ci --legacy-peer-deps', 'xcodebuild -version', 'npx expo prebuild'].map((s) => text.indexOf(s));
+    expect(stellen[0]).toBeGreaterThan(-1);
+    expect([...stellen].sort((a, b) => a - b)).toEqual(stellen);
+  });
+
+  it.each([['Xcode 27.1', '57.0.4'], ['Xcode 28.0', '56.0.14']])('bricht unter %s mit %s ab', (xcode, jsi) => {
+    const { code, aus } = pruefe(xcode, jsi);
+    expect(code).toBe(1);
+    expect(aus).toContain(`expo-modules-jsi ${jsi} ab (behoben erst ab 57.0.5)`);
+  });
+
+  it.each([['Xcode 27.1', '57.0.5'], ['Xcode 27.1', '57.1.3'], ['Xcode 27.1', '58.0.19'], ['Xcode 26.6', '57.0.4']])(
+    'lässt %s mit %s bauen', (xcode, jsi) => {
+      const { code, aus } = pruefe(xcode, jsi);
+      expect(code).toBe(0);
+      expect(aus.trim()).toBe(`${xcode}, expo-modules-jsi ${jsi}`);
+    });
+
+  it.each([['', '57.1.3'], ['Xcode 27.1', 'abc']])('bricht bei unlesbaren Versionen %j / %j ab', (xcode, jsi) => {
+    const { code, aus } = pruefe(xcode, jsi);
+    expect(code).toBe(1);
+    expect(aus).toContain('Versionen nicht erkannt');
+  });
+
+  it('die eingecheckten Stände tragen die Behebung, in Lockfile und Podfile.lock gleich', () => {
+    const lock = JSON.parse(lesen('mobile/package-lock.json'));
+    const version = lock.packages['node_modules/expo-modules-jsi'].version;
+    expect(pruefe('Xcode 27.1', version).code).toBe(0);
+    expect(lesen('mobile/ios/Podfile.lock')).toContain(`  - ExpoModulesJSI (${version}):`);
+  });
+});
+
 describe('Build-Nummer aus Xcode Cloud', () => {
   const knoten = text.match(/node -e '\n([\s\S]*?)' "\$MOBILE\/app.json"/)[1];
   function setze(nummer, buildNumber = '53') {

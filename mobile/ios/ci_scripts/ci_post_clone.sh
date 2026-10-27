@@ -28,6 +28,19 @@ app.expo.ios.buildNumber = String(neu); fs.writeFileSync(datei, JSON.stringify(a
 console.log(`Version ${app.expo.version}, iOS-Build ${neu}`);' "$MOBILE/app.json"
 
 npm ci --legacy-peer-deps
+
+# Xcode 27 laesst ExpoModulesJSI vor 57.0.5 Warnungen ausgeben, die der innere
+# Build als "error:" meldet, und Xcode bricht die Skriptphase ab (expo/expo#49120).
+# Faellt das Paket je unter 57.0.5, meldet diese Pruefung es frueh.
+# shellcheck disable=SC2016
+node -e '
+const [xcode, jsi] = process.argv.slice(1);
+const haupt = Number((/^Xcode (\d+)/.exec(xcode) || [])[1]);
+const [a, b, c] = jsi.split(".").map(Number);
+if (!(haupt > 0) || !/^\d+\.\d+\.\d+/.test(jsi)) { console.error(`FEHLER: Versionen nicht erkannt: "${xcode}", expo-modules-jsi "${jsi}".`); process.exit(1); }
+const behoben = a > 57 || (a === 57 && (b > 0 || c >= 5));
+if (haupt >= 27 && !behoben) { console.error(`FEHLER: ${xcode} bricht den Bau von expo-modules-jsi ${jsi} ab (behoben erst ab 57.0.5). Expo-SDK anheben oder im Xcode-Cloud-Workflow Xcode 26.6 einstellen.`); process.exit(1); }
+console.log(`${xcode}, expo-modules-jsi ${jsi}`);' "$(xcodebuild -version | sed -n 1p)" "$(node -p 'require("expo-modules-jsi/package.json").version')"
 # Die Adresse wird beim Buendeln fest eingebaut. Sie ist oeffentlich, steht in
 # .env.example und ist die Produktion, wie bei der Android-Fassung.
 cp .env.example .env
