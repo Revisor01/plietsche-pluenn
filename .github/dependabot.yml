@@ -83,3 +83,23 @@ updates:
       prefix: "chore"
     labels:
       - dependencies
+
+  # ── PocketBase-Abbild (docker) ──────────────────────────────────────────
+  # In 0.x bricht schon ein Minor-Sprung das Datenformat; Server, App-SDK und
+  # Migrationen werden dann gemeinsam angehoben. Hier nur Patch-Stände.
+  - package-ecosystem: docker
+    directory: /pocketbase
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    commit-message:
+      prefix: "chore"
+    labels:
+      - dependencies
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
