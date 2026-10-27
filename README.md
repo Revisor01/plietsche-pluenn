@@ -10,10 +10,6 @@
 </p>
 
 <p align="center">
-  <b>Deutsch</b> · <a href="README.en.md">English</a>
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/Plattform-iOS%2016.4%2B%20%C2%B7%20Android%207%2B-blue" alt="Plattform">
   <img src="https://img.shields.io/itunes/v/6784690448?label=App%20Store&color=green" alt="Version im App Store">
   <img src="https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo" alt="Expo">
@@ -63,7 +59,7 @@ betriebenen Server; es gibt keinen Cloud-Dienst dazwischen.
 
 ## Installation
 
-**[Im App Store laden »](https://apps.apple.com/app/id6784690448)** ·
+**[Im App Store laden »](https://apps.apple.com/de/app/id6784690448)** ·
 **[Bei Google Play »](https://play.google.com/store/apps/details?id=de.godsapp.plietschepluenn)**
 
 Die App gehört zu einem bestimmten Laden: Nach dem Start legt man ein Konto an
