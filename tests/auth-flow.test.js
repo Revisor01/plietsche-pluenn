@@ -1,14 +1,4 @@
-// Kontoablaeufe: Registrieren, Bestaetigungsmail, Passwort vergessen,
-// Abmelden, Konto loeschen.
-//
-// Diese Tests FUEHREN die Ablauflogik aus mobile/lib/authFlow.ts aus — gegen
-// einen gestellten PocketBase-Client, der jeden Aufruf in eine Liste schreibt.
-// Geprueft wird die tatsaechliche Aufruffolge, nicht der Quelltext: Ein
-// auskommentierter Aufruf fehlt in der Liste und macht den Test rot.
-//
-// Vorher lasen die Tests useAuth.ts als Text und suchten nach Namen. Ein
-// auskommentiertes `requestVerification(email)` blieb dabei gruen, weil der
-// Name im Kommentar weiter dastand.
+// Führt die Abläufe aus mobile/lib/authFlow.ts gegen einen mitschreibenden Client aus, damit ein auskommentierter Aufruf auffällt.
 
 import { describe, it, expect } from 'vitest';
 import { createAuthFlow } from '../mobile/lib/authFlow.ts';
@@ -16,10 +6,7 @@ import { code, ohneKommentare } from './helper/quelltext.js';
 
 const ANGEMELDET = { id: 'u1', email: 'kim@example.org' };
 
-/**
- * Baut die Abhaengigkeiten fuer createAuthFlow. Jeder Aufruf landet als
- * Eintrag in `log`. `fehler` nennt Schritte, die werfen sollen.
- */
+/** Abhängigkeiten für createAuthFlow; jeder Aufruf landet in `log`, `fehler` nennt werfende Schritte. */
 function gestellt({ record = ANGEMELDET, fehler = [] } = {}) {
   const log = [];
   const wirft = (schritt) => {
@@ -92,8 +79,7 @@ describe('register', () => {
   });
 
   it('scheitert nicht, wenn die Bestaetigungsmail nicht rausgeht', async () => {
-    // Das Konto steht und die Person ist angemeldet — ein stehender
-    // Mailversand darf die Registrierung nicht zurueckmelden.
+    // Ein stehender Mailversand darf die Registrierung nicht zurückmelden.
     const { flow, log } = gestellt({ record: null, fehler: ['requestVerification'] });
     await expect(flow.register('neu@example.org', 'geheim123', 'Neu')).resolves.toBeUndefined();
     expect(taten(log).map(([n]) => n)).toEqual(['create', 'authWithPassword', 'requestVerification']);
@@ -147,8 +133,7 @@ describe('deleteAccount', () => {
   });
 
   it('wirft, wenn am angemeldeten Konto keine Adresse haengt', async () => {
-    // Ohne Adresse liesse sich das Passwort nicht pruefen — dann darf auch
-    // nichts geloescht werden.
+    // Ohne Adresse kein Passwortcheck, also auch kein Löschen.
     const { flow, log } = gestellt({ record: { id: 'u1' } });
     await expect(flow.deleteAccount('egal')).rejects.toThrow('not authenticated');
     expect(log).toEqual([]);
@@ -158,8 +143,7 @@ describe('deleteAccount', () => {
 describe('requestVerification', () => {
   it('schickt an die Adresse des angemeldeten Kontos', async () => {
     const { flow, log } = gestellt();
-    // Ein uebergebener Wert wird nicht beachtet: Sonst liessen sich fremde
-    // Postfaecher mit Bestaetigungsmails beschicken.
+    // Sonst ließen sich fremde Postfächer beschicken.
     await flow.requestVerification('fremd@example.org');
     expect(taten(log)).toEqual([['requestVerification', 'kim@example.org']]);
   });
@@ -199,10 +183,7 @@ describe('logout', () => {
   });
 });
 
-// Die Ablauflogik nuetzt nur, wenn der Hook sie auch aufruft. useAuth.ts
-// selbst laesst sich in Node nicht laden (React, SecureStore); geprueft wird
-// deshalb der Quelltext OHNE Kommentare — ein auskommentierter Aufruf faellt
-// damit auf.
+// useAuth.ts lädt in Node nicht, daher Text ohne Kommentare.
 describe('Verdrahtung in useAuth', () => {
   const hook = code('mobile/lib/hooks/useAuth.ts');
 

@@ -1,22 +1,4 @@
-// Holt das gepinnte PocketBase-Binary für die Integrationstests.
-//
-// Warum ein echtes Binary und nicht der Harness: Der Harness (tests/harness.js)
-// baut die PocketBase-Umgebung nach und prüft die Fachlogik schnell und
-// genau. Was er nicht prüfen kann, ist, ob PocketBase selbst unsere Dateien so
-// versteht, wie wir sie meinen — ob die Migrationen durchlaufen, ob eine
-// Leseregel greift, ob ein Filter der App noch dieselben Datensätze liefert.
-// Genau daran hängt ein Versionssprung wie 0.22 → 0.40.
-//
-// Die Version ist fest und muss zu pocketbase/Dockerfile passen. Die
-// Prüfsummen stammen aus der checksums.txt des offiziellen Releases
-// (https://github.com/pocketbase/pocketbase/releases/tag/v0.40.4).
-// Stimmt die Prüfsumme nicht, wird nichts ausgepackt.
-//
-// Cache: node_modules/.cache/pocketbase/<version>/<plattform>/pocketbase —
-// ein zweiter Lauf lädt nichts nach. In der CI hält actions/cache das
-// Verzeichnis zwischen den Läufen.
-//
-// Offline oder mit eigenem Binary: PB_BINARY=/pfad/zu/pocketbase setzen.
+// Holt das gepinnte, per Prüfsumme geprüfte PocketBase-Binary (wie pocketbase/Dockerfile); eigenes Binary über PB_BINARY.
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';

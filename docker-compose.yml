@@ -1,11 +1,4 @@
-# Lokale Fassung zum Ausprobieren: fremdes PocketBase-Abbild, Hooks und
-# Migrationen als Bind-Mount aus pocketbase/. Start: docker compose up -d,
-# danach http://localhost:8090/_/.
-#
-# NICHT die Fassung, die in Produktion läuft. Dort gilt
-# docker-compose.portainer.yml: eigenes Abbild aus pocketbase/Dockerfile, in
-# dem Hooks und Migrationen stecken, und nur pb_data als Mount. Der Grund
-# steht dort im Kopf.
+# Lokale Fassung mit Bind-Mounts aus pocketbase/; Produktion: docker-compose.portainer.yml. Start: docker compose up -d, dann http://localhost:8090/_/
 
 services:
   pocketbase:
@@ -16,14 +9,9 @@ services:
       - "--encryptionEnv=PB_ENCRYPTION_KEY"
       - "--http=0.0.0.0:8090"
     environment:
-      # Genau 32 Zeichen, z. B. openssl rand -hex 16; ohne ihn sind die
-      # gespeicherten Einstellungen nach einem Neustart unlesbar.
+      # Genau 32 Zeichen (openssl rand -hex 16), sonst sind gespeicherte Einstellungen nach einem Neustart unlesbar.
       PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY:?PB_ENCRYPTION_KEY setzen}
-      # Nur für die Uhrzeiten der nächtlichen Aufgaben und für Logzeilen.
-      # Tagesgrenze, Kalenderwoche und Jahreszahl hängen NICHT hieran — die
-      # rechnet die Fachlogik aus der gepflegten Ladenzeitzone (store.timezone).
-      # Geht diese Zeile auf einem anders eingerichteten Host verloren, bleiben
-      # Punkte, Serien und Abzeichen deshalb trotzdem richtig.
+      # Nur für Cron-Uhrzeiten und Logs; Tage und Wochen rechnet die Fachlogik aus store.timezone.
       TZ: Europe/Berlin
     volumes:
       - ./pocketbase/pb_data:/pb_data
@@ -36,9 +24,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-    # Dieselben Grenzen wie in docker-compose.portainer.yml — sonst beschriebe
-    # diese Datei einen Aufbau, den es so nicht gibt. Ohne max-size waechst die
-    # Protokolldatei unbegrenzt weiter, bis die Platte voll ist.
+    # Dieselben Grenzen wie in docker-compose.portainer.yml.
     logging:
       driver: json-file
       options:

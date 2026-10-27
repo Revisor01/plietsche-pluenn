@@ -1,10 +1,4 @@
-// Tests für die Record-Hooks: Standardwerte, SKU-Vergabe, Schreibschutz und
-// die Punkte fürs Bringen.
-//
-// Der Schreibschutz ist der wichtigste Teil: PocketBase erlaubt es einer
-// angemeldeten Person, den eigenen Datensatz zu ändern. Ohne diesen Hook
-// ließe sich der Punktestand von Hand setzen — und die Abzeichen-Vergabe
-// vertraut genau diesem Wert.
+// Record-Hooks, vor allem der Schreibschutz der Punktefelder, dem die Abzeichen-Vergabe vertraut.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -36,12 +30,7 @@ describe('Neue Person', () => {
     expect(neuerNutzer(h).get('role')).toBe('visitor');
   });
 
-  // Die Registrierung ist offen (createRule ""): Wer die API direkt anspricht,
-  // kann beliebige Felder mitschicken. Bis 26.09.2026 übernahm der Hook eine
-  // mitgeschickte Rolle — gemessen gegen PocketBase 0.22.21: POST ohne
-  // Anmeldung mit role "admin" ergab ein Admin-Konto. Ebenso ließ sich ein
-  // Startguthaben setzen. Beim Anlegen gilt deshalb derselbe Schutz wie beim
-  // Ändern: Rolle, Punktestand und Serie setzt nur der Server.
+  // Registrierung ist offen: Rolle, Punkte und Serie setzt nur der Server.
   it('wird bei der Registrierung nie Admin, auch wenn es mitgeschickt wird (verbotener Fall)', () => {
     const h = setup();
     expect(neuerNutzer(h, { role: 'admin' }).get('role')).toBe('visitor');
@@ -82,8 +71,6 @@ describe('Neue Person', () => {
   });
 
   it('startet bei null Punkten und ohne Serie', () => {
-    // Zahlenfelder stehen ohne Angabe auf 0 — niemand faengt mit einem
-    // Guthaben oder einer laufenden Serie an.
     const h = setup();
     const rec = neuerNutzer(h);
     expect(rec.get('points_total')).toBe(0);
@@ -91,8 +78,6 @@ describe('Neue Person', () => {
   });
 
   it('setzt den Punktestand auf 0, wenn nichts mitgeschickt wurde', () => {
-    // Die Gegenprobe: Ohne Angabe traegt der Hook die 0 ein. Genau das ist
-    // seine Aufgabe.
     const h = setup();
     expect(neuerNutzer(h).get('points_total')).toBe(0);
   });
@@ -103,8 +88,6 @@ describe('Neue Person', () => {
   });
 
   it('bekommt drei der vier Benachrichtigungsarten eingeschaltet', () => {
-    // Serie, Aktionen und Abzeichen an, Sonstiges aus — waehrend der
-    // Registrierung gibt es keine Gelegenheit, das zu waehlen.
     const h = setup();
     const rec = neuerNutzer(h);
     expect(rec.get('push_streak_enabled')).toBe(true);
@@ -207,8 +190,7 @@ describe('Neues Teil', () => {
   });
 
   it('zaehlt von der hoechsten vergebenen Nummer weiter', () => {
-    // Nicht die Anzahl zaehlen: Nach einer Loeschung gaebe das doppelte
-    // Nummern auf einem Feld, das eindeutig sein muss.
+    // Nach einer Löschung gäbe die Anzahl doppelte Nummern.
     const h = setup({
       items: [
         { id: 'i1', sku: 'PP-0001', title: 'Alt' },
@@ -235,17 +217,13 @@ describe('Neues Teil', () => {
   });
 
   it('bekommt ohne Angabe 30 Punkte', () => {
-    // Ohne diesen Standardwert stuende in der Teileliste 0, obwohl das Teil
-    // beim Mitnehmen 30 Punkte bringt — der Scanner faengt es mit `|| 30` ab.
+    // Sonst stünde 0 in der Liste, obwohl das Teil 30 Punkte bringt.
     const h = setup();
     expect(neuesTeil(h, { title: 'Jacke' }).get('points')).toBe(30);
   });
 
   it('wertet auch eine mitgeschickte 0 als "nicht gesetzt"', () => {
-    // Bewusst so: Ein Zahlenfeld ohne Wert und eine ausdrueckliche 0 sind im
-    // Hook nicht zu unterscheiden. Ein Teil mit 0 Punkten waere die seltene
-    // Ausnahme und laesst sich nachtragen — ein Teil, das versehentlich mit 0
-    // im Bestand landet, faellt dagegen erst beim Mitnehmen auf.
+    // Leeres Feld und 0 sind im Hook nicht zu unterscheiden.
     const h = setup();
     expect(neuesTeil(h, { title: 'Gruss', points: 0 }).get('points')).toBe(30);
   });
@@ -281,9 +259,7 @@ describe('Neues Teil', () => {
     expect(rec.get('is_showcase')).toBe(false);
   });
 
-  // Der erlaubte Fall zum verbotenen darueber. Ohne ihn wuerde auch ein Hook
-  // durchgehen, der is_showcase pauschal auf false setzt — das Schaufenster
-  // liesse sich dann gar nicht mehr befuellen, und kein Test faende es.
+  // Der erlaubte Fall, sonst ginge ein Hook durch, der is_showcase immer auf false setzt.
   it('laesst das Team ein Teil direkt ins Schaufenster stellen', () => {
     for (const rolle of ['volunteer', 'admin']) {
       const h = setup({ users: [{ __name: 'team', id: 'u1', role: rolle }] });
@@ -299,8 +275,6 @@ describe('Neues Teil', () => {
   });
 
   it('laesst ein Team-Teil ausserhalb des Schaufensters, wenn nichts gesetzt ist', () => {
-    // Der Hook darf nicht in die andere Richtung uebertreiben: Ohne Angabe
-    // bleibt das Teil im normalen Bestand.
     const h = setup({ users: [{ __name: 'team', id: 'u1', role: 'admin' }] });
     const rec = neuesTeil(h, { title: 'Hose' }, { authRecord: h.records.team });
     expect(rec.get('is_showcase')).toBe(false);

@@ -1,13 +1,4 @@
-// Archiv in der Teile-Übersicht: welche Teile in welcher Ansicht stehen und in
-// welchen Zustand ein Teil beim Zurückholen aus dem Archiv geht.
-//
-// Vorher gab es weder das eine noch das andere. Archivierte Teile blieben
-// unter „Alle" stehen, trugen weiter den Mülleimer-Knopf — der sie ein zweites
-// Mal archivierte und sonst nichts tat — und ließen sich weder zurückholen
-// noch löschen.
-//
-// Geprüft wird die reine Logik in mobile/lib/itemState.ts. Die Screens ziehen
-// React-Native-Module nach und laufen in Node nicht.
+// Archiv-Logik aus mobile/lib/itemState.ts.
 
 import { describe, it, expect } from 'vitest';
 import { filterItems, isArchived, restoreStatus } from '../mobile/lib/itemState.ts';
@@ -74,10 +65,7 @@ describe('filterItems', () => {
 });
 
 describe('restoreStatus', () => {
-  // Freigeben zahlt dem Einreichenden Bring-Punkte (defaults.pb.js). Eine
-  // abgelehnte Einreichung darf beim Zurückholen deshalb nicht still
-  // freigegeben werden, sondern kommt zurück in „Zu prüfen" — dort lässt sie
-  // sich wie jede andere freigeben, auch mit Aktion.
+  // Abgelehnte Einreichungen kommen in „Zu prüfen“, nicht still freigegeben.
   it('abgelehnte Einreichung → zurück in „Zu prüfen"', () => {
     expect(restoreStatus(teil('a', { ...archiviert, created_by: 'besucherin' }))).toBe('pending');
   });

@@ -1,18 +1,4 @@
-// Anmelde-Token aus PocketBase 0.22 — die Handys, die vor dem Upgrade
-// angemeldet waren.
-//
-// 0.22 stellte Token mit type "authRecord" aus, 0.40 kennt nur noch "auth"
-// und weist die alten ab (gemessen am 26.09.2026: HTTP 401 auf eine mit 0.22
-// ausgestellte Anmeldung nach dem Upgrade). Eine Übergangs-Middleware
-// (pb_hooks/compat.pb.js) hat sie eine Zeit lang wieder angenommen; sie ist
-// am 07.10.2026 entfernt worden — Produktion hatte nur Testkonten. Seitdem
-// gilt: Ein alter Token öffnet nichts mehr, eine frische Anmeldung schon.
-//
-// Einen alten Token kann 0.40 nicht ausstellen; der Test baut ihn so, wie
-// 0.22 ihn gebaut hat: HS256 über {collectionId, exp, id, type:"authRecord"}
-// mit dem Schlüssel tokenKey des Kontos + Anmeldegeheimnis der Sammlung.
-// Beides liest er an der API vorbei direkt aus der Datenbank der
-// Testinstanz — über die API gibt PocketBase keines von beiden heraus.
+// Token aus PocketBase 0.22 (type "authRecord") öffnen nichts mehr; der Test baut sie wie 0.22 aus der Datenbank der Testinstanz.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { inject } from 'vitest';
@@ -54,8 +40,7 @@ describe('Token im 0.22-Format (ohne Übergangsregel)', () => {
   it('öffnet das eigene Konto nicht mehr', async () => {
     const alt = jwt({ collectionId: usersId, exp: inEinerStunde(), id: anna.id, type: 'authRecord' }, key);
     const res = await call('GET', `/api/collections/users/records/${anna.id}`, { token: alt });
-    // Ohne gültige Anmeldung greift die Leseregel id = @request.auth.id nicht:
-    // PocketBase meldet den Datensatz als nicht vorhanden.
+    // Ohne Anmeldung meldet PocketBase den Datensatz als nicht vorhanden.
     expect(res.status).toBe(404);
   });
 

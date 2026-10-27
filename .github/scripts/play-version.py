@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-# Ermittelt die naechste freie Versionsnummer bei Google Play.
-# Aufruf: play-version.py <service-account.json> <paketname>
-# Ausgabe: "code=<zahl>" (fuer GITHUB_OUTPUT)
-#
-# Die Nummer kommt aus Google Play und nicht aus dem Repo: Sie muss dort
-# eindeutig aufsteigen, und ein Zaehler im Git liefe frueher oder spaeter
-# auseinander. Beruecksichtigt werden alle hochgeladenen Pakete, auch solche,
-# die in keiner Spur veroeffentlicht sind.
-#
-# Reine Standardbibliothek plus openssl — auf dem Runner ist beides da.
+# Naechste freie Versionsnummer aus Google Play, weil ein Zaehler im Git auseinanderliefe. Aufruf: play-version.py <service-account.json> <paketname>
 import base64
 import json
 import subprocess
@@ -82,9 +73,7 @@ def main():
         anfrage = urllib.request.Request(f'{API}{pfad}', data=daten, method=methode)
         anfrage.add_header('Authorization', f'Bearer {zugang}')
         anfrage.add_header('Content-Type', 'application/json')
-        # streng=False fuer das Aufraeumen im finally: Ein Fehler dort darf den
-        # eigentlichen Fehler nicht verdecken, und SystemExit aus einem finally
-        # heraus taete genau das.
+        # streng=False im finally, sonst verdeckt ein SystemExit den eigentlichen Fehler.
         if streng:
             antwort = oeffne(anfrage, f'{methode} {pfad}')
         else:

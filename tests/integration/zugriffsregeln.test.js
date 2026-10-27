@@ -1,18 +1,4 @@
-// Die Sicherheitszusagen der Zugriffsregeln, gegen das echte PocketBase 0.40
-// über HTTP — je Zusage ein verbotener und ein erlaubter Fall.
-//
-// Die Unit-Ebene (tests/zugriffsregeln.test.js) prüft den Wortlaut der Regeln
-// im Snapshot und wertet sie selbst aus. Hier zählt, was PocketBase daraus
-// macht. Die Statuscodes sind gemessen (26.09.2026, 0.40.4):
-//   - Regel null (nur Superuser): 403 für list, view und create — auch ohne
-//     Anmeldung, Meldung „Only superusers can perform this action."
-//   - Regel greift nicht beim Listen: 200 mit leerer Liste.
-//   - Regel greift nicht beim Einzelabruf: 404, nicht 403 — PocketBase
-//     verrät nicht, ob es den Datensatz gibt.
-//
-// Die Konten werden mit dem SDK der ausgelieferten Apps angelegt (0.22.1),
-// die Datensätze, die nur Hooks oder der Superuser schreiben (visits,
-// points_log, action_counts), legt der Superuser an.
+// Zugriffsregeln gegen PocketBase 0.40, je Zusage verboten und erlaubt; null gibt 403, nicht greifend 200 leer beim Listen und 404 beim Einzelabruf.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { call, superuserToken, adminList, registerAndLogin } from './helpers.mjs';
@@ -107,8 +93,7 @@ describe('store: lesbar für Angemeldete, ohne Türgeheimnis', () => {
   });
 
   it('als Besucherin: nicht änderbar (404)', async () => {
-    // Die updateRule lautet auf role = "admin". PocketBase 0.40 antwortet auf
-    // eine nicht erfüllte Schreibregel mit 404 (gemessen), wie beim Lesen.
+    // Auch eine nicht erfüllte Schreibregel gibt 404.
     const res = await call('PATCH', `/api/collections/store/records/${storeRow.id}`, {
       token: tokenVon(anna),
       body: { checkin_qr_secret: 'selbst-gesetzt' },
@@ -203,9 +188,7 @@ describe('action_counts: nur die eigenen Teilnahmezahlen', () => {
   let bensZaehler;
 
   beforeAll(async () => {
-    // Eine längst beendete Aktion: action_counts braucht eine, aber eine
-    // laufende würde die Punkte der anderen Testdateien vervielfachen — alle
-    // teilen sich eine Instanz, und die Reihenfolge der Dateien ist nicht fest.
+    // Beendet, weil eine laufende die Punkte der anderen Testdateien vervielfachte.
     const aktion = await alsSuperuserAnlegen('campaigns', {
       name: 'Regel-Aktion (beendet)',
       multiplier: 1,
@@ -261,9 +244,7 @@ describe('items: fremde Einreichungen samt Standort bleiben verborgen', () => {
   });
 
   it('fremde Einreichung: auch der Standort ist nicht über einen Filter abzutasten', async () => {
-    // Ein Filter auf ein verborgenes Feld eines verborgenen Datensatzes darf
-    // keine Treffer liefern — sonst ließe sich die Adresse Zeichen für
-    // Zeichen erraten.
+    // Sonst ließe sich die Adresse Zeichen für Zeichen erraten.
     const q = new URLSearchParams({ filter: 'location ~ "Musterweg"' });
     const res = await call('GET', `/api/collections/items/records?${q}`, { token: tokenVon(anna) });
     expect(res.status).toBe(200);

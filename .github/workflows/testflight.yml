@@ -1,14 +1,6 @@
 name: TestFlight
 
-# Baut den aktuellen Stand des Branches in Xcode Cloud (Workflow „Plietsche
-# Plünn TestFlight") und trägt danach die Testhinweise ein. Xcode Cloud
-# signiert selbst und vergibt die Build-Nummer
-# (mobile/ios/ci_scripts/ci_post_clone.sh); die Workflow-ID steht in der
-# Repo-Variable XCODE_CLOUD_WORKFLOW. Die App spricht immer mit der Produktion:
-# Xcode Cloud baut aus dem Repo-Stand, die Adresse steht in mobile/.env.example.
-#
-# Die Testhinweise entstehen aus den Commits seit dem letzten Lauf und stehen
-# danach in TestFlight unter "Was gibt es Neues zu testen".
+# Stößt den Xcode-Cloud-Workflow (Repo-Variable XCODE_CLOUD_WORKFLOW) an und trägt die Testhinweise ein.
 
 on:
   workflow_dispatch:
@@ -49,8 +41,7 @@ jobs:
       - name: Quelltext holen
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Die ganze Historie, damit die Testhinweise aus den Commits seit
-          # dem letzten gebauten Stand entstehen koennen.
+          # Ganze Historie für die Testhinweise.
           fetch-depth: 0
 
       - name: ASC-API-Key ablegen
@@ -66,13 +57,7 @@ jobs:
         id: vorher
         env:
           GH_TOKEN: ${{ github.token }}
-        # Der Commit des letzten erfolgreichen Laufs dieses Workflows. Ein
-        # Git-Tag scheidet aus: Der eingebaute Token darf keine Referenz
-        # setzen, die auf Workflow-Dateien zeigt.
-        #
-        # Der Branch gehoert in die Abfrage: Ohne ihn zaehlt auch ein Lauf von
-        # einem Nebenzweig als Vergleichsstand, und die Hinweise entstuenden
-        # dann aus einem Bereich, der mit diesem Zweig nichts zu tun hat.
+        # Letzter erfolgreicher Lauf dieses Branches; kein Tag, weil der Token keine Referenz auf Workflow-Dateien setzen darf.
         run: |
           SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/testflight.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=1" \
@@ -85,8 +70,6 @@ jobs:
         env:
           VORGABE: ${{ inputs.hinweis }}
           SEIT_COMMIT: ${{ steps.vorher.outputs.sha }}
-        # Aus den Commits seit dem letzten Upload. Dasselbe Skript bedient den
-        # Google-Play-Workflow, nur mit anderer Laengengrenze.
         run: |
           python3 .github/scripts/release-notes.py testflight > /tmp/notes.txt
           {
@@ -104,8 +87,7 @@ jobs:
           BUILD_NUMMER: ${{ needs.bauen.outputs.build-nummer }}
           HINWEISE: ${{ steps.hinweise.outputs.text }}
           ASC_APP_ID: ${{ env.ASC_APP_ID }}
-        # Der Baustein meldet den Build, sobald er in App Store Connect liegt;
-        # das Nachfassen bleibt für den Fall, dass die Suche nachhinkt.
+        # Nachfassen, falls die Suche in App Store Connect nachhinkt.
         run: |
           python3 - <<'PY'
           import base64, json, os, subprocess, time, urllib.request, urllib.error

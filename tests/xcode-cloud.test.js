@@ -1,6 +1,4 @@
-// Xcode Cloud baut den iOS-Release. Dafür liegt mobile/ios im Repo, das Skript
-// nach dem Klonen bereitet Abhängigkeiten, Build-Nummer und Pods vor, und
-// testflight.yml und release.yml starten den Build über den Baustein.
+// Xcode Cloud baut den iOS-Release aus mobile/ios, gestartet über testflight.yml und release.yml.
 
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';

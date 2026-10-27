@@ -6,16 +6,7 @@ import type { Item } from './types';
 import { categoryLabel } from './format';
 import { PP } from './theme';
 
-/**
- * Druckbogen mit QR-Etiketten — zum Ausschneiden und an die Kleidung heften.
- *
- * Als PDF über den Teilen-Dialog: So kann das Team es direkt an einen Drucker
- * schicken, per Mail an den Laden senden oder auf einem Rechner ablegen. Ein
- * reiner Bildschirm-Screen hätte keinen Weg aufs Papier.
- *
- * Die QR-Codes werden als data:-URI eingebettet, damit der Bogen auch ohne
- * Netz vollständig ist — im Laden ist WLAN nicht selbstverständlich.
- */
+/** Druckbogen mit QR-Etiketten als PDF; Codes als data:-URI, weil im Laden WLAN fehlen kann. */
 
 const MM = (n: number) => `${n}mm`;
 
@@ -28,8 +19,7 @@ function esc(s?: string): string {
 }
 
 async function qrDataUri(text: string): Promise<string> {
-  // Fehlerkorrektur M: verträgt Knicke und Waschzettel-Falten, bleibt aber
-  // klein genug für ein Etikett von 30 mm.
+  // Fehlerkorrektur M verträgt Knicke und bleibt klein genug für 30 mm.
   return QRCode.toDataURL(text, {
     errorCorrectionLevel: 'M',
     margin: 1,
@@ -38,8 +28,7 @@ async function qrDataUri(text: string): Promise<string> {
   });
 }
 
-// Bewusst ohne Punktwert und Zustand: Beides kann sich ändern, ohne dass das
-// Teil ein neues Etikett bekommt — gedruckt gehört nur, was dauerhaft gilt.
+// Ohne Punkte und Zustand, die ändern sich ohne neues Etikett.
 function label(item: Item, qr: string): string {
   const cat = categoryLabel(item.category);
   return `

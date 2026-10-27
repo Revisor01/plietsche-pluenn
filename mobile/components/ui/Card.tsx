@@ -47,8 +47,7 @@ export function GradientCard({ children, pad = PP.space.lg, radius, colors, styl
           borderRadius: r,
           padding: pad,
           overflow: 'hidden',
-          // Schatten folgt der Kartenfarbe, sonst schimmert bei einer eigenen
-          // Akzentfarbe das Teal der Marke darunter durch.
+          // Schatten in Kartenfarbe, sonst schimmert das Marken-Teal durch.
           shadowColor: colors?.[0] ?? PP.teal,
           shadowOpacity: 0.18,
           shadowRadius: 24,

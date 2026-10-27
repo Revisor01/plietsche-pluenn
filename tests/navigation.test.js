@@ -1,15 +1,4 @@
-// Zurück-Taste unter Android und Einführung aus dem Profil.
-//
-// Tester meldeten, ein „Zurück" schließe auf der Startseite die ganze App. In
-// der App gibt es dort keinen Knopf — gemeint war die System-Geste von
-// Android. Sie lief an unserem eigenen Zurück-Pfeil vorbei: Alle Unterseiten
-// sind versteckte Tabs, und Androids Zurück springt aus jedem Tab direkt zur
-// Startseite. Ein zweites Zurück beendete dort ohne Vorwarnung die App.
-//
-// Die Entscheidungen stehen in mobile/lib/navigation.ts und werden hier
-// ausgeführt. Dass die Screens sie wirklich benutzen, prüfen die Text-Tests
-// unten — ohne Kommentare, damit ein auskommentierter Aufruf auffällt. Wie
-// sich die Geste auf dem Gerät anfühlt, sieht dieser Test nicht.
+// Androids Zurück und Einführung aus dem Profil; Logik aus mobile/lib/navigation.ts, Screens als Text ohne Kommentare.
 
 import { describe, it, expect } from 'vitest';
 import { entryRedirect, createExitGuard, EXIT_WINDOW_MS } from '../mobile/lib/navigation.ts';

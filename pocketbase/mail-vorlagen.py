@@ -21,14 +21,7 @@ nicht mehr unter `meta` in /api/settings. Ein PATCH auf /api/settings mit
 import json
 
 TEAL, MINT, SKY = "#27b092", "#79c4b0", "#80b4e2"
-# Wohin der Knopf fuehrt. Unter PocketBase 0.22 war {ACTION_URL} Pflicht und
-# wurde aus `actionUrl` in den Einstellungen gebaut; 0.40 kennt diesen
-# Platzhalter nicht mehr — der Link steht jetzt direkt in der Vorlage, aus
-# {APP_URL} und {TOKEN}. Die Form bleibt dieselbe wie bisher,
-#   https://plietsche-pluenn.de/_/#/auth/confirm-verification/<token>
-# denn die Seite /konto (web/konto.html) liest Fall und Token genau aus
-# dieser Adresse, und Mails, die vor dem Upgrade verschickt wurden, zeigen
-# ebenfalls dorthin. appUrl in den Einstellungen muss auf die Webseite zeigen.
+# Link direkt in der Vorlage aus {APP_URL} und {TOKEN}, weil 0.40 {ACTION_URL} nicht mehr kennt; web/konto.html liest genau diese Form.
 LINK = {
     "verificationTemplate": "{APP_URL}/_/#/auth/confirm-verification/{TOKEN}",
     "resetPasswordTemplate": "{APP_URL}/_/#/auth/confirm-password-reset/{TOKEN}",

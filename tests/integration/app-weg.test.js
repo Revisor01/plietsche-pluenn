@@ -1,14 +1,4 @@
-// Der Weg der App, gegen das echte PocketBase 0.40 — mit dem SDK in der
-// Version, die in den ausgelieferten Apps steckt (0.22.1).
-//
-// Die Antwortformen der eigenen Routen werden auf die EXAKTE Schlüsselmenge
-// geprüft. Das ist der Vertrag mit den Apps auf den Geräten: Ein Feld, das
-// verschwindet oder umbenannt wird, bricht eine App, die sich nicht
-// mitdeployen lässt (siehe CLAUDE.md, „Ausgelieferte Apps nie brechen").
-// Ein neues Feld dagegen wäre erlaubt — schlägt ein Test nur deshalb fehl,
-// die Liste hier bewusst erweitern und docs/openapi.yaml mitziehen.
-//
-// Die Formen stammen aus docs/openapi.yaml (CheckinResult, ItemResult, Ok).
+// Weg der App gegen PocketBase 0.40 mit dem SDK der Apps (0.22.1); Antwortformen exakt nach docs/openapi.yaml.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import {
@@ -24,9 +14,7 @@ import {
 const CHECKIN_KEYS = ['already_checked_in', 'bonus_points', 'points', 'points_total', 'streak_weeks', 'type'];
 const ITEM_KEYS = ['bonus_points', 'checkin_points', 'did_checkin', 'item_points', 'label', 'points', 'points_total', 'type'];
 
-// Das SDK wirft bei Fehlern einen ClientResponseError. Die App liest daraus
-// `status` und `response.message` (mobile/lib/errors.ts) — genau das prüfen
-// wir auch.
+// Die App liest `status` und `response.message`.
 async function fehler(promise) {
   try {
     await promise;
@@ -36,12 +24,7 @@ async function fehler(promise) {
   throw new Error('Aufruf hätte fehlschlagen müssen');
 }
 
-// PocketBase ab 0.23 macht aus jeder ApiError-Meldung einen Satz: großer
-// Anfangsbuchstabe, Punkt am Ende. Aus throw new ApiError(400, 'Du bist nicht
-// im Laden') wird in der Antwort „Du bist nicht im Laden." — gemessen am
-// 26.09.2026 gegen 0.40.4, der Hook-Quelltext hat keinen Punkt. Die App zeigt
-// den Text wörtlich (mobile/lib/errors.ts); ihre Deutsch-Erkennung trifft
-// weiterhin. Geprüft wird deshalb der Text, der wirklich ankommt.
+// Ab 0.23 hängt PocketBase einen Punkt an ApiError-Meldungen.
 const scan = (pb, body) => pb.send('/api/pp/scan', { method: 'POST', body });
 
 let store;
@@ -269,10 +252,7 @@ describe('POST /api/pp/push/register und /unregister', () => {
 });
 
 describe('GET /api/pp/version', () => {
-  // Die Route ist am 02.10.2026 gegen 0.22 entstanden und beim Upgrade auf
-  // die 0.40-Schnittstelle umgeschrieben worden (e statt c). Der Harness kann
-  // nicht zeigen, ob der Handler unter dem echten Binary läuft — etwa ob
-  // require() mit __hooks im Handler-Scope greift. Hier läuft er wirklich.
+  // Ob der Handler unter dem echten Binary läuft, zeigt nur dieser Test.
   it('antwortet ohne Anmeldung mit genau { commit }', async () => {
     const res = await call('GET', '/api/pp/version');
     expect(res.status).toBe(200);

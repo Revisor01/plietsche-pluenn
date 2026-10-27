@@ -10,16 +10,11 @@ interface QRScannerProps {
   active?: boolean;
 }
 
-// Full-screen camera with a viewfinder overlay. Calls onScanned once per scan;
-// parent controls re-arming via the `active` prop.
+// Vollbild-Kamera; `active` steuert, wann wieder gescannt wird.
 export function QRScanner({ onScanned, active = true }: QRScannerProps) {
   const lockRef = useRef(false);
 
-  // Die Sperre hängt an `active`, nicht an einem festen Timer. Ein fester
-  // Timer lief ab, während der Scan noch lief (Standortermittlung, Netz) —
-  // die Kamera nahm dann einen zweiten Code an, den der Screen still verwarf.
-  // Jetzt bleibt gesperrt, solange der Elternteil `active` auf false hält, und
-  // wird erst gelöst, wenn er wieder scanbereit ist.
+  // Sperre an `active` statt Timer, sonst nahm die Kamera während eines laufenden Scans einen zweiten Code.
   useEffect(() => {
     if (active) lockRef.current = false;
   }, [active]);

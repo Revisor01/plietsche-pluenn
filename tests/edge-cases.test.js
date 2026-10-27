@@ -1,12 +1,4 @@
-// Fachliche Randfälle (Befund T-7): Stellen, an denen ein Vergleich mit `<`
-// statt `<=`, ein `v && v > 0` oder ein fehlender Datensatz still ein anderes
-// Ergebnis liefert, als man beim Lesen erwartet.
-//
-// Die Tests halten das HEUTIGE Verhalten fest. Wo es fachlich fragwürdig wirkt,
-// steht das im Kommentar — geändert wird der Hook hier nicht (siehe CLAUDE.md,
-// „Beim Ändern der Fachlogik"). Erwartete Punktwerte werden, wo es um
-// Rückfallwerte geht, aus den Konstanten in lib/points.js gelesen und nicht
-// abgeschrieben.
+// Fachliche Randfälle; die Tests halten das heutige Verhalten fest, Rückfallwerte kommen aus lib/points.js.
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createRequire } from 'node:module';
@@ -95,8 +87,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-// Vor loadHook aufrufen: Der Harness reicht das globale Date an die
-// Hook-Umgebung weiter, und das muss dann schon das gestellte sein.
+// Vor loadHook, der Harness reicht Date an die Hook-Umgebung weiter.
 function amZeitpunkt(isoZeit) {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(isoZeit));
@@ -144,10 +135,7 @@ describe('Hoechstzahl mitgenommener Teile, genau an der Grenze', () => {
   });
 
   it('lehnt nach 6 Teilen heute das 8. und 9. Teil ab — die Grenze gilt pro Tag', () => {
-    // Bis 26.09.2026 galt die Grenze nur je Scan: Wer schon eingecheckt war,
-    // scannte den Tuer-Code erneut und bekam weitere Teile gutgeschrieben.
-    // Entscheidung des Betreibers: Die Hoechstzahl gilt pro Besuch, also pro
-    // Tag in der Ladenzeitzone, ueber alle Scans.
+    // Die Höchstzahl gilt pro Tag in der Ladenzeitzone über alle Scans.
     amZeitpunkt(JETZT);
     const h = scanSetup({
       visits: [
@@ -188,12 +176,7 @@ describe('Hoechstzahl mitgenommener Teile, genau an der Grenze', () => {
   });
 });
 
-// ── 1b. Tagesgrenze ueber alle Scans ─────────────────────────────
-//
-// Gezaehlt wird, was die Person heute (Ladenzeitzone) mitgenommen hat: die
-// Zaehler-Teile aus dem Besuch des Tages (visits.items_count, jetzt auch beim
-// zweiten Tuer-Scan fortgeschrieben) plus jedes per QR gescannte Teil
-// (points_log mit kind = "scan" — das Teil selbst traegt keinen Personenbezug).
+// ── 1b. Tagesgrenze über alle Scans: Zähler im Besuch plus QR-Scans in points_log ──
 
 describe('Hoechstzahl pro Tag, ueber alle Scans', () => {
   const teil = (n) => ({
@@ -261,8 +244,7 @@ describe('Hoechstzahl pro Tag, ueber alle Scans', () => {
   });
 
   it('am naechsten Tag ist wieder frei — Tagesgrenze ist Mitternacht im Laden', () => {
-    // JETZT ist 12:00 Uhr in Buesum (UTC+2). 23:30 Uhr am Vortag ist
-    // 21:30 UTC — gestern. 00:30 Uhr heute ist 22:30 UTC des Vortags — heute.
+    // 12:00 in Büsum (UTC+2): 23:30 Vortag ist gestern, 00:30 heute ist heute.
     amZeitpunkt(JETZT);
     const gestern = scanSetup({
       visits: [{ id: 'v1', user: 'user1', checkin_at: '2026-09-25T21:30:00.000Z', items_count: 7 }],
@@ -335,10 +317,7 @@ describe('Hoechstzahl pro Tag, ueber alle Scans', () => {
 
 describe('Aktionsfaktoren an den Raendern', () => {
   it('Faktor 0 aufs Mitnehmen gibt normale Punkte und keine Teilnahme', () => {
-    // FACHLICH FRAGWUERDIG: campaignMult prueft `v && v > 0`. Eine 0 gilt
-    // damit als „nicht gesetzt" und faellt auf das Altfeld `multiplier`
-    // zurueck, hier 1. Wer 0 eintraegt, um Mitnehmen in der Aktion
-    // auszuschliessen, bekommt stattdessen die normalen Punkte.
+    // Fragwürdig: `v && v > 0` macht aus 0 „nicht gesetzt“.
     amZeitpunkt(JETZT);
     const h = scanSetup({ campaigns: [aktion({ mult_visit: 1, mult_take: 0, mult_bring: 1 })] });
     const res = scan(h, { qr_code: DOOR, items_count: 2 });
@@ -347,10 +326,7 @@ describe('Aktionsfaktoren an den Raendern', () => {
   });
 
   it('Faktor 0 aufs Mitnehmen erbt den Altfaktor der Aktion', () => {
-    // FACHLICH FRAGWUERDIG, und schaerfer als oben: Die App speichert beim
-    // Anlegen multiplier = max(mult_visit, mult_take, mult_bring). Steht
-    // Vorbeikommen auf x2 und Mitnehmen auf 0, bekommt Mitnehmen ueber den
-    // Rueckfall ebenfalls x2 — und zaehlt als Teilnahme.
+    // Fragwürdig: Mitnehmen 0 bekommt über `multiplier` den Besuchsfaktor.
     amZeitpunkt(JETZT);
     const h = scanSetup({
       campaigns: [aktion({ mult_visit: 2, mult_take: 0, mult_bring: 1, multiplier: 2 })],
@@ -365,8 +341,7 @@ describe('Aktionsfaktoren an den Raendern', () => {
   });
 
   it('Faktor 0,5 halbiert die Punkte fuers Mitnehmen und zaehlt keine Teilnahme', () => {
-    // Ein Faktor unter 1 wirkt als Abzug — die App bietet nur x1, x2, x3 an,
-    // ueber die Verwaltungsoberflaeche ist 0,5 aber speicherbar (min: 0).
+    // Faktor unter 1 wirkt als Abzug; über die Verwaltung ist 0,5 speicherbar.
     amZeitpunkt(JETZT);
     const h = scanSetup({ campaigns: [aktion({ mult_visit: 1, mult_take: 0.5, mult_bring: 1 })] });
     const res = scan(h, { qr_code: DOOR, items_count: 2 });
@@ -395,9 +370,7 @@ describe('Aktionsfaktoren an den Raendern', () => {
   });
 
   it('ein negativer Faktor faellt auf den Altfaktor zurueck, hier 1', () => {
-    // PocketBase wuerde -1 wegen min: 0 gar nicht speichern; der Harness
-    // prueft min nicht. Der Test haelt fest, dass die Rechenlogik einen
-    // solchen Wert trotzdem nicht als Abzug anwendet.
+    // Der Harness prüft min nicht, die Rechnung wendet -1 trotzdem nicht an.
     amZeitpunkt(JETZT);
     const h = scanSetup({ campaigns: [aktion({ mult_visit: 1, mult_take: -1, mult_bring: 1 })] });
     const res = scan(h, { qr_code: DOOR, items_count: 2 });
@@ -495,10 +468,7 @@ describe('Zeitgrenzen einer Aktion, auf die Sekunde', () => {
   });
 
   it('gilt in der letzten halben Sekunde des Endtags nicht mehr', () => {
-    // Die App speichert das Ende als 23:59:59.000 Ortszeit (dayEndIso in der
-    // Aktionsverwaltung). Ein Scan um 23:59:59,5 liegt dahinter. Praktisch
-    // folgenlos, der Laden hat dann zu — festgehalten, weil die Grenze
-    // nicht „bis Mitternacht" ist, wie der Kommentar dort nahelegt.
+    // Das Ende ist 23:59:59.000, nicht Mitternacht.
     const ende = new Date('2026-09-26T21:59:59.000Z').getTime(); // 23:59:59 in Büsum
     amZeitpunkt(iso(ende + 500));
     const h = mitAktion(T, ende);
@@ -531,9 +501,7 @@ describe('Laden-Datensatz fehlt oder ist nicht gepflegt', () => {
   });
 
   it('config() nimmt die Rueckfallwerte, wenn die Felder auf 0 stehen', () => {
-    // FACHLICH FRAGWUERDIG: 0 ist vom Leerwert nicht zu unterscheiden. Wer im
-    // Laden-Datensatz pts_take auf 0 setzt, um Mitnehmen nicht mehr zu
-    // belohnen, bekommt weiter den Rueckfallwert.
+    // Fragwürdig: pts_take 0 ergibt den Rückfallwert.
     const h = loadHook('scan.pb.js', {
       store: [{ pts_checkin: 0, pts_take: 0, pts_bring: 0, max_items_take: 0 }],
     });
@@ -608,12 +576,7 @@ describe('Freigabe eines eingereichten Teils, einreichendes Konto ohne Rolle', (
   }
 
   it('gibt ohne Rolle keine Bring-Punkte und markiert das Teil nicht als bezahlt', () => {
-    // Heutiges Verhalten: defaults.pb.js zahlt nur, wenn role === 'visitor'.
-    // Ein leeres Rollenfeld faellt damit wie ein Teammitglied heraus. In
-    // Produktion gibt es derzeit 0 Konten ohne Rolle (gemessen) — neue
-    // Konten bekommen beim Anlegen 'visitor'. Faellt das Rollenfeld je leer
-    // aus, bleibt das Teil unbezahlt, aber auch nicht als bezahlt markiert:
-    // Eine spaetere Freigabe nach Nachtragen der Rolle zahlt dann noch.
+    // Nur role === 'visitor' wird bezahlt; ohne Rolle bleibt das Teil unbezahlt, aber nachholbar.
     const h = setup('');
     h.fireRecordHook('updateRequest', 'items', h.records.teil);
     expect(h.records.person.get('points_total')).toBe(0);

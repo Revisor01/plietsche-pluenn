@@ -36,7 +36,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# Android erzeugt der Release mit expo prebuild. ios/ ist versioniert, weil
-# Xcode Cloud ein Projekt im Repo braucht; was Xcode und CocoaPods darin
-# erzeugen, schliesst ios/.gitignore aus.
+# Android erzeugt der Release per prebuild; ios/ ist versioniert, weil Xcode Cloud ein Projekt im Repo braucht.
 /android

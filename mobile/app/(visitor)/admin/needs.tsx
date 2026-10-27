@@ -25,11 +25,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
   const [active, setActive] = useState(need?.is_active ?? true);
   const [color, setColor] = useState(need?.color ?? '');
   const [campaign, setCampaign] = useState(need?.campaign ?? '');
-  // Push only offered for new entries (a one-off broadcast, not on every edit)
-  // and nur für Admins: push_messages.createRule lässt im Backend
-  // ausschließlich `admin` zu. Ein Volunteer bekäme sonst einen Schalter
-  // angeboten, dessen Benutzung der Server mit 403 abweist — der Aushang
-  // stünde, die Push nicht.
+  // Push nur bei neuen Einträgen und nur für Admins, weil push_messages.createRule nur `admin` erlaubt.
   const [push, setPush] = useState(false);
   const [busy, setBusy] = useState(false);
   const { data: campaigns } = useActiveCampaigns();
@@ -46,8 +42,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         detail: detail.trim(),
         is_active: active,
         color,
-        // Leerstring, NICHT undefined: PocketBase überspringt undefined-Felder
-        // beim Update — die Verknüpfung ließe sich sonst nie wieder lösen.
+        // Leerstring statt undefined, sonst überspringt PocketBase das Feld und die Verknüpfung bleibt.
         campaign: campaign || '',
       };
       if (need) await updateNeed(need.id, payload);
@@ -56,11 +51,7 @@ function NeedEditor({ need, onSaved }: { need?: Need; onSaved: () => void }) {
         try {
           await sendPushNow(title.trim(), detail.trim() || 'Neuer Aushang im Laden');
         } catch (e: any) {
-          // Der Editor darf erst zuklappen, wenn der Hinweis quittiert ist.
-          // Lief `onSaved()` direkt hinterher, wechselte der Screen unter dem
-          // stehenden Dialog — und wer ihn dann wegtippte, ging davon aus, die
-          // Push sei raus. Deshalb schließt hier der OK-Knopf, nicht der Code
-          // darunter.
+          // Erst nach dem OK zuklappen, sonst hält man die Push für verschickt.
           Alert.alert(
             'Aushang gespeichert',
             'Die Push konnte nicht gesendet werden: ' + errorText(e, 'Unbekannter Fehler.'),

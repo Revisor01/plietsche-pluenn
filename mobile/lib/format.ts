@@ -2,10 +2,7 @@ import { pb } from './pb';
 import { PP } from './theme';
 import type { Item, Badge, Tier } from './types';
 
-// ── Kategorien — eine einzige Quelle für die ganze App ──────────
-// Eine Kategorie besteht aus Zielgruppe (group) und optionaler Art (type).
-// Der gespeicherte category-Key ist "<group>-<type>" (z.B. "damen-hose") oder
-// eine reine Gruppe ("kinder", "accessoires", "sonstiges").
+// ── Kategorien: gespeichert als "<group>-<type>" oder "<group>" ──
 export const CATEGORY_GROUPS: { key: string; label: string }[] = [
   { key: 'damen', label: 'Damen' },
   { key: 'herren', label: 'Herren' },
@@ -77,15 +74,7 @@ const TIER_NAMES: Record<Tier, string> = {
   diamant: 'Diamant',
 };
 
-/**
- * Die fünf Abzeichen-Stufen in fester Reihenfolge. Namen und Anzahl kommen aus
- * den Rängen unter „Punkte & Ränge" (store.tiers_json): Wer dort vier Ränge
- * pflegt, sieht an jedem Abzeichen vier Stufen — mit den dort vergebenen Namen.
- *
- * Intern bleiben es die Spalten bronze…diamant: An ihnen hängen Vergabelogik,
- * current_tier bei jedem Nutzer und die Medaillon-Farben. Ränge ab dem sechsten
- * haben deshalb keine Entsprechung und bleiben für Abzeichen außen vor.
- */
+/** Die fünf Abzeichen-Stufen; Namen und Anzahl aus store.tiers_json, intern bleiben die Spalten bronze…diamant. */
 export function badgeTierSlots(ranks?: TierStep[] | null): { tier: Exclude<Tier, 'none'>; name: string }[] {
   const order: Exclude<Tier, 'none'>[] = ['bronze', 'silber', 'gold', 'platin', 'diamant'];
   const named = (ranks ?? []).slice().sort((a, b) => a.at - b.at);
@@ -150,9 +139,7 @@ export function badgeTierInfo(badge: Badge, progress: number, ranks?: TierStep[]
 
 export type TierStep = { name: string; at: number };
 
-// Default point ranks — used until store.tiers_json is loaded. The admin can
-// override these (incl. Diamant) via the global tier editor. Even Bronze must
-// be earned: below the first threshold the user has no rank yet ("—").
+// Standard-Ränge bis store.tiers_json geladen ist; unter der ersten Schwelle gibt es keinen Rang.
 export const DEFAULT_TIERS: TierStep[] = [
   { name: 'Bronze', at: 150 },
   { name: 'Silber', at: 750 },
@@ -161,9 +148,7 @@ export const DEFAULT_TIERS: TierStep[] = [
   { name: 'Diamant', at: 6000 },
 ];
 
-// Current rank + progress to the next, against a configurable tier ladder.
-// Below the lowest threshold there is no rank yet — current is '—' and progress
-// counts up toward the first rank (Bronze).
+// Aktueller Rang und Fortschritt; unter der ersten Schwelle '—' mit Fortschritt zu Bronze.
 export function nextTier(points: number, tiers: TierStep[] = DEFAULT_TIERS) {
   const ladder = (tiers && tiers.length ? tiers : DEFAULT_TIERS).slice().sort((a, b) => a.at - b.at);
   const current = [...ladder].reverse().find((t) => t.at <= points) ?? null;
@@ -189,9 +174,7 @@ export function formatPoints(n: number) {
   return n.toLocaleString('de-DE');
 }
 
-// Reader-friendly label for a campaign's points multiplier, so users see what
-// an action gets them. ×2 → "Doppelte Punkte", ×3 → "Dreifach-Punkte",
-// everything else → "×N Punkte" (e.g. ×1,5).
+// Lesbares Label für den Punktefaktor einer Aktion.
 export function campaignBonusLabel(multiplier?: number) {
   const m = multiplier ?? 1;
   if (m >= 3) return 'Dreifach-Punkte';
@@ -200,11 +183,7 @@ export function campaignBonusLabel(multiplier?: number) {
   return '';
 }
 
-// Per-type factors of a campaign, listing every type that differs from ×1.
-// A campaign can boost coming by ×3, taking by ×1,5 and bringing by ×2 — showing
-// only the leading multiplier would hide two thirds of that.
-// Falls back to the legacy single `multiplier` for campaigns created before the
-// per-type fields existed.
+// Alle Faktoren ungleich ×1, sonst blieben zwei Drittel einer Aktion unsichtbar; alte Aktionen über `multiplier`.
 export function campaignFactors(c?: {
   mult_visit?: number;
   mult_take?: number;
@@ -224,9 +203,7 @@ export function campaignFactors(c?: {
   return out;
 }
 
-// "Vorbeikommen ×3 · Mitnehmen ×1,5 · Bringen ×2" — empty when nothing is boosted.
-// Eine Zeile für die Listendarstellung; `campaignFactors` liefert dieselben
-// Werte einzeln, wenn sie als getrennte Marken gezeigt werden sollen.
+// Eine Zeile für Listen, leer ohne Verstärkung; einzeln über `campaignFactors`.
 export function campaignFactorsLabel(c?: {
   mult_visit?: number;
   mult_take?: number;
@@ -273,12 +250,9 @@ export function initials(name?: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// ── Motivation auf der Startseite ──────────────────────────────
-// Statt zweier fester Sätze: die passendste Situation gewinnt. Reihenfolge =
-// Priorität — je konkreter der Anlass, desto weiter oben.
+// ── Motivation auf der Startseite; die Reihenfolge ist die Priorität ──
 
-// Nur modulintern: Beide Formen erscheinen ausschließlich in der Signatur von
-// `motivationFor()`, und die Aufrufstelle leitet ihre Typen daraus ab.
+// Nur modulintern, die Aufrufstelle leitet ihre Typen aus `motivationFor()` ab.
 interface Motivation {
   /** Kurzer Chip über dem Text. */
   pill: string;
@@ -387,9 +361,7 @@ export function motivationFor(input: MotivationInput): Motivation {
   };
 }
 
-// ── Aushang-Farben ─────────────────────────────────────────────
-// Aktionen und Ankündigungen können im Admin eine eigene Akzentfarbe bekommen.
-// Leer/ungültig → null, dann greift die Standardoptik.
+// ── Aushang-Farben; leer oder ungültig heißt Standardoptik ──
 
 /** '#27b092' oder '27b092' → '#27b092'. Ungültiges → null. */
 export function normalizeHex(value?: string | null): string | null {
@@ -420,11 +392,7 @@ export function lighten(hex: string, amount: number): string {
   return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/**
- * Verlauf für eine Aktions-Karte. Ohne eigene Farbe bleibt es beim
- * Marken-Verlauf; mit Farbe wird ein Verlauf aus ihr gezogen (satt → hell),
- * damit der Aushang bunter werden kann, ohne dass Text darauf untergeht.
- */
+/** Verlauf einer Aktions-Karte aus ihrer Farbe, sonst der Marken-Verlauf. */
 export function accentGradient(color?: string | null): readonly [string, string, string] | undefined {
   const base = normalizeHex(color);
   if (!base) return undefined; // → GradientCard nutzt PP.gradient

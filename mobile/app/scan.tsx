@@ -29,25 +29,13 @@ export default function Scan() {
   const [extraBusy, setExtraBusy] = useState(false);
   const [doorSecret, setDoorSecret] = useState<string | null>(null);
   const { data: store } = useStore();
-  // Obergrenze des Steppers. Der Server prüft die Tagessumme über alle Scans
-  // (Tür und QR); der Stepper kennt nur die Höchstzahl selbst. Bei
-  // „Unbegrenzt" ein Deckel, damit das Plus nicht ins Endlose zählt.
-  // Ausgelieferte App-Versionen kennen items_take_unlimited nicht: Ihr
-  // Stepper stoppt weiter bei max_items_take — die harmlose Richtung, es
-  // lässt sich dort nur weniger eintragen als erlaubt, nie mehr.
+  // Bei „Unbegrenzt“ ein Deckel für den Stepper; die Tagessumme prüft der Server.
   const UNLIMITED_STEPPER_MAX = 99;
   const unlimited = store?.items_take_unlimited === true;
   const maxItems = unlimited ? UNLIMITED_STEPPER_MAX : store?.max_items_take ?? 7;
   const [extraError, setExtraError] = useState<string | null>(null);
 
-  // Harte Zeitgrenze für die Standortermittlung. Drinnen im Laden hat das
-  // Gerät oft keine GPS-Sicht; getCurrentPositionAsync wartet dann ohne
-  // Obergrenze. Solange das läuft, blockiert der Scan: Die Kamera steht auf
-  // dem Etikett, es passiert nichts, und ein zweiter Versuch wird still
-  // verworfen. Nach COORDS_TIMEOUT_MS scannen wir lieber ohne Koordinaten
-  // weiter — der Server behandelt fehlende Koordinaten (siehe
-  // pb_hooks/lib/points.js, assertInGeofence: ohne Standort trägt der Code
-  // selbst die Prüfung).
+  // Ohne GPS im Laden wartete die Ortung endlos; danach ohne Koordinaten scannen, der Server prüft dann über den Code.
   const COORDS_TIMEOUT_MS = 3000;
 
   const getCoords = async (): Promise<{ gps_lat?: number; gps_lng?: number }> => {
@@ -102,9 +90,7 @@ export default function Scan() {
       setDoorSecret(null);
       setExtraItems(0);
     } catch (e: any) {
-      // Sheet bleibt offen. Die Meldung zeigen — etwa „Höchstens 7 Teile pro
-      // Besuch. Heute gehen noch 2 Teile.", wenn heute schon Teile per QR
-      // gescannt wurden. Vorher schlug das still fehl.
+      // Sheet bleibt offen und zeigt die Meldung des Servers.
       setExtraError(errorText(e, 'Konnte die Teile nicht gutschreiben.'));
     } finally {
       setExtraBusy(false);

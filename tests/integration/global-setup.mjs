@@ -1,17 +1,4 @@
-// Startet EINE echte PocketBase für alle Integrationstests.
-//
-// Aufbau wie in Produktion, nur auf leerem, temporärem pb_data:
-//   - Migrationen aus pocketbase/pb_migrations, Hooks aus pocketbase/pb_hooks
-//     (die Dateien aus dem Repo, nicht kopiert — was hier grün ist, ist der
-//     Stand, der ins Abbild kommt),
-//   - Einstellungen verschlüsselt über --encryptionEnv, wie im Stack,
-//   - ein Superuser für die Prüfungen, die an den Regeln vorbei lesen müssen
-//     (Türgeheimnis, Push-Geräte). Die App selbst hat keinen.
-//
-// Freier Port, Warten auf /api/health, am Ende beenden und aufräumen. Bricht
-// PocketBase beim Start ab (z. B. weil eine Migration scheitert), schlägt die
-// Einrichtung mit dem Protokoll fehl, statt dass jeder Test einzeln in einen
-// Timeout läuft.
+// Startet eine echte PocketBase mit Migrationen und Hooks aus dem Repo auf leerem pb_data; scheitert der Start, scheitert die Einrichtung mit Protokoll.
 
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -24,8 +11,7 @@ import { ensurePocketBase } from './pocketbase-binary.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MIGRATIONS = path.join(ROOT, 'pocketbase', 'pb_migrations');
-// PB_HOOKS_DIR: zum Gegenprüfen mit einem anderen Hook-Stand (z. B. leer, um
-// zu sehen, dass die Routen-Tests dann wirklich rot werden).
+// PB_HOOKS_DIR für einen anderen Hook-Stand zum Gegenprüfen.
 const HOOKS = process.env.PB_HOOKS_DIR || path.join(ROOT, 'pocketbase', 'pb_hooks');
 
 export const SUPERUSER = { email: 'superuser@integration.test', password: 'Integration-Superuser-1' };
@@ -74,8 +60,7 @@ export default async function setup({ provide }) {
       'serve',
       `--http=127.0.0.1:${port}`,
       ...common,
-      // Keine Neustarts, wenn während des Laufs eine Hook-Datei gespeichert
-      // wird, und keine Migrationsdateien, die PocketBase selbst schreibt.
+      // Keine Neustarts bei gespeicherten Hooks, keine selbst geschriebenen Migrationen.
       '--hooksWatch=false',
       '--automigrate=false',
     ],

@@ -1,25 +1,10 @@
 name: Veröffentlichen
 
-# Ein Probelauf traegt die Marke [Probelauf] im Titel; "Letzte
-# Veroeffentlichung ermitteln" ueberspringt solche Laeufe.
+# Die Marke [Probelauf] im Titel lässt die Ermittlung der letzten Veröffentlichung diese Läufe überspringen.
 run-name: >-
   ${{ inputs.probelauf && '[Probelauf] ' || '' }}Veröffentlichen ${{ inputs.version }}
 
-# Bringt eine Fassung in den App Store und zu Google Play — beide Plattformen
-# in einem Lauf, damit die Staende nicht auseinanderlaufen.
-#
-# Anders als die Testkanaele laesst sich das nicht zurueckholen. Deshalb muss
-# die Versionsnummer beim Start abgetippt werden: Sie wird gegen app.json
-# geprueft, und bei einer Abweichung bricht der Lauf ab, bevor irgendetwas
-# gebaut wird. Ein Fehlklick allein reicht also nicht.
-#
-# Was danach noch von Hand passiert:
-#   - iOS: Die Fassung landet in App Store Connect. Dort zur Pruefung
-#     einreichen; nach Apples Freigabe gibst du sie frei.
-#   - Android: Geht in die Produktionsspur; Google startet die Pruefung selbst.
-#     Bei Freigabe "draft" landet die Fassung stattdessen als Entwurf in der
-#     Play Console und wird dort von Hand freigegeben — so muss die allererste
-#     Veroeffentlichung laufen.
+# Veröffentlicht in App Store und Google Play in einem Lauf; die Version muss beim Start abgetippt werden.
 
 on:
   workflow_dispatch:
@@ -41,11 +26,7 @@ on:
         options:
           - completed
           - draft
-        # Vorgabe completed, weil das der Normalfall einer Veroeffentlichung ist.
-        # Fuer die allererste Veroeffentlichung muss hier draft gewaehlt werden:
-        # Solange die App bei Google unveroeffentlicht ist, lehnt die API jeden
-        # anderen Status ab ("Only releases with status draft may be created on
-        # draft app."). Der Lauf scheiterte sonst nach dem fertigen Build.
+        # draft für die allererste Veröffentlichung, vorher lehnt Google jeden anderen Status ab.
         default: completed
       hinweis:
         description: 'Was ist neu? (leer = aus den Commits erzeugt)'
@@ -90,10 +71,7 @@ jobs:
           fi
           echo "version=$ECHT" >> "$GITHUB_OUTPUT"
 
-      # Ohne setup-node laeuft der Job auf der Node-Version, die der Runner
-      # zufaellig mitbringt. Vitest 5 verlangt >=22.12 — faellt der Runner
-      # darunter, bricht dieser Schritt ab, und zwar der einzige, der vor dem
-      # App Store und der Produktionsspur noch pruefen koennte.
+      # Vitest 5 verlangt Node >=22.12, sonst bricht die letzte Prüfung vor den Stores ab.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26
@@ -110,8 +88,7 @@ jobs:
     name: App Store
     needs: pruefung
     if: ${{ inputs.plattformen != 'nur Android' && !inputs.probelauf }}
-    # Xcode Cloud baut den Kopf des Branches, signiert selbst und vergibt die
-    # Build-Nummer; die Workflow-ID steht in der Repo-Variable XCODE_CLOUD_WORKFLOW.
+    # Xcode Cloud baut, signiert und nummeriert selbst (Repo-Variable XCODE_CLOUD_WORKFLOW).
     uses: Revisor01/workflows/.github/workflows/xcode-cloud.yml@59236255da497972cdac8407c9af45d994ad0fcb # 1.4.1
     with:
       workflow-id: ${{ vars.XCODE_CLOUD_WORKFLOW }}
@@ -199,8 +176,6 @@ jobs:
           d = json.loads(p.read_text(encoding='utf-8'))
           code = int(os.environ['VERSION_CODE'])
           if os.environ.get('PROBELAUF') == 'true':
-              # Weit nach oben, damit der Upload nicht an einer vergebenen
-              # Nummer scheitert; der Probelauf verbraucht sie nicht.
               code += 10000
           d['expo'].setdefault('android', {})['versionCode'] = code
           p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
@@ -237,9 +212,7 @@ jobs:
         id: vorher
         env:
           GH_TOKEN: ${{ github.token }}
-        # Der Commit der letzten Veroeffentlichung, als Vergleichspunkt fuer
-        # die Aenderungshinweise; nur dieser Branch, ohne Probelaeufe (die
-        # veroeffentlichen nichts, siehe run-name).
+        # Letzte Veröffentlichung dieses Branches ohne Probeläufe als Vergleichspunkt.
         run: |
           SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=50" \
@@ -281,8 +254,6 @@ jobs:
           retention-days: 1
 
   android-upload:
-    # In die Produktionsspur über den Baustein; Anteil 1 heißt wie bisher
-    # sofort an alle. Beim Probelauf wird die Bearbeitung verworfen.
     needs: [android]
     uses: Revisor01/workflows/.github/workflows/play-upload.yml@97284908c8f72a4e54b593e2c43b56377eda0606 # 1.4.0
     with:

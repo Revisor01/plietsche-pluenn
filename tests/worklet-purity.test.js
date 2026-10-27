@@ -1,23 +1,4 @@
-// Worklets dürfen keine gewöhnliche JS-Funktion aufrufen.
-//
-// `useAnimatedStyle` & Co. laufen auf dem UI-Thread. Alles, was dort steht,
-// wird von Reanimated in eine eigene Laufzeit übertragen; eine im JS-Thread
-// definierte Funktion existiert dort nicht. Der Aufruf endet nicht mit einer
-// falschen Farbe, sondern reißt den ganzen Screen ab:
-//
-//   Uncaught Error: [Worklets] Tried to synchronously call a Remote Function.
-//   Called "alpha" on the UI Runtime.
-//
-// Genau das ist passiert: Beim Zusammenführen der Design-Farben wurde in
-// Toggle.tsx die feste Spurfarbe durch `alpha(PP.ink, 'medium')` ersetzt —
-// innerhalb des Worklets. Jede Ansicht mit einem Schalter stürzte ab: die
-// Detailansicht eines Teils, das Einstell-Formular, die Benachrichtigungen,
-// die Admin-Bereiche für Badges und Suchanfragen.
-//
-// `tsc` sieht das nicht (der Aufruf ist typkorrekt) und die Backend-Tests auch
-// nicht. Der Fehler zeigt sich erst zur Laufzeit, in der App. Dieser Test
-// prüft die Quelle: Steht in einem Worklet-Rumpf ein Aufruf einer der
-// Theme-Hilfsfunktionen, schlägt er fehl.
+// Worklet-Rümpfe dürfen keine Theme-Funktionen aufrufen, sonst stürzt der Screen zur Laufzeit ab und tsc sieht es nicht.
 
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -36,9 +17,7 @@ const WORKLET_HOOKS = [
   'runOnUI',
 ];
 
-// Gewöhnliche Funktionen aus lib/theme.ts. Sie sind keine Worklets und dürfen
-// deshalb nicht aus einem Worklet-Rumpf gerufen werden. Ihre Ergebnisse sind
-// Zeichenketten und Zahlen — die berechnet man vorher und reicht sie hinein.
+// Gewöhnliche Funktionen aus lib/theme.ts, ihre Ergebnisse vorher berechnen.
 const JS_ONLY_HELPERS = ['alpha', 'radius', 'glow', 'surfaceElevation', 'ripple', 'pressedOpacity'];
 
 function sourceFiles(dir) {
@@ -52,11 +31,7 @@ function sourceFiles(dir) {
   return out;
 }
 
-/**
- * Schneidet den Rumpf eines Worklet-Rückrufs aus der Quelle. Gezählt wird ab
- * der öffnenden Klammer des Hook-Aufrufs bis zu ihrer Entsprechung — so bleibt
- * geschachtelter Code drin und der Rest der Datei draußen.
- */
+/** Schneidet den Rumpf eines Worklet-Rückrufs bis zur passenden Klammer aus. */
 function workletBodies(src) {
   const bodies = [];
   for (const hook of WORKLET_HOOKS) {

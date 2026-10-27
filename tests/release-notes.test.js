@@ -1,13 +1,4 @@
-// Tests für .github/scripts/release-notes.py — die Hinweise, die Tester:innen
-// in TestFlight und bei Google Play zu lesen bekommen.
-//
-// Hier zählt vor allem, was NICHT hineingerät: Der Text geht bei einer
-// Veröffentlichung ungeprüft in die Produktionsspur. Steht dort „Keystore-
-// Angaben an Gradle uebergeben", lesen das die Nutzer:innen im Store.
-//
-// Das Skript liest `git log` aus dem Arbeitsverzeichnis. Damit die Tests nicht
-// an der echten Projekt-Historie hängen (die sich mit jedem Commit ändert),
-// legt jeder Test ein Wegwerf-Repo mit gestellten Commits an.
+// release-notes.py in Wegwerf-Repos; entscheidend ist, was nicht in die Hinweise gerät.
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
@@ -70,9 +61,7 @@ describe('Interna bleiben draußen', () => {
   });
 
   it('filtert Interna am Bereich, auch wenn der Typ fix oder feat ist', () => {
-    // Das ist der Fehler, um den es geht: `fix(ci): ...` trägt den Typ `fix`
-    // und rutschte am Typ-Filter vorbei — die CI-Commits vom 10.09. landeten
-    // so in den Testhinweisen.
+    // `fix(ci): ...` trägt den Typ `fix` und muss trotzdem raus.
     commit('fix(ci): Keystore-Angaben an Gradle uebergeben');
     commit('fix(ci): Vergleichsstand ohne Git-Tag ermitteln');
     commit('perf(ci): Android-Build beschleunigen');
@@ -82,8 +71,7 @@ describe('Interna bleiben draußen', () => {
   });
 
   it('behält einen Fix mit fachlichem Bereich', () => {
-    // Die Gegenprobe zum Test davor: `fix(items)` betrifft Nutzer:innen und
-    // muss stehen bleiben — der Bereichsfilter darf nicht zu weit greifen.
+    // `fix(items)` bleibt, der Bereichsfilter darf nicht zu weit greifen.
     commit('fix(items): Standardwert von 30 Punkten greifen lassen');
     expect(hinweise()).toEqual([
       'Standardwert von 30 Punkten greifen lassen',
@@ -99,10 +87,7 @@ describe('Vorgabe und Grenzen', () => {
   });
 
   it('kürzt die Vorgabe bei Google Play auf 480 Zeichen', () => {
-    // Die Länge allein sagt nichts: 480 beliebige Zeichen kämen damit durch.
-    // Geprüft wird deshalb der Inhalt — und zwar mit unterscheidbarem Anfang
-    // und Ende, damit auch feststeht, dass VORN gekürzt wird und nicht etwa
-    // das Ende genommen.
+    // Inhalt statt Länge, mit unterscheidbarem Anfang und Ende, damit vorn gekürzt wird.
     const lang = `ANFANG${'a'.repeat(600)}ENDE`;
     const [zeile] = hinweise('play', { VORGABE: lang });
     expect(zeile).toBe(lang.slice(0, 480));

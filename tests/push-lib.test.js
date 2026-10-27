@@ -1,19 +1,4 @@
-// Tests für den Push-Versand selbst (lib/push.js).
-//
-// Warum das hier eigene Tests braucht: In dieser Datei steht, WER eine
-// Benachrichtigung bekommt. Jede Nachricht hat eine Kategorie (Serie, Aktion,
-// Abzeichen, Sonstiges), und jede Person hat pro Kategorie einen Schalter.
-// Wer „nur Serien-Erinnerungen" eingestellt hat, darf keine Aktions-Nachricht
-// bekommen — das ist eine Einwilligung, keine Anzeigefrage.
-//
-// Ein Vertippen bei der Zuordnung (push_badge_enabled statt
-// push_campaign_enabled) fällt sonst niemandem auf, bis sich jemand beschwert.
-// Deshalb steht hier zu jeder Kategorie beides: der erlaubte und der
-// verbotene Fall.
-//
-// Die übrigen Tests ersetzen lib/push.js durch einen Stub — ein Test darf
-// keine echten Nachrichten verschicken. Hier wird die Bibliothek stattdessen
-// echt geladen (realPush), und nur der Versandkanal $http.send ist gestellt.
+// Push-Versand mit echter lib/push.js (nur $http.send gestellt), weil hier die Einwilligung je Kategorie entschieden wird; je Kategorie erlaubt und verboten.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -71,8 +56,7 @@ describe('collectTokens: Kategorie und Einwilligung', () => {
   }
 
   it('trennt zwei Personen mit verschiedenen Einstellungen sauber', () => {
-    // Die Probe aufs Exempel: dieselbe Nachricht, zwei Empfängerinnen, nur
-    // eine hat zugestimmt.
+    // Zwei Empfängerinnen, nur eine hat zugestimmt.
     const h = setup(
       [person('u1', ['campaign']), person('u2', ['streak'])],
       [
@@ -212,8 +196,7 @@ describe('tokensForUser', () => {
   });
 
   it('ordnet jede Kategorie demselben Schalter zu wie collectTokens', () => {
-    // Beide Wege müssen dieselbe Einwilligung lesen — sonst bekäme jemand die
-    // persönliche Nachricht, die er über den Rundruf abbestellt hat.
+    // Beide Wege lesen dieselbe Einwilligung.
     for (const { kategorie, schalter } of KATEGORIEN) {
       const h = setup([person('u1', [schalter])], [{ id: 'd1', user: 'u1', expo_token: 'TOK1' }]);
       expect(h.push.tokensForUser(h.records.u1, kategorie).map((t) => t.token)).toEqual(['TOK1']);
@@ -299,8 +282,7 @@ describe('send', () => {
   });
 
   it('lässt ein Gerät stehen, wenn Expo einen anderen Fehler meldet', () => {
-    // Nur DeviceNotRegistered heißt „das Gerät gibt es nicht mehr". Ein
-    // MessageRateExceeded darf niemanden abmelden.
+    // Nur DeviceNotRegistered meldet ab, MessageRateExceeded nicht.
     const h = setup([person('u1', ['streak'])], [{ id: 'd1', user: 'u1', expo_token: 'TOK1' }]);
     h.httpResponses.push({
       json: { data: [{ status: 'error', details: { error: 'MessageRateExceeded' } }] },
@@ -313,8 +295,7 @@ describe('send', () => {
     // Ein fehlgeschlagener Versand darf keinen Check-in zurückrollen.
     const h = setup([person('u1', ['streak'])], [{ id: 'd1', user: 'u1', expo_token: 'TOK1' }]);
     h.httpResponses.push(new Error('Netz weg'));
-    // Expo wurde nicht erreicht: failed zaehlt den Stapel, damit der Aufrufer
-    // die Nachricht stehen lassen und erneut versuchen kann.
+    // failed zählt den Stapel, damit der Aufrufer erneut versuchen kann.
     expect(h.push.send([ZIEL], 'Titel', 'Text', '')).toEqual({ sent: 0, failed: 1 });
     expect(h.rows('push_devices')).toHaveLength(1);
   });
@@ -326,12 +307,7 @@ describe('send', () => {
   });
 
   it('ordnet die Quittungen des zweiten Stapels den richtigen Geräten zu', () => {
-    // Befund aus dem Audit, hier festgehalten: push.js liest
-    // `batch[j]._deviceId` — ein Feld, das beim Bauen der Nachrichten nie
-    // gesetzt wird. Die Zuordnung trägt allein der ||-Rückfall über
-    // `targets[i + j]`. Dieser Test prüft die Wirkung, nicht die Schreibweise:
-    // Meldet Expo im ZWEITEN Stapel das 105. Gerät als abgemeldet, muss genau
-    // dieses verschwinden — nicht das fünfte.
+    // Die Zuordnung trägt der Rückfall über `targets[i + j]`, `_deviceId` wird nie gesetzt; geprüft wird die Wirkung im zweiten Stapel.
     const geraete = [];
     const ziele = [];
     for (let i = 0; i < 110; i++) {
@@ -357,12 +333,7 @@ describe('send', () => {
 });
 
 describe('send: Kanal und Dringlichkeit', () => {
-  // Warum das hier geprüft wird: Der Kanal entscheidet, wie laut eine
-  // Nachricht auf Android ankommt, das interruptionLevel dasselbe auf iOS.
-  // Beides ist unsichtbar — ein vertauschter Wert fällt erst auf, wenn eine
-  // Serien-Erinnerung stumm bleibt oder ein Abzeichen jemanden nachts weckt.
-  // Die Kennungen müssen außerdem mit mobile/lib/push.ts übereinstimmen
-  // (Tabelle: docs/push-channels.md).
+  // Kanal und interruptionLevel sind unsichtbar, ein Vertauschen fiele erst auf dem Gerät auf.
   const ZIEL = { token: 'TOK1', userId: 'u1', deviceId: 'd1' };
 
   const ERWARTET = [
@@ -401,9 +372,7 @@ describe('send: Kanal und Dringlichkeit', () => {
   });
 
   it('hält die Kennungen mit der App zusammen', () => {
-    // Die App legt die Kanäle unter genau diesen Kennungen an
-    // (mobile/lib/push.ts). Laufen sie auseinander, adressiert das Backend
-    // einen Kanal, den es auf dem Gerät nicht gibt.
+    // Kennungen wie in mobile/lib/push.ts.
     const h = setup();
     expect(Object.keys(h.push.CHANNELS).sort()).toEqual(['badge', 'campaign', 'other', 'streak']);
     for (const [name, eintrag] of Object.entries(h.push.CHANNELS)) {
@@ -413,9 +382,7 @@ describe('send: Kanal und Dringlichkeit', () => {
 });
 
 describe('Aufrufstellen reichen die Kategorie durch', () => {
-  // Der Kanal nützt nichts, wenn eine Aufrufstelle ihn vergisst — die
-  // Nachricht landete dann still auf „Sonstiges". Deshalb prüfen wir die
-  // echten Hooks, nicht nur send() selbst.
+  // Die echten Hooks, weil eine vergessene Kategorie still auf „Sonstiges“ fiele.
 
   it('die Check-in-Bestätigung geht auf den Serien-Kanal', () => {
     const h = loadHook(

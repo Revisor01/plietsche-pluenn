@@ -1,18 +1,4 @@
-// Tests für .github/scripts/deploy-verify.py — die Nachher-Prüfung des Deploys.
-//
-// Das Skript ist die einzige Stelle im Ablauf, die merkt, dass ein Deploy
-// nicht angekommen ist. Genau das hat im August gefehlt: Die Instanz lief
-// vier Wochen auf einem alten Stand, /api/health meldete durchgehend „gesund",
-// und ein als behoben geführter Sicherheitsfehler stand weiter offen. Ist
-// dieses Skript falsch, ist der grüne Lauf wieder wertlos.
-//
-// Gestellt werden die Antworten von einem kleinen HTTP-Server, der als
-// EIGENER PROZESS läuft (tests/helper/pb-stub.mjs) — keine echte PocketBase,
-// keine Produktion. Der eigene Prozess ist nötig und nicht Geschmackssache:
-// Läuft der Server im Test-Worker und das Skript wird synchron aufgerufen,
-// blockiert der Aufruf die Ereignisschleife, der Server kommt nie dazu zu
-// antworten, und der Testlauf hängt. Das Skript wird deshalb asynchron
-// aufgerufen und der Server liegt daneben.
+// .github/scripts/deploy-verify.py gegen einen Stub-Server im eigenen Prozess (tests/helper/pb-stub.mjs), sonst blockiert die Ereignisschleife.
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { execFile } from 'node:child_process';
@@ -22,11 +8,7 @@ import { promisify } from 'node:util';
 
 const ausfuehren = promisify(execFile);
 
-// Jeder Test startet zwei Prozesse (Stub-Server und Python-Skript) und das
-// Skript fragt je Runde sechs Pfade ab. Allein dauert ein Test 1 bis 2 s; auf
-// einem ausgelasteten Rechner (gemessen am 26.09.2026 bei Last 44) bis knapp
-// 5 s — genau die Vorgabe von Vitest. Die Zeitgrenze sagt hier nichts über
-// das Skript aus, nur über die Maschine; deshalb großzügiger.
+// Großzügige Zeitgrenze, auf einem ausgelasteten Rechner dauerte ein Test fast 5 s.
 vi.setConfig({ testTimeout: 20_000 });
 
 const SKRIPT = resolve(import.meta.dirname, '../.github/scripts/deploy-verify.py');
@@ -43,8 +25,7 @@ function standRichtig() {
     '/api/collections/store/records': { status: 200, koerper: leereListe },
     '/api/collections/items/records': { status: 200, koerper: leereListe },
     '/api/collections/action_counts/records': { status: 200, koerper: leereListe },
-    // Seit PocketBase 0.23 heißen die Superuser eine Sammlung. Unangemeldet
-    // ist sie geschlossen (403); unter 0.22 gab es sie nicht (404).
+    // Superuser ab 0.23: 403, unter 0.22: 404.
     '/api/collections/_superusers/records': {
       status: 403,
       koerper: { status: 403, message: 'Only superusers can perform this action.', data: {} },
@@ -58,11 +39,7 @@ function standRichtig() {
 
 let laufend = [];
 
-/**
- * Startet den Stub-Server als eigenen Prozess und gibt seine Basis-URL zurück.
- * `warmlaufAbrufe` lässt die ersten n Abrufe je Pfad mit 503 beantworten —
- * damit lässt sich ein Container nachstellen, der noch startet.
- */
+/** Startet den Stub als eigenen Prozess; `warmlaufAbrufe` beantwortet die ersten n Abrufe mit 503. */
 async function serverStarten(antworten, warmlaufAbrufe = 0) {
   const prozess = spawn('node', [STUB], { stdio: ['pipe', 'pipe', 'inherit'] });
   laufend.push(prozess);
@@ -88,10 +65,7 @@ afterEach(() => {
   laufend = [];
 });
 
-/**
- * Ruft das Skript auf und gibt { code, ausgabe } zurück.
- * Ohne Wartezeit zwischen den Runden — sonst dauerte jeder Fehlerfall Minuten.
- */
+/** Ruft das Skript ohne Wartezeit auf und gibt { code, ausgabe } zurück. */
 async function pruefen(basis, { versuche = 2, abstand = 0, commit } = {}) {
   const umgebung = {
     ...process.env,
@@ -99,8 +73,7 @@ async function pruefen(basis, { versuche = 2, abstand = 0, commit } = {}) {
     VERIFY_ABSTAND: String(abstand),
     VERIFY_ZEITLIMIT: '5',
   };
-  // Nur gesetzt, wenn der Test es will — ein Wert aus der Umgebung des
-  // Testlaufs darf das Ergebnis nicht verschieben.
+  // Nur gesetzt, wenn der Test es will.
   delete umgebung.ERWARTETER_COMMIT;
   if (commit !== undefined) umgebung.ERWARTETER_COMMIT = commit;
   try {
@@ -122,10 +95,7 @@ describe('Erfolg nur bei vollständiger Übereinstimmung', () => {
 
 describe('Fehlendes Schemamerkmal', () => {
   it('erkennt eine Migration, die nicht durchgelaufen ist', async () => {
-    // store_secrets gibt es noch nicht: PocketBase antwortet auf eine
-    // unbekannte Sammlung mit 404, nicht mit 403. Das ist der Stand vor
-    // 1782690000_store_secret_collection — genau die Migration, deren Fehlen
-    // vier Wochen lang niemandem auffiel.
+    // Unbekannte Sammlung gibt 404, nicht 403.
     const stand = standRichtig();
     delete stand['/api/collections/store_secrets/records'];
     const basis = await serverStarten(stand);
@@ -139,9 +109,7 @@ describe('Fehlendes Schemamerkmal', () => {
   });
 
   it('erkennt eine Sammlung, die unangemeldet 200 liefert statt 403', async () => {
-    // Der gefährlichere Sonderfall derselben Klasse: store_secrets existiert,
-    // ist aber lesbar. Ein Skript, das nur „antwortet die Route" prüft, wäre
-    // hier grün — und das Türgeheimnis stünde offen im Netz.
+    // store_secrets existiert, ist aber lesbar.
     const stand = standRichtig();
     stand['/api/collections/store_secrets/records'] = {
       status: 200,
@@ -161,11 +129,7 @@ describe('Fehlendes Schemamerkmal', () => {
 
 describe('PocketBase-Version', () => {
   it('erkennt eine Instanz, die noch auf 0.22 läuft', async () => {
-    // Das Upgrade auf 0.40 hat kein anderes unangemeldet sichtbares
-    // Schemamerkmal: Die Regeln der eigenen Sammlungen sind vorher und
-    // nachher dieselben. Läuft nach dem Deploy noch das alte Abbild, gäbe es
-    // ohne diese Zeile fünfmal grün. Unter 0.22 kennt PocketBase die Sammlung
-    // _superusers nicht und antwortet mit 404.
+    // Ohne diese Zeile wäre das alte Abbild fünfmal grün.
     const stand = standRichtig();
     delete stand['/api/collections/_superusers/records'];
     const basis = await serverStarten(stand);
@@ -194,10 +158,7 @@ describe('PocketBase-Version', () => {
 
 describe('Offene Sammlung — die Falle mit dem Statuscode', () => {
   it('erkennt eine offene Sammlung, die mit 200 und Treffern antwortet', async () => {
-    // Das ist der Kern: PocketBase liefert bei einer Regel, die nichts
-    // durchlässt, HTTP 200 mit leerer Liste. Eine Sammlung ganz ohne
-    // Leseregel liefert ebenfalls 200 — nur mit Inhalt. Wer auf Statuscodes
-    // prüft, hält die offene Sammlung für geschlossen.
+    // 200 mit Inhalt ist eine offene Sammlung.
     const stand = standRichtig();
     stand['/api/collections/items/records'] = {
       status: 200,
@@ -242,10 +203,7 @@ describe('Offene Sammlung — die Falle mit dem Statuscode', () => {
 
 describe('Langsam startender Server', () => {
   it('wartet den Neustart ab und meldet dann grün', async () => {
-    // Der Webhook antwortet sofort, der Container braucht Sekunden: Image
-    // ziehen, starten, Migrationen ausführen. Die ersten beiden Abrufe je
-    // Pfad laufen ins Leere (503, wie ein Reverse Proxy ohne Backend),
-    // danach steht der richtige Stand.
+    // Die ersten zwei Abrufe je Pfad laufen auf 503 wie beim Neustart.
     const basis = await serverStarten(standRichtig(), 2);
 
     const { code, ausgabe } = await pruefen(basis, { versuche: 5 });
@@ -284,18 +242,14 @@ describe('Aufruf', () => {
   });
 
   it('meldet einen Aufruffehler statt eines Stacktrace bei unbrauchbarer URL', async () => {
-    // 2, nicht 1: Ein Tippfehler im Workflow ist ein Aufruffehler und kein
-    // „Deploy nicht angekommen" — sonst sucht man den Fehler auf dem Server.
+    // 2 für Aufruffehler, nicht 1, sonst sucht man auf dem Server.
     expect(await aufruf('')).toBe(2);
     expect(await aufruf('pb.example.invalid')).toBe(2);
   });
 });
 
 describe('Commit der geladenen Hooks', () => {
-  // Bis hierher maß die Prüfung nur Schemamerkmale. Eine Änderung allein an
-  // pb_hooks war damit unsichtbar: Lief noch das alte Abbild, stimmte das
-  // Schema trotzdem, und der Lauf war grün. Mit ERWARTETER_COMMIT vergleicht
-  // das Skript zusätzlich, was GET /api/pp/version meldet.
+  // Mit ERWARTETER_COMMIT wird auch eine Änderung nur an pb_hooks sichtbar.
   const NEU = '4b6b2babe7d9c11c1f4a76e41e7051364f56c5b1';
   const ALT = 'b2ddb7339df767707bad46a1b9d14f0be3f363e4';
 
@@ -330,8 +284,7 @@ describe('Commit der geladenen Hooks', () => {
   });
 
   it('wertet einen leeren Commit nicht als Treffer', async () => {
-    // Leer meldet die Route, wenn lib/build.js fehlt — ein Abbild, das nicht
-    // über den Deploy gebaut wurde.
+    // Leer, wenn lib/build.js fehlt.
     const basis = await serverStarten(mitVersion(''));
     const { code, ausgabe } = await pruefen(basis, { commit: NEU });
     expect(code).toBe(1);

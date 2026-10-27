@@ -1,15 +1,6 @@
 version: 2
 
-# Achtung beim Erweitern: Der Großteil der Abhängigkeiten dieser App ist an die
-# Expo-SDK-Version gebunden. Expo-Module, React, React Native und die nativen
-# Bibliotheken (reanimated, screens, gesture-handler, svg, worklets, …) dürfen
-# NICHT einzeln aktualisiert werden — sie werden ausschließlich über
-# `npx expo install expo@^<major> --fix` gemeinsam angehoben. Einzelne Updates
-# führen zu Versionskonflikten mit dem nativen Teil und brechen den Build.
-#
-# Deshalb sind hier nur die wenigen Pakete freigegeben, die unabhängig vom SDK
-# leben. Der Rest ist explizit ausgenommen. TypeScript ist ein Sonderfall: Es
-# haengt am SDK, ist aber kein Expo-Paket — dort sind nur Patch-Staende offen.
+# Fast alles hängt am Expo-SDK und wird nur gemeinsam per `npx expo install expo@^<major> --fix` angehoben; hier nur SDK-unabhängige Pakete.
 
 updates:
   # ── App-Abhängigkeiten (npm) ────────────────────────────────────────────
@@ -39,24 +30,17 @@ updates:
       - dependency-name: "@react-native-community/*"
       # Native Module: Version muss zum React-Native-Unterbau passen.
       - dependency-name: "react-native-*"
-      # Muss zur PocketBase-Hauptversion auf dem Server passen (aktuell 0.22).
-      # Wird bewusst exakt gepinnt — siehe TECH.md.
+      # Muss zur PocketBase-Version des Servers passen, deshalb exakt gepinnt (TECH.md).
       - dependency-name: "pocketbase"
       # React-Typen folgen der React-Version aus dem SDK.
       - dependency-name: "@types/react"
-      # TypeScript gibt das Expo SDK vor (`expo install --check` erwartet ~6.0.3).
-      # Eine Hauptversion weiter (7.x, der Go-Compiler) ist von Expo nicht
-      # unterstuetzt und war hier bereits unbemerkt eingezogen. Deshalb nur
-      # Patch-Staende innerhalb 6.0 zulassen, Minor und Major blockieren.
+      # TypeScript gibt das Expo-SDK vor (~6.0.3), daher nur Patch-Stände.
       - dependency-name: "typescript"
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
 
-  # ── Testwerkzeug im Repo-Root (npm) ─────────────────────────────────────
-  # Getrennt von /mobile: Hier liegt nur Vitest für die Backend-Hooks, das
-  # nichts mit dem Expo-SDK zu tun hat und deshalb frei aktualisiert werden
-  # darf.
+  # ── Testwerkzeug im Repo-Root, unabhängig vom Expo-SDK ──
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -72,8 +56,7 @@ updates:
     labels:
       - dependencies
     ignore:
-      # Die Integrationstests nutzen das SDK der ausgelieferten Apps
-      # (mobile/package.json); beide Stände werden nur gemeinsam angehoben.
+      # Integrationstests nutzen das SDK der ausgelieferten Apps, beide nur gemeinsam anheben.
       - dependency-name: "pocketbase"
 
   # ── GitHub Actions ──────────────────────────────────────────────────────
@@ -86,9 +69,7 @@ updates:
     labels:
       - dependencies
 
-  # ── PocketBase-Abbild (docker) ──────────────────────────────────────────
-  # In 0.x bricht schon ein Minor-Sprung das Datenformat; Server, App-SDK und
-  # Migrationen werden dann gemeinsam angehoben. Hier nur Patch-Stände.
+  # ── PocketBase-Abbild: in 0.x bricht schon ein Minor das Datenformat, daher nur Patches ──
   - package-ecosystem: docker
     directory: /pocketbase
     schedule:

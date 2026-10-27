@@ -34,19 +34,14 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Die Android-Kanäle stehen, bevor irgendetwas ankommt — nicht erst beim
-// Anmelden. Android schreibt die Eigenschaften eines Kanals beim ersten
-// Anlegen fest; käme die erste Nachricht zuerst, wäre die Wichtigkeit dauerhaft
-// die falsche. Auf iOS tut der Aufruf nichts.
+// Kanäle vor der ersten Nachricht anlegen, weil Android ihre Eigenschaften beim ersten Anlegen festschreibt.
 setupNotificationChannels();
 
 // expo-router renders this instead of a blank screen when a route throws.
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   const { Text, Pressable } = require('react-native');
   return (
-    // Bewusst nacktes <Text> statt PPText: Dieser Bildschirm muss auch dann
-    // stehen, wenn die Schriften nicht geladen sind. Farben und Größen kommen
-    // trotzdem aus dem Theme.
+    // Nacktes <Text>, weil dieser Bildschirm auch ohne geladene Schriften stehen muss.
     <View style={{ flex: 1, backgroundColor: PP.inkDeep, padding: PP.space.xxl, paddingTop: 80 }}>
       <Pressable
         onPress={retry}
@@ -82,9 +77,7 @@ function RootNavigator() {
   // ?replay=1: Einführung aus dem Profil noch einmal ansehen.
   const { replay } = useGlobalSearchParams<{ replay?: string }>();
 
-  // Target of a tapped notification, held until the user is actually allowed
-  // into the app. Navigating earlier would be overwritten by the auth redirect
-  // below (cold start: the tap is known before auth has even resolved).
+  // Ziel einer angetippten Mitteilung bis nach dem Auth-Redirect halten, sonst überschreibt er es.
   const [pendingLink, setPendingLink] = useState<string | null>(null);
   const linkedIn = isAuthenticated && !!user?.onboarding_complete;
 
@@ -122,8 +115,7 @@ function RootNavigator() {
     if (!ready || !linkedIn || !pendingLink) return;
     const link = pendingLink;
     setPendingLink(null);
-    // One tick after the auth redirect so we navigate on top of the tabs,
-    // not into a layout that is about to be replaced.
+    // Einen Tick nach dem Redirect, damit über den Tabs navigiert wird.
     const t = setTimeout(() => router.push(link as any), 0);
     return () => clearTimeout(t);
   }, [ready, linkedIn, pendingLink]);
@@ -148,8 +140,7 @@ export default function RootLayout() {
     WorkSans_700Bold,
   });
 
-  // Safety: render after 2.5s even if useFonts never resolves (it has hung
-  // before after SDK changes). System font is an acceptable fallback.
+  // Nach 2,5 s auch ohne Schriften rendern, useFonts hing schon nach SDK-Wechseln.
   const [fontTimeout, setFontTimeout] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setFontTimeout(true), 2500);

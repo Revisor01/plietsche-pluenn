@@ -1,24 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Startbestand für eine FRISCHE Installation: ein Laden, sein Türgeheimnis,
-// die vier Stufen-Abzeichen.
-//
-// Früher haben das die alten Migrationen nebenbei erledigt
-// (pb_migrations_022/1700000100_seed.js, …500_seed_tier_badges.js,
-// …800_diamant_tiers.js, …1782650000_configurable_points.js,
-// …1782690000_store_secret_collection.js, …1782700000_store_timezone.js).
-// Die Werte hier sind deren Endstand — nachgemessen auf einer Datenbank, die
-// mit allen 20 alten Migrationen aufgebaut wurde.
-//
-// IN PRODUKTION TUT DIESE MIGRATION NICHTS. Jeder der drei Teile greift nur,
-// wenn die jeweilige Sammlung LEER ist — nicht „wenn ein bestimmter Datensatz
-// fehlt". Der Unterschied zählt bei den Abzeichen: Hat das Team eines
-// gelöscht oder umbenannt, darf es nicht beim nächsten Deploy wieder
-// auftauchen.
-//
-// Die Punktwerte sind dieselben wie die Rückfallwerte in pb_hooks/lib/points.js
-// (10 / 5 / 5, höchstens 7 Teile je Besuch). Ort und Adresse sind Platzhalter
-// aus dem ursprünglichen Seed; der echte Laden pflegt sie im Adminbereich.
+// Startbestand nur für eine frische Installation, je Teil nur bei leerer Sammlung; Werte wie in pb_hooks/lib/points.js.
 
 migrate((app) => {
   const isEmpty = (name) => {
@@ -55,9 +37,7 @@ migrate((app) => {
     app.save(rec);
   }
 
-  // ── Türgeheimnis ────────────────────────────────────────────
-  // Zufällig je Installation. Ein fester Wert im Repo stünde öffentlich im
-  // Netz — genau das war der kritische Befund vom August.
+  // ── Türgeheimnis zufällig je Installation, nie im Repo ──
   if (isEmpty('store_secrets')) {
     const rec = new Record(app.findCollectionByNameOrId('store_secrets'));
     rec.set('checkin_qr_secret', $security.randomString(32));
@@ -96,8 +76,6 @@ migrate((app) => {
     }
   }
 }, (app) => {
-  // Kein Rückweg: In Produktion hat diese Migration nichts angelegt, und auf
-  // einer frischen Installation hängen an Laden und Abzeichen schnell echte
-  // Daten.
+  // Kein Rückweg, an Laden und Abzeichen hängen schnell echte Daten.
   return null;
 });

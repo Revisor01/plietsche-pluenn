@@ -1,17 +1,4 @@
-// Höchstzahl mitgenommener Teile pro Besuch, gegen das echte PocketBase 0.40.
-//
-// Entscheidung des Betreibers (26.09.2026): Die Grenze gilt pro Tag in der
-// Ladenzeitzone, über alle Scans — Zähler an der Tür (auch beim zweiten
-// Tür-Scan) und per QR gescannte Teile. Mit dem Schalter „Unbegrenzt"
-// (store.items_take_unlimited) gibt es keine Grenze.
-//
-// Geprüft wird der Weg der App: Scan mit dem SDK 0.22.1, Schalter umlegen
-// über ein Team-Konto mit Rolle admin, wie der Admin-Screen es tut. Dass bei
-// einer Ablehnung nichts gebucht ist, liest der Superuser an den Regeln
-// vorbei nach — so wirkt die echte Transaktion, nicht die des Harness.
-//
-// Die Datei legt den Schalter am Ende wieder auf aus: Alle Integrationstests
-// teilen sich eine Instanz.
+// Tagesgrenze über alle Scans gegen PocketBase 0.40; setzt den Schalter am Ende zurück, weil sich alle Tests eine Instanz teilen.
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { adminList, registerAndLogin, createTeamUser } from './helpers.mjs';

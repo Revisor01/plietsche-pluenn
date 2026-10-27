@@ -8,26 +8,13 @@ interface PPTextProps extends TextProps {
   weight?: Weight;
   /** Stufe aus `PP.fontSizes`. Bewusst keine Zahl — Größen gehören ins Theme. */
   size?: SizeStep;
-  /**
-   * Nur für Größen, die aus einem übergebenen Maß berechnet werden (Initialen
-   * im Avatar, Zeichen im Markenzeichen, Medaille). Hier wird absichtlich an
-   * der Skala vorbeigearbeitet, weil ein Verhältnis gehalten wird, keine Größe.
-   */
+  /** Nur für Größen, die aus einem übergebenen Maß berechnet werden. */
   rawSize?: number;
-  /**
-   * Fertiger Farbwert, kein Token-Name: `color={PP.ink}`, nicht `color="PP.ink"`.
-   * Der Typ kann das nicht erzwingen, weil hier auch `alpha(...)` und die vom
-   * Team gepflegten Aushang-Farben ankommen — beides sind gewöhnliche
-   * Zeichenketten. Die Prüfung unten fängt den Vertipper deshalb zur Laufzeit.
-   */
+  /** Fertiger Farbwert, kein Token-Name; die Prüfung unten fängt den Vertipper zur Laufzeit. */
   color?: string;
 }
 
-// Beim Zusammenführen der Design-Werte sind sechs Stellen als `color="PP.ink3"`
-// stehengeblieben — als Zeichenkette statt als Wert. React Native kann damit
-// nichts anfangen und zeichnet den Text in der Standardfarbe; auf farbigem Grund
-// heißt das: unlesbar. `tsc` sieht das nicht, weil jede Zeichenkette zum Typ
-// passt. In der Entwicklung fällt es jetzt sofort auf.
+// `color="PP.ink3"` als String zeichnet unlesbar in der Standardfarbe, und tsc sieht es nicht.
 function warnIfTokenName(color: string) {
   if (!__DEV__) return;
   if (/^(PP|alpha)\./.test(color)) {
@@ -61,11 +48,7 @@ export function PPText({
   const base = rawSize ?? PP.fontSizes[size ?? 'base'];
   const scaled = scale(base);
 
-  // `lineHeight` und `letterSpacing` aus dem Style sind auf die UNSKALIERTE
-  // Größe gemünzt (z.B. size="xl2" + lineHeight: 26). Ohne Mitskalieren bliebe
-  // die Zeile kleiner als die Glyphen und Ober-/Unterlängen würden
-  // abgeschnitten; eine nicht mitskalierte Laufweite ließe große
-  // Überschriften enger stehen, als sie entworfen sind.
+  // lineHeight und letterSpacing mitskalieren, sonst werden Ober- und Unterlängen abgeschnitten.
   const flat = StyleSheet.flatten(style) as TextStyle | undefined;
   const metrics: TextStyle = {};
   if (typeof flat?.lineHeight === 'number') metrics.lineHeight = scale(flat.lineHeight);

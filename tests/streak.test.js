@@ -1,8 +1,4 @@
-// Tests für Serien (Wochen in Folge) und Aktionen in lib/points.js.
-//
-// Beides rechnet mit ISO-Wochen und Zeitfenstern — die Stellen, an denen
-// Grenzfälle wie der Jahreswechsel leicht durchrutschen. Laut CHANGELOG hing
-// die Serie einmal an einem Zählerfeld statt an den tatsächlichen Besuchen.
+// Serien und Aktionen in lib/points.js, vor allem Jahreswechsel und Zeitfenster.
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createRequire } from 'node:module';
@@ -25,8 +21,7 @@ function setup(store = {}) {
   });
 }
 
-// Ein Datum n Wochen vor heute — die Serienlogik rechnet gegen die aktuelle
-// Woche, feste Kalenderdaten wären deshalb bereits morgen falsch.
+// Relativ zu heute, weil die Serie gegen die laufende Woche rechnet.
 function vorWochen(n) {
   return new Date(Date.now() - n * 7 * 86400000);
 }
@@ -74,8 +69,7 @@ describe('isWeekAdjacent — folgen zwei Wochen aufeinander?', () => {
   });
 
   it('traegt ueber den Jahreswechsel', () => {
-    // KW 53/2026 -> KW 1/2027: ohne Sonderfall waere die Differenz 48.
-    // 2026 hat 53 Wochen, KW 53 ist also die letzte Woche des Jahres.
+    // KW 53/2026 → KW 1/2027.
     expect(h.lib.isWeekAdjacent(202653, 202701)).toBe(true);
     // Auch aus einem Jahr mit 52 Wochen heraus: 2025 endet mit KW 52.
     expect(h.lib.isWeekAdjacent(202552, 202601)).toBe(true);
@@ -88,16 +82,14 @@ describe('isWeekAdjacent — folgen zwei Wochen aufeinander?', () => {
   });
 
   it('reisst, wenn die 53. Woche uebersprungen wurde', () => {
-    // 2026 hat 53 Kalenderwochen. Zwischen KW 52/2026 und KW 1/2027 liegt
-    // KW 53 — eine echte Lucke, die Serie darf hier nicht weiterlaufen.
+    // Zwischen KW 52/2026 und KW 1/2027 liegt KW 53.
     expect(h.lib.isWeekAdjacent(202652, 202701)).toBe(false);
     // Dasselbe fuer 2020, ebenfalls ein 53-Wochen-Jahr.
     expect(h.lib.isWeekAdjacent(202052, 202101)).toBe(false);
   });
 
   it('kennt die Laenge des jeweiligen Jahres', () => {
-    // 2025 hat 52 Wochen: eine KW 53/2025 gibt es nicht, sie kann also auch
-    // nicht Vorgaengerin von KW 1/2026 sein.
+    // 2025 hat keine KW 53.
     expect(h.lib.isWeekAdjacent(202553, 202601)).toBe(false);
     // 2032 hat wieder 53 Wochen (Schaltjahr, beginnt an einem Donnerstag).
     expect(h.lib.isWeekAdjacent(203253, 203301)).toBe(true);
@@ -113,8 +105,6 @@ describe('isoWeeksInYear — wie viele Kalenderwochen ein Jahr hat', () => {
   const h = setup();
 
   it('gibt 53 fuer die Jahre, die eine 53. Woche haben', () => {
-    // ISO 8601: 53 Wochen, wenn der 1. Januar ein Donnerstag ist oder ein
-    // Schaltjahr an einem Mittwoch beginnt.
     expect(h.lib.isoWeeksInYear(2015)).toBe(53);
     expect(h.lib.isoWeeksInYear(2020)).toBe(53);
     expect(h.lib.isoWeeksInYear(2026)).toBe(53);
@@ -144,8 +134,7 @@ describe('streakFromVisits — Serie aus den Besuchen', () => {
   });
 
   it('ignoriert ein Zaehlerfeld ohne Besuche', () => {
-    // Ohne Besuch gibt es keinen Fortschritt — auch nicht, wenn ein alter
-    // Zaehlerstand herumliegt.
+    // Ohne Besuch kein Fortschritt, auch mit altem Zählerstand.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', streak_weeks: 9, streak_last_visit: '2026-01-01' }],
     });
@@ -209,9 +198,7 @@ describe('streakFromVisits — Serie aus den Besuchen', () => {
 });
 
 describe('streakFromVisits — Jahreswechsel mit 53 Kalenderwochen', () => {
-  // Die Serie wird gegen die laufende Woche gerechnet. Fuer den Jahreswechsel
-  // braucht es deshalb einen festen Zeitpunkt, sonst waere der Fall nur an
-  // wenigen Tagen im Jahr pruefbar.
+  // Fester Zeitpunkt für den Jahreswechsel.
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -226,8 +213,7 @@ describe('streakFromVisits — Jahreswechsel mit 53 Kalenderwochen', () => {
   }
 
   it('zaehlt die 53. Woche als Bindeglied mit', () => {
-    // 2026 hat KW 53 (28.12.2026 bis 3.1.2027). Wer in KW 51, 52, 53 und
-    // KW 1/2027 da war, hat vier Wochen in Folge.
+    // KW 51, 52, 53/2026 und KW 1/2027 sind vier in Folge.
     amTag('2027-01-06T12:00:00.000Z'); // KW 1/2027
     const h = setup({
       visits: [
@@ -301,8 +287,7 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
   });
 
   it('zaehlt auch aus einem Jahr mit 52 Wochen heraus hoch', () => {
-    // 2025 endet mit KW 52 (29.12.2025 liegt schon in KW 1/2026 — deshalb
-    // der 22.12.), danach folgt unmittelbar KW 1/2026.
+    // Der 22.12., weil der 29.12.2025 schon in KW 1/2026 liegt.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', streak_weeks: 4, streak_last_visit: '2025-12-22T10:00:00.000Z' }],
     });
@@ -311,9 +296,7 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
   });
 
   it('faengt wieder bei 1 an, wenn die 53. Woche ausgelassen wurde', () => {
-    // 2026 hat 53 Kalenderwochen. Letzter Besuch am 21.12.2026 (KW 52), die
-    // Woche vom 28.12. bis 3.1. (KW 53) ausgelassen, am 4.1.2027 (KW 1) wieder
-    // da: dazwischen fehlt eine ganze Woche, die Serie beginnt neu.
+    // KW 53 ausgelassen, die Serie beginnt neu.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', streak_weeks: 5, streak_last_visit: '2026-12-21T10:00:00.000Z' }],
     });
@@ -330,9 +313,7 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
   });
 
   it('faengt nach einer Luecke von zwei Jahren wieder bei 1 an', () => {
-    // Wer Ende 2025 zuletzt da war und erst Anfang 2027 wiederkommt, hat ein
-    // ganzes Jahr ausgelassen — auch wenn die Wochennummern (52 -> 1) auf den
-    // ersten Blick aufeinanderzufolgen scheinen.
+    // 52 → 1 über ein ganzes Jahr ist keine Folge.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', streak_weeks: 7, streak_last_visit: '2025-12-26T10:00:00.000Z' }],
     });
@@ -352,9 +333,7 @@ describe('updateStreak — Serie beim Check-in fortschreiben', () => {
 });
 
 describe('Jahreswechsel: alle drei Aufrufstellen urteilen gleich', () => {
-  // Die Regel „welche Woche folgt auf welche" wurde frueher an drei Stellen
-  // getrennt nachgebaut: in isWeekAdjacent, in updateStreak und im
-  // Reset-Cron. Dieser Block haelt fest, dass sie jetzt dasselbe sagen.
+  // isWeekAdjacent, updateStreak und der Reset-Cron sagen dasselbe.
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -443,11 +422,7 @@ describe('campaignApplies — fuer wen eine Aktion gilt', () => {
     expect(pruefe({})).toBe(true);
   });
 
-  // Die Sammlung campaigns hat kein Feld target_segment (siehe
-  // pb_migrations/): Zielgruppe UND Segment stehen beide in target_role mit
-  // den Werten all / visitor / streak2plus / inactive14d. Die Fixtures setzen
-  // deshalb target_role — ein Feld, das es nicht gibt, kaeme in Produktion nie
-  // an. Eine Rolle als Ziel ist dort nur `visitor` waehlbar.
+  // campaigns kennt kein target_segment, Zielgruppe und Segment stehen in target_role.
   it('gilt nur fuer die gewaehlte Rolle', () => {
     expect(pruefe({ target_role: 'visitor' }, { role: 'visitor' })).toBe(true);
     expect(pruefe({ target_role: 'visitor' }, { role: 'volunteer' })).toBe(false);
@@ -550,10 +525,7 @@ describe('findActiveCampaign — welche Aktion gerade laeuft', () => {
     expect(c && c.id).toBe('c2');
   });
 
-  // Zwei Aktionen duerfen sich ueberschneiden — das Schema verbietet es nicht,
-  // und die Auswahl laeuft ausdruecklich ueber mehrere Zeilen. Entscheidend ist
-  // dann, dass die Aktion gewinnt, die tatsaechlich mehr Punkte bringt, und
-  // nicht die mit dem hoechsten Wert im alten Sammelfeld.
+  // Bei Überschneidung gewinnt der wirksame Faktor, nicht das alte Sammelfeld.
   describe('zwei Aktionen gleichzeitig', () => {
     it('nimmt die Aktion mit dem hoeheren Holen-Faktor', () => {
       const h = setup({
@@ -590,8 +562,7 @@ describe('findActiveCampaign — welche Aktion gerade laeuft', () => {
     });
 
     it('ueberspringt die staerkere Aktion, wenn sie fuer diese Person nicht gilt', () => {
-      // Zielgruppe schlaegt Faktor: Eine Aktion nur fuer Serien ab zwei Wochen
-      // darf einer Neuen nicht zufallen, auch wenn sie mehr Punkte braechte.
+      // Zielgruppe schlägt Faktor.
       const h = setup({
         users: [{ __name: 'user', id: 'u1', role: 'visitor', streak_weeks: 0 }],
         campaigns: [
@@ -605,9 +576,7 @@ describe('findActiveCampaign — welche Aktion gerade laeuft', () => {
     });
 
     it('zaehlt die Teilnahme an der staerkeren Aktion mit', () => {
-      // Der Folgeschaden aus dem Befund: Gewinnt die schwaechere Aktion, liegt
-      // ihr Faktor bei 1, bumpActionCount zaehlt nicht — und das zugehoerige
-      // Aktions-Abzeichen bleibt aus.
+      // Sonst zählt bumpActionCount nicht und das Aktions-Abzeichen bleibt aus.
       const h = setup({
         campaigns: [
           { id: 'c1', starts_at: gestern, ends_at: morgen, multiplier: 5, mult_take: 1 },

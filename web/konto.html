@@ -108,19 +108,11 @@
   </main>
 
 <script>
-// Diese Seite bedient die drei Links aus den System-Mails:
-// Adresse bestaetigen, neues Passwort setzen, Adresswechsel bestaetigen.
-//
-// Ohne Token zeigt sie nur einen Hinweis — so laesst sie sich gefahrlos
-// direkt aufrufen.
+// Bedient die drei Links aus den System-Mails; ohne Token nur ein Hinweis.
 const PB = 'https://pb.xn--plietsche-plnn-rsb.de';
 const inhalt = document.getElementById('inhalt');
 
-// PocketBase baut den Link in den Mails fest als
-//   <appUrl>/_/#/auth/confirm-<fall>/<token>
-// Das laesst sich nicht umstellen ({ACTION_URL} ist Pflicht in der Vorlage).
-// Weil appUrl auf diese Webseite zeigt, landen die Leute hier — Fall und
-// Token stehen im Fragment nach der Raute.
+// Fall und Token stehen im Fragment von <appUrl>/_/#/auth/confirm-<fall>/<token>.
 const frag = location.hash.replace(/^#\/?/, '');          // auth/confirm-.../<token>
 const m = frag.match(/auth\/confirm-([a-z-]+)\/(.+)$/);
 const fall = m ? m[1] : '';
@@ -159,8 +151,7 @@ async function bestaetigeAdresse() {
 }
 
 async function bestaetigeWechsel() {
-  // Der Adresswechsel verlangt zusaetzlich das Passwort — sonst koennte
-  // jemand mit dem abgefangenen Link die Adresse allein umstellen.
+  // Mit Passwort, sonst ließe ein abgefangener Link die Adresse umstellen.
   zeige(`
     <h1>Neue Adresse bestätigen</h1>
     <p>Gib zur Sicherheit dein Passwort ein.</p>

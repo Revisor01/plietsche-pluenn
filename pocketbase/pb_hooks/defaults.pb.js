@@ -1,28 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Apply field defaults that PocketBase select/number fields can't express,
-// and auto-generate item SKU + QR code on create.
-//
-// Ab PocketBase 0.23 sind das Request-Hooks mit Kette: Was vor e.next()
-// steht, läuft VOR dem Speichern und landet im Datensatz; e.next() prüft und
-// speichert; was danach steht, läuft auf dem gespeicherten Stand. Wer e.next()
-// vergisst, speichert nichts.
-//
-// Rechte: e.hasSuperuserAuth() ist der PocketBase-Superuser (unter 0.22
-// httpContext.get('admin')). e.auth ist die angemeldete Person — bei einem
-// Superuser aber dessen Datensatz aus `_superusers`, ohne Rolle und ohne
-// Konto in `users`.
-//
-// Lesen und Schreiben über e.app: Läuft die Anfrage als Teil eines Stapels
-// (Batch-API), ist das die Transaktion; $app würde darin blockieren.
+// Standardwerte, SKU und QR-Code beim Anlegen; vor e.next() vor dem Speichern, danach auf dem gespeicherten Stand; Lesen und Schreiben über e.app.
 
 onRecordCreateRequest((e) => {
   const r = e.record;
-  // Die Registrierung ist offen (createRule ""), der Anfragekörper kommt also
-  // von beliebigen Clients. Rolle, Punktestand und Serie setzt deshalb nur der
-  // Server — sonst legte ein POST mit role "admin" ein Admin-Konto an (so bis
-  // 26.09.2026) oder ein Startguthaben, dem die Abzeichen-Vergabe vertraut.
-  // Ausnahme wie beim Ändern: Superuser und App-Admins legen Konten mit Rolle an.
+  // Rolle, Punkte und Serie setzt nur der Server, sonst legt ein POST mit role "admin" ein Admin-Konto an.
   const superuser = e.hasSuperuserAuth();
   const auth = e.auth && !e.auth.isSuperuser() ? e.auth : null;
   const privileged = superuser || (!!auth && `${auth.get('role')}` === 'admin');
@@ -36,9 +18,7 @@ onRecordCreateRequest((e) => {
   if (r.get('points_total') == null) r.set('points_total', 0);
   if (r.get('streak_weeks') == null) r.set('streak_weeks', 0);
   r.set('onboarding_complete', false);
-  // Push defaults: streak/campaign/badge on, other off.
-  // bool fields default to false in the request body, so set them unconditionally
-  // on create (the user has no way to opt out during registration anyway).
+  // Bei der Registrierung gibt es keine Wahl, bool-Felder kämen sonst als false.
   r.set('push_streak_enabled', true);
   r.set('push_campaign_enabled', true);
   r.set('push_badge_enabled', true);
@@ -47,12 +27,7 @@ onRecordCreateRequest((e) => {
   e.next();
 }, 'users');
 
-// Score fields are server-owned. PocketBase auth collections let a user PATCH
-// their own record, which would otherwise allow setting points_total or
-// streak_weeks by hand — and badge awarding trusts those values. Any client
-// request that tries to change them is reverted to the stored value;
-// server-side code writes via $app.save…() and never passes through this
-// request hook.
+// Punktefelder gehören dem Server; Client-Änderungen werden zurückgesetzt, weil die Abzeichen-Vergabe ihnen vertraut.
 onRecordUpdateRequest((e) => {
   const r = e.record;
   let stored = null;
@@ -61,8 +36,7 @@ onRecordUpdateRequest((e) => {
   } catch (_) {}
 
   if (stored) {
-    // Admins keep manual correction rights (e.g. fixing a miscount): both the
-    // PocketBase superuser and an app admin editing someone else's record.
+    // Superuser und App-Admins dürfen korrigieren.
     const superuser = e.hasSuperuserAuth();
     const auth = e.auth && !e.auth.isSuperuser() ? e.auth : null;
     const adminOnOther = !!auth && `${auth.get('role')}` === 'admin' && auth.id !== r.id;
@@ -78,8 +52,7 @@ onRecordUpdateRequest((e) => {
 
 onRecordCreateRequest((e) => {
   const r = e.record;
-  // Readable SKU: PP-0001 ... derived from the highest existing number (not the
-  // row count — deletions would otherwise cause collisions on the unique index).
+  // Aus der höchsten Nummer, nicht der Anzahl, sonst kollidiert der Unique-Index nach Löschungen.
   if (!r.get('sku')) {
     let next = 1;
     try {
@@ -95,22 +68,15 @@ onRecordCreateRequest((e) => {
   if (!r.get('qr_code')) {
     r.set('qr_code', r.get('sku'));
   }
-  // Ein Zahlenfeld ohne Wert liefert 0, nicht null — eine Prüfung auf
-  // `== null` griffe hier also nie, und in der Teileliste stünde 0, obwohl
-  // das Teil beim Mitnehmen 30 Punkte bringt (scan.pb.js rechnet `|| 30`).
-  // Wer ein Teil bewusst mit 0 Punkten anlegen will, trägt es danach ein.
+  // Leeres Zahlenfeld ist 0, nicht null; scan.pb.js rechnet sonst mit 30.
   if (!r.get('points')) r.set('points', 30);
   if (r.get('is_showcase') == null) r.set('is_showcase', false);
 
-  // Track who created the item. Ein Superuser hat kein Konto in `users` —
-  // sein Datensatz gehört nicht in die Relation (unter 0.22 war authRecord
-  // für ihn leer, und so bleibt es: kein created_by, Status wie Besucherin).
+  // Superuser haben kein Konto in `users`, also kein created_by.
   const auth = e.auth && !e.auth.isSuperuser() ? e.auth : null;
   if (auth && !r.get('created_by')) r.set('created_by', auth.id);
 
-  // Approval flow: staff items are approved immediately; visitor submissions
-  // must be reviewed → forced to "pending". Visitors can never self-approve
-  // because updateRule is staff-only. The server decides status, not the client.
+  // Den Status entscheidet der Server: Staff-Teile frei, Einreichungen pending.
   const role = auth ? `${auth.get('role')}` : 'visitor';
   const isStaff = role === 'volunteer' || role === 'admin';
   r.set('status', isStaff ? 'approved' : 'pending');
@@ -121,15 +87,7 @@ onRecordCreateRequest((e) => {
   e.next();
 }, 'items');
 
-// "Bringen": when a staff member approves a visitor's submitted item, the
-// submitter earns bring points — once per item (brought_awarded flag).
-//
-// Nach e.next(), also auf dem gespeicherten Stand — wie unter 0.22
-// onRecordAfterUpdateRequest. Bewusst ein Request-Hook und nicht
-// onRecordAfterUpdateSuccess: Der liefe bei JEDEM Speichern eines Teils, auch
-// bei serverseitigen (der Scan setzt taken_at). Ein freigegebenes Besucher-Teil
-// ohne brought_awarded — etwa aus der Zeit vor den Bring-Punkten — zahlte dann
-// beim Mitnehmen plötzlich Punkte an die Person, die es gebracht hat.
+// Bring-Punkte bei Freigabe einmal je Teil; Request-Hook, weil ein Success-Hook auch beim Scan-Speichern liefe.
 onRecordUpdateRequest((e) => {
   e.next();
 
@@ -148,8 +106,7 @@ onRecordUpdateRequest((e) => {
   const role = `${submitter.get('role')}`;
   if (role !== 'visitor') return;
 
-  // If the staff member credited this item to an action, that action's BRING
-  // multiplier applies to the bring points. No campaign credited → plain points.
+  // Der Bring-Faktor der gutgeschriebenen Aktion gilt.
   const campId = `${r.get('campaign') || ''}`.trim();
   let mult = 1.0;
   let campLabel = '';
@@ -169,8 +126,7 @@ onRecordUpdateRequest((e) => {
       : `Teil gebracht: ${r.get('title')}`;
   L.awardPoints(submitter, pts, 'bring', label, r.id);
 
-  // Teilnahme mitzählen — nur wenn die Aktion aufs Bringen auch Bonus gibt
-  // (siehe lib.bumpActionCount). Treibt die Aktions-Abzeichen.
+  // Nur, wenn die Aktion aufs Bringen Bonus gibt (lib.bumpActionCount).
   if (campId) {
     try {
       L.bumpActionCount(submitter, app.findRecordById('campaigns', campId), 'bring', 1);
@@ -179,12 +135,10 @@ onRecordUpdateRequest((e) => {
 
   L.checkBadges(submitter);
 
-  // Tell the submitter their item went through — approval happens later, so
-  // without this they'd never learn the points landed.
+  // Sonst erfährt die Person nie, dass die Punkte da sind.
   try {
     const push = require(`${__hooks}/lib/push.js`);
-    // 'badge' category: on by default, and this is a personal reward message —
-    // 'other' defaults to off, so the confirmation would never arrive.
+    // 'badge', weil 'other' standardmäßig aus ist.
     const targets = push.tokensForUser(submitter, 'badge');
     if (targets.length) {
       push.send(
@@ -197,8 +151,7 @@ onRecordUpdateRequest((e) => {
     }
   } catch (_) {}
 
-  // Flag so re-approval doesn't pay twice. Direkt gespeichert: Das löst nur
-  // die Modell-Hooks aus, nicht diesen Request-Hook — kein erneuter Durchlauf.
+  // Direkt gespeichert, das löst diesen Request-Hook nicht erneut aus.
   r.set('brought_awarded', true);
   app.saveNoValidate(r);
 }, 'items');

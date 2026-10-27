@@ -30,16 +30,14 @@ export default function Permissions() {
   };
 
   const askPush = async () => {
-    // Lazy import — avoids expo-notifications running its Expo Go warning at
-    // app/route-load time (which blanked the screen during route discovery).
+    // Lazy, sonst blendet die Expo-Go-Warnung von expo-notifications den Screen beim Routen-Laden aus.
     const Notifications = await import('expo-notifications');
     const { status } = await Notifications.requestPermissionsAsync();
     setPush(status === 'granted' ? 'granted' : 'denied');
   };
 
   const finish = async () => {
-    // Beim Wiederholen aus dem Profil ist am Konto nichts zu setzen — zurück
-    // dorthin, wo die Einführung geöffnet wurde.
+    // Beim Wiederholen aus dem Profil ist am Konto nichts zu setzen.
     if (replay) {
       close();
       return;

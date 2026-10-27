@@ -35,8 +35,7 @@ function recommendApp(store: Parameters<typeof appRecommendationText>[0]) {
   Share.share({ message: appRecommendationText(store) }, { dialogTitle: 'App empfehlen' }).catch(() => {});
 }
 
-// App bewerten: direkt zur Bewertungsseite im Store, unter Android mit der
-// Webseite als Rückfall, falls die Play-Store-App fehlt (siehe lib/share.ts).
+// Direkt zur Bewertung, unter Android mit Webseite als Rückfall (lib/share.ts).
 async function rateApp() {
   for (const url of reviewUrls(Platform.OS)) {
     try {
@@ -61,9 +60,7 @@ function AdminLink({ icon, label, onPress }: { icon: IconName; label: string; on
   );
 }
 
-// Diagnose für den Admin: zeigt, warum Liquid Glass greift oder eben nicht.
-// Die drei Bedingungen (iOS 26, Glass-API vorhanden, Transparenz nicht
-// reduziert) lassen sich sonst nur auf dem Gerät selbst auseinanderhalten.
+// Zeigt dem Admin, welche der drei Liquid-Glass-Bedingungen fehlt.
 function SystemInfo() {
   const [reduceTransparency, setReduceTransparency] = useState<boolean | null>(null);
   useEffect(() => {
@@ -122,10 +119,7 @@ function SystemInfo() {
   );
 }
 
-// Die Auswahl fuer das App-Symbol. Dunkelgruen ist das Haupticon — es wird
-// deshalb ueber null gesetzt, nicht ueber seinen Namen. Sonst fuehrte iOS es
-// als "alternatives" Symbol, und getAppIconName meldete es nicht als das
-// gewaehlte zurueck.
+// Das Haupticon über null setzen, sonst führt iOS es als alternatives und getAppIconName meldet es nicht.
 const SYMBOLE = [
   { name: 'Dunkel' as const,  titel: 'Dunkelgrün', quelle: require('../../../assets/icons/dunkel.png'),  haupt: true },
   { name: 'Ring' as const,    titel: 'Ring hell',  quelle: require('../../../assets/icons/ring.png'),    haupt: false },
@@ -221,8 +215,7 @@ export default function Account() {
   const [email, setEmail] = useState('');
   const [oldPw, setOldPw] = useState('');
   const [newPw, setNewPw] = useState('');
-  // Zum Loeschen: erst aufklappen, dann Passwort eingeben. Zwei bewusste
-  // Schritte, damit niemand aus Versehen sein Konto entfernt.
+  // Zwei Schritte, damit niemand versehentlich sein Konto löscht.
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePw, setDeletePw] = useState('');
 
@@ -302,8 +295,7 @@ export default function Account() {
     }
   };
 
-  // Konto löschen. Die Rückfrage benennt ausdrücklich, was verschwindet —
-  // Punkte, Serie und Abzeichen sind für viele der Grund, die App zu nutzen.
+  // Die Rückfrage nennt Punkte, Serie und Abzeichen ausdrücklich.
   const confirmDelete = () => {
     if (!deletePw) {
       Alert.alert('Passwort fehlt', 'Bitte gib dein Passwort ein, um das Löschen zu bestätigen.');
@@ -321,9 +313,7 @@ export default function Account() {
             setBusy('delete');
             try {
               await deleteAccount(deletePw);
-              // Kein Alert mehr danach: Der Auth-Store ist leer, der Root-Guard
-              // schickt sofort zum Login — ein Hinweis auf einem verschwindenden
-              // Screen käme nicht mehr an.
+              // Kein Alert, der Root-Guard schickt sofort zum Login.
             } catch (e: any) {
               setBusy(null);
               Alert.alert(

@@ -1,8 +1,4 @@
-// Tests für die An- und Abmeldung von Push-Token.
-//
-// Ein Token gehört immer genau einer Person. Wandert ein Gerät weiter oder
-// meldet sich jemand anders darauf an, muss der Eintrag umziehen — sonst
-// bekäme die falsche Person die Benachrichtigungen.
+// An- und Abmeldung von Push-Token; ein Token gehört genau einer Person.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -98,8 +94,6 @@ describe('Anmelden', () => {
   });
 
   it('schreibt einen bekannten Token auf die anmeldende Person um', () => {
-    // Wechselt das Geraet die Besitzerin, darf die alte keine
-    // Benachrichtigungen mehr dafuer bekommen.
     const h = setup([{ id: 'd1', expo_token: TOKEN, user: 'user1', platform: 'ios' }]);
     h.call(REGISTER, { body: { expo_token: TOKEN }, authRecord: h.records.other });
 
@@ -114,10 +108,7 @@ describe('Anmelden', () => {
     h.call(REGISTER, { body: { expo_token: TOKEN }, authRecord: h.records.user });
     const nachher = Date.now();
 
-    // Geprueft wird das WANN, nicht nur das DASS: Der Zeitstempel muss in der
-    // Zeitspanne des Aufrufs liegen. Sonst kaeme auch ein fester Wert durch,
-    // und die Angabe waere wertlos — an ihr haengt, welche Geraete als
-    // verwaist gelten.
+    // Der Zeitpunkt muss in der Spanne des Aufrufs liegen, sonst ginge ein fester Wert durch.
     const gesehen = Date.parse(`${h.rows('push_devices')[0].last_seen}`);
     expect(Number.isNaN(gesehen)).toBe(false);
     expect(gesehen).toBeGreaterThanOrEqual(vorher);
@@ -185,11 +176,7 @@ describe('Abmelden', () => {
   });
 });
 
-// Der Token kommt aus dem Anfragekoerper und landete ungeprueft in einem
-// Suchausdruck. Ein Anfuehrungszeichen darin bricht aus dem Ausdruck aus:
-// Mit `x" || user = "…` laesst sich die Besitzpruefung beim Abmelden
-// aushebeln oder ein fremdes Geraet auf das eigene Konto umschreiben — die
-// andere Person bekaeme keine Nachrichten mehr, der Angreifer ihre.
+// Ein Anführungszeichen im Token darf nicht aus dem Filter ausbrechen.
 describe('Token-Form — verbotene und erlaubte Faelle', () => {
   const BOESE = [
     ['Anfuehrungszeichen und ODER', 'x" || user = "user1'],

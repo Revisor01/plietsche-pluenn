@@ -17,16 +17,7 @@ import {
 import { Screen, PPHeader, PPText, Card, PPButton } from '../../components/ui';
 import type { Item } from '../../lib/types';
 
-// "Neu" = in den letzten 14 Tagen eingestellt (Feld `created`).
-//
-// Die Startseite ("Neu im Laden", useRecentItems) nimmt stattdessen eine feste
-// Anzahl der zuletzt eingestellten Teile. Das passt dort, weil der Abschnitt eine
-// Zeile mit fester Breite füllt — er soll nie leer und nie endlos sein.
-// Ein Filter kann das nicht übernehmen: "die neuesten sechs" wäre unabhängig davon,
-// ob sie von gestern oder aus dem Frühjahr stammen, und ließe sich mit Größe oder
-// Kategorie nicht sinnvoll kombinieren. Deshalb hier ein Zeitraum.
-// 14 Tage, weil der Laden nicht täglich geöffnet ist: Wer alle zwei Wochen
-// vorbeikommt, soll genau das sehen, was seit dem letzten Besuch dazugekommen ist.
+// „Neu“ = letzte 14 Tage, weil der Laden nicht täglich öffnet; eine feste Anzahl ließe sich nicht mit Filtern kombinieren.
 const NEW_DAYS = 14;
 
 // Image-forward grid card — the photo is the hero, text sits below.
@@ -137,8 +128,7 @@ function SelectChip({
       accessibilityRole="button"
       accessibilityLabel={a11yLabel ?? label}
       accessibilityState={{ selected: active }}
-      // Die Chips sind rund 36 pt hoch — knapp unter der empfohlenen Trefferfläche.
-      // hitSlop nur vertikal, damit nebeneinanderliegende Chips sich nicht überlappen.
+      // hitSlop nur vertikal, sonst überlappen benachbarte Chips.
       hitSlop={{ top: 6, bottom: 6 }}
       style={{
         paddingVertical: PP.space.sm,
@@ -168,10 +158,7 @@ export default function Store() {
   const [size, setSize] = useState<string | null>(null);
   // Aufbewahrung: im Laden vs. extern gelagert (große Teile bleiben bei der einreichenden Person).
   const [loc, setLoc] = useState<string | null>(null);
-  // "Neu" und "Schaufenster" sind eigene Zeilen statt Optionen der Aufbewahrungs-Zeile:
-  // Aufbewahrung beantwortet "wo liegt das Teil" und ist damit eine andere Frage. Wer
-  // "Schaufenster" in dieselbe Zeile packt, schließt außerdem "Im Laden + Schaufenster" aus,
-  // obwohl sich beides kombinieren lässt. Zwei eigene Ja/Nein-Zeilen bleiben kombinierbar.
+  // Eigene Ja/Nein-Zeilen, damit „Im Laden“ und „Schaufenster“ kombinierbar bleiben.
   const [showcase, setShowcase] = useState<string | null>(null);
   const [fresh, setFresh] = useState<string | null>(null);
 
@@ -181,16 +168,13 @@ export default function Store() {
     setRefreshing(false);
   }, [refetch]);
 
-  // Sizes available within the current group/type selection (so the size list
-  // is never cluttered with sizes that can't be reached).
+  // Nur Größen, die in der Auswahl erreichbar sind.
   const sizes = useMemo(() => {
     const set = new Set<string>();
     for (const it of items ?? []) {
       if (group && groupOf(it.category) !== group) continue;
       if (type && typeOf(it.category) !== type) continue;
-      // Auch die übrigen Filter einbeziehen: Sonst stehen Größen zur Auswahl,
-      // die es in der gewählten Ansicht gar nicht gibt — man wählt sie und
-      // landet bei „Keine Teile in dieser Ansicht", ohne zu sehen, warum.
+      // Auch die übrigen Filter, sonst lassen sich Größen wählen, die leer sind.
       if (loc === 'store' && it.stays_external) continue;
       if (loc === 'external' && !it.stays_external) continue;
       if (showcase === 'only' && !it.is_showcase) continue;

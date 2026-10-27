@@ -1,18 +1,11 @@
-// Tests für die Abzeichen-Logik in lib/points.js.
-//
-// Hier liegen laut CHANGELOG die meisten bisherigen Fehler: Stufen, die der
-// Server vergab, aber die App nicht zeigte; Fortschritt, der als veraltete
-// Kopie stehen blieb; Abzeichen, die stumm ausfielen. Die Logik ist über
-// mehrere Methoden verteilt, die einander aufrufen — deshalb hier direkt
-// geprüft und nicht nur über die Routen.
+// Abzeichen-Logik in lib/points.js, direkt statt nur über die Routen.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
 
 const { loadHook } = createRequire(import.meta.url)('./harness.js');
 
-// Die Bibliothek läuft in derselben Umgebung wie ein Hook. scan.pb.js dient
-// nur als Träger; benutzt wird ausschließlich das zurückgegebene lib-Objekt.
+// scan.pb.js dient nur als Träger, benutzt wird das lib-Objekt.
 function setup(store = {}) {
   const h = loadHook('scan.pb.js', {
     store: [Object.assign({ __name: 'store', pts_checkin: 10, pts_take: 5 }, store.store || {})],
@@ -48,8 +41,7 @@ const GESTUFT = {
 
 function besuche(n, userId = 'u1') {
   return Array.from({ length: n }, (_, i) => ({
-    // Die ID traegt die Person: Besuche zweier Personen in einer Fixture
-    // duerfen sich nicht die ID teilen (PocketBase lehnt das ab).
+    // PocketBase lehnt doppelte IDs ab.
     id: `v${userId}_${i}`,
     user: userId,
     checkin_at: new Date(2026, 0, 1 + i).toISOString(),
@@ -74,8 +66,7 @@ describe('badgeTiers — welche Stufen ein Abzeichen hat', () => {
   });
 
   it('begrenzt auf die Zahl der gepflegten Raenge', () => {
-    // Wer einen Rang entfernt, sieht eine Stufe weniger — der Server darf sie
-    // dann auch nicht mehr vergeben.
+    // Ein entfernter Rang darf nicht mehr vergeben werden.
     const h = setup({
       store: { tiers_json: [1, 2, 3] },
       badges: [GESTUFT],
@@ -85,10 +76,7 @@ describe('badgeTiers — welche Stufen ein Abzeichen hat', () => {
   });
 
   it('schneidet vor dem Aussortieren leerer Stufen ab', () => {
-    // Die Reihenfolge ist entscheidend: erst auf die Zahl der Raenge kuerzen,
-    // dann leere entfernen. Ein Abzeichen, bei dem nur Diamant gefuellt ist,
-    // verliert diese Stufe bei drei Raengen vollstaendig — sonst ruecke sie
-    // faelschlich auf Platz eins.
+    // Erst auf die Zahl der Ränge kürzen, dann leere entfernen.
     const h = setup({
       store: { tiers_json: [1, 2, 3] },
       badges: [{ id: 'b1', name: 'Nur Diamant', tier_diamant: 100 }],
@@ -106,9 +94,7 @@ describe('badgeTiers — welche Stufen ein Abzeichen hat', () => {
     expect(h.lib.tierSlotCount()).toBe(5);
   });
 
-  // PocketBase gibt ein json-Feld je nach Schreibweg als Array ODER als
-  // Zeichenkette zurueck. Wird die Zeichenkette nicht ausgepackt, zaehlt die
-  // Laenge Zeichen statt Raenge — und die Stufen darueber fallen stumm aus.
+  // json-Felder kommen auch als Zeichenkette.
   it('liest die Raenge auch als Zeichenkette', () => {
     const h = setup({
       store: { tiers_json: '[{"at":150},{"at":750},{"at":1500}]' },
@@ -118,9 +104,7 @@ describe('badgeTiers — welche Stufen ein Abzeichen hat', () => {
   });
 
   it('nimmt bei leerer Rangliste als Zeichenkette fuenf Stufen an', () => {
-    // Der schaedliche Fall: '[]' hat zwei Zeichen. Ohne Auspacken blieben nur
-    // Bronze und Silber uebrig — Gold, Platin und Diamant waeren fuer jedes
-    // gestufte Abzeichen unerreichbar, samt der Punkte dahinter.
+    // '[]' hat zwei Zeichen, ungeprüft blieben nur Bronze und Silber.
     const h = setup({ store: { tiers_json: '[]' }, badges: [GESTUFT] });
     expect(h.lib.tierSlotCount()).toBe(5);
     const tiers = h.lib.badgeTiers(h.store.badges[0]);
@@ -166,8 +150,6 @@ describe('reachedTier — welche Stufe erreicht ist', () => {
 
 describe('computeProgress — woraus sich der Fortschritt ergibt', () => {
   it('zaehlt Besuche vollstaendig', () => {
-    // Die Zaehlung war einmal auf die ersten Eintraege begrenzt, wodurch der
-    // Fortschritt ab einem bestimmten Punkt stehen blieb.
     const h = setup({
       badges: [{ id: 'b1', trigger_type: 'visits' }],
       visits: besuche(120),
@@ -208,8 +190,7 @@ describe('computeProgress — woraus sich der Fortschritt ergibt', () => {
   });
 
   it('leitet die Serie aus den Besuchen ab, nicht aus dem Zaehlerfeld', () => {
-    // "Durchhalter" stand auf 1/2 Wochen, obwohl seit Wochen niemand da war:
-    // Der Wert kam aus einem Feld beim Nutzer statt aus den echten Besuchen.
+    // Aus den Besuchen, nicht aus dem Feld am Nutzer.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', streak_weeks: 7, streak_last_visit: '2026-01-01' }],
       badges: [{ id: 'b1', trigger_type: 'streak_weeks' }],
@@ -255,8 +236,7 @@ describe('checkBadges — gestufte Abzeichen', () => {
   });
 
   it('belohnt beim Ueberspringen jede Stufe einzeln', () => {
-    // Von null auf 25 Besuche: Bronze, Silber und Gold auf einmal.
-    // 10 + 20 + 50 = 80.
+    // Von 0 auf 25 Besuche: 10 + 20 + 50 = 80.
     const h = setup({ badges: [GESTUFT], visits: besuche(25) });
     h.lib.checkBadges(h.records.user);
     expect(h.rows('user_badges')[0].current_tier).toBe('gold');
@@ -329,8 +309,6 @@ describe('checkBadges — gestufte Abzeichen', () => {
   });
 
   it('vergibt keine Stufe, die es nach dem Entfernen eines Rangs nicht mehr gibt', () => {
-    // Der Server hielt sich frueher nicht an die Zahl der Raenge und vergab
-    // im Hintergrund weiter, was die App nicht mehr anzeigte.
     const h = setup({
       store: { tiers_json: [1, 2] },
       badges: [GESTUFT],
@@ -379,8 +357,7 @@ describe('checkBadges — Einzel-Abzeichen', () => {
   });
 
   it('vergibt Treue- und Aktions-Abzeichen nicht von selbst', () => {
-    // Die laufen ueber ihre eigenen naechtlichen Aufgaben; sonst kaeme das
-    // Abzeichen zum falschen Zeitpunkt.
+    // Die laufen über eigene nächtliche Aufgaben.
     const h = setup({
       badges: [
         { id: 'b1', slug: 'treue', name: 'Treue', kind: 'single', trigger_type: 'years_active', trigger_value: 1 },

@@ -13,14 +13,7 @@ export function formatDE(d: Date | null): string {
   return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-// A tappable field that opens a native date picker. Value/onChange use a Date
-// (local time). Display is TT.MM.JJJJ.
-//
-// iOS: Der Kalender läuft in einem Sheet, NICHT inline im Layout. Inline zwängt
-// er sich in die Breite des Feldes — bei zwei Feldern nebeneinander ("Von"/"Bis"
-// mit je flex:1) läuft er rechts aus dem Bild, und zwei geöffnete Picker
-// überlagern sich gegenseitig. Android bringt seinen eigenen System-Dialog mit,
-// der ohnehin über dem Layout schwebt.
+// Datumsfeld (TT.MM.JJJJ); auf iOS im Sheet, weil zwei Inline-Kalender nebeneinander aus dem Bild laufen.
 export function DateField({
   label,
   value,
@@ -102,8 +95,7 @@ export function DateField({
             {/* Tippen im Sheet darf es nicht schließen. */}
             <Pressable
               onPress={() => {}}
-              // Reiner Auffänger, damit ein Tipp im Sheet es nicht schließt —
-              // selbst kein Bedienelement, die Kinder bleiben erreichbar.
+              // Fängt Tipps ab, damit das Sheet offen bleibt.
               importantForAccessibility="no"
               style={{
                 backgroundColor: PP.surface,

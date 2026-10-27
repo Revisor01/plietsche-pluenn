@@ -1,29 +1,8 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Der Token kommt aus dem Anfragekörper. Er geht als gebundener Parameter
-// ({:token}) in den Filter, nicht als eingesetzter Text — ein
-// Anführungszeichen darin kann den Ausdruck also nicht mehr aufbrechen. Bis
-// 26.09.2026 wurde er eingesetzt: `x" || user = "fremdeId` hebelte beim
-// Abmelden die Besitzprüfung aus und schrieb beim Anmelden ein fremdes Gerät
-// auf das eigene Konto um.
-//
-// Die Formprüfung bleibt trotzdem, als zweite Sperre und weil sie etwas
-// Eigenes sagt: Expo vergibt Token ausschließlich in dieser Gestalt
-// (ExponentPushToken[…] bzw. ExpoPushToken[…], darin nur Buchstaben, Ziffern,
-// Binde- und Unterstriche). Was nicht so aussieht, könnte ohnehin nie eine
-// Nachricht empfangen — 400 statt eines Datensatzes, der nie zustellbar ist.
-//
-// Die Prüfung steht in JEDEM Handler selbst: PocketBase führt Handler in einer
-// eigenen Umgebung aus, ein oben in der Datei deklarierter Helfer ist darin
-// nicht sichtbar. So war es bis 26.09.2026 — Anmelden und Abmelden scheiterten
-// ausnahmslos mit "ReferenceError: assertExpoToken is not defined".
-//
-// Antworten und Fehlertexte sind ein Vertrag mit den ausgelieferten Apps.
+// Token als gebundener Parameter gegen Filter-Injection, Formprüfung als zweite Sperre, je Handler, weil Handler isoliert laufen; Antworten sind ein Vertrag mit den Apps.
 
-// POST /api/pp/push/register — upsert the caller's Expo push token.
-// Body: { expo_token, platform? }
-// Server-side lookup, so the unique-token upsert works even though the
-// push_devices list rule is restricted to the owner.
+// POST /api/pp/push/register { expo_token, platform? }: Upsert serverseitig, weil die list rule nur eigene Geräte zeigt.
 routerAdd('POST', '/api/pp/push/register', (e) => {
   // Superuser haben kein Konto in `users` — unter 0.22 war authRecord leer.
   if (!e.auth || e.auth.isSuperuser()) throw new ApiError(401, 'Nicht angemeldet');

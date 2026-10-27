@@ -14,12 +14,7 @@ interface ScreenProps {
   onRefresh?: () => void;
 }
 
-// Screen wrapper that handles safe-area top inset and optional scroll.
-// Tab screens pass padBottom ~110 to clear the floating glass tab bar (iOS).
-//
-// Auf Android ist die MD3 Navigation Bar im Layout verankert statt schwebend —
-// der Platz darunter ist dort bereits reserviert. Der Freiraum wird deshalb
-// zentral zurückgenommen, statt ihn in 18 Screens einzeln zu korrigieren.
+// Bildschirmrahmen mit Safe Area; auf Android wird der Freiraum für die Tab-Leiste zentral zurückgenommen.
 const TAB_CLEARANCE = 100;
 
 export function Screen({
@@ -53,9 +48,7 @@ export function Screen({
     <View style={[{ flex: 1, paddingTop: padTop, paddingBottom: padBot}, contentStyle]}>{children}</View>
   );
 
-  // NOTE: never define the wrapper as an inline component — a fresh component
-  // identity each render remounts the whole subtree (incl. TextInputs), which
-  // drops keyboard focus after every keystroke. Render both branches directly.
+  // Den Wrapper nie inline definieren, sonst verliert jedes TextInput nach jedem Tastendruck den Fokus.
   if (gradientBg) {
     return (
       <LinearGradient colors={PP.gradientSoft} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>

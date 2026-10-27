@@ -39,8 +39,7 @@ export default function NewItem() {
   const isStaff = user?.role === 'volunteer' || user?.role === 'admin';
 
   const [title, setTitle] = useState('');
-  // Kategorie = Gruppe (+ optionale Art bei Damen/Herren). Zusammengesetzt zum
-  // gespeicherten category-Key "<group>" oder "<group>-<type>".
+  // Gespeichert als "<group>" oder "<group>-<type>".
   const [group, setGroup] = useState('sonstiges');
   const [type, setType] = useState<string | null>(null);
   const category = group && GROUPS_WITH_TYPE.includes(group) && type ? `${group}-${type}` : group;
@@ -82,8 +81,7 @@ export default function NewItem() {
       Alert.alert('Standort fehlt', 'Bitte gib an, wo das Teil bei dir zu finden ist.');
       return;
     }
-    // Standort nur übernehmen, wenn er im Formular auch erfasst wurde:
-    // bei "verbleibt bei mir" (Abholadresse) oder Staff im Laden (Regalplatz).
+    // Standort nur, wenn das Formular ihn erfasst hat.
     const locationToSave =
       destination === 'mine' || (isStaff && destination === 'store') ? location.trim() || undefined : undefined;
 
@@ -100,8 +98,7 @@ export default function NewItem() {
         is_showcase: isStaff ? showcase : false,
         photoUri,
       });
-      // Staff-Teile sind sofort freigegeben und stehen damit auch im Laden —
-      // deshalb der komplette Bestand, nicht nur die eigenen und die offenen.
+      // Staff-Teile sind sofort freigegeben, also den ganzen Bestand neu laden.
       await invalidateItems(qc);
       Alert.alert(
         'Danke!',

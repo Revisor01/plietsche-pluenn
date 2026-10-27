@@ -10,9 +10,7 @@ interface PillProps {
   icon?: IconName;
   size?: 's' | 'm';
   style?: StyleProp<ViewStyle>;
-  // Auswahl-Chip: der ausgewählte Zustand wird sonst allein über die Farbe
-  // getragen und ist für den Screenreader nicht erkennbar. Wird nur gesetzt,
-  // wenn die Pille tatsächlich eine Auswahl darstellt.
+  // Nur bei echter Auswahl; sonst ist der Zustand im Screenreader nicht erkennbar.
   selected?: boolean;
   accessibilityLabel?: string;
 }
@@ -29,8 +27,7 @@ export function Pill({
 }: PillProps) {
   const fs = size === 's' ? 'xs' : 'sm';
   const iconSize = size === 's' ? PP.iconSizes.xs : PP.iconSizes.sm;
-  // Polsterung und Mindesthöhe wachsen mit der Schrift mit (PP.fontScale),
-  // sonst wird der Chip bei größerer Typo zu eng und die Schrift beschnitten.
+  // Wächst mit PP.fontScale, sonst wird die Schrift beschnitten.
   const scale = PP.fontScale;
   const padH = Math.round((size === 's' ? 8 : 12) * scale);
   const padV = Math.round((size === 's' ? 4 : 6) * scale);

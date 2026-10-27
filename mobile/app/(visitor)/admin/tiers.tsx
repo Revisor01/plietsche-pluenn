@@ -62,16 +62,14 @@ export default function TiersAdmin() {
     const pc = parseNum(ptsCheckin);
     const pt = parseNum(ptsTake);
     const pb = parseNum(ptsBring);
-    // Bei „Unbegrenzt" ist das Feld ausgeblendet; die Zahl bleibt gespeichert
-    // und gilt wieder, sobald der Schalter aus ist.
+    // Bei „Unbegrenzt“ bleibt die Zahl gespeichert und gilt wieder, sobald der Schalter aus ist.
     const mt = parseNum(maxTake, 1);
     if (!unlimited && parseNum(maxTake) < 1) {
       Alert.alert('Maximale Teile', 'Es muss mindestens 1 Teil pro Besuch erlaubt sein.');
       return;
     }
 
-    // ── Ränge validieren ──
-    // Leere Ränge (Name UND Schwelle leer) rausfiltern.
+    // ── Ränge validieren: ganz leere rausfiltern ──
     const cleaned = ranks.filter((r) => r.name.trim() !== '' || r.at.trim() !== '');
     for (const r of cleaned) {
       if (!r.name.trim()) {
@@ -177,8 +175,7 @@ export default function TiersAdmin() {
       </View>
       <View style={{ paddingHorizontal: PP.space.xl, gap: PP.space.md }}>
         {ranks.map((r, i) => (
-          // alignItems: 'stretch' — beide Felder gleich hoch, egal wie lang das
-          // Label ist. Sonst springt die Zeile, sobald eins davon umbricht.
+          // stretch, sonst springt die Zeile, wenn ein Label umbricht.
           <View key={i} style={{ flexDirection: 'row', alignItems: 'stretch', gap: PP.space.md }}>
             <View style={{ width: 12, height: 12, borderRadius: PP.rMicro, backgroundColor: tierColor(r.name), alignSelf: 'center' }} />
             <View style={{ flex: 1 }}>

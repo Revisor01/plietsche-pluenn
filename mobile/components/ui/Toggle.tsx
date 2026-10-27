@@ -5,17 +5,12 @@ import { PP, alpha } from '../../lib/theme';
 interface ToggleProps {
   value: boolean;
   onChange: (v: boolean) => void;
-  // Der Schalter trägt keinen eigenen Text; die Beschriftung steht daneben in
-  // der Zeile. Für den Screenreader muss sie hier mitgegeben werden.
+  // Die Beschriftung steht daneben und muss für den Screenreader mit.
   accessibilityLabel?: string;
   accessibilityHint?: string;
 }
 
-// Die Spurfarbe wird EINMAL beim Laden des Moduls berechnet, nicht im Worklet.
-// `useAnimatedStyle` läuft auf dem UI-Thread; eine gewöhnliche JS-Funktion wie
-// `alpha()` ist dort nicht vorhanden und der Aufruf reißt den Screen ab
-// ("Tried to synchronously call a Remote Function"). Fertige Farbwerte sind
-// blosse Zeichenketten und dürfen ins Worklet.
+// Einmal beim Laden berechnet, weil `alpha()` im Worklet auf dem UI-Thread nicht existiert.
 const TRACK_OFF = alpha(PP.ink, 'medium');
 const TRACK_ON = PP.teal;
 

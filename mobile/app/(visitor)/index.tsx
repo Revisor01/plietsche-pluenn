@@ -58,8 +58,7 @@ export default function Home() {
   const total = user?.points_total ?? 0;
   const tier = nextTier(total, (store as any)?.tiers_json);
 
-  // Ankündigungen, die eine laufende Aktion bereits abdeckt, werden von der
-  // Aktions-Karte geschluckt — sonst stünde dasselbe Thema doppelt im Aushang.
+  // Was eine laufende Aktion schon abdeckt, schluckt die Aktions-Karte.
   const activeCampaignIds = new Set((campaigns ?? []).map((c) => c.id));
   const visibleNeeds = (needs ?? []).filter((n) => !n.campaign || !activeCampaignIds.has(n.campaign));
 
@@ -192,9 +191,7 @@ export default function Home() {
             {visibleNeeds.map((n) => {
               const accent = normalizeHex(n.color) ?? PP.sky;
               return (
-              // Die gewählte Farbe trägt die ganze Karte (Kante + getönte
-              // Fläche) — nur im Icon war sie gegen den Standard nicht zu
-              // unterscheiden. Text bleibt dunkel, die Tönung ist schwach genug.
+              // Die Farbe trägt die ganze Karte, im Icon allein war sie nicht zu erkennen.
               <Card
                 key={n.id}
                 pad={14}
@@ -219,8 +216,7 @@ export default function Home() {
             })}
             {/* Laufende Aktionen — hervorgehoben. */}
             {campaigns?.map((c) => {
-              // Every boosted type gets its own badge — an action can raise
-              // coming, taking and bringing by different factors.
+              // Je verstärktem Typ ein eigenes Badge, die Faktoren können verschieden sein.
               const factors = campaignFactors(c);
               return (
                 <GradientCard key={c.id} pad={16} radius={20} colors={accentGradient(c.color)}>

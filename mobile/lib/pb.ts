@@ -1,5 +1,4 @@
-// PocketBase client singleton with SecureStore-backed auth persistence.
-// `pb.authStore` is fully reactive — subscribe via pb.authStore.onChange().
+// PocketBase-Client mit SecureStore-Persistenz.
 
 import PocketBase, { AsyncAuthStore } from 'pocketbase';
 import * as SecureStore from 'expo-secure-store';
@@ -30,14 +29,10 @@ pb.authStore.onChange(() => {
 export type PPUser = {
   id: string;
   email: string;
-  // Von PocketBase gepflegt: steht auf true, sobald der Link aus der
-  // Bestaetigungsmail geoeffnet wurde. Die App erzwingt das nicht
-  // (onlyVerified ist aus), zeigt den Stand aber im Profil.
+  // Von PocketBase gepflegt; erzwungen wird es nicht (onlyVerified aus).
   verified: boolean;
   name: string;
-  // Eine Quelle für die Rollen: `Role` aus types.ts. Die Aufzählung stand hier
-  // ein zweites Mal wörtlich — eine neue Rolle hätte an beiden Stellen
-  // nachgetragen werden müssen, und nur eine davon hätte der Compiler gemahnt.
+  // Rollen nur aus `Role` in types.ts.
   role: Role;
   avatar?: string;
   points_total: number;

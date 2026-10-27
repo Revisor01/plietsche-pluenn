@@ -9,10 +9,7 @@ import { Icon, type IconName } from '../lib/icons';
 import { PPText } from './ui/Text';
 import { useCurrentUser } from '../lib/hooks/useData';
 
-// Evaluated lazily, not at module load: isLiquidGlassAvailable() reaches into a
-// native module, and at import time that module may not be registered yet — it
-// would then answer `false` and stay wrong for the whole session, because the
-// result is cached inside expo-glass-effect after the first call.
+// Erst beim Aufruf prüfen, beim Import ist das native Modul evtl. noch nicht registriert und das falsche Ergebnis bliebe gecacht.
 function liquidGlassAvailable(): boolean {
   try {
     return isLiquidGlassAvailable();
@@ -21,8 +18,7 @@ function liquidGlassAvailable(): boolean {
   }
 }
 
-// Minimal shape of the tabBar prop expo-router passes (avoids a direct
-// @react-navigation/bottom-tabs dependency that isn't installed standalone).
+// Minimale Form der tabBar-Props, ohne @react-navigation/bottom-tabs als Abhängigkeit.
 type TabRoute = { key: string; name: string };
 type TabBarProps = {
   state: { index: number; routes: TabRoute[] };
@@ -32,8 +28,7 @@ type TabBarProps = {
   };
 };
 
-// Fixed visual order. "Scannen" is not a tab route — it opens the modal
-// universal-scanner screen at the root, so the tab bar stays out of the way there.
+// Feste Reihenfolge; „Scannen“ öffnet den Scanner als Modal statt einer Tab-Route.
 type Slot = { name: string; label: string; icon: IconName; modal?: boolean; staffOnly?: boolean; push?: string };
 const SLOTS: Slot[] = [
   { name: 'index', label: 'Moin', icon: 'house' },
@@ -46,16 +41,12 @@ const SLOTS: Slot[] = [
   { name: 'points', label: 'Punkte', icon: 'coins' },
 ];
 
-// Tab bar je Plattform:
-//  - iOS   → schwebende Liquid-Glass-Leiste (HANDOFF §8 Glass variant)
-//  - Android → MD3 Navigation Bar: am Rand verankert, Pill-Indikator, Ripple
+// iOS schwebende Liquid-Glass-Leiste, Android MD3 Navigation Bar.
 export function GlassTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  // Liquid Glass needs iOS 26 AND the system's transparency setting left on —
-  // "Reduce Transparency" (Accessibility → Display) silently flattens the
-  // material, in which case the blur fallback is the better-looking option.
+  // Mit „Transparenz reduzieren“ wird das Material flach, dann sieht der Blur besser aus.
   const [glass, setGlass] = useState(() => !isAndroid && liquidGlassAvailable());
   useEffect(() => {
     if (isAndroid) return;
@@ -107,8 +98,7 @@ export function GlassTabBar({ state, navigation }: TabBarProps) {
               android_ripple={ripple(PP.teal, false)}
               accessibilityRole="tab"
               accessibilityLabel={slot.label}
-              // Der aktive Tab wird sichtbar allein über die Farbe getragen —
-              // ohne diesen Zustand ist er im Screenreader nicht erkennbar.
+              // Sonst ist der aktive Tab im Screenreader nicht erkennbar.
               accessibilityState={{ selected: isActive }}
               style={styles.md3Item}
             >
@@ -186,10 +176,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: PP.space.xs,
   },
-  // Echtes Liquid Glass sampelt den Inhalt DAHINTER auf Systemebene. Deshalb
-  // hier kein `overflow: hidden` (die Clipping-Ebene kappt genau das und macht
-  // aus dem Material eine milchige Fläche), kein eigener Hintergrund, kein
-  // Border und kein Schatten — Tiefe und Rand bringt das Material selbst mit.
+  // Kein overflow, Hintergrund, Rand oder Schatten, sonst wird das Glas milchig.
   barGlass: {},
   barBlur: {
     // Der Fallback-Blur braucht das Clipping, sonst läuft er über die Ecken.
@@ -213,8 +200,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // --- MD3 Navigation Bar (Android) ---------------------------------------
-  // Material verankert die Leiste am Rand statt sie schweben zu lassen.
+  // --- MD3 Navigation Bar (Android), am Rand verankert ---
   md3Bar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -230,8 +216,7 @@ const styles = StyleSheet.create({
     gap: PP.space.xs,
     paddingBottom: PP.space.md,
   },
-  // Der aktive Zustand wird allein über die Farbe von Icon und Label getragen —
-  // bewusst ohne den MD3-Pill hinter dem Icon.
+  // Aktiv nur über die Farbe, bewusst ohne MD3-Pill.
   md3IndicatorWrap: {
     width: 64,
     height: 32,

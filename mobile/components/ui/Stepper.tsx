@@ -9,8 +9,7 @@ interface StepperProps {
   onChange: (v: number) => void;
   min?: number;
   max?: number;
-  // Wofür gezählt wird — steht sichtbar über dem Stepper, für den
-  // Screenreader muss es mit an das Bedienelement.
+  // Wofür gezählt wird, für den Screenreader am Bedienelement.
   accessibilityLabel?: string;
 }
 
