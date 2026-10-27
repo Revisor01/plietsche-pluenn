@@ -66,19 +66,15 @@ react-native-svg · react-native-qrcode-svg · qrcode · @react-native-community
 react-native-share · @expo/vector-icons (Font Awesome 6) · @expo-google-fonts/work-sans ·
 @expo/metro-runtime · pocketbase-js-sdk · @tanstack/react-query
 
-> `expo-print` + `expo-sharing` + `qrcode` tragen den QR-Etikettenbogen
-> (`lib/qrsheet.ts`): HTML → PDF → Teilen-Dialog. `qrcode` erzeugt die Codes als
-> data:-URI, damit der Bogen ohne Netz vollständig ist; `react-native-qrcode-svg`
-> bleibt für die Anzeige einzelner Codes im Screen.
+> `expo-print`, `expo-sharing` und `qrcode` erzeugen den QR-Etikettenbogen
+> (`lib/qrsheet.ts`) als PDF; `react-native-qrcode-svg` zeigt einzelne Codes im
+> Screen.
 
 **Schrift:** Work Sans (400/500/600/700), lokal gebündelt
 
-> `pocketbase` (JS-SDK) ist exakt auf 0.22.1 festgenagelt — die Version in den
-> ausgelieferten Apps. Seit dem Server-Upgrade auf 0.40.4 (26.09.2026) spricht
-> dieses SDK mit einem neueren Server. Die Wege, die die App nutzt (Anmeldung,
-> Registrierung, Listen mit Filter, eigene Routen), prüfen die
-> Integrationstests (`npm run test:integration`) mit genau diesem SDK gegen das
-> echte 0.40.4-Binary.
+> `pocketbase` (JS-SDK) ist exakt auf 0.22.1 gepinnt, die Version der
+> ausgelieferten Apps. Die Integrationstests (`npm run test:integration`) prüfen
+> die Wege der App mit diesem SDK gegen den Server 0.40.4.
 
 **Bekannte Meldungen aus `npm audit`** (26.10.2026): fünf hohe, keine kritischen. Alle
 hängen an zwei Paketen im Expo-Kommandozeilenwerkzeug (`node-forge`, `zod`) und landen
@@ -91,14 +87,8 @@ PocketBase-Serverversion gebunden und werden nur gemeinsam angehoben
 schlägt Updates im Wesentlichen nur noch für `@tanstack/react-query` vor — siehe
 `.github/dependabot.yml`.
 
-> **TypeScript folgt dem SDK, nicht dem Neuesten.** Die aktuellste Version überhaupt
-> ist 7.0 (der in Go neu geschriebene Compiler), das SDK 57 erwartet aber `~6.0.3`.
-> Die App bleibt bewusst auf 6.0: TypeScript 7 ist von Expo nicht unterstützt
-> (`expo install --check` meldet es als Abweichung), bringt bis 7.1 keine
-> Compiler-API für Werkzeuge mit, und es gab eine gemeldete Unverträglichkeit beim
-> Laden der Expo-Konfiguration. Für eine App im TestFlight-Betrieb ist der vom SDK
-> erwartete Stand die sichere Wahl. Damit die Hauptversion nicht erneut unbemerkt
-> weiterwandert, lässt Dependabot für `typescript` nur Patch-Stände zu.
+> **TypeScript folgt dem SDK:** 6.0, wie SDK 57 es erwartet (`~6.0.3`), nicht 7.x.
+> Dependabot lässt für `typescript` nur Patch-Stände zu.
 
 ---
 
@@ -139,13 +129,9 @@ Push auf `main` → Tests → Abbild bauen und zu `ghcr.io` schieben →
 Webhook → Prüfung gegen die laufende Instanz. Kein SSH aus der CI;
 der Server zieht selbst.
 
-Hooks und Migrationen liegen **im Abbild** (`pocketbase/Dockerfile`), nicht in
-einem Verzeichnis auf dem Host — der Stand des Containers ist damit der Stand
-eines Commits. Der Stack mountet deshalb nur noch `pb_data`.
-
-Geprüft wird nach dem Deploy nicht `/api/health`, sondern je Migration ein
-Schemamerkmal über die öffentliche API (`.github/scripts/deploy-verify.py`).
-Ein gesunder Container sagt über den ausgelieferten Stand nichts aus.
+Hooks und Migrationen liegen im Abbild (`pocketbase/Dockerfile`); der Stack
+mountet nur `pb_data`. Nach dem Deploy prüft `.github/scripts/deploy-verify.py`
+je Migration ein Schemamerkmal und den Commit der geladenen Hooks.
 
 ---
 
