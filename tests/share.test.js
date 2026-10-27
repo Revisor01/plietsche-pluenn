@@ -117,9 +117,19 @@ describe('appRecommendationText', () => {
   });
 });
 
+describe('LINKS', () => {
+  it('App-Store-Link nennt den deutschen Store', () => {
+    expect(LINKS.appStore).toBe('https://apps.apple.com/de/app/id6784690448');
+  });
+
+  it('Play-Link nennt das Paket', () => {
+    expect(LINKS.playStore).toBe('https://play.google.com/store/apps/details?id=de.godsapp.plietschepluenn');
+  });
+});
+
 describe('reviewUrls', () => {
   it('iOS: direkt zur Bewertungsseite im App Store', () => {
-    expect(reviewUrls('ios')).toEqual(['https://apps.apple.com/app/id6784690448?action=write-review']);
+    expect(reviewUrls('ios')).toEqual(['https://apps.apple.com/de/app/id6784690448?action=write-review']);
   });
 
   it('Android: erst die Play-Store-App, dann die Webseite', () => {

@@ -13,7 +13,8 @@ export const LINKS = {
   // Die öffentliche Seite des Ladens (web/index.html). In Punycode, weil
   // nicht jede Messenger-App eine Adresse mit Umlaut als Link erkennt.
   web: 'https://xn--plietsche-plnn-rsb.de',
-  appStore: 'https://apps.apple.com/app/id6784690448',
+  // Nur im deutschen Store; ohne /de/ leitet Apple in den US-Store (404).
+  appStore: 'https://apps.apple.com/de/app/id6784690448',
   playStore: 'https://play.google.com/store/apps/details?id=de.godsapp.plietschepluenn',
 } as const;
 
