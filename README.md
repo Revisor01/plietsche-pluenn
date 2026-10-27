@@ -59,7 +59,7 @@ betriebenen Server; es gibt keinen Cloud-Dienst dazwischen.
 
 ## Installation
 
-**[Im App Store laden »](https://apps.apple.com/app/id6784690448)** ·
+**[Im App Store laden »](https://apps.apple.com/de/app/id6784690448)** ·
 **[Bei Google Play »](https://play.google.com/store/apps/details?id=de.godsapp.plietschepluenn)**
 
 Die App gehört zu einem bestimmten Laden: Nach dem Start legt man ein Konto an
