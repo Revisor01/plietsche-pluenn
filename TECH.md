@@ -141,7 +141,11 @@ je Migration ein Schemamerkmal und den Commit der geladenen Hooks.
 Drittanbieter-Telemetrie. Geprüft über Abhängigkeitsbaum und Quelltextsuche.
 
 Die App spricht ausschließlich mit dem eigenen Backend und — beim Versand von
-Benachrichtigungen — mit dem Expo-Push-Dienst.
+Benachrichtigungen — mit dem Expo-Push-Dienst. Unter Android stellt Expo über
+Firebase Cloud Messaging (Google) zu; das Gerät meldet sich dafür bei Firebase an.
+Die Konfiguration dazu schreibt der Android-Build aus dem Secret
+`GOOGLE_SERVICES_JSON_BASE64`; ein lokaler Android-prebuild braucht die Datei
+unter `mobile/google-services.json`.
 
 **Angeforderte Berechtigungen:**
 

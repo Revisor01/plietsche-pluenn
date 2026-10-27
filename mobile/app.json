@@ -21,6 +21,7 @@
     },
     "android": {
       "package": "de.godsapp.plietschepluenn",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#27b092",
         "foregroundImage": "./assets/android-icon-foreground.png",
