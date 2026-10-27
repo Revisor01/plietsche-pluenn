@@ -36,6 +36,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# generated native folders
-/ios
+# Android erzeugt der Release mit expo prebuild. ios/ ist versioniert, weil
+# Xcode Cloud ein Projekt im Repo braucht; was Xcode und CocoaPods darin
+# erzeugen, schliesst ios/.gitignore aus.
 /android
