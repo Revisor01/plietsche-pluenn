@@ -1,26 +1,20 @@
 name: TestFlight
 
-# Baut den aktuellen Stand von main als iOS-Version und laedt sie zu
-# TestFlight hoch. Gedacht fuer den Alltag am Windows-Rechner: Ein Klick auf
-# "Run workflow", und die Tester:innen haben die Fassung mit den letzten
-# Aenderungen — ohne Mac.
+# Baut den aktuellen Stand des Branches in Xcode Cloud (Workflow „Plietsche
+# Plünn TestFlight") und trägt danach die Testhinweise ein. Xcode Cloud
+# signiert selbst und vergibt die Build-Nummer
+# (mobile/ios/ci_scripts/ci_post_clone.sh); die Workflow-ID steht in der
+# Repo-Variable XCODE_CLOUD_WORKFLOW. Die App spricht immer mit der Produktion:
+# Xcode Cloud baut aus dem Repo-Stand, die Adresse steht in mobile/.env.example.
 #
 # Die Testhinweise entstehen aus den Commits seit dem letzten Lauf und stehen
 # danach in TestFlight unter "Was gibt es Neues zu testen".
-#
-# Hintergrund zum Xcode-Schritt: Builds von Beta-macOS werden von Apple mit
-# ITMS-90111 abgelehnt (Beta-Stempel im Binary). Deshalb waehlt der Workflow
-# ausdruecklich die neueste stabile Installation.
 
 on:
   workflow_dispatch:
     inputs:
       hinweis:
         description: 'Was soll getestet werden? (leer = aus den Commits erzeugt)'
-        required: false
-        default: ''
-      backend:
-        description: 'Backend-Adresse (leer = Produktion)'
         required: false
         default: ''
 
@@ -32,44 +26,32 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  TEAM_ID: J459G9CJT5
-  BUNDLE_ID: de.godsapp.plietschepluenn
   ASC_APP_ID: '6784690448'
 
 jobs:
-  build:
-    name: Bauen und hochladen
-    runs-on: macos-26
-    timeout-minutes: 90
+  bauen:
+    name: In Xcode Cloud bauen
+    uses: Revisor01/workflows/.github/workflows/xcode-cloud.yml@5bb9fc1d9e2cd728029f334f50bbe355f005eef5 # 1.3.1
+    with:
+      workflow-id: ${{ vars.XCODE_CLOUD_WORKFLOW }}
+    secrets:
+      asc-key-id: ${{ secrets.ASC_KEY_ID }}
+      asc-issuer-id: ${{ secrets.ASC_ISSUER_ID }}
+      asc-key-p8: ${{ secrets.ASC_KEY_P8_BASE64 }}
+
+  hinweise:
+    name: Testhinweise eintragen
+    needs: bauen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Quelltext holen
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Die ganze Historie, damit die Testhinweise aus den Commits seit
-          # dem letzten hochgeladenen Stand entstehen koennen.
+          # dem letzten gebauten Stand entstehen koennen.
           fetch-depth: 0
-
-      - name: Neuestes stabiles Xcode waehlen
-        run: |
-          XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -iv beta | sort -V | tail -1)
-          if [ -z "$XCODE" ]; then XCODE=/Applications/Xcode.app; fi
-          echo "Verwende: $XCODE"
-          sudo xcode-select -s "$XCODE/Contents/Developer"
-          xcodebuild -version
-
-      - name: Node einrichten
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Abhaengigkeiten installieren
-        working-directory: mobile
-        # Die Peer-Abhaengigkeiten des Expo-SDK loesen sich mit npm 10 nicht
-        # strikt auf; lokal wird ebenso installiert.
-        run: npm ci --legacy-peer-deps
 
       - name: ASC-API-Key ablegen
         env:
@@ -80,127 +62,6 @@ jobs:
           echo "$ASC_KEY_P8_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
           chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
 
-      - name: Naechste Build-Nummer ermitteln
-        id: version
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_APP_ID: ${{ env.ASC_APP_ID }}
-        # Die Nummer kommt aus App Store Connect, nicht aus dem Repo — dort
-        # muss sie eindeutig aufsteigen. Dasselbe Skript nutzt der
-        # Veroeffentlichungs-Workflow.
-        run: python3 .github/scripts/asc-build-number.py >> "$GITHUB_OUTPUT"
-
-      - name: Version und Build-Nummer eintragen
-        working-directory: mobile
-        env:
-          BUILD_NUMMER: ${{ steps.version.outputs.build }}
-        run: |
-          python3 - <<'PY'
-          import json, os, pathlib
-          p = pathlib.Path('app.json')
-          d = json.loads(p.read_text(encoding='utf-8'))
-          nummer = os.environ['BUILD_NUMMER']
-          d['expo'].setdefault('ios', {})['buildNumber'] = nummer
-          p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-          print(f"Version {d['expo']['version']} ({nummer})")
-          PY
-
-      - name: Natives Projekt erzeugen
-        working-directory: mobile
-        env:
-          EXPO_PUBLIC_PB_URL: ${{ inputs.backend }}
-        run: |
-          # ios/ liegt nicht im Repo — Expo erzeugt es aus app.json.
-          # Ohne Angabe gilt die Produktionsadresse aus .env.example.
-          if [ -z "$EXPO_PUBLIC_PB_URL" ]; then
-            export EXPO_PUBLIC_PB_URL="https://pb.xn--plietsche-plnn-rsb.de"
-          fi
-          echo "Backend: $EXPO_PUBLIC_PB_URL"
-          echo "EXPO_PUBLIC_PB_URL=$EXPO_PUBLIC_PB_URL" >> .env
-          npx expo prebuild --platform ios --clean --no-install
-
-      - name: CocoaPods installieren
-        working-directory: mobile/ios
-        run: pod install
-
-      - name: Signing-Keychain einrichten
-        env:
-          P12_BASE64: ${{ secrets.IOS_DIST_P12_BASE64 }}
-          P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
-        run: |
-          echo "$P12_BASE64" | base64 --decode > dist.p12
-          security create-keychain -p ci-build build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p ci-build build.keychain
-          security set-keychain-settings -t 3600 build.keychain
-          security import dist.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k ci-build build.keychain >/dev/null
-          rm dist.p12
-
-      - name: Archiv bauen
-        working-directory: mobile/ios
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          TEAM_ID: ${{ env.TEAM_ID }}
-        run: |
-          set -o pipefail
-          # Der App-Name traegt einen Umlaut; wie Expo daraus den Projektnamen
-          # bildet, wird nicht geraten, sondern aus dem Verzeichnis gelesen.
-          SCHEME=$(ls -d *.xcworkspace | head -1 | sed 's/\.xcworkspace$//')
-          if [ -z "$SCHEME" ]; then echo "Kein Xcode-Workspace gefunden"; exit 1; fi
-          echo "Schema: $SCHEME"
-          # DEVELOPMENT_TEAM und der Signaturstil muessen mitgegeben werden:
-          # expo prebuild erzeugt das Projekt ohne Team, und ohne die Angabe
-          # bricht das Archiv mit "requires a development team" ab.
-          xcodebuild -workspace "$SCHEME.xcworkspace" -scheme "$SCHEME" \
-            -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath build/App.xcarchive archive \
-            DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -40
-
-      - name: IPA exportieren
-        working-directory: mobile/ios
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: |
-          set -o pipefail
-          cat > ExportOptions-ci.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>destination</key><string>export</string>
-            <key>method</key><string>app-store-connect</string>
-            <key>signingStyle</key><string>automatic</string>
-            <key>stripSwiftSymbols</key><true/>
-            <key>teamID</key><string>${TEAM_ID}</string>
-            <key>uploadSymbols</key><true/>
-            <key>manageAppVersionAndBuildNumber</key><false/>
-          </dict>
-          </plist>
-          EOF
-          xcodebuild -exportArchive -archivePath build/App.xcarchive \
-            -exportPath build/export -exportOptionsPlist ExportOptions-ci.plist \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -10
-
-      # Die Hinweise entstehen VOR dem Upload. Scheiterten sie danach, waere
-      # der Build bei Apple schon angekommen und die Nummer verbraucht — er
-      # stuende dann ohne "Was gibt es Neues zu testen" in TestFlight, und die
-      # Nummer liesse sich nicht wiederverwenden.
-      #
-      # Das Vorziehen ist gefahrlos: Die Abfrage sucht den letzten
-      # ERFOLGREICHEN Lauf. Der gerade laufende zaehlt nicht dazu, egal an
-      # welcher Stelle sie steht. play-internal.yml haelt dieselbe Reihenfolge.
       - name: Letzten gebauten Stand ermitteln
         id: vorher
         env:
@@ -236,26 +97,15 @@ jobs:
           echo "--- Testhinweise ---"
           cat /tmp/notes.txt
 
-      - name: Zu App Store Connect hochladen
-        working-directory: mobile/ios
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: |
-          IPA=$(ls build/export/*.ipa | head -1)
-          echo "Lade hoch: $IPA"
-          xcrun altool --upload-app -f "$IPA" -t ios \
-            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
-
       - name: Testhinweise in TestFlight eintragen
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          BUILD_NUMMER: ${{ steps.version.outputs.build }}
+          BUILD_NUMMER: ${{ needs.bauen.outputs.build-nummer }}
           HINWEISE: ${{ steps.hinweise.outputs.text }}
           ASC_APP_ID: ${{ env.ASC_APP_ID }}
-        # Der Upload dauert; bis der Build in ASC auftaucht, vergehen Minuten.
-        # Deshalb mit Geduld nachfassen statt sofort aufzugeben.
+        # Der Baustein meldet den Build, sobald er in App Store Connect liegt;
+        # das Nachfassen bleibt für den Fall, dass die Suche nachhinkt.
         run: |
           python3 - <<'PY'
           import base64, json, os, subprocess, time, urllib.request, urllib.error
@@ -350,7 +200,7 @@ jobs:
       - name: Zusammenfassung
         if: always()
         env:
-          BUILD_NUMMER: ${{ steps.version.outputs.build }}
+          BUILD_NUMMER: ${{ needs.bauen.outputs.build-nummer }}
           HINWEISE: ${{ steps.hinweise.outputs.text }}
         run: |
           {
@@ -362,5 +212,4 @@ jobs:
             echo ""
             echo "${HINWEISE:-–}"
             echo ""
-            echo "Die Verarbeitung bei Apple dauert nach dem Hochladen noch einige Minuten."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Xcode Cloud, nach dem Klonen: Abhaengigkeiten, natives Projekt aus app.json,
-# Backend-Adresse, Pods und Pruefung der Signierung, mit denselben Schritten
-# wie der iOS-Release auf GitHub. Ohne sie fehlen node_modules, Pods und Version.
+# Backend-Adresse, Pods und Pruefung der Signierung. Ohne sie fehlen
+# node_modules, Pods und Version.
 set -euo pipefail
 
 REPO="${CI_PRIMARY_REPOSITORY_PATH:?Nur fuer Xcode Cloud gedacht.}"
@@ -28,8 +28,8 @@ app.expo.ios.buildNumber = String(neu); fs.writeFileSync(datei, JSON.stringify(a
 console.log(`Version ${app.expo.version}, iOS-Build ${neu}`);' "$MOBILE/app.json"
 
 npm ci --legacy-peer-deps
-# Die Adresse wird beim Buendeln fest eingebaut. Sie ist oeffentlich und steht
-# in .env.example, wie im GitHub-Release.
+# Die Adresse wird beim Buendeln fest eingebaut. Sie ist oeffentlich, steht in
+# .env.example und ist die Produktion, wie bei der Android-Fassung.
 cp .env.example .env
 
 # Ab Expo 57 raeumt prebuild ohne --no-clean ios/ ab und erzeugt es neu.

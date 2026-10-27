@@ -28,7 +28,7 @@ Designsprache. Backend selbst gehostet, kein Cloud-Dienst Dritter.
 | Backend | PocketBase (Go, eingebettetes SQLite) | 0.40.4 |
 | Backend-Logik | JavaScript-Hooks (Goja-Runtime) | ES5-kompatibel |
 | Container | eigenes Docker-Abbild (`pocketbase/Dockerfile`) | — |
-| Build | EAS CLI, lokale Xcode-Archive | ≥ 12.0 |
+| Build | iOS in Xcode Cloud, Android mit Gradle in GitHub Actions | — |
 
 **Laufzeitanforderung Entwicklung:** Node 22 LTS
 
