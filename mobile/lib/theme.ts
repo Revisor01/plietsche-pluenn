@@ -1,15 +1,9 @@
-// Design tokens — die EINE Stelle für Farben, Abstände, Schriftgrößen, Radien,
-// Icon-Größen und Schatten. In Screens und Komponenten nie hart kodieren:
-// `PP.<token>` für Farben und Maße, `alpha(farbe, stufe)` für getönte Flächen.
-//
-// Grundlage: Bestandsaufnahme der Farben und Maße vom 14.09.2026.
+// Design-Tokens: Farben und Maße nur über `PP.<token>` und `alpha()`, nie hart kodiert.
 
 import { Platform, StyleSheet } from 'react-native';
 import type { IconName } from './icons';
 
-// ---------------------------------------------------------------------------
-// Rohfarben — die einzige Stelle im Projekt mit Hex-Literalen.
-// ---------------------------------------------------------------------------
+// ── Rohfarben, die einzige Stelle mit Hex-Literalen ──
 const RAW = {
   // Markenverlauf (teal -> mint -> sky)
   teal: '#27b092',
@@ -27,18 +21,7 @@ const RAW = {
   // Text
   ink: '#1A2E2C',
   ink2: '#5A6B6A',
-  // Nebentext: Feld-Beschriftungen, Platzhalter, Zeitstempel, Meta-Zeilen.
-  // War #9AA8A7 — 2,46:1 auf Weiß, 2,28:1 auf dem Seitengrund. Gefordert sind
-  // 4,5:1, und diese Farbe steht fast immer in xs oder sm.
-  //
-  // Der Wert ist gegen beide tatsächlich vorkommenden Gründe gerechnet, nicht
-  // nur gegen Weiß: 4,88:1 auf `surface`, 4,53:1 auf `bg`. (`sand` trägt nur
-  // den Avatar, `sandDeep` wird nirgends als Hintergrund benutzt — dort steht
-  // kein Nebentext.)
-  //
-  // Weiter abzudunkeln bringt nichts: Schon ink2 selbst erreicht auf sandDeep
-  // nur 4,39:1; wer ink3 dort über 4,5 bringen wollte, müsste es mit ink2
-  // zusammenfallen lassen und verlöre die Abstufung Haupt-/Zweit-/Nebentext.
+  // Nebentext: 4,88:1 auf `surface`, 4,53:1 auf `bg`; dunkler fiele es mit ink2 zusammen.
   ink3: '#657473',
   hairline: '#E5EDEB',
   onBrand: '#FFFFFF', // Text/Icon auf gefärbtem Grund
@@ -56,8 +39,7 @@ const RAW = {
   platin: '#7FB6C9',
   diamant: '#6FD3E8',
 
-  // Druck: die gestrichelte Schnittlinie auf dem QR-Blatt. Bewusst dunkler als
-  // `hairline` — Papier braucht mehr Kontrast als ein Display.
+  // Schnittlinie auf dem QR-Blatt, dunkler, weil Papier mehr Kontrast braucht.
   printCut: '#B7C4C2',
 } as const;
 
@@ -73,11 +55,7 @@ export const ALPHA = {
 
 export type AlphaStep = keyof typeof ALPHA;
 
-/**
- * Hex-Farbe + Deckkraft → `rgba(...)`. Die Deckkraft ist entweder eine Stufe
- * der Leiter (`alpha(PP.ink, 'soft')`) oder — nur wo die Leiter nicht passt,
- * etwa bei Text auf gefärbtem Grund — eine Zahl.
- */
+/** Hex-Farbe und Deckkraft (Stufe oder Zahl) → `rgba(...)`. */
 export function alpha(hex: string, step: AlphaStep | number): string {
   const a = typeof step === 'number' ? step : ALPHA[step];
   const h = hex.replace('#', '');
@@ -106,7 +84,7 @@ export const PP = {
   onBrandMuted: alpha(RAW.surface, 0.85),
   onBrandFaint: alpha(RAW.surface, 0.7),
 
-  // ── Ränge ────────────────────────────────────────────────────────────────
+  // ── Ränge ──
   /** Rangfarben mit ihrem hellen Gegenstück (Verlauf auf der Medaille). */
   tier: {
     bronze: { base: RAW.bronze, light: '#E89E58' },
@@ -116,10 +94,7 @@ export const PP = {
     diamant: { base: RAW.diamant, light: '#B6ECF6' },
   },
 
-  /**
-   * Auswahlpalette für Aushänge. Das sind Daten — die Menge der Farben, die
-   * das Team einem Aushang geben darf —, keine UI-Rollen.
-   */
+  /** Auswahlpalette für Aushänge. */
   accents: [
     { name: 'Teal', hex: RAW.teal },
     { name: 'Sky', hex: RAW.sky },
@@ -152,9 +127,7 @@ export const PP = {
   rSheet: 28, // Oberkante Bottom Sheet
   rPill: 999,
 
-  // ── Typografie ───────────────────────────────────────────────────────────
-  // Globaler Faktor über ALLE Schriftgrößen. Einzelne Stufen ändert man
-  // dagegen direkt in `fontSizes`.
+  // ── Typografie; der Faktor wirkt auf alle Größen ──
   fontScale: 1.15,
   font: {
     regular: 'WorkSans_400Regular',
@@ -208,7 +181,7 @@ export const PP = {
     external: 'map-pin',
   } as Record<string, IconName>,
 
-  // ── Maße wiederkehrender Elemente ────────────────────────────────────────
+  // ── Maße wiederkehrender Elemente ──
   /** Kantenlänge der quadratischen Icon-Kachel (siehe IconTile). */
   tile: { s: 40, m: 44, l: 48 },
   /** Mindestmaß einer Antippfläche. */
@@ -239,14 +212,7 @@ export const PP = {
   },
 } as const;
 
-// `PPTheme = typeof PP` stand hier ohne einen einzigen Verwender. Wer die Form
-// der Palette als Typ braucht, schreibt `typeof PP` — das ist kürzer als der
-// Import und läuft nicht Gefahr, veraltet neben `PP` stehen zu bleiben.
-
-/**
- * Farbiger Glanz unter einem Markenelement — drei Stufen statt vier von Hand
- * gesetzter Schattenblöcke, die alle dasselbe meinten.
- */
+/** Farbiger Glanz unter einem Markenelement, drei Stufen. */
 const GLOW = {
   s: { opacity: 0.32, radius: 18, y: 6, elevation: 4 },
   m: { opacity: 0.3, radius: 30, y: 14, elevation: 8 },
@@ -264,23 +230,11 @@ export function glow(color: string, level: keyof typeof GLOW = 'm') {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Platform design language
-//
-// Ziel: iOS sieht nach iOS aus (Liquid Glass), Android nach Android (Material 3).
-// Die Marke (PP-Farben, Work Sans) bleibt auf beiden Plattformen gleich — es
-// ändern sich Form, Elevation und Feedback-Verhalten, nicht die Identität.
-//
-// Screens nutzen weiterhin nur die UI-Komponenten; diese Tokens sind für die
-// Komponenten selbst gedacht, nicht für den direkten Gebrauch in Screens.
-// ---------------------------------------------------------------------------
+// ── Plattform: iOS Liquid Glass, Android Material 3, die Marke bleibt; nur für Komponenten ──
 
 export const isAndroid = Platform.OS === 'android';
 
-/**
- * MD3 shape scale. Material bevorzugt durchgängig kleinere Radien als das
- * iOS-Design dieser App — Buttons sind dort vollrund (full), Karten medium.
- */
+/** MD3-Shape-Skala. */
 const MD3_SHAPE = {
   none: 0,
   xs: 4,
@@ -291,37 +245,25 @@ const MD3_SHAPE = {
   full: 999,
 } as const;
 
-/**
- * Ein Radius-Wert je Plattform: iOS behält die bestehende, weichere
- * Formsprache, Android bekommt die MD3-Shape-Skala.
- */
+/** Radius je Plattform: iOS weicher, Android MD3. */
 export function radius(ios: number, android: keyof typeof MD3_SHAPE): number {
   return isAndroid ? MD3_SHAPE[android] : ios;
 }
 
-/**
- * Press-Feedback: iOS dimmt die gesamte View, Android nutzt den state layer und
- * lässt die View selbst unverändert (dort kommt zusätzlich der Ripple dazu).
- */
+/** Press-Feedback: iOS dimmt, Android nutzt State Layer und Ripple. */
 export function pressedOpacity(pressed: boolean): number {
   if (!pressed) return 1;
   return isAndroid ? 1 : 0.7;
 }
 
-/**
- * android_ripple-Konfiguration für Pressable. Auf iOS bewusst `undefined`,
- * damit dort nichts passiert.
- */
+/** android_ripple für Pressable, auf iOS `undefined`. */
 export function ripple(color: string = PP.teal, borderless = false) {
   if (!isAndroid) return undefined;
   // MD3 state layer „pressed": 10 % Deckkraft über der Fläche.
   return { color: alpha(color, 0.1), borderless };
 }
 
-/**
- * Plattform-Erhebung: auf Android eine MD3-Elevation-Stufe, auf iOS der
- * bestehende weiche Schatten.
- */
+/** Erhebung: Android MD3-Elevation, iOS weicher Schatten. */
 const MD3_ELEVATION = [0, 1, 3, 6, 8, 12] as const;
 
 export function surfaceElevation(level: 0 | 1 | 2 | 3 | 4 | 5) {

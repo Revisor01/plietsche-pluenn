@@ -11,9 +11,7 @@ const TONES: Record<Tone, { bg: string; fg: string; icon: string }> = {
   neutral: { bg: alpha(PP.ink, "ghost"), fg: PP.ink2, icon: PP.ink3 },
 };
 
-// A flat, shadowless hint block — a soft tinted background with optional icon.
-// Deliberately has NO card shadow: a tinted surface plus a drop shadow reads as
-// an ugly fat border, so hints stay flat and quiet.
+// Flacher Hinweisblock ohne Schatten, mit getönter Fläche wirkte er wie ein dicker Rand.
 export function Hint({
   children,
   icon,

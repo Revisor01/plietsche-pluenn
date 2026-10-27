@@ -1,18 +1,4 @@
-// Tests für awardPoints und recomputeTotal — die beiden Funktionen, durch die
-// jeder einzelne Punkt der App läuft.
-//
-// Bisher waren sie nur mittelbar geprüft: über Check-in, Scan und Abzeichen.
-// Das deckt das Zusammenspiel ab, aber nicht die Zusagen, die diese beiden
-// Funktionen selbst geben — und die stehen als Begründung im Code:
-//
-//   „Recomputing — instead of incrementing in memory — keeps points_total
-//    self-healing: it can never drift from points_log, even across multiple
-//    awardPoints() calls in one request or a stale user object."
-//
-// Genau diese drei Zusagen werden hier direkt geprüft: die Selbstheilung aus
-// dem Verlauf, mehrere Vergaben in einem Durchgang und ein veraltetes
-// Nutzerobjekt. Ein Fehler darin wäre für Nutzer:innen unmittelbar sichtbar —
-// der Punktestand ist die Zahl, auf die die ganze App zeigt.
+// awardPoints und recomputeTotal direkt: Selbstheilung aus dem Verlauf, mehrere Vergaben, veraltetes Nutzerobjekt.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -48,17 +34,14 @@ describe('awardPoints — einen Eintrag schreiben', () => {
   });
 
   it('vermerkt den Bezug, wenn einer mitgegeben wird', () => {
-    // Abzeichen-Punkte tragen die Abzeichen-Id, damit der Verlauf zeigt,
-    // wofür sie kamen.
+    // Mit Abzeichen-Id, damit der Verlauf zeigt, wofür.
     const h = setup();
     h.lib.awardPoints(h.records.user, 50, 'badge', 'Stammgast — bronze', 'badge1');
     expect(h.rows('points_log')[0].ref_id).toBe('badge1');
   });
 
   it('laesst ref_id weg, wenn keiner mitgegeben wird', () => {
-    // Ein Scan-Eintrag darf keinen Verweis auf das Teil tragen — das ist die
-    // Datenschutz-Zusage der Route: Teile bekommen einen Zeitstempel, aber
-    // keinen Verweis auf die Person, und umgekehrt.
+    // Kein Verweis aufs Teil (Datenschutz).
     const h = setup();
     h.lib.awardPoints(h.records.user, 30, 'scan', 'Jacke', null);
     // Ein Textfeld ohne Wert ist in PocketBase der Leerstring.
@@ -78,8 +61,7 @@ describe('awardPoints — einen Eintrag schreiben', () => {
   });
 
   it('zaehlt mehrere Vergaben in einem Durchgang zusammen', () => {
-    // Der Fall aus dem Check-in: Besuchsbonus und Stepper-Punkte laufen
-    // nacheinander durch dieselbe Funktion, auf demselben Nutzerobjekt.
+    // Besuchsbonus und Stepper auf demselben Nutzerobjekt.
     const h = setup();
     h.lib.awardPoints(h.records.user, 10, 'checkin', 'Check-In im Laden', null);
     h.lib.awardPoints(h.records.user, 15, 'checkin', '3 Teile mitgenommen', null);
@@ -89,8 +71,7 @@ describe('awardPoints — einen Eintrag schreiben', () => {
   });
 
   it('verrechnet einen Abzug', () => {
-    // Eine Korrektur des Teams kann negativ sein; der Stand ist die Summe,
-    // nicht die Zahl der Zeilen.
+    // Korrekturen können negativ sein.
     const h = setup({ points_log: [{ id: 'p1', user: 'u1', points: 100, kind: 'checkin' }] });
     h.lib.awardPoints(h.records.user, -30, 'korrektur', 'Rueckbuchung', null);
     expect(h.records.user.get('points_total')).toBe(70);
@@ -111,9 +92,6 @@ describe('recomputeTotal — der Stand ist die Summe des Verlaufs', () => {
   });
 
   it('heilt einen abgedrifteten Stand', () => {
-    // Die im Code genannte Zusage: points_total kann nicht dauerhaft vom
-    // Verlauf abweichen. Hier steht ein falscher Wert im Feld — nach dem
-    // Neurechnen stimmt er wieder.
     const h = setup({
       users: [{ __name: 'user', id: 'u1', points_total: 9999 }],
       points_log: [
@@ -146,18 +124,14 @@ describe('recomputeTotal — der Stand ist die Summe des Verlaufs', () => {
   });
 
   it('setzt einen Stand ohne Verlauf auf null', () => {
-    // Auch das ist Selbstheilung: Wer keinen Verlauf hat, hat keine Punkte.
-    // Ein stehengebliebener Wert aus der App darf nicht ueberleben.
+    // Ohne Verlauf keine Punkte.
     const h = setup({ users: [{ __name: 'user', id: 'u1', points_total: 1234 }] });
     h.lib.recomputeTotal(h.records.user);
     expect(h.records.user.get('points_total')).toBe(0);
   });
 
   it('rechnet auf einem veralteten Nutzerobjekt richtig', () => {
-    // Der dritte im Code genannte Fall: Das uebergebene Objekt traegt einen
-    // alten Stand, weil zwischenzeitlich anderswo Punkte kamen. Gerechnet
-    // wird aus dem Verlauf, nicht aus dem Feld — sonst gingen die
-    // zwischenzeitlichen Punkte verloren.
+    // Aus dem Verlauf, sonst gingen zwischenzeitliche Punkte verloren.
     const h = setup({ points_log: [{ id: 'p1', user: 'u1', points: 10, kind: 'checkin' }] });
     // Stand einlesen (10), dann kommt an anderer Stelle etwas dazu.
     h.lib.recomputeTotal(h.records.user);
@@ -174,8 +148,7 @@ describe('recomputeTotal — der Stand ist die Summe des Verlaufs', () => {
   });
 
   it('haelt den Stand bei wiederholtem Rechnen stabil', () => {
-    // Zweimal rechnen darf nicht zweimal addieren — genau der Fehler, den ein
-    // Hochzaehlen im Speicher machen wuerde.
+    // Zweimal rechnen darf nicht zweimal addieren.
     const h = setup({
       points_log: [
         { id: 'p1', user: 'u1', points: 10, kind: 'checkin' },
@@ -189,8 +162,7 @@ describe('recomputeTotal — der Stand ist die Summe des Verlaufs', () => {
   });
 
   it('schreibt den Stand auch auf den Datensatz', () => {
-    // Nicht nur im Speicher: Der Wert muss gespeichert sein, sonst zeigt die
-    // App beim naechsten Laden wieder den alten Stand.
+    // Gespeichert, nicht nur im Speicher.
     const h = setup({ points_log: [{ id: 'p1', user: 'u1', points: 42, kind: 'scan' }] });
     h.lib.recomputeTotal(h.records.user);
     expect(h.dao.findRecordById('users', 'u1').get('points_total')).toBe(42);

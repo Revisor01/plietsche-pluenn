@@ -1,15 +1,4 @@
-// GET /api/pp/version — welcher Commit auf dem Server läuft.
-//
-// Die Nachher-Prüfung des Deploys (deploy-verify.py) maß bisher je Migration
-// ein Schemamerkmal. Eine reine Änderung an den Hooks war damit nicht zu
-// sehen: Lief die Instanz noch auf dem alten Abbild, war das Schema trotzdem
-// richtig und der Lauf grün.
-//
-// Der Commit steht in lib/build.js. Die Datei gibt es nur im Abbild, das
-// Dockerfile schreibt sie beim Bauen in pb_hooks/ — also dorthin, von wo
-// PocketBase die Hooks tatsächlich lädt. Ein Bind-Mount, der /pb_hooks mit
-// einem alten Stand überdeckt (die Falle vom August), überdeckt damit auch
-// den Commit, und die Prüfung schlägt an.
+// GET /api/pp/version liefert den Commit aus lib/build.js, damit auch Hook-Änderungen messbar sind.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -32,9 +21,7 @@ describe('GET /api/pp/version', () => {
   });
 
   it('liefert einen leeren Commit, wenn die Datei fehlt (lokal, ohne Abbild)', () => {
-    // Kein Absturz: Lokal läuft das Upstream-Abbild mit eingehängten Hooks,
-    // dort gibt es lib/build.js nicht. Der Deploy erwartet einen echten
-    // Commit, ein leerer fällt dort also auf.
+    // Lokal fehlt lib/build.js, das darf nicht abstürzen.
     const h = loadHook('version.pb.js');
     expect(h.call(ROUTE)).toEqual({ status: 200, body: { commit: '' } });
   });

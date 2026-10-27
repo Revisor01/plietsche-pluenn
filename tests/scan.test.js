@@ -1,14 +1,9 @@
-// Tests für POST /api/pp/scan — den universellen Scanner.
-//
-// Die Route entscheidet selbst, ob der gescannte Code das Türgeheimnis oder ein
-// Teil ist. Hier zählen die Fälle, in denen ein Fehler Punkte falsch vergibt
-// oder ein Teil doppelt herausgibt.
+// POST /api/pp/scan: Fälle, in denen Punkte falsch vergeben oder Teile doppelt herausgegeben würden.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
 
-// Der Harness ist CommonJS, weil er die Hook-Dateien mit Nodes vm-Modul in
-// eine nachgebaute Goja-Umgebung laedt.
+// CommonJS, weil der Harness die Hooks per vm in eine Goja-Nachbildung lädt.
 const { loadHook } = createRequire(import.meta.url)('./harness.js');
 
 const ROUTE = 'POST /api/pp/scan';
@@ -31,8 +26,7 @@ function setup(overrides = {}) {
     overrides.store || {}
   );
 
-  // Das Tuergeheimnis liegt in einer eigenen, gesperrten Sammlung — nicht in
-  // `store`, das alle Angemeldeten lesen duerfen.
+  // Das Türgeheimnis liegt in einer gesperrten Sammlung, nicht in `store`.
   const secrets =
     overrides.storeSecrets !== undefined
       ? overrides.storeSecrets
@@ -77,9 +71,7 @@ describe('Anmeldung und Eingabe', () => {
   });
 
   it('weist einen Superuser mit 401 ab, statt nach seinem Konto zu suchen', () => {
-    // Ab PocketBase 0.23 ist auch ein Superuser e.auth — aber ohne Konto in
-    // `users`. Unter 0.22 war authRecord fuer ihn leer, die Route antwortete
-    // 401; so bleibt es. Nichts wird gebucht.
+    // Superuser ohne `users`-Konto bekommen 401, nichts wird gebucht.
     const h = setup();
     let err;
     try {
@@ -117,8 +109,7 @@ describe('Anmeldung und Eingabe', () => {
   });
 
   it('erkennt ein falsches Tuergeheimnis nicht als Check-in', () => {
-    // Ein abgewandeltes Geheimnis darf keinen Check-in ausloesen. Da es auch
-    // kein Teil ist, endet es als unbekannter Code — nicht als Besuch.
+    // Ein abgewandeltes Geheimnis endet als unbekannter Code.
     const h = setup();
     let err;
     try {
@@ -164,8 +155,7 @@ describe('Geofence', () => {
   });
 
   it('nutzt den eingestellten Radius statt des Standardwerts', () => {
-    // Bei 500 m Radius muss dieselbe Position durchgehen, die bei 150 m
-    // abgelehnt wird — sonst wirkt die Einstellung nicht.
+    // Sonst wirkt die Radius-Einstellung nicht.
     const h = setup({ store: { geofence_radius_m: 500 } });
     const res = h.call(ROUTE, {
       body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.003, gps_lng: STORE_LNG },
@@ -184,9 +174,7 @@ describe('Geofence', () => {
   });
 
   it('speichert keine Koordinaten, nur den Abstand zum Laden', () => {
-    // Datenminimierung: Der Standort dient allein der Pruefung, ob jemand vor
-    // Ort ist. Dafuer genuegt der Abstand — die genaue Position gehoert nicht
-    // dauerhaft in die Datenbank. Siehe Datenschutzerklaerung.
+    // Datenminimierung: nur der Abstand wird gespeichert.
     const h = setup();
     const res = h.call(ROUTE, {
       body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.00054, gps_lng: STORE_LNG },
@@ -195,8 +183,7 @@ describe('Geofence', () => {
     expect(res.status).toBe(200);
 
     const visit = h.rows('visits')[0];
-    // Ein Zahlenfeld ohne Wert steht in PocketBase auf 0 — also keine
-    // Position gespeichert.
+    // Leeres Zahlenfeld ist 0, also keine Position.
     expect(visit.gps_lat).toBe(0);
     expect(visit.gps_lng).toBe(0);
     // Der Abstand bleibt erhalten — rund 60 m noerdlich des Ladens.
@@ -217,8 +204,7 @@ describe('Geofence', () => {
       err = e;
     }
     expect(err.status).toBe(400);
-    // Wortgleich derselbe Hinweis wie beim Tuercode — so steht er in der
-    // API-Beschreibung und so erscheint er in der App.
+    // Wortgleich wie in der API-Beschreibung.
     expect(err.message).toBe('Du bist nicht im Laden');
     // Das Teil darf dabei nicht als mitgenommen markiert werden.
     expect(h.rows('items')[0].taken_at).toBe('');
@@ -249,8 +235,7 @@ describe('Geofence', () => {
   });
 
   it('haelt die Grenze auf den Meter genau ein', () => {
-    // Genau auf dem Rand zaehlt als drinnen, einen Schritt weiter nicht mehr.
-    // Ohne diese Probe koennte der Rueckfallwert 150 unbemerkt verrutschen.
+    // Der Rand zählt als drinnen, damit der Rückfallwert 150 nicht verrutscht.
     const h = setup();
     const grenze = h.lib.distanceM(STORE_LAT, STORE_LNG, STORE_LAT + 0.0013, STORE_LNG);
     expect(Math.round(grenze)).toBe(145);
@@ -312,8 +297,7 @@ describe('Geofence', () => {
   });
 
   it('haelt die Entfernung im Besuch fest', () => {
-    // Der Tuer-Zweig behaelt die gemessene Distanz und schreibt sie in den
-    // Besuch — beim Zusammenfuehren der Pruefung darf das nicht wegfallen.
+    // Die Distanz darf beim Zusammenführen nicht wegfallen.
     const h = setup();
     h.call(ROUTE, {
       body: { qr_code: DOOR, gps_lat: STORE_LAT + 0.00054, gps_lng: STORE_LNG },
@@ -494,8 +478,7 @@ describe('Teile, die nicht mehr zu haben sind', () => {
     const nachher = Date.now();
 
     const item = h.rows('items')[0];
-    // Der Zeitpunkt des Scans, nicht irgendein gesetzter Wert: Ein Hook, der
-    // hier "ja" einträgt, käme mit toBeTruthy() durch.
+    // Der Zeitpunkt, sonst käme ein beliebiger Wert durch.
     const gesetzt = Date.parse(item.taken_at);
     expect(Number.isNaN(gesetzt)).toBe(false);
     expect(gesetzt).toBeGreaterThanOrEqual(vorher);
@@ -507,22 +490,7 @@ describe('Teile, die nicht mehr zu haben sind', () => {
 });
 
 describe('Zweiter Besuch am selben Tag', () => {
-  // Ein frueherer Zeitpunkt am laufenden **Ladentag**.
-  //
-  // Zwei Fallen stecken hier, beide nur zu bestimmten Uhrzeiten sichtbar:
-  //
-  //  1. Vorher stand hier eine feste Stunde (`d.setHours(9, ...)`). Zwischen
-  //     Mitternacht und 9 Uhr lag der "fruehere Besuch" damit in der Zukunft.
-  //  2. Der Ladentag richtet sich nach `Europe/Berlin` (store.timezone), nicht
-  //     nach der Zeitzone des Rechners. Wer stattdessen die lokale Mitternacht
-  //     nimmt, landet auf einem Laeufer mit anderer Zeitzone — oder in der
-  //     Stunde nach Mitternacht Ortszeit — vor dem Ladentagsbeginn, und der
-  //     Besuch zaehlt zu gestern.
-  //
-  // Beides hat in der Nacht zum 19.09.2026 das Test-Gate rot gefaerbt.
-  // Deshalb: Tagesbeginn in der Ladenzeitzone bestimmen und den Zeitpunkt
-  // sicher dazwischen legen — immer in der Vergangenheit, immer am selben
-  // Ladentag, unabhaengig von Uhrzeit und Zeitzone des Laufs.
+  // Früherer Zeitpunkt am laufenden Ladentag in Europe/Berlin, unabhängig von Uhrzeit und Zeitzone des Laufs.
   const LADEN_TZ = 'Europe/Berlin';
 
   function ladenTagesbeginn(jetzt) {
@@ -584,11 +552,7 @@ describe('Zweiter Besuch am selben Tag', () => {
 });
 
 describe('Tuergeheimnis liegt getrennt vom Laden', () => {
-  // Das Geheimnis stand bis zum 14.09.2026 im `store`-Datensatz, den jede
-  // Person auch ohne Anmeldung lesen konnte. Es liegt jetzt in einer eigenen,
-  // gesperrten Sammlung. Diese Tests halten beide Seiten fest: dass der
-  // Scan weiter funktioniert, und dass der Laden das Geheimnis nicht mehr
-  // kennt.
+  // Der Scan funktioniert weiter, und `store` kennt das Geheimnis nicht mehr.
 
   it('erkennt den Tuercode aus der gesperrten Sammlung', () => {
     // Erlaubter Fall: Das Geheimnis steht ausschliesslich in store_secrets.
@@ -603,8 +567,7 @@ describe('Tuergeheimnis liegt getrennt vom Laden', () => {
   });
 
   it('gibt das Geheimnis in keiner Antwort heraus', () => {
-    // Verbotener Fall: Die Route darf den Code nirgends zurueckspiegeln —
-    // weder beim Check-in noch beim Teil.
+    // Verboten: den Code zurückspiegeln.
     const h = setup({
       items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
     });
@@ -617,8 +580,7 @@ describe('Tuergeheimnis liegt getrennt vom Laden', () => {
   });
 
   it('nimmt einen Code aus dem Laden-Datensatz nicht mehr als Tuercode an', () => {
-    // Verbotener Fall: Wer den alten, oeffentlich abgerufenen Wert kennt und
-    // ihn scannt, bekommt keinen Check-in. Das Feld in `store` ist tot.
+    // Verboten: der alte öffentliche Wert gibt keinen Check-in.
     const h = setup({
       store: { checkin_qr_secret: 'alter-oeffentlicher-code' },
       storeSecrets: [{ checkin_qr_secret: DOOR }],
@@ -637,8 +599,7 @@ describe('Tuergeheimnis liegt getrennt vom Laden', () => {
   });
 
   it('laesst ein leeres Geheimnis keinen beliebigen Code zum Tuercode machen', () => {
-    // Ist die gesperrte Sammlung leer und das Altfeld geraeumt, darf ein
-    // leerer Vergleich nicht jeden Code durchwinken.
+    // Ein leerer Vergleich darf nicht jeden Code durchwinken.
     const h = setup({ storeSecrets: [] });
 
     let err;
@@ -652,8 +613,7 @@ describe('Tuergeheimnis liegt getrennt vom Laden', () => {
   });
 
   it('liest den Laden weiterhin fuer Punktwerte und Geofence', () => {
-    // Erlaubter Fall: Angemeldete sehen den Laden — Punktwerte und Radius
-    // wirken unveraendert, obwohl das Geheimnis ausgezogen ist.
+    // Erlaubt: Punktwerte und Radius wirken unverändert.
     const h = setup({ store: { pts_checkin: 25, pts_take: 4, geofence_radius_m: 500 } });
 
     const res = h.call(ROUTE, {
@@ -683,13 +643,7 @@ describe('Tuergeheimnis liegt getrennt vom Laden', () => {
 });
 
 describe('Antwortform', () => {
-  // Die Felder sind ein Vertrag gegenueber den Apps auf den Geraeten.
-  //
-  // Der Vertrag lautet: Kein Feld verschwindet, keins wechselt den Typ. Ein
-  // zusaetzliches Feld ist ausdruecklich erlaubt — eine alte App-Version liest
-  // es schlicht nicht. Geprueft wird deshalb, dass jedes vereinbarte Feld da
-  // ist und was drinsteht; die Liste als geschlossene Menge zu pruefen wuerde
-  // eine erlaubte Ergaenzung als Fehler melden.
+  // Vertrag mit den Apps: kein Feld verschwindet oder wechselt den Typ, neue sind erlaubt.
   const CHECKIN_FELDER = ['already_checked_in', 'points', 'points_total', 'streak_weeks', 'type'];
   const TEIL_FELDER = [
     'checkin_points',
@@ -734,14 +688,8 @@ describe('Antwortform', () => {
 });
 
 describe('Besuche entstehen serverseitig', () => {
-  // Seit 1782710000_tighten_read_rules.js steht visits.createRule auf null:
-  // Kein Konto kann sich mehr Besuche über die REST-API anlegen. Die Regel
-  // darf den regulären Weg nicht mit zumachen — doCheckin schreibt über
-  // $app.dao(), und der Admin-DAO geht an den Regeln vorbei. Diese Tests
-  // sind der erlaubte Fall zum verbotenen in read-rules-migration.test.js.
+  // Der erlaubte Fall zu visits.createRule = null: doCheckin schreibt an den Regeln vorbei.
 
-  // Ein Abzeichen mit dem Auslöser „visits" — genau das, was über den
-  // offenen Schreibweg erschleichbar war.
   const STAMMGAST = { id: 'b_stammgast', trigger_type: 'visits' };
 
   it('legt beim Türcode einen vollständigen Besuch an', () => {
@@ -754,14 +702,11 @@ describe('Besuche entstehen serverseitig', () => {
     expect(besuch.user).toBe('user1');
     expect(besuch.items_count).toBe(0);
     expect(besuch.points_awarded).toBe(10);
-    // Der Besuch zählt für das Abzeichen „Stammgast" — genau dafür war der
-    // offene Schreibweg missbrauchbar.
     expect(h.lib.computeProgress(h.records.user, h.store.badges[0])).toBe(1);
   });
 
   it('legt auch beim Scannen eines Teils den fehlenden Besuch an', () => {
-    // Wer ein Teil scannt, ohne vorher eingecheckt zu haben, bekommt den
-    // Check-in mitgeliefert. Auch dieser Weg läuft über den Admin-DAO.
+    // Ein Teil-Scan ohne Check-in bringt den Check-in mit.
     const h = setup({
       items: [{ id: 'item1', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' }],
     });
@@ -773,8 +718,7 @@ describe('Besuche entstehen serverseitig', () => {
   });
 
   it('zählt am selben Tag keinen zweiten Besuch', () => {
-    // Gegenprobe: Der Schreibweg ist offen, aber nicht beliebig. Zwei Scans
-    // am selben Tag ergeben einen Besuch, nicht zwei.
+    // Zwei Scans am selben Tag ergeben einen Besuch.
     const h = setup({ badges: [STAMMGAST] });
     h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
     const zweiter = h.call(ROUTE, { body: { qr_code: DOOR }, authRecord: auth(h) });
@@ -785,13 +729,7 @@ describe('Besuche entstehen serverseitig', () => {
   });
 });
 
-// Beim ersten Besuch schaltet oft gleich ein Abzeichen frei. Die Punkte
-// dafuer vergibt checkBadges NACH doCheckin — points_total enthaelt sie,
-// `points` nicht. Die App meldete „+10 Punkte", der Kontostand sprang um 510.
-//
-// `points` bleibt, was es ist: die Regel „ausgelieferte Apps nie brechen"
-// gilt, Build 33 liest genau dieses Feld und zeigt es an. Ergaenzt wird ein
-// ZUSAETZLICHES Feld `bonus_points`, das eine kuenftige Version addieren kann.
+// `bonus_points` zusätzlich, `points` bleibt für ausgelieferte Apps.
 describe('Punkte aus Abzeichen in der Antwort', () => {
   // Ein Abzeichen, das beim ersten Besuch sofort Bronze erreicht.
   const ERSTER_BESUCH = {
@@ -840,8 +778,7 @@ describe('Punkte aus Abzeichen in der Antwort', () => {
   });
 
   it('weist den Bonus auch beim zweiten Check-in am selben Tag aus', () => {
-    // Zweiter Zweig der Route: kein neuer Besuchsbonus, aber Stepper-Punkte —
-    // und die koennen ebenfalls ein Abzeichen ausloesen.
+    // Auch Stepper-Punkte können ein Abzeichen auslösen.
     const SAMMLER = {
       id: 'b2',
       name: 'Sammler',
@@ -902,18 +839,7 @@ describe('Punkte aus Abzeichen in der Antwort', () => {
 });
 
 describe('Teilschreibung: das Teil laesst sich nicht als mitgenommen speichern', () => {
-  // Bis 26.09.2026 schrieb die Route nacheinander, ohne Transaktion: Besuch,
-  // Punkte fuers Einchecken, Punkte fuers Teil, Punktestand — und erst ganz am
-  // Ende taken_at am Teil. Scheiterte dieser letzte Schreibvorgang (etwa
-  // „database is locked" unter Last), war alles davor schon gespeichert: Die
-  // Punkte blieben, das Teil blieb verfuegbar und zahlte beim naechsten Scan
-  // ein zweites Mal. Dieser Test hielt damals genau das fest (Befund offen).
-  //
-  // Seit dem Umstieg auf PocketBase 0.40 laeuft der ganze Scan in einer
-  // Transaktion ($app.runInTransaction). Gewollte Verhaltensaenderung: Scheitert
-  // ein Schritt, wird NICHTS gebucht — kein Besuch, keine Punkte, das Teil
-  // bleibt offen, und die App bekommt den Fehler. Der zweite Scan zahlt dann
-  // genau einmal.
+  // Der Scan läuft in einer Transaktion: scheitert ein Schritt, wird nichts gebucht.
   const TEIL = { id: 'item1', sku: 'PP-0001', qr_code: 'PP-0001', title: 'Jacke', points: 30, status: 'approved' };
 
   it('bucht nichts, laesst das Teil offen und zahlt beim zweiten Scan genau einmal', () => {
@@ -924,17 +850,13 @@ describe('Teilschreibung: das Teil laesst sich nicht als mitgenommen speichern',
       'database is locked'
     );
 
-    // Nach dem Fehler ist nichts gespeichert — auch nicht die Schritte, die
-    // vor dem gescheiterten liefen.
     expect(h.rows('visits')).toHaveLength(0);
     expect(h.rows('points_log')).toEqual([]);
     expect(h.records.user.get('points_total')).toBe(0);
     expect(h.records.user.get('streak_weeks')).toBe(0);
     expect(h.rows('items')[0].taken_at).toBe('');
 
-    // Die App zeigt einen Fehler; die Person scannt noch einmal, jetzt klappt
-    // das Speichern — und weil nichts gebucht war, ist es wieder der erste
-    // Scan des Tages, samt Check-in.
+    // Der zweite Versuch ist wieder der erste Scan des Tages.
     aus();
     const res = h.call(ROUTE, { body: { qr_code: 'PP-0001' }, authRecord: auth(h) });
     expect(res.status).toBe(200);
@@ -954,9 +876,7 @@ describe('Teilschreibung: das Teil laesst sich nicht als mitgenommen speichern',
   });
 
   it('meldet einen Fehler mit Status unveraendert, auch wenn er in der Transaktion faellt', () => {
-    // Die Abweisungen (hier: ausserhalb des Radius) entstehen innerhalb der
-    // Transaktion. Sie muessen mit ihrem Status bei der App ankommen, nicht
-    // als allgemeiner Fehler — und duerfen nichts hinterlassen.
+    // Abweisungen kommen mit ihrem Status an und hinterlassen nichts.
     const h = setup({ items: [TEIL] });
     let err;
     try {
@@ -971,10 +891,7 @@ describe('Teilschreibung: das Teil laesst sich nicht als mitgenommen speichern',
   });
 
   it('schickt die Check-in-Bestaetigung erst nach dem Festschreiben', () => {
-    // Eine Mitteilung „10 Punkte gutgeschrieben" zu einer Buchung, die
-    // zurueckgerollt wird, waere falsch. Scheitert der Scan, geht nichts an
-    // Expo; klappt er, genau eine Nachricht. Mit dem echten Push-Versand —
-    // nur die Anfrage an Expo ist gestellt.
+    // Push nur bei festgeschriebener Buchung, genau einmal.
     const h = loadHook(
       'scan.pb.js',
       {

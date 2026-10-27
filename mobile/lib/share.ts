@@ -1,17 +1,7 @@
-// Texte und Adressen fürs Teilen, Empfehlen und Bewerten.
-//
-// Reine Logik ohne React Native, damit sie sich in Node testen lässt
-// (tests/share.test.js). Die Screens reichen die Beschriftungen aus
-// lib/format.ts herein und rufen damit das Teilen-Menü des Systems auf.
-//
-// Formatierung: reiner Text mit Zeilenumbrüchen, kein *fett* und kein
-// _kursiv_. WhatsApp würde das auszeichnen, iMessage, SMS und Signal zeigen
-// die Sternchen dagegen wörtlich an — und welche App die Person im
-// Teilen-Menü wählt, erfährt die App vorher nicht. Auch kein Emoji.
+// Texte und Adressen fürs Teilen, ohne React Native testbar; reiner Text ohne Markdown oder Emoji, weil nicht jeder Messenger es auszeichnet.
 
 export const LINKS = {
-  // Die öffentliche Seite des Ladens (web/index.html). In Punycode, weil
-  // nicht jede Messenger-App eine Adresse mit Umlaut als Link erkennt.
+  // Punycode, weil nicht jeder Messenger eine Umlaut-Adresse verlinkt.
   web: 'https://xn--plietsche-plnn-rsb.de',
   // Nur im deutschen Store; ohne /de/ leitet Apple in den US-Store (404).
   appStore: 'https://apps.apple.com/de/app/id6784690448',
@@ -28,16 +18,14 @@ export type ShareableItem = {
   // Die öffentliche Beschreibung, die auch Besucher:innen sehen.
   note?: string;
   staysExternal?: boolean;
-  // Bewusst kein Feld für den Lagerort (item.location): Er ist intern, bei
-  // Teilen, die zu Hause bleiben, steht dort eine Privatadresse.
+  // Kein Lagerort, dort steht bei Teilen zu Hause eine Privatadresse.
 };
 
 export type ShareableStore = { name?: string; address?: string } | null | undefined;
 
 const nichtLeer = (s?: string | null) => `${s ?? ''}`.trim();
 
-// Teilen nur für Teile, die man auch bekommen kann. Vergebene, archivierte
-// und noch nicht freigegebene Teile würden jemanden umsonst losschicken.
+// Nur verfügbare Teile, sonst schickt man jemanden umsonst los.
 export function canShareItem(item: {
   status?: string;
   taken_at?: string;
@@ -69,8 +57,6 @@ export function itemShareText(item: ShareableItem, store?: ShareableStore): stri
     nichtLeer(item.note),
   ].filter(Boolean).join('\n');
 
-  // Blöcke durch eine Leerzeile getrennt; fehlende Angaben hinterlassen
-  // keine leeren Zeilen.
   return [`Schau mal, was es bei ${ladenName} gibt:`, teil, wo, `Mehr zum Laden: ${LINKS.web}`].join('\n\n');
 }
 
@@ -84,8 +70,7 @@ export function appRecommendationText(store?: ShareableStore): string {
   ].join('\n');
 }
 
-// MIME-Typ eines Fotos für das Teilen-Menü, aus der Dateiendung. PocketBase
-// nimmt nur JPEG, PNG und WebP an (items.photo); alles andere gilt als JPEG.
+// MIME-Typ aus der Endung; PocketBase nimmt nur JPEG, PNG und WebP, sonst gilt JPEG.
 export function photoMimeType(filename: string): string {
   const endung = `${filename}`.split('.').pop()?.toLowerCase() ?? '';
   if (endung === 'png') return 'image/png';
@@ -93,12 +78,7 @@ export function photoMimeType(filename: string): string {
   return 'image/jpeg';
 }
 
-// Wohin „App bewerten" führt. Ein Knopf darf laut Apple nicht den
-// System-Dialog (requestReview) auslösen — der erscheint höchstens dreimal im
-// Jahr und in TestFlight nie, der Knopf täte dann sichtbar nichts. Apple
-// empfiehlt für Knöpfe den direkten Weg zur Bewertungsseite.
-//
-// Android: zuerst die Play-Store-App (market://), falls sie fehlt die Webseite.
+// Direkt zur Bewertungsseite, weil requestReview höchstens dreimal im Jahr erscheint; Android zuerst market://.
 export function reviewUrls(os: string): string[] {
   if (os === 'ios') return [`${LINKS.appStore}?action=write-review`];
   return ['market://details?id=de.godsapp.plietschepluenn', LINKS.playStore];

@@ -36,8 +36,7 @@ export function BadgeMedallion({ icon, tier = 'bronze', earned = false, size = 5
     );
   }
 
-  // Eigene Farbe schlägt die Stufenfarbe. Der helle Ton wird daraus gemischt,
-  // damit der Verlauf dieselbe Anmutung behält wie bei den Stufen.
+  // Eigene Farbe vor Stufenfarbe, der helle Ton wird daraus gemischt.
   const c = color ? { base: color, light: lighten(color, 0.25) } : TIER_COLORS[tier];
   return (
     <LinearGradient

@@ -27,8 +27,7 @@ export function GradientRing({
   const c = 2 * Math.PI * r;
   const clamped = Math.max(0, Math.min(1, progress));
   const off = c * (1 - clamped);
-  // Ohne eigenen Schlüssel kollidieren zwei Ringe gleicher Größe mit
-  // verschiedenen Farben — SVG-Verlaufs-IDs sind dokumentweit eindeutig.
+  // SVG-Verlaufs-IDs sind dokumentweit eindeutig, sonst kollidieren zwei Ringe.
   const gid = `ppg-${size}-${stroke}-${gradientKey ?? 'brand'}`;
   const [c0, c1, c2] = colors ?? [PP.teal, PP.mint, PP.sky];
 

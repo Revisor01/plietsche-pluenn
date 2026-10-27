@@ -1,17 +1,4 @@
-// Tests für die Auswahl des Vergleichsstands in .github/workflows/play-internal.yml.
-//
-// Der Schritt "Letzten veroeffentlichten Stand ermitteln" bestimmt, ab welchem
-// Commit die Release-Notes entstehen. Ein Probelauf veröffentlicht nichts — er
-// verwirft die Play-Bearbeitung —, endet aber mit Erfolg. Zählte er als
-// Vergleichsstand, fielen beim nächsten echten Lauf alle Änderungen seit dem
-// Probelauf aus den Hinweisen heraus, obwohl sie nie bei einem Menschen
-// angekommen sind. In der Produktionsspur stünde dann „Kleinere Verbesserungen
-// unter der Haube.", wo zwei Wochen Arbeit hingehörten.
-//
-// Getestet wird die Auswahllogik so, wie der Workflow sie ausführt: Das
-// Python-Schnipsel wird aus der Workflow-Datei gelesen und als Prozess
-// aufgerufen. Damit schlägt der Test auch dann fehl, wenn jemand den Filter im
-// Workflow entfernt — eine nachgebaute Kopie hier im Test würde das verschweigen.
+// Vergleichsstand in play-internal.yml; das Python-Schnipsel wird aus dem Workflow ausgeführt, damit ein entfernter Probelauf-Filter auffällt.
 
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
@@ -20,11 +7,7 @@ import { resolve } from 'node:path';
 
 const WORKFLOW = resolve(import.meta.dirname, '../.github/workflows/play-internal.yml');
 
-/**
- * Schneidet das Python-Schnipsel aus dem Schritt heraus: von `import json, sys`
- * bis zur Zeile davor, die die Pipe öffnet. Der Workflow rückt den Block per
- * YAML-Blockskalar ein; die Einrückung ist beim Lesen bereits weg.
- */
+/** Schneidet das Python-Schnipsel von `import json, sys` bis vor die Pipe aus. */
 function auswahlSkript() {
   const text = readFileSync(WORKFLOW, 'utf-8');
   const treffer = text.match(/^(\s*)import json, sys$[\s\S]*?^\s*"\)$/m);
@@ -80,8 +63,7 @@ describe('Vergleichsstand für die Release-Notes', () => {
 });
 
 describe('Der Workflow markiert Probeläufe im Titel', () => {
-  // Die Auswahl oben erkennt Probeläufe an der Marke [Probelauf]. Die muss der
-  // Workflow auch tatsächlich setzen — sonst filtert die Auswahl ins Leere.
+  // Der Workflow muss die Marke [Probelauf] auch setzen.
   const text = readFileSync(WORKFLOW, 'utf-8');
 
   it('setzt einen run-name, der bei probelauf die Marke trägt', () => {
@@ -92,8 +74,7 @@ describe('Der Workflow markiert Probeläufe im Titel', () => {
   });
 
   it('fragt genug Läufe ab, um über Probeläufe hinwegzukommen', () => {
-    // Mit per_page=1 wäre der Filter wirkungslos: Ein Probelauf an der Spitze
-    // liefert dann gar kein Ergebnis, statt den echten Lauf davor zu finden.
+    // Mit per_page=1 fände man den echten Lauf hinter einem Probelauf nicht.
     const abfrage = text.match(/play-internal\.yml\/runs\?[^"]*/);
     expect(abfrage).not.toBeNull();
     const perPage = Number(abfrage[0].match(/per_page=(\d+)/)[1]);

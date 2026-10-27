@@ -1,19 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Scheduled jobs for Plietsche Plünn.
-//   1. push-scheduled   — every minute: send due push_messages (scheduled_at past, not sent)
-//   2. streak-reset      — daily: zero out streaks of users inactive > 1 week
-//   3. action-badges     — daily: grant action_participation badges after campaign end
-//   4. year-badges        — daily: on Dec 31, grant years_active loyalty badges
-//
-// PocketBase cron uses standard 5-field cron expressions (server local time).
+// Geplante Aufgaben: Push jede Minute, täglich Serien-Reset, Aktions- und Jahresabzeichen.
 
 // ── 1. Deliver scheduled push messages ─────────────────────────
 cronAdd('push-scheduled', '* * * * *', () => {
-  // Wie oft eine Nachricht erneut versucht wird, bevor sie abgehakt wird. Ohne
-  // Grenze liefe der Job jede Minute gegen dieselbe unerreichbare Adresse.
-  // Steht im Handler, weil PocketBase ihn in einer eigenen Umgebung ausführt —
-  // eine Konstante oben in der Datei wäre dort nicht definiert.
+  // Im Handler, weil PocketBase ihn isoliert ausführt; ohne Grenze liefe der Job jede Minute gegen dieselbe Adresse.
   const MAX_SEND_ATTEMPTS = 5;
   const push = require(`${__hooks}/lib/push.js`);
   const nowIso = new Date().toISOString().replace('T', ' ');
@@ -32,19 +23,11 @@ cronAdd('push-scheduled', '* * * * *', () => {
     const targets = push.collectTokens(segment, role, 'campaign');
     const res = push.send(targets, `${msg.get('title')}`, `${msg.get('body')}`, `${msg.get('deep_link') || ''}`, 'campaign') || {};
 
-    // Scheitert der Versand, bleibt sent_at leer — der Filter oben holt die
-    // Nachricht dann im nächsten Lauf wieder. Vorher galt sie als verschickt,
-    // sobald der Versuch gelaufen war: Eine Ankündigung „Heute geschlossen"
-    // lief ins Leere, während im Verwaltungsbereich ein Häkchen stand.
-    //
-    // „Gescheitert" heißt: Expo war nicht erreichbar (res.failed). Eine
-    // Nachricht ohne Empfänger:innen ist dagegen erledigt — da gibt es nichts
-    // zu wiederholen.
+    // sent_at bleibt leer, wenn Expo nicht erreichbar war, dann holt der nächste Lauf die Nachricht.
     if (res.failed > 0) {
       const attempts = (msg.get('send_attempts') || 0) + 1;
       msg.set('send_attempts', attempts);
-      // Nach der letzten Wiederholung abhaken, sonst läuft der Job jede Minute
-      // weiter dagegen. Dass es nicht geklappt hat, steht am Zähler.
+      // Nach der letzten Wiederholung abhaken; der Zähler zeigt das Scheitern.
       if (attempts >= MAX_SEND_ATTEMPTS) msg.set('sent_at', new Date().toISOString());
       $app.saveNoValidate(msg);
       continue;
@@ -55,9 +38,7 @@ cronAdd('push-scheduled', '* * * * *', () => {
   }
 });
 
-// ── 2. Reset stale streaks ─────────────────────────────────────
-// A streak survives if the last visit was this week or last week (1-week grace).
-// Anyone who hasn't visited in > 1 full week loses their streak.
+// ── 2. Serien zurücksetzen: eine Woche Kulanz ──
 cronAdd('streak-reset', '5 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
   const now = new Date();
@@ -73,16 +54,12 @@ cronAdd('streak-reset', '5 3 * * *', () => {
     if (!last) {
       u.set('streak_weeks', 0);
       $app.saveNoValidate(u);
-      // user_badges.progress is a cache — without this the old streak count
-      // stays visible ("1/2 Wochen in Folge") even though the streak is gone.
+      // progress ist ein Cache, sonst bleibt der alte Serienstand sichtbar.
       try { lib.checkBadges(u); } catch (_) {}
       continue;
     }
     const lastWeek = lib.isoWeek(new Date(last));
-    // Allow current week and the immediately preceding week (grace).
-    // „Vorwoche" beantwortet lib.isWeekAdjacent — dieselbe Prüfung, die auch
-    // updateStreak und streakFromVisits benutzen. Sie kennt die Länge des
-    // Vorjahres, sodass eine ausgelassene 53. Woche als Lücke gilt.
+    // lib.isWeekAdjacent kennt die Länge des Vorjahres, eine ausgelassene 53. Woche ist eine Lücke.
     if (thisWeek !== lastWeek && !lib.isWeekAdjacent(lastWeek, thisWeek)) {
       u.set('streak_weeks', 0);
       $app.saveNoValidate(u);
@@ -91,15 +68,7 @@ cronAdd('streak-reset', '5 3 * * *', () => {
   }
 });
 
-// ── 3. Grant action-participation badges (Sicherheitsnetz) ─────
-// Der Regelfall läuft sofort: Beim Freigeben eines gebrachten Teils zählt
-// defaults.pb.js action_counts hoch und ruft checkBadges — das Badge kommt
-// also direkt, nicht erst nach Aktionsende.
-//
-// Dieser Job fängt nur die Fälle ab, die dabei durchrutschen können:
-//   - Teilnahme durch reinen Besuch (kein gebrachtes Teil)
-//   - Aktion/Badge erst nachträglich verknüpft, Beiträge lagen schon vor
-// Läuft deshalb über LAUFENDE und beendete Aktionen, nicht nur beendete.
+// ── 3. Aktions-Abzeichen als Sicherheitsnetz für reine Besuche und nachträgliche Kopplung, auch bei laufenden Aktionen ──
 cronAdd('action-badges', '20 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
   let camps;
@@ -113,8 +82,7 @@ cronAdd('action-badges', '20 3 * * *', () => {
     let badge;
     try { badge = $app.findRecordById('badges', badgeId); } catch (_) { continue; }
 
-    // Gestufte Badges laufen ausschließlich über computeProgress/checkBadges —
-    // grantBadge würde sie sofort auf Gold setzen und die Stufen überspringen.
+    // Gestufte nur über checkBadges, grantBadge spränge sofort auf Gold.
     if (`${badge.get('kind')}` === 'tiered') {
       let counts = [];
       try {
@@ -156,10 +124,7 @@ cronAdd('action-badges', '20 3 * * *', () => {
   }
 });
 
-// ── 4. Year-end loyalty badges (years_active) ──────────────────
-// Runs daily but only acts on Dec 31. Counts distinct calendar years in which
-// the user had at least one visit; grants single-badges whose trigger_value is
-// reached. A year with no visits breaks the count (it's "years active", total).
+// ── 4. Treue-Abzeichen am 31.12. nach Jahren mit mindestens einem Besuch ──
 cronAdd('year-badges', '40 3 * * *', () => {
   const lib = require(`${__hooks}/lib/points.js`);
   const now = new Date();

@@ -1,10 +1,4 @@
-// Laufen die Migrationen unter dem echten PocketBase 0.40 durch, und steht
-// danach auf einer frischen Installation das, was die App braucht?
-//
-// Die globale Einrichtung startet PocketBase auf LEEREM pb_data. Kommt sie
-// überhaupt bis hierher, sind alle Migrationen ohne Fehler gelaufen — eine
-// scheiternde Migration hält den Start an. Die Tests hier prüfen, ob sie
-// auch das Richtige angelegt haben.
+// Migrationen unter PocketBase 0.40 auf frischer Installation.
 
 import { describe, it, expect } from 'vitest';
 import { call, superuserToken, adminList } from './helpers.mjs';
@@ -80,8 +74,7 @@ describe('Migrationen auf leerem pb_data', () => {
     expect(res.body.authAlert.enabled).toBe(false);
     // Die Bestätigungsmail verspricht eine Woche.
     expect(res.body.verificationToken.duration).toBe(604800);
-    // Anmeldung 30 Tage auf einer frischen Installation (0.40 ab Werk: 5 Tage).
-    // Produktion steht auf 14 Tagen; die Migration lässt einen gepflegten Wert stehen.
+    // Frisch 30 Tage (ab Werk 5); ein gepflegter Wert bleibt.
     expect(res.body.authToken.duration).toBe(2592000);
   });
 

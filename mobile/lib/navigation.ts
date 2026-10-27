@@ -1,6 +1,4 @@
-// Navigationsentscheidungen ohne React Native, damit sie sich in Node testen
-// lassen (tests/navigation.test.js). Die Screens und _layout.tsx reichen nur
-// den aktuellen Stand herein.
+// Navigationsentscheidungen ohne React Native, testbar in tests/navigation.test.js.
 
 export type EntryState = {
   isAuthenticated: boolean;
@@ -11,13 +9,7 @@ export type EntryState = {
   replay: boolean;
 };
 
-// Wohin der Einstiegs-Wächter in _layout.tsx umleitet — oder null, wenn die
-// aktuelle Route passt.
-//
-// Die Einführung ist beim ersten Start Pflicht. Wer sie schon hinter sich hat,
-// wird aus (onboarding) herausgeleitet — außer beim bewussten Wiederholen aus
-// dem Profil. Ohne diese Ausnahme schlüge der Wächter die Einführung sofort
-// wieder zu.
+// Ziel des Einstiegs-Wächters oder null; beim bewussten Wiederholen bleibt die Einführung offen.
 export function entryRedirect(s: EntryState): string | null {
   const inAuth = s.group === '(auth)';
   const inOnboarding = s.group === '(onboarding)';
@@ -29,10 +21,7 @@ export function entryRedirect(s: EntryState): string | null {
   return null;
 }
 
-// Android: Zurück auf der Startseite beendet die App. Ein versehentliches
-// Wischen vom Bildschirmrand — etwa beim Blättern durchs Schaufenster —
-// reichte dafür. Jetzt braucht es ein zweites Zurück innerhalb des Fensters;
-// das erste zeigt nur einen Hinweis.
+// Android: Zurück auf der Startseite braucht ein zweites Mal im Zeitfenster.
 export const EXIT_WINDOW_MS = 2000;
 
 export function createExitGuard(windowMs: number = EXIT_WINDOW_MS) {

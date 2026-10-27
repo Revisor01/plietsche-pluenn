@@ -1,19 +1,4 @@
-// Prüft den Harness selbst: Wo er so streng ist wie PocketBase (bis
-// 26.09.2026 gemessen an 0.22.21, seitdem an 0.40.4).
-//
-// Ein Audit hat den Harness gegen echtes PocketBase gemessen und zwei Stellen
-// gefunden, an denen er gutmütiger war als das Original — Tests liefen grün,
-// wo die Produktion scheitert:
-//
-//   T-5  Filter: leerer Filter, unbekanntes Feld und ein unquotierter Wert
-//        rechts wurden still ausgewertet statt abgelehnt. Datumsfelder wurden
-//        als Zeitpunkt statt als Text verglichen (siehe harness-time.test.js).
-//   T-6  Speichern: saveRecord konnte nie scheitern — kein UNIQUE-Index, keine
-//        unbekannten Sammlungen, kein Weg, einen Schreibfehler zu stellen.
-//        Die Feldliste stand von Hand im Harness statt aus dem Schema.
-//
-// Jeder Fall hier ist ein Verhalten von PocketBase, das der Harness jetzt
-// nachbildet, oder eine bewusste, im Harness begründete Abweichung.
+// Harness: so streng wie PocketBase 0.40.4 bei Filtern und beim Speichern, Abweichungen begründet.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -30,9 +15,7 @@ function setup(store = {}) {
 // ── T-5: Filter ────────────────────────────────────────────────
 
 describe('Harness-Filter: was PocketBase ablehnt', () => {
-  // Bewusste Abweichung: PocketBase 0.40 liest einen leeren Filter als „alle"
-  // (gemessen 26.09.2026). Für die Hooks ist er immer ein Fehler — siehe
-  // harness.js, Abschnitt Filter.
+  // Bewusste Abweichung: 0.40 liest einen leeren Filter als „alle“.
   it('lehnt einen leeren Filter ab', () => {
     const h = setup({ items: [{ id: 'i1', sku: 'PP-0001', title: 'Jacke' }] });
     expect(() => h.dao.findRecordsByFilter('items', '', '', 0, 0)).toThrow(
@@ -56,8 +39,7 @@ describe('Harness-Filter: was PocketBase ablehnt', () => {
   });
 
   it('lehnt einen kaputten Filter auch auf einer leeren Sammlung ab', () => {
-    // PocketBase prüft den Filter, bevor es liest. Früher wertete der Harness
-    // ihn nur je Zeile aus — auf einer leeren Sammlung fiel nichts auf.
+    // PocketBase prüft den Filter vor dem Lesen, auch auf leeren Sammlungen.
     const h = setup();
     expect(h.rows('items')).toHaveLength(0);
     expect(() => h.dao.findRecordsByFilter('items', 'gibtsnicht = "1"', '', 0, 0)).toThrow(
@@ -211,18 +193,14 @@ describe('Harness-Schema: aus pb_migrations/ abgeleitet', () => {
   });
 
   it('löst eine Sammlung auch über ihre ID auf', () => {
-    // Relationen und manche Migrationen sprechen Sammlungen über die ID an.
-    // Welche das ist, legt der Snapshot fest (in Produktion schreibt er sie
-    // auf den Bestand um) — deshalb hier nicht als fester Wert.
+    // Die ID legt der Snapshot fest.
     expect(schema.store.id).toMatch(/^\w+$/);
     expect(Object.values(schema).find((c) => c.id === schema.store.id).name).toBe('store');
     expect(schema.store.fields.timezone.type).toBe('text');
   });
 
   it('gibt Auth-Sammlungen ihre Systemfelder (Stand 0.40)', () => {
-    // Ab 0.23 sind created/updated eigene Felder vom Typ autodate, das
-    // Passwort ein Feld vom Typ password; passwordHash und die
-    // last…SentAt-Spalten von 0.22 gibt es nicht mehr.
+    // Ab 0.23: autodate und password als Felder.
     expect(schema.users.type).toBe('auth');
     const typen = {};
     for (const f of ['id', 'created', 'updated', 'email', 'username', 'verified', 'emailVisibility', 'tokenKey', 'password']) {
@@ -247,9 +225,7 @@ describe('Harness-Schema: aus pb_migrations/ abgeleitet', () => {
   });
 
   it('liest die Indizes der Auth-Sammlung selbst, samt Teilindex', () => {
-    // Früher standen die drei im Harness von Hand; seit 0.40 stehen sie im
-    // Snapshot. E-Mail ist ein Teilindex (WHERE email != ''): Leerwerte zählen
-    // nicht.
+    // E-Mail ist ein Teilindex, Leerwerte zählen nicht.
     expect(schema.users.unique).toEqual([
       { columns: ['username'], skipEmpty: false },
       { columns: ['email'], skipEmpty: true },
@@ -267,8 +243,7 @@ describe('Harness-Schema: aus pb_migrations/ abgeleitet', () => {
   });
 
   it('kennt kein Feld target_segment an Aktionen', () => {
-    // Nur Nachrichten haben es; lib/points.js liest es an Aktionen trotzdem
-    // (und fällt dort auf target_role zurück).
+    // lib/points.js liest es an Aktionen und fällt auf target_role zurück.
     expect(schema.campaigns.fields.target_segment).toBe(undefined);
     expect(schema.push_messages.fields.target_segment.type).toBe('select');
   });
@@ -302,8 +277,7 @@ describe('Harness-Datensatz: Felder und Werte', () => {
   });
 
   it('wirft, wenn ein Textfeld ein Objekt bekommt', () => {
-    // Bewusste Abweichung: PocketBase speicherte still den Leerstring — etwa
-    // wenn ein Hook den ganzen Datensatz statt seiner ID übergibt.
+    // Bewusste Abweichung: PocketBase speicherte still den Leerstring.
     const user = new FakeRecord('users', { id: 'u1' });
     const log = new FakeRecord('points_log', {});
     expect(() => log.set('user', user)).toThrow('Harness: points_log.user erwartet Text');
@@ -387,8 +361,7 @@ describe('Harness-DAO: UNIQUE-Indizes', () => {
   });
 
   it('lehnt eine Fixture ab, die gegen einen Index verstößt', () => {
-    // Zwei Teile ohne SKU: In PocketBase stehen beide als "" im eindeutigen
-    // Index — so einen Bestand gibt es nicht.
+    // In PocketBase stünden beide als "" im eindeutigen Index.
     expect(() => setup({ items: [{ id: 'i1' }, { id: 'i2' }] })).toThrow(
       'Harness: Fixture verletzt UNIQUE constraint failed: items.sku'
     );
@@ -467,12 +440,7 @@ describe('Harness-DAO: gestellte Speicherfehler (failSaveOn)', () => {
   });
 });
 
-// ── Transaktionen (runInTransaction) ────────────────────────────
-//
-// Der Scan bucht seit 0.40 in einer Transaktion. Der Harness muss dafür
-// zurückrollen können — und die zwei Fallen von PocketBase nachbilden: $app
-// statt txApp zum Schreiben blockiert (eine einzige Schreibverbindung), $app
-// zum Lesen sieht den Stand von vor der Transaktion.
+// ── Transaktionen: Rollback, $app schreibt nicht, $app liest den alten Stand ──
 
 describe('Harness-App: runInTransaction', () => {
   it('schreibt fest, wenn nichts scheitert', () => {
@@ -545,8 +513,7 @@ describe('Harness-App: runInTransaction', () => {
 
 describe('Harness: Record-Request-Hooks', () => {
   it('speichert erst mit e.next() und zeigt danach den gespeicherten Stand', () => {
-    // defaults.pb.js setzt die Rolle vor e.next(); was ein Hook erst danach
-    // setzt, ohne selbst zu speichern, ist in PocketBase verloren.
+    // Was ein Hook nach e.next() setzt, ohne zu speichern, ist verloren.
     const h = loadHook('defaults.pb.js', { users: [] });
     const rec = h.newRecord('users', { role: 'admin' });
     h.fireRecordHook('createRequest', 'users', rec);

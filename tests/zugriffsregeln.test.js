@@ -1,33 +1,4 @@
-// Zugriffsregeln und Türgeheimnis — geprüft am Schema, das eine Instanz
-// wirklich bekommt.
-//
-// Warum hier Migrationen geprüft werden, obwohl es sonst um Hooks geht:
-// Die Zugriffsregel IST die Sicherheitsmaßnahme. Steht sie falsch, ist ein
-// Weg offen, und kein Hook-Test fällt deswegen um. In PocketBase heißt der
-// Leerstring bei listRule/viewRule „alle, auch ohne Anmeldung", null heißt
-// „nur Superuser". Der Unterschied ist eine Zeichenkette.
-//
-// Quelle der Wahrheit ist seit PocketBase 0.40 der Sammlungs-Snapshot
-// (pocketbase/pb_migrations/*_collections_snapshot.js) samt den Migrationen
-// danach. Diese Datei führt sie alle in einer kleinen nachgebauten Umgebung
-// aus — wie tests/harness.js, nur dass hier die Regeln und die angelegten
-// Datensätze festgehalten werden, die der Harness nicht braucht.
-//
-// Bis 26.09.2026 standen hier (und in store-secret-migration.test.js) Tests
-// für die drei 0.22-Migrationen, die diese Zusagen eingeführt haben
-// (1782690000_store_secret_collection, 1782710000_tighten_read_rules).
-// Entfallen sind die Tests, die nur deren MECHANIK prüften: Rückbau über
-// down(), zweiter Durchlauf, Übertragung des Türgeheimnisses aus dem alten
-// Feld store.checkin_qr_secret. Diese Migrationen liegen jetzt als Historie
-// in pocketbase/pb_migrations_022/ und laufen auf keiner Instanz mehr: Die
-// Produktion hat sie längst angewendet (samt Übertragung des Geheimnisses),
-// neue Instanzen starten mit dem Snapshot. Geblieben sind die ZUSAGEN — der
-// Endstand der Regeln, ihre Auswertung für konkrete Konten und Datensätze,
-// und dass eine frische Installation ihr Türgeheimnis nur in store_secrets
-// ablegt.
-//
-// Gegen das echte Binary über HTTP prüft dasselbe
-// tests/integration/zugriffsregeln.test.js.
+// Zugriffsregeln und Türgeheimnis am Schema aus Snapshot und späteren Migrationen; über HTTP prüft tests/integration/zugriffsregeln.test.js.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
@@ -40,14 +11,7 @@ const crypto = require_('node:crypto');
 
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'pocketbase', 'pb_migrations');
 
-// ── Nachgebaute Migrationsumgebung ─────────────────────────────
-//
-// Führt den Snapshot und alle Migrationen danach aus, in Dateinamen-Reihenfolge
-// wie PocketBase. Nachgebaut ist nur, was die Migrationen aufrufen; ein Aufruf,
-// den es hier nicht gibt, wirft — lieber rot als still falsch.
-//
-// `vorher` legt Datensätze an, die schon vor dem ersten Lauf da sind (so sieht
-// eine Instanz aus, die ihr Türgeheimnis längst hat).
+// ── Nachgebaute Migrationsumgebung; `vorher` legt vorhandene Datensätze an ──
 function migrationFiles() {
   const files = fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.js')).sort();
   const start = files.findIndex((f) => /_collections_snapshot\.js$/.test(f));
@@ -82,8 +46,7 @@ function frischeInstallation(vorher = {}) {
       },
     });
     if (col.type === 'auth') {
-      // Vorgaben einer FRISCHEN 0.40-Installation (gemessen 26.09.2026,
-      // siehe 1790500200_settings.js). Der Snapshot bringt sie bewusst nicht mit.
+      // Vorgaben einer frischen 0.40-Installation.
       col.authAlert = col.authAlert || { enabled: true };
       col.authToken = col.authToken || { duration: 432000 };
       col.verificationToken = col.verificationToken || { duration: 86400 };
@@ -196,19 +159,7 @@ function frischeInstallation(vorher = {}) {
   return { sammlung, zeilen, zufall };
 }
 
-// ── Regel-Auswertung ───────────────────────────────────────────
-// Wertet einen PocketBase-Regelausdruck aus, so weit die Regeln dieses Repos
-// ihn nutzen: Vergleiche über Datensatzfelder und @request.auth.*, verknüpft
-// mit &&, || und Klammern. Alles, was nicht erkannt wird, wirft — still
-// falsch zu antworten wäre schlimmer als rot zu werden.
-//
-// PocketBase bindet && stärker als ||, wie in den meisten Sprachen. Genau
-// diese Rangfolge macht den Unterschied zwischen „angemeldet UND freigegeben"
-// und „freigegeben, egal ob angemeldet".
-//
-// `auth` ist das angemeldete Konto ({ id, role }) oder null für unangemeldet.
-// Superuser umgehen die Regeln ganz; das bildet `darf()` nicht ab — ein
-// Konto mit role "admin" ist KEIN Superuser.
+// ── Regel-Auswertung für die Ausdrücke dieses Repos; && bindet stärker als ||, Unbekanntes wirft ──
 function darf(regel, datensatz, auth) {
   // null heißt in PocketBase: nur Superuser, kein Weg über die API.
   if (regel === null || regel === undefined) return false;
@@ -290,8 +241,7 @@ const regeln = (name) => {
 };
 
 describe('Die Regel-Auswertung selbst', () => {
-  // Der Prüfer ist Testwerkzeug — steht er falsch, gehen die Regel-Tests grün
-  // durch, obwohl die Regel offen ist. Deshalb bekommt er eigene Proben.
+  // Der Prüfer bekommt eigene Proben, sonst gingen offene Regeln grün durch.
   const satz = { status: 'approved', created_by: 'u_besucher' };
 
   it('unterscheidet null von Leerstring', () => {
@@ -321,8 +271,7 @@ describe('Die Regel-Auswertung selbst', () => {
 
 describe('Türgeheimnis: store_secrets', () => {
   it('ist für jeden Weg über die API gesperrt', () => {
-    // Verbotener Fall. null heißt „nur Superuser"; der Leerstring wäre
-    // „alle, auch unangemeldet" — der kritische Befund vom August.
+    // Verboten: null heißt nur Superuser, '' hieße alle.
     expect(regeln('store_secrets')).toEqual({
       listRule: null,
       viewRule: null,
@@ -333,8 +282,7 @@ describe('Türgeheimnis: store_secrets', () => {
   });
 
   it('bleibt auch einem Konto mit role "admin" verschlossen', () => {
-    // Die Admin-Rolle ist ein Feld am Konto, kein Superuser. Das Türgeheimnis
-    // liest nur der Scan-Hook serverseitig.
+    // Die Admin-Rolle ist kein Superuser.
     const r = regeln('store_secrets');
     for (const konto of [UNANGEMELDET, BESUCHER, HELFER, ADMIN]) {
       expect(darf(r.listRule, {}, konto)).toBe(false);
@@ -396,8 +344,7 @@ describe('Frische Installation: wo das Türgeheimnis landet', () => {
   });
 
   it('tauscht ein vorhandenes Geheimnis beim Deploy nicht aus', () => {
-    // Die Produktion hat ihr Geheimnis längst. Ein Deploy darf es nicht
-    // ersetzen — sonst wäre jeder Tür-QR-Code danach ungültig.
+    // Ein Deploy darf das Geheimnis nicht ersetzen.
     const inst = frischeInstallation({
       store: [{ name: 'Laden in Produktion' }],
       store_secrets: [{ checkin_qr_secret: 'vorhandenes-geheimnis' }],
@@ -410,8 +357,7 @@ describe('Frische Installation: wo das Türgeheimnis landet', () => {
 
 describe('Besuche: visits', () => {
   it('lässt niemanden Besuche über die API anlegen', () => {
-    // Verbotener Fall: Besuche entstehen nur im Scan-Hook. Jeder Wert außer
-    // null — auch der Leerstring — wäre ein Weg, sich Punkte selbst zu bauen.
+    // Verboten: Besuche entstehen nur im Scan-Hook.
     const r = regeln('visits');
     expect(r.createRule).toBeNull();
     expect(r.updateRule).toBeNull();
@@ -456,8 +402,7 @@ describe('Punkteverlauf: points_log', () => {
 
 describe('Aktivitätsprofile: action_counts', () => {
   it('gibt fremde Teilnahmezahlen nicht heraus', () => {
-    // Verbotener Fall: So war es gemessen — ein Besucherkonto bekam alle
-    // Zeilen der Instanz samt fremder Nutzer-ID.
+    // Verboten: fremde Zeilen samt Nutzer-ID.
     const r = regeln('action_counts');
     const fremd = { user: FREMDER.id };
     expect(darf(r.listRule, fremd, BESUCHER)).toBe(false);
@@ -483,8 +428,7 @@ describe('Aktivitätsprofile: action_counts', () => {
 describe('Einreichungen und Standortangaben: items', () => {
   // Die Datensätze bilden nach, was in der Instanz steht.
   const fremdePending = { status: 'pending', created_by: FREMDER.id };
-  // Freigegeben, bleibt aber bei der Familie zu Hause; die Privatadresse
-  // steht im Feld `location`.
+  // Bleibt zu Hause, die Privatadresse steht in `location`.
   const fremdesExternesTeil = { status: 'approved', created_by: FREMDER.id };
   const freigegeben = { status: 'approved', created_by: HELFER.id };
   const altbestand = { status: '', created_by: '' };
@@ -505,8 +449,7 @@ describe('Einreichungen und Standortangaben: items', () => {
   });
 
   it('zeigt freigegebene Teile und den Altbestand jedem angemeldeten Konto', () => {
-    // Laden-Tab und „neu im Laden"; der Altbestand stammt aus der Zeit vor
-    // dem status-Feld und steht teils im Schaufenster.
+    // Altbestand ohne status-Feld, teils im Schaufenster.
     const r = regeln('items');
     expect(darf(r.listRule, freigegeben, BESUCHER)).toBe(true);
     expect(darf(r.viewRule, freigegeben, BESUCHER)).toBe(true);
@@ -535,8 +478,7 @@ describe('Einreichungen und Standortangaben: items', () => {
   });
 
   it('schreibt den Regelausdruck im Wortlaut fest', () => {
-    // Die Klammern um den Anmelde-Zweig trennen die Regel von einer Öffnung,
-    // und sie gehen beim Umformulieren als Erstes verloren.
+    // Die Klammern um den Anmelde-Zweig gehen beim Umformulieren als Erstes verloren.
     expect(regeln('items').listRule).toBe(
       '(@request.auth.id != "" && (status = "approved" || status = "" ||' +
         ' created_by = @request.auth.id))' +

@@ -3,9 +3,7 @@ import { Redirect } from 'expo-router';
 import { PP } from '../lib/theme';
 import { useAuth } from '../lib/hooks/useAuth';
 
-// Root index. Decides the entry route itself instead of waiting passively for
-// the _layout guard — this guarantees we never hang on the spinner if the
-// guard effect misfires (e.g. slow auth-store hydration on a cold start).
+// Entscheidet die Einstiegsroute selbst, damit nie ein Spinner hängt, falls der Guard ausbleibt.
 export default function Index() {
   const { ready, isAuthenticated, user } = useAuth();
 

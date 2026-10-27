@@ -4,27 +4,14 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { pb } from './pb';
 
-// ── Android-Kanäle ────────────────────────────────────────────────────────
-//
-// QUELLE DER WAHRHEIT: docs/push-channels.md. Diese Tabelle ist die Kopie für
-// die App, `pocketbase/pb_hooks/lib/push.js` hält die Kopie fürs Backend
-// (Konstante CHANNELS). Die Kennungen MÜSSEN gleich lauten: Hier werden die
-// Kanäle angelegt, dort werden sie adressiert. Wer hier etwas ändert, ändert
-// beide Stellen und die Tabelle in der Doku.
-//
-// Android schreibt die Eigenschaften eines Kanals beim ERSTEN Anlegen fest.
-// Danach ändert nur noch die Nutzerin sie, kein Code. Deshalb werden die
-// Kanäle beim App-Start angelegt — bevor die erste Nachricht der Kategorie
-// ankommt. Käme sie zuerst, legte Android den Kanal mit Standardwerten an, und
-// die Wichtigkeit wäre für immer die falsche.
+// ── Android-Kanäle: Quelle docs/push-channels.md, Kennungen gleich wie in pb_hooks/lib/push.js ──
 const ANDROID_CHANNELS = [
   {
     id: 'streak',
     name: 'Serie und Punkte',
     description:
       'Punkte nach dem Check-in und Erinnerungen, bevor deine Serie abläuft.',
-    // HIGH: Eine Serie, die heute endet, hilft nur, wenn sie oben aufploppt —
-    // morgen ist sie weg. Das ist die einzige Kategorie mit einer Frist.
+    // HIGH: eine heute endende Serie hilft nur, wenn sie aufploppt.
     importance: 'high' as const,
   },
   {
@@ -32,24 +19,21 @@ const ANDROID_CHANNELS = [
     name: 'Aktionen und Ankündigungen',
     description:
       'Neue Aktionen im Laden, besondere Öffnungszeiten und Hinweise vom Team.',
-    // DEFAULT: Wissenswert und mit Ton, aber nichts, was den Bildschirm
-    // übernehmen müsste — eine Aktion läuft Tage, nicht Stunden.
+    // DEFAULT: eine Aktion läuft Tage, nicht Stunden.
     importance: 'default' as const,
   },
   {
     id: 'badge',
     name: 'Abzeichen und Ränge',
     description: 'Neue Abzeichen, Ränge und freigegebene Teile.',
-    // DEFAULT: Eine Belohnung darf sich melden. Sie ist aber nie dringend —
-    // das Abzeichen bleibt auch, wenn man erst abends hinsieht.
+    // DEFAULT: eine Belohnung ist nie dringend.
     importance: 'default' as const,
   },
   {
     id: 'other',
     name: 'Sonstiges',
     description: 'Alles Übrige aus der App.',
-    // LOW: Still in die Mitteilungszentrale, kein Ton. Hier landet, was keine
-    // eigene Kategorie hat — das soll niemanden unterbrechen.
+    // LOW: still, für alles ohne eigene Kategorie.
     importance: 'low' as const,
   },
 ];
@@ -60,8 +44,7 @@ const IMPORTANCE = {
   low: Notifications.AndroidImportance.LOW,
 };
 
-// Beim App-Start aufrufen, nicht erst beim Registrieren des Tokens: Ein Kanal
-// muss stehen, bevor die erste Nachricht kommt. Auf iOS passiert nichts.
+// Beim Start aufrufen, weil Android Kanaleigenschaften beim ersten Anlegen festschreibt; iOS ohne Wirkung.
 export async function setupNotificationChannels(): Promise<void> {
   if (Platform.OS !== 'android') return;
   try {
@@ -73,8 +56,7 @@ export async function setupNotificationChannels(): Promise<void> {
       });
     }
   } catch {
-    // Klappt das nicht, stellt Android im Standardkanal zu. Lieber eine
-    // Nachricht ohne eigene Kategorie als gar keine.
+    // Sonst stellt Android im Standardkanal zu.
   }
 }
 
@@ -86,9 +68,7 @@ function projectId(): string | undefined {
   );
 }
 
-// Ask for permission, fetch the Expo push token, and register it with the
-// backend (/api/pp/push/register). Safe to call on every authenticated start —
-// it upserts. Silently no-ops on simulators / when permission is denied.
+// Holt Erlaubnis und Expo-Token und registriert es per Upsert; auf Simulatoren oder ohne Erlaubnis ohne Wirkung.
 export async function registerPushToken(): Promise<void> {
   try {
     if (!Device.isDevice) return; // push tokens don't work on simulators
@@ -116,12 +96,9 @@ export async function registerPushToken(): Promise<void> {
   }
 }
 
-// ── Deep links ────────────────────────────────────────────────────────────
-// The backend puts a route into the notification payload as data.deep_link
-// (e.g. "/(visitor)/points"). Tapping the notification should open that screen.
+// ── Deep Links aus data.deep_link ──
 
-// Routes a push is allowed to open. A push payload is remote input, so we never
-// hand it to the router unchecked — an unknown value just opens the app.
+// Erlaubte Ziele, weil ein Push-Payload fremde Eingabe ist.
 const ALLOWED_LINKS = [
   '/(visitor)',
   '/(visitor)/points',
@@ -134,8 +111,7 @@ const ALLOWED_LINKS = [
 export function parseDeepLink(response: unknown): string | null {
   const res = response as any;
   if (!res) return null;
-  // Only a plain tap on the notification navigates — not a dismissal or a
-  // custom action button.
+  // Nur ein schlichter Tipp navigiert.
   const action = res.actionIdentifier;
   if (action != null && action !== Notifications.DEFAULT_ACTION_IDENTIFIER) return null;
   const raw = res?.notification?.request?.content?.data?.deep_link;
@@ -146,8 +122,7 @@ export function parseDeepLink(response: unknown): string | null {
   return (ALLOWED_LINKS as readonly string[]).includes(link) ? link : null;
 }
 
-// Deep link from a notification that launched the app from a cold start.
-// Read once — the pending link is consumed by the first navigator that is ready.
+// Deep Link eines Kaltstarts, einmal gelesen.
 export async function initialDeepLink(): Promise<string | null> {
   try {
     const res = await Notifications.getLastNotificationResponseAsync();

@@ -1,17 +1,4 @@
-// Tests für die Tagesgrenze, die Wochenzählung und die Jahreszählung.
-//
-// Warum es diese Tests gibt: Der Laden steht in Deutschland, der Server läuft
-// in UTC. Wer die Tagesgrenze aus `new Date(jahr, monat, tag)` ableitet, erbt
-// die Zeitzone des Prozesses — und damit im Sommer einen Tageswechsel um
-// 02:00 Uhr Ortszeit. Wer um 00:30 eincheckt, gilt dem Server als „gestern"
-// und bekommt vormittags einen zweiten vollen Bonus.
-//
-// Die übrige Suite läuft absichtlich in Europe/Berlin (siehe
-// vitest.config.mjs) — also genau in der Zeitzone, die der Server NICHT hat.
-// Deshalb konnte kein Test den Fehler je zeigen. Diese Datei stellt die
-// Prozess-Zeitzone selbst um und prüft beide Fälle: Server in UTC und Server
-// in Europe/Berlin. Das Ergebnis muss in beiden gleich sein — die Fachlogik
-// darf nicht davon abhängen, wie der Rechner zufällig konfiguriert ist.
+// Tagesgrenze, Woche und Jahr müssen mit Server in UTC und in Europe/Berlin gleich sein.
 
 import { describe, it, expect, afterEach } from 'vitest';
 import { createRequire } from 'node:module';
@@ -20,8 +7,7 @@ const { loadHook } = createRequire(import.meta.url)('./harness.js');
 
 const ORIGINAL_TZ = process.env.TZ;
 
-// Die Prozess-Zeitzone für einen Testabschnitt umstellen. Node liest TZ bei
-// jeder Date-Operation neu, sobald process.env.TZ zugewiesen wurde.
+// Node liest TZ nach einer Zuweisung bei jeder Date-Operation neu.
 function mitServerZeitzone(tz, fn) {
   process.env.TZ = tz;
   try {
@@ -35,8 +21,7 @@ afterEach(() => {
   process.env.TZ = ORIGINAL_TZ;
 });
 
-// Beide Fälle, die in der Wirklichkeit vorkommen: der Container, wie er heute
-// läuft (UTC), und ein Host, der auf deutsche Zeit gestellt ist.
+// Container in UTC und Host in deutscher Zeit.
 const SERVER_ZEITZONEN = ['UTC', 'Europe/Berlin'];
 
 function setup(store = {}) {
@@ -53,8 +38,7 @@ function setup(store = {}) {
     user_badges: [],
     items: [],
   });
-  // Die gelesene Zeitzone wird kurz zwischengespeichert. Jeder Test startet
-  // mit leerem Puffer, sonst hinge das Ergebnis an der Reihenfolge.
+  // Leerer Puffer, sonst hinge das Ergebnis an der Reihenfolge.
   h.lib.forgetStoreTimezone();
   return h;
 }
@@ -144,8 +128,7 @@ describe('Wochenzählung: die Woche beginnt Montag Ortszeit', () => {
       it('rechnet Montag 00:30 Ortszeit der neuen Woche zu', () => {
         mitServerZeitzone(tz, () => {
           const h = setup();
-          // Montag, 3.8.2026, 00:30 Ortszeit = 2.8. 22:30 UTC.
-          // Nach UTC gelesen wäre das Sonntag und damit die Vorwoche.
+          // Montag 3.8.2026 00:30 Ortszeit, in UTC noch Sonntag.
           expect(h.lib.isoWeek(new Date('2026-08-02T22:30:00.000Z'))).toBe(202632);
           // Derselbe Montag um 08:00 Ortszeit — dieselbe Woche.
           expect(h.lib.isoWeek(new Date('2026-08-03T06:00:00.000Z'))).toBe(202632);
@@ -230,8 +213,7 @@ describe('Ladenzeitzone ist gepflegt, nicht geerbt', () => {
       const h = setup();
       expect(h.lib.storeTimezone()).toBe('Europe/Berlin');
 
-      // Geaendert wie ueber die Verwaltung: gesetzt UND gespeichert. Ein nur
-      // im Speicher geaenderter Datensatz ist fuer niemanden sonst sichtbar.
+      // Gesetzt und gespeichert wie über die Verwaltung.
       const laden = h.records.store;
       laden.set('timezone', 'UTC');
       h.dao.saveRecord(laden);
@@ -262,8 +244,7 @@ describe('Ladenzeitzone ist gepflegt, nicht geerbt', () => {
   it('trifft die Tagesgrenze in der Nacht der Zeitumstellung', () => {
     mitServerZeitzone('UTC', () => {
       const h = setup();
-      // 29.3.2026: Umstellung auf Sommerzeit um 02:00 Ortszeit (01:00 UTC).
-      // Der Tag beginnt trotzdem um 00:00 Ortszeit — also 23:00 UTC am 28.3.
+      // 29.3.2026: der Tag beginnt um 23:00 UTC am 28.3.
       const fruehSonntag = h.lib.storeDayStart(new Date('2026-03-29T00:30:00.000Z'));
       expect(fruehSonntag.toISOString()).toBe('2026-03-28T23:00:00.000Z');
       // Nach der Umstellung liegt derselbe Tag noch immer auf derselben Grenze.
@@ -281,15 +262,11 @@ describe('Jahreszählung: der Jahreswechsel liegt um Mitternacht Ortszeit', () =
   for (const tz of SERVER_ZEITZONEN) {
     it(`ordnet einen Besuch am 1.1. um 00:30 Ortszeit dem neuen Jahr zu (Server in ${tz})`, () => {
       mitServerZeitzone(tz, () => {
-        // 31.12.2026, 04:40 Ortszeit = 03:40 UTC — der Tag, an dem der Job
-        // wirkt. Die Uhr wird vor dem Laden gestellt, weil der Harness die
-        // Date-Funktion beim Laden in die Hook-Umgebung übernimmt.
+        // Uhr vor dem Laden stellen, der Harness übernimmt Date beim Laden.
         const h = mitFestemJetzt(new Date('2026-12-31T03:40:00.000Z'), () =>
           loadHook('cron.pb.js', {
             users: [{ __name: 'u', id: 'u1' }],
-            // 1.1.2026, 00:30 Ortszeit = 31.12.2025, 23:30 UTC.
-            // Ein Besuch im Vorjahr, einer in der Neujahrsnacht — nach
-            // Ortszeit sind das zwei aktive Jahre (2025 und 2026).
+            // Nach Ortszeit zwei aktive Jahre.
             visits: [
               { id: 'v1', user: 'u1', checkin_at: '2025-06-01T10:00:00.000Z' },
               { id: 'v2', user: 'u1', checkin_at: '2025-12-31T23:30:00.000Z' },
@@ -323,8 +300,7 @@ describe('Jahreszählung: der Jahreswechsel liegt um Mitternacht Ortszeit', () =
   }
 });
 
-// Date.now und new Date() für die Dauer eines Aufrufs auf einen festen
-// Zeitpunkt legen — die Cronjobs lesen die aktuelle Zeit selbst.
+// Date.now und new Date() für die Dauer eines Aufrufs festlegen.
 function mitFestemJetzt(zeitpunkt, fn) {
   const Original = globalThis.Date;
   const fest = zeitpunkt.getTime();

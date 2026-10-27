@@ -1,10 +1,4 @@
-// Tests für den Upload zu Google Play in play-internal.yml und release.yml.
-//
-// Hochgeladen wird über den Baustein play-upload.yml (Revisor01/workflows).
-// Seine Logik (Status, Track-Liste, 500 Zeichen, Wiederholung, Verwerfen)
-// prüft er in seinem eigenen Selbsttest; hier steht, dass beide Workflows ihn
-// mit den richtigen Eingaben aufrufen und dass ein Probelauf nichts
-// veröffentlicht.
+// Beide Workflows rufen play-upload.yml mit den richtigen Eingaben, ein Probelauf veröffentlicht nichts.
 
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
@@ -33,8 +27,7 @@ const WORKFLOWS = {
 describe('Freigabestatus', () => {
   for (const [name, text] of Object.entries(WORKFLOWS)) {
     it(`${name} bietet draft und completed an, Vorgabe completed`, () => {
-      // draft soll bewusst gewählt werden; als Vorgabe blieben Fassungen
-      // unbemerkt in der Konsole liegen.
+      // draft bewusst wählen, sonst bleiben Fassungen in der Konsole liegen.
       const block = text.match(/freigabe:[\s\S]*?default: (\w+)/);
       expect(block[0]).toContain('- completed');
       expect(block[0]).toContain('- draft');

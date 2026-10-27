@@ -18,14 +18,12 @@ interface PPButtonProps {
   loading?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
-  // Standardmäßig liest der Screenreader den Knopftitel vor. Nur setzen, wenn
-  // der Titel als Ansage nicht reicht (z.B. „Weiter" ohne Ziel).
+  // Nur setzen, wenn der Titel als Ansage nicht reicht.
   accessibilityLabel?: string;
   accessibilityHint?: string;
 }
 
-// Der sichtbare Titel ist die Ansage. Im Ladezustand ersetzt ein Spinner den
-// Text — ohne diese Ableitung wäre der Knopf dann stumm.
+// Im Ladezustand ersetzt ein Spinner den Text, ohne diese Ableitung wäre der Knopf stumm.
 function labelFromChildren(children: React.ReactNode): string {
   if (typeof children === 'string') return children;
   if (typeof children === 'number') return String(children);

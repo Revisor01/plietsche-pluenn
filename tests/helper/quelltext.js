@@ -1,17 +1,4 @@
-// Quelltext fuer Text-Pruefungen vorbereiten.
-//
-// Einige Tests muessen .ts/.tsx-Dateien als Text lesen, weil die Screens
-// React-Native-Module nachziehen, die in Node nicht existieren. Damit ein
-// auskommentierter Aufruf dabei nicht als vorhanden durchgeht, entfernt
-// `ohneKommentare` vorher alle Zeilen- und Blockkommentare (auch JSX-
-// Kommentare `{/* ... */}`).
-//
-// Zeichenketten bleiben unangetastet: `'https://…'` ist kein Kommentar.
-// Einfache und doppelte Anfuehrungszeichen enden spaetestens am Zeilenende
-// (JS-Strings koennen nicht umbrechen) — ein Apostroph im JSX-Text kann
-// deshalb hoechstens eine Zeile verschlucken, nicht den Rest der Datei.
-// Regex-Literale werden nicht erkannt; ein `//` darin wuerde als Kommentar
-// gelesen. In den geprueften Dateien kommt das nicht vor.
+// Entfernt Kommentare für Text-Prüfungen, damit auskommentierte Aufrufe nicht als vorhanden gelten; Regex-Literale werden nicht erkannt.
 
 import { readFileSync } from 'node:fs';
 

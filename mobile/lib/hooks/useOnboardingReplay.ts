@@ -1,10 +1,6 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
-// Einführung aus dem Profil noch einmal ansehen.
-//
-// Der Parameter ?replay=1 muss auf jeder Seite mitlaufen: Fehlt er, hält der
-// Einstiegs-Wächter in _layout.tsx die Einführung für erledigt und leitet
-// sofort auf die Startseite (siehe entryRedirect in ../navigation.ts).
+// Einführung erneut ansehen; ?replay=1 muss auf jeder Seite mit, sonst leitet der Einstiegs-Wächter weg.
 export function useOnboardingReplay() {
   const router = useRouter();
   const { replay } = useLocalSearchParams<{ replay?: string }>();

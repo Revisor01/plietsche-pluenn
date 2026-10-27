@@ -1,13 +1,4 @@
-// Abmelden mit Rückfrage und deutsche Gedankenstriche.
-//
-// Beides kam aus dem Testbericht zur geschlossenen Testphase bei Google Play:
-// Abmelden passierte ohne Rückfrage auf einen Tipp, und die App setzte den
-// englischen Geviertstrich „—" statt des deutschen Gedankenstrichs „–".
-//
-// Die Screens ziehen React-Native-Module nach und laufen in Node nicht. Geprüft
-// wird deshalb der Quelltext — ohne Kommentare, damit ein auskommentierter
-// Aufruf auffällt. Ob der Dialog auf dem Gerät erscheint, sieht dieser Test
-// nicht.
+// Abmelden mit Rückfrage und deutscher Gedankenstrich; Screens als Text ohne Kommentare.
 
 import { describe, it, expect } from 'vitest';
 import { readdirSync, statSync } from 'node:fs';

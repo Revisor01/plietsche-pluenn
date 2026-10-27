@@ -1,5 +1,4 @@
-// FontAwesome 6 icon wrapper. Maps internal semantic names → FA6 light/solid names.
-// Keep names stable across the app — change FA6 names here, never in screens.
+// FontAwesome-6-Wrapper; FA6-Namen nur hier ändern, nie in Screens.
 
 import { FontAwesome6 } from '@expo/vector-icons';
 import { PP } from './theme';
@@ -239,9 +238,7 @@ export function Icon({ name, size = PP.iconSizes.lg, color = PP.ink, style }: Ic
   return <FontAwesome6 name={fa as any} size={size} color={color} iconStyle="solid" style={style} />;
 }
 
-// Symbole für Abzeichen und Aktionen. Bewusst ohne Werkzeug-Zeichen (Diagramm,
-// Lupe, Regler): Ein Abzeichen ist eine Auszeichnung, kein Bedienelement.
-// Gruppiert nach Auszeichnung, Jahreslauf, Küste, Miteinander, Gefühl, Laden.
+// Symbole für Abzeichen und Aktionen, bewusst ohne Werkzeug-Zeichen.
 export const BADGE_ICONS: IconName[] = [
   // Auszeichnung
   'medal', 'trophy', 'crown', 'gem', 'award', 'ribbon', 'certificate', 'star',

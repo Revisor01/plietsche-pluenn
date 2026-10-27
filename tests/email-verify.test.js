@@ -1,18 +1,4 @@
-// E-Mail-Bestätigung: was die Screens zeigen und anbieten.
-//
-// Bis zum 18.09.2026 forderte die App nie eine Bestätigungsmail an. Konten
-// standen deshalb dauerhaft auf `verified: false`, und niemand bekam je eine
-// Mail — gemessen am Mailserver: null Zustellungen an die betroffene Adresse.
-//
-// Der Ablauf selbst (Mail nach der Anmeldung, Fehler schluckt die
-// Registrierung nicht, Adresse aus dem angemeldeten Konto) wird in
-// tests/auth-flow.test.js AUSGEFÜHRT.
-//
-// Hier bleiben Text-Prüfungen der Screens: Sie ziehen React-Native-Module
-// nach, die in Node nicht existieren. Geprüft wird der Quelltext OHNE
-// Kommentare, und zwar auf Aufrufe und Bedingungen, nicht auf bloße Namen —
-// ein auskommentierter Aufruf fällt damit auf. Ob der Screen richtig
-// rendert, sieht dieser Test nicht.
+// E-Mail-Bestätigung in den Screens als Text ohne Kommentare; der Ablauf läuft in tests/auth-flow.test.js.
 
 import { describe, it, expect } from 'vitest';
 import { code } from './helper/quelltext.js';
@@ -47,8 +33,7 @@ describe('Erinnerung auf der Startseite', () => {
   const start = code('mobile/app/(visitor)/index.tsx');
 
   it('erscheint nur, solange die Adresse offen ist, und führt ins Profil', () => {
-    // Negation im Bedingungsausdruck: Der Hinweis erscheint nur bei
-    // !user?.verified — sonst stünde er dauerhaft da.
+    // Nur bei !user?.verified.
     const i = start.indexOf('!user?.verified && (');
     expect(i, 'Bedingung !user?.verified fehlt').toBeGreaterThan(-1);
     expect(start.slice(i, i + 400)).toMatch(/router\.push\('\/\(visitor\)\/settings\/account/);

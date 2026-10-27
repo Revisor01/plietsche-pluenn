@@ -1,39 +1,5 @@
 #!/usr/bin/env python3
-# Prueft nach einem Deploy, ob der neue Stand tatsaechlich in Produktion
-# angekommen ist.
-#
-# Aufruf: deploy-verify.py <basis-url>
-# Beispiel: deploy-verify.py https://pb.xn--plietsche-plnn-rsb.de
-#
-# Warum das noetig ist, und warum /api/health dafuer nicht genuegt:
-# Die Instanz lief im August vier Wochen auf einem alten Stand. Sie war in
-# dieser Zeit durchgehend „gesund" — /api/health antwortet mit 200, solange
-# der Prozess laeuft, und sagt ueber den Stand von Hooks und Migrationen
-# nichts aus. Ein im Repo als behoben gefuehrter Sicherheitsfehler stand
-# dadurch unbemerkt weiter offen.
-#
-# Deshalb prueft dieses Skript je Migration ein Schemamerkmal: nicht „ist die
-# Migration vermerkt", sondern „ist das, was sie bewirken sollte, wirksam".
-# Das faengt auch einen Fehlschlag mitten in einer Migration ab. Gelesen wird
-# unangemeldet — ein Superuser-Zugang in einem GitHub-Tresor waere ein
-# groesseres Zugestaendnis als der Nutzen rechtfertigt.
-#
-# DIE FALLE, um die es hier im Kern geht:
-# PocketBase antwortet auf eine Regel, die nichts durchlaesst, mit HTTP 200
-# und einer leeren Liste — NICHT mit 403. Ein 403 kommt nur bei listRule =
-# null (Sammlung fuer niemanden ausser Superuser). Wer nur Statuscodes
-# prueft, haelt eine offene Sammlung fuer geschlossen: Eine Sammlung ohne
-# jede Leseregel liefert ebenfalls 200, nur eben mit Inhalt. Bei den
-# 200er-Pruefungen wird deshalb zusaetzlich totalItems == 0 verlangt.
-#
-# Schemamerkmale allein sehen eine Aenderung nur an den Hooks nicht: Laeuft
-# noch das alte Abbild, stimmt das Schema trotzdem. Ist ERWARTETER_COMMIT
-# gesetzt (der Deploy setzt ihn auf den ausgelieferten Commit), vergleicht
-# das Skript deshalb zusaetzlich, was GET /api/pp/version meldet. Der Commit
-# steht im Abbild in /pb_hooks, also dort, von wo PocketBase die Hooks laedt.
-# Von Hand aufgerufen ohne die Variable bleibt es bei den Schemamerkmalen.
-#
-# Reine Standardbibliothek — auf dem Runner ist nichts weiter noetig.
+# Prueft nach dem Deploy je Migration ein Schemamerkmal und den Hook-Commit, weil /api/health nur sagt, dass der Prozess laeuft. Aufruf: deploy-verify.py <basis-url>
 import json
 import os
 import sys
@@ -41,40 +7,21 @@ import time
 import urllib.error
 import urllib.request
 
-# Wie lange auf den Neustart gewartet wird. Der Portainer-Webhook antwortet
-# sofort, der Container braucht danach ein paar Sekunden: Image ziehen,
-# starten, Migrationen ausfuehren. Ueber Umgebungsvariablen steuerbar, damit
-# die Tests nicht eine Minute lang warten muessen.
+# Wartezeit auf den Neustart, per Umgebung verkuerzbar fuer die Tests.
 VERSUCHE = int(os.environ.get('VERIFY_VERSUCHE', '24'))
 ABSTAND = float(os.environ.get('VERIFY_ABSTAND', '5'))
 ZEITLIMIT = float(os.environ.get('VERIFY_ZEITLIMIT', '10'))
 ERWARTETER_COMMIT = os.environ.get('ERWARTETER_COMMIT', '').strip()
 VERSION_PFAD = '/api/pp/version'
 
-# Je Zeile: Pfad, erwarteter Status, erwartete Trefferzahl (None = egal),
-# welche Migration das belegt.
-#
-# Die Sollwerte sind am 14.09.2026 unangemeldet gegen die laufende Instanz
-# gemessen, nicht geschaetzt. Seit dem Upgrade auf PocketBase 0.40 prueft
-# tests/integration/migrations.test.js dieselben Werte gegen das echte
-# 0.40.4-Binary (26.09.2026: alle unveraendert).
-#
-# Die Migrationsnamen in der Spalte „belegt" sind die der urspruenglichen
-# 0.22-Migrationen (heute unter pocketbase/pb_migrations_022/). Unter 0.40
-# legt der Sammlungs-Snapshot 1790500000_collections_snapshot.js dasselbe an;
-# die Namen bleiben stehen, weil sie sagen, WARUM die Regel so ist.
+# Pfad, Status, Trefferzahl, belegende 0.22-Migration; gemessen am 14.09.2026, unter 0.40 von tests/integration/migrations.test.js bestaetigt.
 PRUEFUNGEN = (
-    # listRule = null → die Sammlung existiert und ist ueber die API fuer
-    # niemanden lesbar. Hier ist 403 die richtige Erwartung, und sie ist
-    # zugleich der Beweis, dass die Sammlung ueberhaupt angelegt wurde:
-    # Ein unbekannter Name liefert 404, kein 403.
+    # 403 heisst listRule null und belegt zugleich, dass die Sammlung existiert (sonst 404).
     ('/api/collections/store_secrets/records', 403, None,
      '1782690000_store_secret_collection — Tuergeheimnis liegt in einer eigenen, '
      'fuer niemanden lesbaren Sammlung'),
 
-    # Ab hier die 200er. Der Statuscode allein sagt nichts; entscheidend ist
-    # totalItems == 0. Stuende hier eine Zahl groesser null, waere die
-    # Sammlung unangemeldet offen.
+    # Bei 200 zaehlt totalItems == 0, sonst ist die Sammlung offen.
     ('/api/collections/store/records', 200, 0,
      '1782690000_store_secret_collection — store verlangt eine Anmeldung'),
     ('/api/collections/items/records', 200, 0,
@@ -82,17 +29,12 @@ PRUEFUNGEN = (
     ('/api/collections/action_counts/records', 200, 0,
      '1782710000_tighten_read_rules — die Besitzpruefung auf action_counts greift'),
 
-    # Laeuft PocketBase 0.40? Das Upgrade aendert an den Regeln der eigenen
-    # Sammlungen nichts — die Zeilen darueber waeren auch mit dem alten
-    # Abbild gruen. Die Superuser sind seit 0.23 eine eigene Sammlung,
-    # unangemeldet geschlossen (403). Unter 0.22 gibt es sie nicht (404).
+    # Superuser sind ab 0.23 eine eigene Sammlung (403), unter 0.22 fehlt sie (404).
     ('/api/collections/_superusers/records', 403, None,
      'PocketBase 0.40 laeuft — die Sammlung _superusers existiert und ist '
      'geschlossen (unter 0.22 gibt es sie nicht)'),
 
-    # Zum Schluss: laeuft die Instanz ueberhaupt. Alleine wertlos, zusammen
-    # mit den Zeilen darueber die Abgrenzung „erreichbar, aber falsch" gegen
-    # „nicht erreichbar".
+    # Grenzt „erreichbar, aber falsch“ gegen „nicht erreichbar“ ab.
     ('/api/health', 200, None,
      'die Instanz antwortet'),
 )
@@ -180,8 +122,7 @@ def eine_runde(basis):
                 )
                 continue
             if ist != soll_treffer:
-                # Der wichtigste Fall: Status stimmt, die Sammlung ist aber
-                # offen. Genau das uebersieht eine Pruefung auf Statuscodes.
+                # Status stimmt, die Sammlung ist aber offen.
                 alles_gut = False
                 zeilen.append(
                     f'  [OFFEN] {pfad}: HTTP {status}, aber totalItems={ist} '
@@ -210,8 +151,7 @@ def main():
 
     basis = sys.argv[1].rstrip('/')
     if not basis.startswith(('http://', 'https://')):
-        # Ohne diese Pruefung stirbt urllib mit einem Stacktrace statt mit
-        # einer lesbaren Meldung — im Workflow-Log ist das nicht zu deuten.
+        # Sonst stirbt urllib mit unlesbarem Stacktrace.
         print(f'Basis-URL muss mit http:// oder https:// beginnen: {basis!r}',
               file=sys.stderr)
         return 2

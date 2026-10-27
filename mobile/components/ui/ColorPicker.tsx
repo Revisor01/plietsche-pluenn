@@ -3,10 +3,7 @@ import { PP } from '../../lib/theme';
 import { Icon } from '../../lib/icons';
 import { PPText } from './Text';
 
-// Kuratierte Palette für Aushänge. Bewusst kein freies Hex-Feld: Auf dem Handy
-// umständlich, und weißer Text muss auf jeder Farbe lesbar bleiben. Alle Werte
-// sind dunkel genug dafür. Die Liste selbst steht im Theme (PP.accents) —
-// sie ist eine Gestaltungsentscheidung, keine Zuständigkeit dieses Bausteins.
+// Kuratierte Palette statt Hex-Feld, damit weißer Text lesbar bleibt; die Liste steht in PP.accents.
 export const AUSHANG_COLORS: { name: string; hex: string }[] = [...PP.accents];
 
 interface ColorPickerProps {
@@ -37,8 +34,7 @@ export function ColorPicker({ value, onChange, label = 'FARBE' }: ColorPickerPro
             borderRadius: PP.rTile2,
             alignItems: 'center',
             justifyContent: 'center',
-            // Standard = Markenfarbe. Vorher ein Zauberstab-Symbol, das wie
-            // "Farbe automatisch wählen" aussah und niemand deuten konnte.
+            // Standard ist die Markenfarbe.
             backgroundColor: PP.teal,
             borderWidth: !current ? 2 : 0,
             borderColor: PP.ink,

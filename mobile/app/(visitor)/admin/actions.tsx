@@ -21,10 +21,7 @@ function factorLabel(m: number): string {
   return `${m}`.replace('.', ',');
 }
 
-// Die Faktoren einer Aktion wurden hier einmal lokal nachgebaut und der
-// Fließtext daraus ein drittes Mal von Hand zusammengesetzt. Beides kommt
-// jetzt aus lib/format.ts — so heißt „Vorbeikommen" überall gleich, und eine
-// Änderung an der Darstellung wirkt an allen Stellen.
+// Faktoren und Text kommen aus lib/format.ts, damit sie überall gleich heißen.
 
 // Parse a PB datetime string into a local Date (for the picker).
 function parseDate(s?: string): Date | null {
@@ -32,9 +29,7 @@ function parseDate(s?: string): Date | null {
   const d = new Date(s.replace(' ', 'T'));
   return isNaN(d.getTime()) ? null : d;
 }
-// Local day → UTC ISO. Start = local 00:00, end = local 23:59:59. The device's
-// timezone (Europe/Berlin) is applied by the Date constructor, so a campaign
-// "1.12.–31.12." covers the full local days incl. the right offset.
+// Lokaler Tag → UTC-ISO, 00:00 bis 23:59:59 in der Gerätezeitzone.
 function dayStartIso(d: Date): string {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0).toISOString();
 }
@@ -50,8 +45,7 @@ function CampaignEditor({ campaign, onSaved }: { campaign?: Campaign; onSaved: (
   const [multBring, setMultBring] = useState(campaign?.mult_bring ?? 1);
   const [start, setStart] = useState<Date | null>(parseDate(campaign?.starts_at));
   const [end, setEnd] = useState<Date | null>(parseDate(campaign?.ends_at));
-  // Nur mitgeführt, damit Speichern die Verknüpfung nicht löscht — gepflegt
-  // wird sie im Abzeichen-Editor („Aktions-Teilnahme" → gekoppelte Aktion).
+  // Nur mitgeführt, damit Speichern die Kopplung nicht löscht; gepflegt wird sie im Abzeichen-Editor.
   const badgeId = campaign?.badge ?? '';
   const [color, setColor] = useState(campaign?.color ?? '');
   const [busy, setBusy] = useState(false);
@@ -175,8 +169,7 @@ export default function ActionsAdmin() {
   const onSaved = async () => {
     setOpenId(null); setCreating(false);
     await refetch();
-    // Der Aushang auf der Startseite liest ['campaigns','active-list'] — ein
-    // anderer Schlüssel als die Einzel-Aktion ['campaign','active'].
+    // Der Aushang liest ['campaigns','active-list'], nicht ['campaign','active'].
     await invalidateCampaigns(qc);
   };
 

@@ -1,19 +1,10 @@
 name: Google Play
 
-# Der Titel des Laufs traegt bei einem Probelauf die Marke [Probelauf]. Daran
-# erkennt der Schritt "Letzten veroeffentlichten Stand ermitteln" die Laeufe,
-# die nichts veroeffentlicht haben, und ueberspringt sie — sonst verschoebe ein
-# Probelauf den Vergleichsstand fuer die Release-Notes.
+# Die Marke [Probelauf] im Titel lässt die Ermittlung des letzten Stands diese Läufe überspringen.
 run-name: >-
   ${{ inputs.probelauf && '[Probelauf] ' || '' }}Google Play ${{ inputs.spur }}
 
-# Baut den aktuellen Stand von main als signiertes Android-Paket und laedt es
-# in eine Testspur bei Google Play. Gegenstueck zum TestFlight-Workflow, nur
-# ohne Mac — Android baut auf einem gewoehnlichen Linux-Runner.
-#
-# Der Dry-Run laeuft komplett durch (Bauen, Hochladen, Spur setzen, pruefen),
-# verwirft am Ende aber die Play-Bearbeitung. Nichts wird veroeffentlicht, und
-# die Versionsnummer bleibt unverbraucht — zum gefahrlosen Ausprobieren.
+# Signiertes Android-Paket in eine Play-Testspur; der Probelauf verwirft am Ende die Bearbeitung.
 
 on:
   workflow_dispatch:
@@ -33,12 +24,7 @@ on:
         options:
           - completed
           - draft
-        # Vorgabe bleibt completed: Der interne Weg laeuft seit Monaten so, und
-        # ein stillschweigender Wechsel auf draft haette Testfassungen unbemerkt
-        # in der Konsole liegen lassen, statt sie an die Tester:innen zu geben.
-        # draft wird deshalb bewusst gewaehlt — vor allem fuer die erste
-        # Einreichung in die Produktionsspur, die Google anders gar nicht
-        # annimmt ("Only releases with status draft may be created on draft app.").
+        # completed, damit Testfassungen bei den Tester:innen ankommen; draft nur für die erste Einreichung in production.
         default: completed
       hinweis:
         description: 'Was soll getestet werden? (leer = aus den Commits erzeugt)'
@@ -105,10 +91,7 @@ jobs:
         env:
           GPLAY_SA_JSON_BASE64: ${{ secrets.GPLAY_SA_JSON_BASE64 }}
           PROBELAUF: ${{ inputs.probelauf }}
-        # Die Nummer kommt aus Google Play, nicht aus dem Repo — dort muss sie
-        # eindeutig aufsteigen. Im Probelauf wird sie kuenstlich hochgesetzt,
-        # damit der Upload nicht an einer schon vergebenen Nummer scheitert;
-        # verbraucht wird sie nicht, die Bearbeitung wird ja verworfen.
+        # Nummer aus Google Play; im Probelauf künstlich hoch, sie wird nicht verbraucht.
         run: |
           echo "$GPLAY_SA_JSON_BASE64" | base64 --decode > /tmp/gplay-sa.json
           python3 .github/scripts/play-version.py /tmp/gplay-sa.json "$PACKAGE" \
@@ -126,8 +109,6 @@ jobs:
           d = json.loads(p.read_text(encoding='utf-8'))
           code = int(os.environ['VERSION_CODE'])
           if os.environ.get('PROBELAUF') == 'true':
-              # Weit nach oben, damit der Upload nicht an einer bereits
-              # vergebenen Nummer scheitert. Wird nie veroeffentlicht.
               code += 10000
           d['expo'].setdefault('android', {})['versionCode'] = code
           p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
@@ -158,17 +139,10 @@ jobs:
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        # Expo erzeugt eine Gradle-Konfiguration ohne Signaturangaben. Sie
-        # werden hier eingehaengt, statt sie ins Repo zu schreiben — die
-        # Zugangsdaten sollen nirgends im Quelltext stehen.
+        # Signierung einhängen statt ins Repo schreiben, die Zugangsdaten bleiben aus dem Quelltext.
         run: |
           python3 "$GITHUB_WORKSPACE/.github/scripts/android-signing.py"
-          # Die Werte als Aufrufparameter statt ueber gradle.properties: So
-          # stehen sie sicher am :app-Projekt an und landen nirgends in einer
-          # Datei, die im Arbeitsverzeichnis liegen bleibt.
-          # Ohne diese Angaben laeuft der Build auf dem Runner in eine
-          # zaehe Einzelspur — der erste Versuch stand nach 40 Minuten
-          # immer noch beim Uebersetzen.
+          # Als Aufrufparameter, damit nichts in einer Datei liegen bleibt; ohne die Angaben lief der Build über 40 Minuten.
           export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
           ./gradlew bundleRelease --no-daemon --build-cache \
             "-PPP_KEYSTORE_PATH=/tmp/release.jks" \
@@ -181,20 +155,7 @@ jobs:
         id: vorher
         env:
           GH_TOKEN: ${{ github.token }}
-        # Der Commit des letzten Laufs, der tatsaechlich veroeffentlicht hat.
-        # Ein Git-Tag scheidet aus: Der eingebaute Token darf keine Referenz
-        # setzen, die auf Workflow-Dateien zeigt.
-        #
-        # Der Branch gehoert in die Abfrage: Ohne ihn zaehlt auch ein Lauf von
-        # einem Nebenzweig als Vergleichsstand, und die Hinweise entstuenden
-        # dann aus einem Bereich, der mit diesem Zweig nichts zu tun hat.
-        #
-        # Probelaeufe scheiden ebenfalls aus: Sie verwerfen die Play-Bearbeitung
-        # und veroeffentlichen nichts, enden aber mit Erfolg. Zaehlten sie mit,
-        # gaelte der Commit des Probelaufs beim naechsten echten Lauf als
-        # "zuletzt ausgeliefert" — alle Aenderungen bis dahin fielen aus den
-        # Hinweisen heraus, obwohl sie nie bei einem Menschen angekommen sind.
-        # Erkennbar sind sie an der Marke [Probelauf] im Titel (siehe run-name).
+        # Letzter veröffentlichter Commit dieses Branches ohne Probeläufe; kein Tag, weil der Token keine Referenz auf Workflow-Dateien setzen darf.
         run: |
           SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
             "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/play-internal.yml/runs?status=success&branch=${GITHUB_REF_NAME}&per_page=50" \
@@ -238,9 +199,7 @@ jobs:
           retention-days: 1
 
   upload:
-    # Eigener Job über den Baustein: prüft vor dem Anlegen der Bearbeitung,
-    # wiederholt bei 5xx und verwirft sie bei Fehlern. Anteil 1: production
-    # geht wie bisher an alle.
+    # Baustein prüft vorab, wiederholt bei 5xx und verwirft bei Fehlern.
     needs: [build]
     uses: Revisor01/workflows/.github/workflows/play-upload.yml@97284908c8f72a4e54b593e2c43b56377eda0606 # 1.4.0
     with:

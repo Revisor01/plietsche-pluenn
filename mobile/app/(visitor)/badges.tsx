@@ -10,11 +10,7 @@ import type { IconName } from '../../lib/icons';
 import type { Badge, UserBadge } from '../../lib/types';
 import type { TierStep } from '../../lib/format';
 
-/**
- * Was ein Abzeichen bedeutet und wie weit man ist — die Beschreibung hat in
- * der Kachel keinen Platz, verschwinden soll sie deshalb aber nicht.
- * Bei geheimen Abzeichen bleibt sie verdeckt, bis die erste Stufe steht.
- */
+/** Beschreibung und Fortschritt eines Abzeichens; bei geheimen erst ab der ersten Stufe. */
 function BadgeSheet({
   badge,
   ub,
@@ -203,17 +199,13 @@ export default function Badges() {
           const progress = ub?.progress ?? 0;
           const info = badgeTierInfo(b, progress, ranks);
           const earned = info.current !== 'none';
-          // Ungelöste Badges bleiben sichtbar und grau — auch nach Aktionsende,
-          // dann eben als Leerstelle in der Sammlung.
+          // Ungelöste bleiben grau sichtbar, auch nach Aktionsende.
           const tierC = earned && info.current !== 'none' ? TIER_COLORS[info.current] : null;
           // Geheim: bis zur ersten Stufe weder Name noch Fortschritt verraten.
           const veiled = !!b.is_secret && !earned;
 
-          // Einzel-Abzeichen kennen keine Stufen — "0/1 bis Gold" wäre dort
-          // irreführend. Sie zeigen offen/erreicht, nicht einen Zählerstand.
+          // Einzel-Abzeichen zeigen offen oder erreicht, keinen Zählerstand.
           const single = b.kind === 'single';
-          // Eigene Farbe für Einzel-Abzeichen: Sie stehen außerhalb der
-          // Stufenlogik und sollen sich auch optisch davon abheben.
           const accent = normalizeHex(b.color);
           const ringColors: [string, string, string] =
             single && earned && accent

@@ -1,13 +1,4 @@
-// Gemeinsame Handgriffe der Integrationstests.
-//
-// Die App spricht mit dem Backend über das SDK `pocketbase` in Version
-// 0.22.1 (mobile/package.json). Genau diese Version liegt hier als
-// devDependency — die Tests gehen damit denselben Weg wie die App auf den
-// Geräten, einschließlich der Art, wie das SDK Filter und Anfragen baut.
-//
-// Der Superuser läuft bewusst NICHT über das SDK: 0.22.1 kennt nur den alten
-// Weg /api/admins, den es in 0.40 nicht mehr gibt. Die App braucht ihn nicht;
-// die Tests nur, um an den Regeln vorbei nachzusehen.
+// Handgriffe der Integrationstests mit dem SDK der Apps (0.22.1); der Superuser geht am SDK vorbei, weil 0.22.1 nur /api/admins kennt.
 
 import { inject } from 'vitest';
 import PocketBase from 'pocketbase';
@@ -70,10 +61,7 @@ export function uniqueEmail(name) {
   return `${name}.${Date.now().toString(36)}${seq}@integration.test`;
 }
 
-/**
- * Legt ein Konto an, wie es die Registrierung der App tut, und meldet es an.
- * Gibt den angemeldeten SDK-Client zurück.
- */
+/** Registriert und meldet ein Konto an wie die App und gibt den Client zurück. */
 export async function registerAndLogin(name, extra = {}) {
   const pb = client();
   const email = uniqueEmail(name);

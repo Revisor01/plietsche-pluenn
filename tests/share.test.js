@@ -1,8 +1,4 @@
-// Teilen, Empfehlen, Bewerten — die Texte und Adressen.
-//
-// Geprüft wird die reine Logik in mobile/lib/share.ts. Ob das Teilen-Menü auf
-// dem Gerät aufgeht, sieht dieser Test nicht; dass die Screens die Logik
-// benutzen, prüfen die Text-Tests unten.
+// Logik aus mobile/lib/share.ts; die Screens werden unten als Text geprüft.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -145,9 +141,7 @@ describe('Die Screens benutzen es', () => {
     const src = code('mobile/app/(visitor)/items/[id].tsx');
     expect(src).toMatch(/itemShareText\(/);
     expect(src).toMatch(/canShareItem\(item\)/);
-    // Mit Foto: auf beiden Plattformen als Datei angehängt, über
-    // react-native-share (das Share von React Native nimmt unter Android
-    // nur Text). Kein Zweig nach Plattform.
+    // Foto als Datei über react-native-share, ohne Plattform-Zweig.
     expect(src).toMatch(/from 'react-native-share'/);
     expect(src).toMatch(/RNShare\.open\(/);
     expect(src).toMatch(/File\.downloadFileAsync\(/);

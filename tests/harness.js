@@ -1,47 +1,4 @@
-// Testumgebung für PocketBase-Hooks.
-//
-// PocketBase führt die Hooks in einer eigenen JavaScript-Umgebung aus (Goja,
-// kein Node). Globale Funktionen wie routerAdd, cronAdd, $app, ApiError oder
-// Record stellt die Laufzeit bereit — in einem Node-Test gibt es sie nicht.
-//
-// Dieser Harness baut sie nach: eine App im Speicher mit den Sammlungen, die
-// die Hooks lesen, dazu die Globals. Die Hook-Datei wird über das vm-Modul in
-// diese Umgebung geladen; die dabei registrierten Routen, Middlewares,
-// Record-Hooks und Cronjobs landen in Listen und lassen sich einzeln
-// aufrufen. Ohne laufende Instanz, ohne Docker.
-//
-// Maßstab ist PocketBase 0.40.4 (JSVM-Schnittstelle ab 0.23: $app.save,
-// $app.findRecordsByFilter, e.auth, e.requestInfo().body, e.next(), …). Nur
-// was die Hooks benutzen, ist nachgebaut — ein Aufruf der alten Schnittstelle
-// ($app.dao(), c.get('authRecord'), onRecordBeforeCreateRequest) scheitert
-// hier wie in Produktion.
-//
-// Ein gutmütiger Harness macht Tests grün, die in Produktion scheitern würden
-// — deshalb verhält er sich an den Stellen, an denen die Hooks sich auf
-// PocketBase verlassen, so streng wie das Original:
-//
-//   - Das Schema (Sammlungen, Felder, Feldtypen, UNIQUE-Indizes) kommt aus
-//     dem Sammlungs-Snapshot in pocketbase/pb_migrations/ und den Migrationen
-//     danach, nicht aus einer Liste im Test. Unbekannte Sammlungen und Felder
-//     fallen auf.
-//   - Filter werden geparst wie in PocketBase: leerer Filter, unbekanntes Feld
-//     oder ein unquotierter Wert rechts sind Fehler. Platzhalter {:name}
-//     brauchen einen Wert.
-//   - Datumsfelder werden in PocketBase-Form gespeichert
-//     ("2026-09-26 10:00:00.000Z") und im Filter als TEXT verglichen, wie
-//     SQLite es tut.
-//   - Lesen liefert eine frische Kopie des gespeicherten Stands. Was ein Hook
-//     an einem Datensatz ändert, ist erst nach dem Speichern für andere
-//     sichtbar.
-//   - Speichern kann scheitern: UNIQUE-Verletzung oder ein im Test gestellter
-//     Fehler (failSaveOn).
-//   - runInTransaction rollt bei einem Fehler ALLES zurück. Wer innerhalb der
-//     Transaktion über $app statt txApp schreibt, bekommt einen Fehler (in
-//     PocketBase wartet das auf die eigene Schreibverbindung); wer über $app
-//     liest, sieht den Stand vor der Transaktion.
-//   - Record-Hooks laufen als Kette: Erst e.next() speichert. Was ein Hook
-//     danach am Datensatz ändert, ohne selbst zu speichern, ist verloren —
-//     der Test sieht den gespeicherten Stand.
+// Testumgebung für PocketBase-Hooks: baut Goja-Globals und Schema aus dem Snapshot nach, so streng wie PocketBase 0.40.4.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -55,29 +12,12 @@ const MIGRATIONS_DIR = path.join(__dirname, '..', 'pocketbase', 'pb_migrations')
 const NO_ROWS = 'sql: no rows in result set';
 const BAD_FILTER = 'invalid or empty filter expression';
 
-// Das Anmeldegeheimnis der Sammlung `users` im Harness (users.authToken.secret).
-// Tests, die Token signieren, benutzen denselben Wert.
+// Anmeldegeheimnis von `users`, auch zum Signieren in Tests.
 const USERS_TOKEN_SECRET = 'harness-users-authtoken-secret-0123456789';
 
-// ── Schema aus dem Sammlungs-Snapshot ──────────────────────────
-//
-// Seit PocketBase 0.40 beschreibt ein einziger Snapshot das Schema
-// (*_collections_snapshot.js, app.importCollections). Migrationen davor
-// stammen aus der 0.22-Zeit und sind durch ihn ersetzt; Migrationen danach
-// bauen darauf auf.
-//
-// Die Dateien werden in einer nachgebauten Migrationsumgebung AUSGEFÜHRT,
-// nicht geparst: Der Snapshot schreibt vor dem Import IDs um, spätere
-// Migrationen fügen Felder über collection.fields.add() hinzu — ein Parser
-// müsste all das nachvollziehen und läge beim nächsten Umbau falsch.
-//
-// Nachgebaut ist nur, was Migrationen aufrufen: Sammlungen finden, importieren,
-// speichern, löschen; Collection mit fields; Feldklassen; Record und
-// $security. Datensätze gibt es hier nicht — Seed-Migrationen laufen ins
-// Leere, hier interessiert nur die Form der Sammlungen.
+// ── Schema: Snapshot und spätere Migrationen werden ausgeführt, nicht geparst ──
 
-// Felder, die PocketBase jeder Auth-Sammlung selbst gibt, falls eine
-// Migration sie nicht nennt (der Snapshot nennt sie).
+// Felder, die PocketBase jeder Auth-Sammlung selbst gibt.
 const AUTH_SYSTEM_FIELDS = [
   { name: 'id', type: 'text', system: true, required: true, primaryKey: true },
   { name: 'password', type: 'password', system: true, required: true, hidden: true },
@@ -221,8 +161,7 @@ function loadSchema() {
       }
       if (this.type === 'auth') {
         for (const f of AUTH_SYSTEM_FIELDS) if (!this.fields.getByName(f.name)) this.fields.add(new Field(f));
-        // Die Optionen einer Auth-Sammlung mit den Vorgaben von PocketBase —
-        // Migrationen stellen sie um (1790500200_settings.js etwa authAlert).
+        // Vorgaben von PocketBase, Migrationen stellen sie um.
         for (const [key, def] of Object.entries({
           authAlert: { enabled: true, emailTemplate: { subject: '', body: '' } },
           authToken: { duration: 604800 },
@@ -261,9 +200,7 @@ function loadSchema() {
 
   const migApp = {
     findCollectionByNameOrId: (nameOrId) => find(nameOrId),
-    // importCollections(liste, deleteMissing): wie PocketBase — vorhandene
-    // Sammlungen (über ID, sonst Namen) werden mit dem Import überlagert;
-    // Felder, die der Import nicht nennt, bleiben ohne deleteMissing stehen.
+    // Wie PocketBase: vorhandene überlagern, ohne deleteMissing bleiben Felder stehen.
     importCollections: (list, deleteMissing) => {
       const imported = [];
       for (const raw of list || []) {
@@ -415,19 +352,12 @@ function requireCollection(name) {
   return c;
 }
 
-// ── Werte wie PocketBase sie speichert ─────────────────────────
-//
-// PocketBase bringt jeden Wert beim Setzen in die Form seines Feldtyps
-// (SchemaField.PrepareValue). Der Harness macht dasselbe; sonst vergleicht ein
-// Test Äpfel (was der Hook übergeben hat) mit Birnen (was in der Datenbank
-// stünde).
+// ── Werte in die Form ihres Feldtyps bringen, wie PocketBase ──
 
 // Wie SQLite eine Zeichenkette als Zahl erkennt.
 const NUMERIC_TEXT = /^\s*[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?\s*$/;
 
-// Datumsformen, die PocketBase beim Setzen annimmt: "JJJJ-MM-TT" mit
-// optionaler Uhrzeit, getrennt durch "T" oder Leerzeichen, mit optionaler
-// Zeitzone. Ohne Zeitzone liest PocketBase UTC.
+// Datumsformen mit optionaler Uhrzeit und Zone; ohne Zone UTC.
 const DATE_INPUT =
   /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?))?\s*(Z|[+-]\d{2}:?\d{2})?$/;
 
@@ -435,8 +365,7 @@ function isDate(value) {
   return Object.prototype.toString.call(value) === '[object Date]';
 }
 
-// "2026-09-26T10:00:00.000Z" → "2026-09-26 10:00:00.000Z", wie PocketBase
-// Datumsfelder schreibt und wie `get()` sie zurückgibt.
+// "2026-09-26T10:00:00.000Z" → "2026-09-26 10:00:00.000Z".
 function toPbDate(value, where) {
   if (value === null || value === undefined) return '';
   let ms;
@@ -458,8 +387,7 @@ function toPbDate(value, where) {
   } else {
     ms = NaN;
   }
-  // Bewusste Abweichung: PocketBase macht aus einem unlesbaren Datum still
-  // den Leerwert. Im Test soll so ein Wert auffallen, statt zu verschwinden.
+  // Bewusste Abweichung: ein unlesbares Datum soll auffallen.
   if (Number.isNaN(ms)) {
     throw new Error(`Harness: ${where} ist kein Datum, das PocketBase lesen kann: ${JSON.stringify(value)}`);
   }
@@ -484,8 +412,7 @@ function toPbText(value, where) {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  // Bewusste Abweichung: PocketBase speichert für ein Objekt (etwa einen
-  // ganzen Datensatz statt seiner ID) still den Leerstring.
+  // Bewusste Abweichung: ein Objekt statt einer ID soll auffallen.
   throw new Error(`Harness: ${where} erwartet Text, bekam ${Object.prototype.toString.call(value)}`);
 }
 
@@ -503,16 +430,13 @@ function kindOf(type) {
     case 'geoPoint':
       return 'json';
     default:
-      // text, email, url, editor, password, select, relation, file — in
-      // diesem Schema alle mit maxSelect 1, also ein einzelner Text.
+      // Hier alle mit maxSelect 1.
       return 'text';
   }
 }
 
 function prepareValue(def, value, where) {
-  // Mehrfachfelder (maxSelect > 1) speichert PocketBase als Liste. Im Schema
-  // gibt es keine; kommt eines dazu, soll das hier auffallen statt still als
-  // Text gespeichert zu werden.
+  // Mehrfachfelder gibt es nicht, ein neues soll auffallen.
   if (def.maxSelect > 1) throw new Error(`Harness: Mehrfachfeld ${where} ist nicht nachgebildet`);
   switch (kindOf(def.type)) {
     case 'number':
@@ -522,17 +446,14 @@ function prepareValue(def, value, where) {
     case 'date':
       return toPbDate(value, where);
     case 'json':
-      // Nicht nachgebildet: PocketBase reicht JSON als Rohwert durch. Der
-      // Harness speichert, was übergeben wurde.
+      // Nicht nachgebildet: JSON als Rohwert.
       return value;
     default:
       return toPbText(value, where);
   }
 }
 
-// Der Nullwert des Feldtyps: Das liefert PocketBase für ein nicht gesetztes
-// Feld. Die Hooks prüfen teils mit `== null` auf „nicht gesetzt" — das greift
-// bei 0, false und '' nicht, und der Harness muss diesen Unterschied abbilden.
+// Nullwert des Feldtyps, weil `== null` bei 0, false und '' nicht greift.
 function zeroValue(def) {
   switch (kindOf(def.type)) {
     case 'number':
@@ -549,10 +470,7 @@ function clone(v) {
   return v !== null && typeof v === 'object' ? structuredClone(v) : v;
 }
 
-// ── Datensatz ──────────────────────────────────────────────────
-// Bildet die Record-Schnittstelle nach, die die Hooks tatsächlich benutzen:
-// get(feld), set(feld, wert), id, isNew(), isSuperuser(), collection() und
-// tokenKey().
+// ── Datensatz: die Record-Schnittstelle, die die Hooks benutzen ──
 let idCounter = 0;
 function nextId(prefix) {
   idCounter += 1;
@@ -613,11 +531,7 @@ class FakeRecord {
     return zeroValue(def);
   }
 
-  // Bewusste Abweichung bei unbekannten Feldern: PocketBase hält den Wert
-  // im Speicher und verwirft ihn beim Speichern still — nach dem Neuladen ist
-  // er weg. Ein Tippfehler im Hook (`set('taken_ta', …)`) ginge so in
-  // Produktion unbemerkt verloren, und im Test ebenso. Der Harness wirft
-  // deshalb sofort, mit Sammlung und Feldname in der Meldung.
+  // Bewusste Abweichung: unbekannte Felder werfen sofort, statt still verloren zu gehen.
   set(field, value) {
     if (field === 'id') {
       this.id = `${value}`;
@@ -633,8 +547,7 @@ class FakeRecord {
     this._data[field] = prepareValue(def, value, `${this.collectionName}.${field}`);
   }
 
-  // Momentaufnahme für Assertions: alle Felder des Schemas, wie nach dem
-  // Neuladen aus der Datenbank.
+  // Alle Felder wie nach dem Neuladen.
   data() {
     const out = { id: this.id };
     for (const [name, def] of Object.entries(this._schema.fields)) {
@@ -645,35 +558,7 @@ class FakeRecord {
   }
 }
 
-// ── Filter ─────────────────────────────────────────────────────
-//
-// Nachgebaut wie PocketBase (search.FilterData → fexpr; gemessen an 0.22.21 und
-// 0.40.4, in diesen Punkten gleich): Ein Ausdruck aus
-// Vergleichen `links OP rechts`, verknüpft mit && und ||, Klammern erlaubt.
-// Jeder Operand ist
-//   - eine Zahl, true/false, null,
-//   - ein Text in "…" oder '…',
-//   - ein Platzhalter {:name} (Wert aus params),
-//   - oder ein Feldname der Sammlung.
-// Alles andere ist ein Fehler — auch ein unquotierter Wert rechts
-// (`status = pending`): PocketBase liest ihn als Feldnamen, findet keinen und
-// lehnt den Filter ab. Ebenso ein unbekanntes Feld (0.40.4: „invalid filter
-// expression: invalid right operand "pending" - unknown field").
-//
-// Bewusste Abweichung beim LEEREN Filter: 0.22 lehnte ihn ab, 0.40 liest ihn
-// als „kein Filter" und liefert alle Datensätze (gemessen am 26.09.2026). In
-// den Hooks ist ein leerer Filter immer ein Fehler — ein zusammengesetzter
-// Ausdruck, dem ein Teil fehlt —, und „alle Datensätze" wäre die gefährlichste
-// Antwort darauf. Der Harness lehnt ihn deshalb weiter ab.
-//
-// Verglichen wird wie in SQLite: Zahlen- und Wahrheitsfelder mit numerischer
-// Affinität, alle anderen (auch Datumsfelder!) als TEXT. Ein Datum in T-Form
-// als Grenze liefert deshalb gegen gespeichertes "2026-09-26 10:00:00.000Z"
-// dasselbe falsche Ergebnis wie in Produktion ('T' > ' ').
-//
-// Relationspfade (a.b), @request/@collection und die Operatoren ~, !~ und ?…
-// kommen in den Hooks nicht vor; der Harness lehnt sie ab, statt still falsch
-// zu antworten.
+// ── Filter wie PocketBase geparst und wie SQLite verglichen (Datum als TEXT); leerer Filter, Relationspfade und ~ ?… werden abgelehnt ──
 
 function harnessUnsupported(detail) {
   return new Error(`Harness: Filter nicht unterstützt: ${detail}`);
@@ -748,8 +633,7 @@ function tokenize(src) {
   return tokens;
 }
 
-// Operand auflösen. Ergebnis: eine Funktion record → { value, affinity }.
-// affinity ist 'NUMERIC', 'TEXT' oder null (Literal ohne Affinität).
+// Operand → record → { value, affinity }.
 function resolveOperand(tok, schema, params) {
   switch (tok.t) {
     case 'num':
@@ -800,10 +684,7 @@ function resolveOperand(tok, schema, params) {
   }
 }
 
-// SQLite: Hat eine Seite numerische Affinität und die andere nicht, bekommt
-// die andere numerische Affinität (Text, der wie eine Zahl aussieht, wird zur
-// Zahl). Hat eine Seite TEXT-Affinität und die andere keine, wird die andere
-// zu Text.
+// Affinität wie in SQLite angleichen.
 function applyAffinity(l, r) {
   const toNum = (x) => (typeof x.value === 'string' && NUMERIC_TEXT.test(x.value) ? Number(x.value) : x.value);
   const toText = (x) => (typeof x.value === 'number' ? String(x.value) : x.value);
@@ -814,8 +695,7 @@ function applyAffinity(l, r) {
   return [l.value, r.value];
 }
 
-// Vergleich nach SQLite-Regeln: Zahlen untereinander numerisch, Texte
-// bytweise, jede Zahl ist kleiner als jeder Text. null bei NULL.
+// SQLite: Zahlen numerisch, Texte bytweise, Zahl < Text, null bei NULL.
 function sqlCompare(a, b) {
   if (a === null || a === undefined || b === null || b === undefined) return null;
   const an = typeof a === 'number';
@@ -836,8 +716,7 @@ function compileComparison(leftTok, opTok, rightTok, schema, params) {
   return (rec) => {
     let l = left(rec);
     let r = right(rec);
-    // PocketBase vergleicht = und != über COALESCE(x, ''): null zählt dort
-    // wie der Leerstring.
+    // = und != über COALESCE(x, ''), null zählt wie ''.
     if (op === '=' || op === '!=') {
       if (l.value === null) l = { value: '', affinity: l.affinity };
       if (r.value === null) r = { value: '', affinity: r.affinity };
@@ -918,20 +797,7 @@ function matchesFilter(record, filter, params) {
   return compileFilter(record.collectionName, filter, params)(record);
 }
 
-// Sortierung nachbilden.
-//
-// Absteigend wird absteigend sortiert — nicht aufsteigend sortiert und dann
-// umgedreht. Der Unterschied zeigt sich bei Gleichstand: `.reverse()` dreht
-// gleiche Werte gegeneinander um, und der Harness lieferte dann eine andere
-// Reihenfolge als PocketBase. Konkret betrifft das findActiveCampaign
-// (sortiert nach "-multiplier"): Bei zwei Aktionen mit demselben Faktor nimmt
-// PocketBase die erste, der Harness nahm die letzte — die Tests hätten eine
-// andere Aktion geprüft als die, die im Laden gilt.
-//
-// Array.prototype.sort ist seit ES2019 stabil, gleiche Werte behalten also
-// ihre Eingabereihenfolge. Genau das braucht es hier. Mehrere Felder
-// ("-a,b") werden der Reihe nach verglichen; ein unbekanntes Feld ist, wie in
-// PocketBase, ein Fehler.
+// Absteigend sortieren statt umdrehen, damit Gleichstände wie in PocketBase bleiben.
 function applySort(rows, sort, schema) {
   const s = `${sort || ''}`.trim();
   if (!s) return rows;
@@ -952,23 +818,9 @@ function applySort(rows, sort, schema) {
   });
 }
 
-// ── Speicher ───────────────────────────────────────────────────
-//
-// Gespeichert werden Zeilen (einfache Objekte in PB-Form), nicht die
-// Datensatz-Objekte selbst. Jedes Lesen liefert eine frische Kopie — wie
-// PocketBase, das jedes Mal aus der Datenbank lädt. Was ein Hook an einem
-// geladenen Datensatz ändert, ohne ihn zu speichern, sieht niemand sonst; und
-// wer einen veralteten Datensatz speichert, überschreibt die ganze Zeile.
-//
-// FakeDao ist der Speicher, den die TESTS sehen (h.dao): Er hat die Methoden
-// der 0.40-App und zusätzlich saveRecord/deleteRecord als Kurzform für
-// Fixtures. Die Hooks sehen ihn nie direkt, sondern nur über appFacade() —
-// dort gibt es ausschließlich die 0.40-Schnittstelle.
+// ── Speicher: Zeilen in PB-Form, jedes Lesen eine frische Kopie ──
 
-// Wert für ein Feld mit autogeneratePattern (username, tokenKey). PocketBase
-// füllt sie beim Anlegen zufällig; hier fortlaufend, damit zwei Datensätze
-// nie zufällig kollidieren. Unterstützt, was im Schema vorkommt: Literale,
-// Zeichenklassen [...] und Wiederholungen {n}.
+// Fortlaufend statt zufällig, damit nichts kollidiert.
 let autogenCounter = 0;
 function autogenerate(pattern) {
   autogenCounter += 1;
@@ -1063,10 +915,7 @@ class FakeDao {
     }
   }
 
-  // Zeile einfügen, ohne die Fehlerquellen des Speicherns — für die
-  // Ausgangsdaten eines Tests. UNIQUE wird trotzdem geprüft: Eine Fixture,
-  // die PocketBase so gar nicht speichern könnte, prüft einen Zustand, den
-  // es in Produktion nicht gibt.
+  // Für Ausgangsdaten, UNIQUE wird trotzdem geprüft.
   _seed(record) {
     const schema = record._schema;
     const table = this._table(schema.name);
@@ -1097,15 +946,12 @@ class FakeDao {
 
   findRecordById(collection, id) {
     const row = this._table(collection, this._view()).find((r) => r.id === `${id}`);
-    // PocketBase wirft, wenn nichts gefunden wird — die Hooks verlassen sich
-    // darauf und fangen den Fehler ab.
+    // PocketBase wirft, wenn nichts gefunden wird.
     if (!row) throw new Error(NO_ROWS);
     return this._load(collection, row);
   }
 
-  // Der Filter wird VOR dem Lesen geprüft, wie in PocketBase: Ein kaputter
-  // Filter scheitert auch auf einer leeren Sammlung. Platzhalterwerte kommen
-  // als letzte Argumente (…params), wie in PocketBase auch mehrere.
+  // Filter vor dem Lesen prüfen, Platzhalterwerte als letzte Argumente.
   findFirstRecordByFilter(collection, filter, ...params) {
     const pred = compileFilter(collection, filter, mergeParams(params));
     const hit = this._all(collection).find(pred);
@@ -1123,10 +969,7 @@ class FakeDao {
     return hit;
   }
 
-  // Reihenfolge wie in PocketBase: erst filtern, dann sortieren, dann `offset`
-  // überspringen, dann auf `limit` kürzen. `offset` wird ernst genommen — ein
-  // Test, der sich auf Blätterung verlässt, prüft sonst etwas anderes als die
-  // Produktion.
+  // Filtern, sortieren, `offset`, `limit`.
   findRecordsByFilter(collection, filter, sort, limit, offset, ...params) {
     const schema = requireCollection(collection);
     const pred = compileFilter(collection, filter, mergeParams(params));
@@ -1140,11 +983,7 @@ class FakeDao {
     return limit && limit > 0 ? page.slice(0, limit) : page;
   }
 
-  // Fehlerquelle für Tests: Jedes Speichern auf `collection`, für das
-  // `predicate(record)` wahr ist (ohne Prädikat: jedes), scheitert mit
-  // `message`. Damit lässt sich prüfen, was ein Hook hinterlässt, wenn ein
-  // Schreibvorgang mitten in einer Folge scheitert. Rückgabe: Funktion, die
-  // die Fehlerquelle wieder entfernt.
+  // Lässt Speichern auf `collection` mit `message` scheitern; gibt eine Entfern-Funktion zurück.
   failSaveOn(collection, predicate, message) {
     requireCollection(collection);
     const entry = {
@@ -1158,8 +997,7 @@ class FakeDao {
     };
   }
 
-  // $app.saveNoValidate: speichern ohne Feldprüfung — wie unter 0.22
-  // dao.saveRecord. Die Hooks schreiben so (siehe lib/points.js).
+  // Ohne Feldprüfung, so schreiben die Hooks.
   saveNoValidate(record) {
     const schema = record._schema;
     for (const f of this._saveFailures) {
@@ -1172,15 +1010,12 @@ class FakeDao {
     const now = toPbDate(new Date(), 'jetzt');
 
     if (record.isNew()) {
-      // Ein neuer Datensatz mit vergebener ID ist ein INSERT — SQLite lehnt
-      // die doppelte ID ab.
+      // Doppelte ID beim INSERT.
       if (i >= 0) throw new Error(`UNIQUE constraint failed: ${schema.name}.id`);
       if (!row.created) row.created = now;
       if (!row.updated) row.updated = now;
     } else {
-      // Bewusste Abweichung: PocketBase schickt ein UPDATE ins Leere, wenn es
-      // die Zeile nicht (mehr) gibt, und meldet keinen Fehler. Im Test ist das
-      // fast immer eine unvollständige Fixture — deshalb laut.
+      // Bewusste Abweichung: UPDATE ins Leere ist meist eine unvollständige Fixture.
       if (i < 0) {
         throw new Error(`Harness: ${schema.name}/${row.id} gibt es nicht, das UPDATE ginge ins Leere`);
       }
@@ -1198,10 +1033,7 @@ class FakeDao {
     return record;
   }
 
-  // $app.save: mit Feldprüfung, wie PocketBase ab 0.23. Nachgebildet sind
-  // Pflichtfelder, Höchstlänge von Text und die erlaubten Werte eines
-  // Auswahlfelds — genug, damit ein Hook, der auf save umstellt, im Test an
-  // denselben Stellen scheitert wie in Produktion.
+  // Mit Pflichtfeldern, Textlänge und Auswahlwerten.
   save(record) {
     const schema = record._schema;
     const problems = [];
@@ -1250,16 +1082,14 @@ function mergeParams(list) {
   return any ? out : undefined;
 }
 
-// Die App, wie ein Hook sie sieht: $app (tx = false) oder txApp (tx = true).
-// Nur die 0.40-Methoden, die die Hooks benutzen.
+// Die App, wie ein Hook sie sieht: $app oder txApp.
 function appFacade(dao, tx) {
   const deadlock = (what) =>
     new Error(
       `Harness: $app.${what} während einer laufenden Transaktion. In PocketBase wartet das auf ` +
         'die einzige Schreibverbindung, die die Transaktion selbst hält — txApp benutzen.'
     );
-  // Lesen über $app während einer Transaktion: eigene Verbindung, also der
-  // festgeschriebene Stand von vor der Transaktion.
+  // $app sieht während einer Transaktion den Stand davor.
   const read = (fn) => {
     if (tx || !dao._tx) return fn();
     dao._readView = dao._tx.committed;
@@ -1287,9 +1117,7 @@ function appFacade(dao, tx) {
     saveNoValidate: (record) => write('saveNoValidate', () => dao.saveNoValidate(record)),
     delete: (record) => write('delete', () => dao.delete(record)),
     isTransactional: () => tx,
-    // Alles oder nichts: Wirft fn, wird der Stand von vorher wiederhergestellt
-    // und der Fehler weitergereicht. Eine Transaktion in der Transaktion
-    // (txApp.runInTransaction) läuft in derselben mit.
+    // Alles oder nichts; verschachtelt läuft es mit.
     runInTransaction: (fn) => {
       if (tx) return fn(app);
       if (dao._tx) throw deadlock('runInTransaction');
@@ -1314,8 +1142,7 @@ function appFacade(dao, tx) {
   return app;
 }
 
-// Ein Superuser, wie e.auth ihn ab 0.23 liefert: Datensatz aus _superusers,
-// ohne Rolle, ohne Konto in `users`.
+// Superuser aus _superusers, ohne Rolle und ohne `users`-Konto.
 function superuserRecord(admin) {
   const id = (admin && admin.id) || 'superuser00001';
   return {
@@ -1374,16 +1201,7 @@ function signJWT(claims, key) {
   return `${head}.${body}.${sig}`;
 }
 
-// ── Umgebung aufbauen und Hook laden ───────────────────────────
-//
-// store: { sammlung: [ {feld: wert}, … ] } — die Datensätze, die es geben soll.
-//   Nur Sammlungen und Felder aus dem Schema; `__name` legt einen Zugriff
-//   über h.records.<name> an.
-// opts.realPush: lib/push.js echt laden statt ersetzen (siehe require unten).
-// opts.libs: { 'lib/<datei>.js': exports } — Bibliotheken, die es im Repo
-//   nicht gibt, sondern erst im Abbild (lib/build.js mit dem Commit). Ohne
-//   Eintrag scheitert require() daran wie in einer Instanz ohne die Datei.
-// Rückgabe: { routes, crons, dao, app, records, call, runCron, failSaveOn, … }
+// ── Umgebung aufbauen: store, opts.realPush, opts.libs; gibt { routes, crons, dao, app, records, call, runCron, failSaveOn, … } zurück ──
 function loadHook(hookFile, store = {}, opts = {}) {
   const realPush = !!opts.realPush;
   const extraLibs = opts.libs || {};
@@ -1399,8 +1217,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
     }
   }
 
-  // h.records.<name>: bei jedem Zugriff frisch aus dem gespeicherten Stand
-  // geladen, wie ein Neuladen in der App. Gelöschte Datensätze sind undefined.
+  // Bei jedem Zugriff frisch geladen, Gelöschtes ist undefined.
   const records = new Proxy(
     {},
     {
@@ -1482,8 +1299,6 @@ function loadHook(hookFile, store = {}, opts = {}) {
     TooManyRequestsError: errorClass(429),
     InternalServerError: errorClass(500),
 
-    // Record-Konstruktor: new Record(collection[, daten]) — die Hooks setzen
-    // die Felder danach einzeln per set().
     Record: function Record(collection, data) {
       const name = collection && typeof collection === 'object' ? collection.name : collection;
       return new FakeRecord(name, data || {});
@@ -1501,8 +1316,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
       routes[`${method} ${pathSpec}`] = isolate(handler);
     },
 
-    // Globale Middlewares: laufen vor jedem Routen-Handler, in der
-    // Reihenfolge ihrer Registrierung, und reichen mit e.next() weiter.
+    // Laufen vor jedem Handler in Registrierungsreihenfolge.
     routerUse: (...handlers) => {
       for (const handler of handlers) middlewares.push(isolate(handler));
     },
@@ -1511,8 +1325,6 @@ function loadHook(hookFile, store = {}, opts = {}) {
       crons[name] = { expr, handler: isolate(handler) };
     },
 
-    // Record-Request-Hooks, gesammelt nach Sammlung (Tags). Aufgerufen im
-    // Test über fireRecordHook.
     onRecordCreateRequest: (handler, ...tags) => {
       recordHooks.createRequest.push({ tags, handler: isolate(handler) });
     },
@@ -1520,12 +1332,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
       recordHooks.updateRequest.push({ tags, handler: isolate(handler) });
     },
 
-    // Der echte Versand geht über $http.send an Expo. Hier wird nur die
-    // Antwort gestellt: Ein Test darf keine Nachrichten verschicken, aber die
-    // Auswertung der Quittungen (tote Token entfernen) soll laufen.
-    //
-    // httpResponses wird pro Aufruf abgearbeitet; ist nichts hinterlegt,
-    // quittiert Expo jede Nachricht der Reihe nach mit "ok".
+    // Gestellte Expo-Antworten; ohne Vorgabe quittiert jede Nachricht "ok".
     $http: {
       send: (req) => {
         httpCalls.push(req);
@@ -1540,17 +1347,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
     },
 
     require: (spec) => {
-      // Die Hooks laden ihre Bibliotheken über require(`${__hooks}/lib/…`).
-      //
-      // Der Push-Versand wird standardmäßig ersetzt: Ein Test darf keine
-      // Nachrichten senden, und die meisten Tests interessiert nur, DASS
-      // gesendet wurde (h.pushed).
-      //
-      // Mit realPush: true wird lib/push.js dagegen echt geladen — nur
-      // $http.send ist dann gestellt. Nur so laufen die Zeilen, die
-      // entscheiden, WER eine Nachricht bekommt: die Zuordnung von Kategorie
-      // zu Opt-in-Feld und die Segmente. Das ist eine Einwilligungsfrage; ein
-      // Stub kann sie nicht beantworten.
+      // Push wird ersetzt; mit realPush läuft die echte Bibliothek, weil nur sie die Empfänger-Einwilligung prüft.
       if (spec.endsWith('/lib/push.js') && !realPush) {
         return {
           tokensForUser: () => [],
@@ -1563,25 +1360,14 @@ function loadHook(hookFile, store = {}, opts = {}) {
       for (const [suffix, exports] of Object.entries(extraLibs)) {
         if (spec.endsWith(`/${suffix}`)) return exports;
       }
-      // Zwischenspeichern: Hook und Test müssen dieselbe Instanz benutzen,
-      // sonst arbeiten sie auf verschiedenen Zuständen.
+      // Hook und Test müssen dieselbe Instanz benutzen.
       if (!libCache[spec]) libCache[spec] = loadLib(spec, sandbox);
       return libCache[spec];
     },
   };
   sandbox.globalThis = sandbox;
 
-  // Handler-Scope wie in PocketBase: Die Laufzeit serialisiert jeden Handler
-  // und führt ihn in einer eigenen Umgebung aus. Funktionen und Konstanten,
-  // die oben in der *.pb.js-Datei stehen, sind darin NICHT sichtbar — nur
-  // die Globals der Laufzeit (und was per require() geladen wird).
-  //
-  // Vorher lief die ganze Datei in einem gemeinsamen Kontext, und die
-  // Handler sahen die Helfer der Datei. So blieben drei Fehler grün, die in
-  // Produktion mit "ReferenceError: … is not defined" scheiterten (Scan,
-  // Push-Anmeldung, Zähler des Push-Crons; gemessen gegen PocketBase
-  // 0.22.21 am 26.09.2026). Der Handler wird deshalb aus seinem Quelltext
-  // in einem frischen Kontext mit nur den Laufzeit-Globals neu erzeugt.
+  // Jeder Handler in frischem Kontext nur mit Laufzeit-Globals, wie PocketBase; sonst bleiben ReferenceErrors grün.
   const laufzeit = { ...sandbox };
   function isolate(handler) {
     const ctx = vm.createContext({ ...laufzeit });
@@ -1612,8 +1398,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
     return e;
   }
 
-  // Kette ausführen: Jeder Handler reicht mit e.next() weiter, am Ende steht
-  // `final`. Rückgabe: ob `final` erreicht wurde.
+  // Kette über e.next(), gibt zurück, ob `final` erreicht wurde.
   function runChain(e, handlers, final) {
     let reached = false;
     let i = -1;
@@ -1632,12 +1417,8 @@ function loadHook(hookFile, store = {}, opts = {}) {
     dao,
     // Die App, wie die Hooks sie als $app sehen.
     app,
-    // Die Fachlogik-Bibliothek in derselben Umgebung — für Tests der reinen
-    // Rechenlogik. Als Objekt zurückgegeben, damit die this-Bindung der
-    // Methoden erhalten bleibt (points.js ruft sich intern über this auf).
+    // Als Objekt, damit `this` in points.js erhalten bleibt.
     lib: sandbox.require(`${HOOKS_DIR}/lib/points.js`),
-    // Der Push-Versand, in derselben Umgebung. Mit realPush ist das die echte
-    // Bibliothek, sonst der Stub.
     push: sandbox.require(`${HOOKS_DIR}/lib/push.js`),
     records,
     routes,
@@ -1653,12 +1434,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
     // Siehe FakeDao.failSaveOn.
     failSaveOn: (collection, predicate, message) => dao.failSaveOn(collection, predicate, message),
 
-    // Route aufrufen: erst die globalen Middlewares (routerUse), dann der
-    // Handler. Gibt { status, body } zurück; ein ApiError wird durchgereicht,
-    // damit der Test ihn mit expect(...).toThrow prüfen kann.
-    //   authRecord: angemeldetes Konto (e.auth)
-    //   admin:      Superuser (e.auth ist dann sein _superusers-Datensatz)
-    //   headers:    Anfrage-Köpfe, etwa Authorization
+    // Middlewares, dann Handler; { status, body } oder der ApiError; Optionen authRecord, admin, headers.
     call(routeKey, { body = {}, authRecord = null, admin = null, headers = {} } = {}) {
       const handler = routes[routeKey];
       if (!handler) throw new Error(`Harness: Route ${routeKey} nicht registriert`);
@@ -1672,8 +1448,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
       return result;
     },
 
-    // Nur die Middlewares durchlaufen und das Ereignis zurückgeben — für
-    // Tests, die prüfen, wen eine Middleware als angemeldet einträgt.
+    // Nur Middlewares, für Tests der Anmeldung.
     runMiddlewares({ authRecord = null, admin = null, headers = {} } = {}) {
       const e = requestEvent({ authRecord, admin, headers });
       const reached = runChain(e, middlewares, () => {});
@@ -1681,14 +1456,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
       return e;
     },
 
-    // Record-Request-Hook aufrufen, wie PocketBase bei POST/PATCH auf
-    // /api/collections/<sammlung>/records:
-    //   phase 'createRequest' | 'updateRequest'
-    // Die registrierten Handler der Sammlung laufen als Kette; das letzte
-    // e.next() speichert den Datensatz (ohne weitere Hooks). Danach trägt
-    // `record` den GESPEICHERTEN Stand: Setzt ein Hook ein Feld erst nach
-    // e.next() und speichert nicht selbst, ist die Änderung weg — wie in
-    // PocketBase.
+    // Record-Request-Hook als Kette ('createRequest' | 'updateRequest'); danach trägt `record` den gespeicherten Stand.
     fireRecordHook(phase, collection, record, { authRecord = null, admin = null } = {}) {
       if (!recordHooks[phase]) throw new Error(`Harness: unbekannte Phase ${phase}`);
       if (phase === 'updateRequest') record._new = false;
@@ -1727,9 +1495,7 @@ function loadHook(hookFile, store = {}, opts = {}) {
   };
 }
 
-// Bibliotheken (lib/points.js) laufen in derselben Umgebung wie der Hook: Sie
-// benutzen dieselben Globals ($app, Record, __hooks) und exportieren über
-// module.exports.
+// Bibliotheken laufen mit denselben Globals wie der Hook und exportieren über module.exports.
 function loadLib(spec, sandbox) {
   const file = spec.startsWith(HOOKS_DIR) ? spec : path.join(HOOKS_DIR, spec);
   const moduleObj = { exports: {} };

@@ -4,15 +4,12 @@ import { Icon, type IconName } from '../../lib/icons';
 
 interface IconButtonProps {
   icon: IconName;
-  // Pflicht: ein reiner Icon-Knopf hat keinen sichtbaren Text, den ein
-  // Screenreader vorlesen könnte. Der Compiler fordert das Label ein, damit
-  // es beim Anlegen neuer Knöpfe nicht vergessen wird.
+  // Pflicht, weil ein Icon-Knopf keinen vorlesbaren Text hat.
   accessibilityLabel: string;
   accessibilityHint?: string;
   badge?: boolean;
   dark?: boolean;
-  // Getönte Aktions-Variante (z.B. rotes Ablehnen): eigene Fläche + Icon-Farbe
-  // auf beiden Plattformen, dann ohne Header-Schatten.
+  // Getönte Variante mit eigener Fläche, dann ohne Header-Schatten.
   tint?: string;
   bg?: string;
   loading?: boolean;

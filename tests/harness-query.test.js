@@ -1,28 +1,11 @@
-// Prüft den Harness selbst: Sortierung und Blätterung.
-//
-// Warum es diese Tests gibt: Der Harness steht zwischen den Hooks und den
-// Erwartungen der Tests. Weicht er von PocketBase ab, prüft die ganze Suite
-// etwas anderes als das, was im Laden passiert — und zwar unbemerkt, denn ein
-// gutmütiger Harness macht Tests grün, nicht rot.
-//
-// Zwei solche Abweichungen sind hier festgenagelt:
-//
-//   1. `offset` wurde still verschluckt. Alle Aufrufe in den Hooks übergeben
-//      ihn; wer eine Blätterung einbaut, bekäme im Test die erste Seite und in
-//      Produktion die zweite.
-//   2. Absteigend wurde durch Umdrehen der aufsteigenden Liste erzeugt. Bei
-//      gleichen Sortierwerten kehrt das die Reihenfolge um — PocketBase tut
-//      das nicht. Betroffen ist findActiveCampaign: Bei zwei Aktionen mit
-//      demselben Faktor gilt die erste, nicht die letzte.
+// Harness: Sortierung und Blätterung wie PocketBase, `offset` zählt, absteigend ohne Umdrehen.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
 
 const { loadHook } = createRequire(import.meta.url)('./harness.js');
 
-// Irgendein Hook, der den DAO aufspannt — geprüft wird hier nur der DAO selbst.
-// Die Zeilen liegen in `campaigns`: Der Harness kennt nur Sammlungen aus
-// pb_migrations/, und `multiplier` ist dort ein Zahlenfeld.
+// `campaigns`, weil der Harness nur Sammlungen aus pb_migrations/ kennt.
 function dao(rows) {
   return loadHook('push.pb.js', { users: [], push_devices: [], campaigns: rows }).dao;
 }
@@ -75,10 +58,7 @@ describe('Harness: Blätterung (offset)', () => {
 
 describe('Harness: absteigende Sortierung', () => {
   it('lässt bei Gleichstand die Eingabereihenfolge stehen', () => {
-    // Der Fall aus findActiveCampaign (sortiert nach "-multiplier"): zwei
-    // Aktionen mit demselben Faktor. PocketBase nimmt die erste — mit
-    // `.reverse()` nahm der Harness die letzte und prüfte damit eine andere
-    // Aktion, als im Laden gilt.
+    // Zwei Aktionen mit gleichem Faktor: PocketBase nimmt die erste.
     const d = dao([
       { id: 'a', multiplier: 2 },
       { id: 'b', multiplier: 2 },
@@ -122,8 +102,6 @@ describe('Harness: absteigende Sortierung', () => {
 
 describe('Harness: Sortierung wirkt auf die Auswahl der Aktion', () => {
   it('wählt bei gleichem Faktor die erste Aktion, wie PocketBase', () => {
-    // Die Wirkung der Härtung dort, wo sie zählt: findActiveCampaign nimmt die
-    // erste Zeile der nach "-multiplier" sortierten Liste.
     const jetzt = new Date('2026-06-15T12:00:00.000Z');
     const h = loadHook('scan.pb.js', {
       users: [{ __name: 'u', id: 'u1', role: 'visitor' }],
@@ -145,10 +123,7 @@ describe('Harness: Sortierung wirkt auf die Auswahl der Aktion', () => {
 });
 
 describe('Harness: Nullwerte der Feldtypen', () => {
-  // Dieselbe Falle wie bei den Zahlenfeldern, eine Ebene weiter: PocketBase
-  // liefert für ein nicht gesetztes Feld den Nullwert seines TYPS. Gibt der
-  // Harness stattdessen überall den Leerstring, prüft ein Test etwas anderes
-  // als die Produktion — und zwar unauffällig, weil nichts scheitert.
+  // Ungesetzte Felder liefern den Nullwert ihres Typs, nicht überall ''.
   const h = loadHook('scan.pb.js', {
     store: [{ pts_checkin: 10 }],
     users: [],

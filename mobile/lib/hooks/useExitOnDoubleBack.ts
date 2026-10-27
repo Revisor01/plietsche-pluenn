@@ -4,10 +4,7 @@ import { useFocusEffect } from 'expo-router';
 
 import { createExitGuard } from '../navigation';
 
-// Startseite unter Android: Das erste Zurück zeigt nur einen Hinweis, erst ein
-// zweites kurz danach beendet die App (Logik in ../navigation.ts). Vorher
-// reichte ein einziges versehentliches Wischen vom Bildschirmrand.
-// Unter iOS gibt es keine Zurück-Taste; dort tut der Hook nichts.
+// Android: erst ein zweites Zurück beendet die App (../navigation.ts); auf iOS ohne Wirkung.
 export function useExitOnDoubleBack() {
   const guard = useRef(createExitGuard());
 

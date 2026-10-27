@@ -1,46 +1,6 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// Das Schema von Plietsche Plünn als Ganzes, für PocketBase 0.40.
-//
-// Ersetzt die 20 Migrationen unter pocketbase/pb_migrations_022/. Die sind
-// gegen die 0.22-Schnittstelle geschrieben (`new Dao(db)`, `SchemaField`) und
-// laufen unter 0.40 nicht mehr. Die offizielle Upgrade-Anleitung sieht dafür
-// einen Sammlungs-Snapshot vor; genau das ist diese Datei.
-//
-// Wie sie entstanden ist (gemessen am 26.09.2026, nachvollziehbar):
-//   1. PocketBase 0.22.21 auf leerem pb_data mit allen 20 alten Migrationen.
-//   2. PocketBase 0.40.4 darüber gestartet, Migrationsordner leer — das hebt
-//      die Datenbank mit den eingebauten System-Migrationen auf 0.40.
-//   3. `pocketbase migrate collections` erzeugt den Snapshot.
-//   4. Nachbearbeitet: siehe die beiden Punkte unten.
-//
-// Zwei Eingriffe gegenüber dem rohen Snapshot, beide wegen Produktion:
-//
-//   a) IDs werden auf den Bestand umgeschrieben (unten, vor dem Import).
-//      Die alten Migrationen haben Sammlungen und Felder mit ZUFÄLLIGEN IDs
-//      angelegt. Produktion hat also andere IDs als dieser Snapshot.
-//      importCollections sucht Sammlungen und Felder über die ID — ohne das
-//      Umschreiben hielte es `items` für neu, legte sie ein zweites Mal an
-//      und scheiterte am doppelten Namen (bzw. legte Felder doppelt an).
-//      Deshalb: Gibt es eine Sammlung gleichen Namens schon, übernimmt der
-//      Snapshot ihre ID und die IDs ihrer Felder (über den Feldnamen), und
-//      Relationen zeigen auf die ID, die es wirklich gibt.
-//
-//   b) Nur Schema, keine Einstellungen. Übernommen werden je Sammlung Name,
-//      Typ, Regeln, Felder, Indizes und bei `users` die Anmeldeart. NICHT
-//      übernommen: Mail-Vorlagen, Token-Laufzeiten, authAlert, OTP, MFA,
-//      OAuth2. importCollections legt die übergebenen Werte über die
-//      bestehende Sammlung — was fehlt, bleibt, wie es ist. So überschreibt
-//      der Snapshot in Produktion weder die deutschen Mail-Vorlagen noch die
-//      eingestellte Anmeldedauer. Auf einer frischen Installation gelten dort
-//      die PocketBase-Vorgaben; was wir davon anders wollen, stellt
-//      1790500200_settings.js ein.
-//
-// Systemsammlungen (_superusers, _mfas, _otps, _externalAuths,
-// _authOrigins) sind nicht enthalten; PocketBase legt sie selbst an.
-//
-// importCollections(…, false): Sammlungen und Felder, die hier NICHT stehen,
-// bleiben erhalten. Nichts wird gelöscht.
+// Schema-Snapshot für PocketBase 0.40 statt der 0.22-Migrationen; IDs werden auf den Bestand umgeschrieben, übernommen wird nur Schema, nichts gelöscht.
 
 migrate((app) => {
   const snapshot = [
@@ -2583,7 +2543,6 @@ migrate((app) => {
 
   return app.importCollections(snapshot, false);
 }, (app) => {
-  // Kein Rückweg. Das Schema wieder abzubauen hieße, Daten zu löschen.
-  // Zurück geht es nur über eine Sicherung.
+  // Kein Rückweg, zurück nur über eine Sicherung.
   return null;
 });

@@ -26,8 +26,7 @@ const FILTERS: { key: InventoryFilter; label: string }[] = [
 ];
 
 function statusPill(item: Item) {
-  // Archiv zuerst: ein archiviertes Teil ist aus dem Bestand, egal was es
-  // vorher war.
+  // Archiv zuerst, ein archiviertes Teil ist aus dem Bestand.
   if (isArchived(item)) return { label: 'archiviert', color: PP.err, bg: alpha(PP.err, "subtle") };
   if (item.taken_at) return { label: 'vergeben', color: PP.ink2, bg: alpha(PP.ink, "subtle") };
   if (item.status === 'pending') return { label: 'zu prüfen', color: PP.warn, bg: alpha(PP.warn, "soft") };
@@ -61,10 +60,7 @@ function ItemRow({ item, isAdmin, onChange, onOpen }: { item: Item; isAdmin: boo
     ]);
   };
 
-  // Der Mülleimer archivierte früher ohne Rückfrage — und bei einem schon
-  // archivierten Teil tat er gar nichts. Jetzt fragt er, was passieren soll;
-  // Löschen darf nur ein Admin (items.deleteRule). Ein Dialog, kein zweiter
-  // daraus heraus: verschachtelte Alerts gehen auf iOS gern verloren.
+  // Ein Dialog statt verschachtelter, die gehen auf iOS verloren; Löschen nur für Admins.
   const onTrash = () => {
     if (archived) {
       confirmDelete();
@@ -137,8 +133,7 @@ function ItemRow({ item, isAdmin, onChange, onOpen }: { item: Item; isAdmin: boo
       </Pressable>
 
       {(archived || !item.taken_at) && (
-        // Hauptaktion mit Text, Entfernen als roter Icon-Button — bricht
-        // auch bei großer Schrift nicht um.
+        // Entfernen als Icon-Button, damit es bei großer Schrift nicht umbricht.
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: PP.space.sm }}>
           {archived ? (
             <View style={{ flex: 1 }}>
@@ -157,10 +152,7 @@ function ItemRow({ item, isAdmin, onChange, onOpen }: { item: Item; isAdmin: boo
               <PPButton
                 size="s"
                 icon="star"
-                // Kräftig, solange das Teil im Schaufenster ist — die Farbe
-                // markiert den Zustand, nicht die Aufforderung. Vorher war es
-                // umgekehrt: Das kräftige Teal stand an den Teilen, die gerade
-                // NICHT im Schaufenster sind.
+                // Kräftig markiert den Zustand „im Schaufenster“, nicht die Aufforderung.
                 variant={item.is_showcase ? 'primary' : 'secondary'}
                 loading={busy}
                 onPress={() => run(() => setShowcase(item.id, !item.is_showcase))}
@@ -218,8 +210,7 @@ export default function ItemsInventory() {
   // Archivierte und mitgenommene Teile brauchen kein Etikett.
   const needsLabel = (i: Item) => !i.taken_at && !isArchived(i);
 
-  // Etiketten für die gerade gefilterte Auswahl — sonst wären es bei „Alle"
-  // schnell hunderte Seiten. Bereits mitgenommene Teile brauchen kein Etikett.
+  // Nur die gefilterte Auswahl, sonst wären es hunderte Seiten; Mitgenommenes braucht kein Etikett.
   const printSheet = useCallback(async () => {
     const list = filtered.filter(needsLabel);
     if (!list.length) {

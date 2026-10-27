@@ -3,8 +3,7 @@ import { PP, alpha } from '../lib/theme';
 
 export function Dots({ count, active }: { count: number; active: number }) {
   return (
-    // Der aktive Punkt wird sichtbar über Farbe und Breite getragen — als
-    // Ansage braucht es die Schrittzahl.
+    // Die Schrittzahl als Ansage, sichtbar trägt sie nur Farbe und Breite.
     <View
       accessible
       accessibilityRole="progressbar"

@@ -1,25 +1,9 @@
-// Prüft den Harness selbst: Datumsfelder.
-//
-// PocketBase speichert Datumsfelder in der Form "2026-09-09 22:00:00.000Z"
-// (Leerzeichen statt "T") — egal, in welcher Form der Hook sie setzt. Im
-// Filter vergleicht SQLite sie als TEXT, nicht als Zeitpunkt.
-//
-// Früher verglich der Harness als Zeitpunkt und bewahrte die T-Form beim
-// Speichern. Das war gutmütiger als PocketBase: Ein Hook, der die Filtergrenze
-// in T-Form baut (`toISOString()` ohne `.replace('T', ' ')`), lief im Test
-// richtig und fand in Produktion nichts — "T" (0x54) ist größer als das
-// Leerzeichen (0x20), am selben Tag liegt jede T-Grenze hinter jedem
-// gespeicherten Wert. Gemessen gegen PocketBase 0.22.21: Grenze
-// "2026-09-26T09:00:00.000Z" gegen gespeichertes 10:00 → 0 Treffer.
-//
-// Jetzt bringt der Harness Datumswerte beim Setzen in PB-Form und vergleicht
-// als Text. Ein Hook mit T-Grenze fällt im Test durch, wie in Produktion.
+// Harness: Datumsfelder in PB-Form, im Filter als Text verglichen, damit eine T-Grenze wie in Produktion nichts findet.
 
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
 
-// Der Harness ist CommonJS, weil er die Hook-Dateien mit Nodes vm-Modul in
-// eine nachgebaute Goja-Umgebung laedt.
+// CommonJS, weil der Harness die Hooks per vm in eine Goja-Nachbildung lädt.
 const { matchesFilter, FakeRecord } = createRequire(import.meta.url)('./harness.js');
 
 function visit(checkinAt) {
@@ -60,15 +44,13 @@ describe('Harness: Datumsvergleich im Filter als Text', () => {
   });
 
   it('findet mit einer Grenze in T-Form nichts — wie PocketBase', () => {
-    // Derselbe Besuch, dieselbe Grenze, nur mit "T": 'T' > ' ', der Vergleich
-    // geht am selben Tag immer gegen den Besuch aus.
+    // 'T' > ' ', am selben Tag verliert der Besuch.
     const rec = visit('2026-09-26T10:00:00.000Z');
     expect(matchesFilter(rec, 'checkin_at >= "2026-09-26T09:00:00.000Z"')).toBe(false);
   });
 
   it('vergleicht eine Grenze in T-Form an einem anderen Tag trotzdem richtig', () => {
-    // Die Falle greift nur am selben Tag — bei verschiedenen Tagen entscheidet
-    // schon der Datumsteil. Genau deshalb fällt sie in Stichproben selten auf.
+    // An verschiedenen Tagen entscheidet schon das Datum.
     const rec = visit('2026-09-27T10:00:00.000Z');
     expect(matchesFilter(rec, 'checkin_at >= "2026-09-26T09:00:00.000Z"')).toBe(true);
   });
@@ -80,8 +62,7 @@ describe('Harness: Datumsvergleich im Filter als Text', () => {
   });
 
   it('trennt Tage korrekt: gestern Abend zählt nicht zu heute', () => {
-    // Der Fall aus hasVisitToday(): Besuch gestern 23:00 Ortszeit (= 21:00 UTC),
-    // Tagesgrenze heute 00:00 Ortszeit (= gestern 22:00 UTC).
+    // Besuch gestern 23:00 Ortszeit, Grenze heute 00:00 Ortszeit.
     const gesternAbend = visit('2026-09-09T21:00:00.000Z');
     expect(matchesFilter(gesternAbend, 'checkin_at >= "2026-09-09 22:00:00.000Z"')).toBe(false);
   });

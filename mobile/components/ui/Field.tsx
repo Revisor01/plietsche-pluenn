@@ -8,8 +8,7 @@ interface FieldProps extends Omit<TextInputProps, 'style'> {
   icon?: IconName;
   label: string;
   secure?: boolean;
-  // Fehlermeldung zum Feld. Sie wird an die Ansage des Eingabefelds gehängt,
-  // damit sie nicht nur sichtbar, sondern auch hörbar beim Feld landet.
+  // Fehlermeldung, auch an die Ansage des Feldes gehängt.
   error?: string;
 }
 
@@ -71,8 +70,7 @@ const styles = StyleSheet.create({
     gap: PP.space.md,
     borderWidth: 1,
     borderColor: alpha(PP.ink, "subtle"),
-    // Füllt die Höhe der Zeile, wenn der Container streckt (Ränge-Liste im
-    // Admin: zwei Felder nebeneinander sollen gleich hoch sein).
+    // Füllt die Zeilenhöhe, damit Felder nebeneinander gleich hoch sind.
     flexGrow: 1,
   },
   label: {

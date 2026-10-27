@@ -32,10 +32,7 @@ export default function Login() {
     }
   };
 
-  // Passwort vergessen: Wir schicken den Link an die Adresse, die oben schon
-  // im Feld steht — ein eigener Screen dafuer waere ein Umweg. Die Rueckmeldung
-  // sagt bewusst "falls es ein Konto gibt": Ob die Adresse bekannt ist, darf
-  // hier niemand herauslesen koennen.
+  // Link an die Adresse im Feld; „falls es ein Konto gibt“, damit niemand herausliest, ob sie bekannt ist.
   const onForgotPassword = () => {
     const next = email.trim().toLowerCase();
     if (!next) {

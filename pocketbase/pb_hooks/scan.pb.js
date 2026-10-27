@@ -1,33 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 
-// POST /api/pp/scan — universal scanner.
-// Body: { qr_code, gps_lat?, gps_lng?, items_count? }
-// Auto-detects whether the QR is the door secret or an item code.
-//   - Door QR  → check-in (visit bonus + streak, once/day) + optional stepper.
-//   - Item QR  → take item (item points) + first scan of the day also checks in.
-// Privacy: items get taken_at but NO user reference.
-//
-// Die Antwort ist ein Vertrag mit den ausgelieferten Apps: Feldnamen, Typen
-// und Statuscodes bleiben, wie sie sind (siehe docs/openapi.yaml).
-//
-// Alles, was ein Scan schreibt, läuft in EINER Transaktion. Vorher wurde
-// nacheinander gespeichert — Besuch, Punkte, Punktestand, zuletzt taken_at am
-// Teil. Scheiterte der letzte Schritt (etwa „database is locked" unter Last),
-// blieben die Punkte gebucht und das Teil verfügbar: beim nächsten Scan
-// zahlte es ein zweites Mal. Jetzt gilt: alles oder nichts.
-//
-// Innerhalb der Transaktion geht jeder Zugriff über txApp (lib.withApp) —
-// PocketBase hat eine einzige Schreibverbindung, und die hält die
-// Transaktion. Die Push-Bestätigung wird gesammelt und erst nach dem
-// Festschreiben verschickt.
-//
-// Alles steht im Handler: PocketBase führt ihn in einer eigenen Umgebung aus,
-// oben in der Datei deklarierte Helfer wären darin nicht sichtbar.
+// POST /api/pp/scan { qr_code, gps_lat?, gps_lng?, items_count? }: Tür- oder Teile-Scan in einer Transaktion; die Antwort ist ein Vertrag (docs/openapi.yaml).
 
 routerAdd('POST', '/api/pp/scan', (e) => {
   const lib = require(`${__hooks}/lib/points.js`);
-  // Ein Superuser ist ab 0.23 ebenfalls e.auth, hat aber kein Konto in
-  // `users`. Unter 0.22 war authRecord für ihn leer → 401; so bleibt es.
+  // Superuser haben kein Konto in `users`, also 401.
   if (!e.auth || e.auth.isSuperuser()) throw new ApiError(401, 'Nicht angemeldet');
   const authId = e.auth.id;
 
@@ -41,10 +18,7 @@ routerAdd('POST', '/api/pp/scan', (e) => {
 
   const afterCommit = [];
   let result = null;
-  // Der Fehler, mit dem der Scan abbricht. Er wird hier festgehalten und
-  // nach dem Zurückrollen unverändert weitergeworfen: So kommt ein ApiError
-  // mit seinem Status (400/404/409/410) bei der App an, egal wie PocketBase
-  // ihn auf dem Weg durch runInTransaction verpackt.
+  // Nach dem Zurückrollen unverändert werfen, damit der Status bei der App ankommt.
   let failure = null;
 
   try {
@@ -60,12 +34,7 @@ routerAdd('POST', '/api/pp/scan', (e) => {
           throw new ApiError(500, 'Laden nicht konfiguriert');
         }
 
-        // Türgeheimnis: liegt in der gesperrten Sammlung store_secrets, nicht
-        // in `store`. `store` ist für alle Angemeldeten lesbar — ein Geheimnis
-        // darin wäre für jedes Konto abrufbar, weil PocketBase-Regeln auf ganze
-        // Datensätze wirken und nicht auf einzelne Felder.
-        // Rückfall auf das Altfeld, solange eine Instanz die Migration noch
-        // nicht gefahren hat; nach der Migration steht dort der Leerstring.
+        // Türgeheimnis aus store_secrets, weil `store` für alle Angemeldeten lesbar ist; Altfeld als Rückfall.
         let doorSecret = '';
         try {
           const sec = txApp.findFirstRecordByFilter('store_secrets', '1=1');
@@ -74,14 +43,7 @@ routerAdd('POST', '/api/pp/scan', (e) => {
         if (!doorSecret) doorSecret = `${store.get('checkin_qr_secret') || ''}`.trim();
 
         const cfg = L.config();
-        // Höchstzahl mitgenommener Teile: gilt pro Besuch, also pro Tag in der
-        // Ladenzeitzone, über ALLE Scans — Zähler an der Tür (auch beim
-        // zweiten Tür-Scan) und per QR gescannte Teile (lib/points.js,
-        // itemsTakenToday). Mit dem Schalter „Unbegrenzt" gibt es keine
-        // Grenze. Geprüft wird unten je Zweig, in dieser Transaktion: Wird
-        // abgelehnt, ist nichts gebucht und das Teil bleibt offen.
-        // Die Grenze je Aufruf bleibt vorn stehen, wie bisher auch für einen
-        // Teile-Scan mit mitgeschicktem items_count.
+        // Tagesgrenze über alle Scans (lib/points.js), je Zweig in dieser Transaktion geprüft.
         const rawCount = Math.max(0, parseInt(data.items_count || 0, 10));
         if (!cfg.itemsTakeUnlimited && rawCount > cfg.maxItemsTake) {
           throw new ApiError(400, `Höchstens ${cfg.maxItemsTake} Teile pro Besuch.`);
@@ -92,16 +54,14 @@ routerAdd('POST', '/api/pp/scan', (e) => {
         // Per-type campaign multipliers — only if the user matches the campaign target.
         const camp = L.findActiveCampaign(now, user);
         const multTake = L.campaignMult(camp, 'take');
-        // In der Transaktion gelesen: Zwei gleichzeitige Scans laufen
-        // nacheinander, der zweite sieht den Besuch des ersten.
+        // In der Transaktion gelesen, der zweite Scan sieht den Besuch des ersten.
         const alreadyToday = L.hasVisitToday(authId, now);
 
         // ── Case 1: DOOR QR → check-in ─────────────────────────────
         if (qr === doorSecret) {
           L.assertItemsTakeAllowed(authId, now, itemsCount, cfg);
 
-          // Geofence check. Die Entfernung wird behalten: doCheckin schreibt
-          // sie als gps_distance_m in den Besuch.
+          // Die Entfernung schreibt doCheckin als gps_distance_m.
           const distance = L.assertInGeofence(store, lat, lng);
 
           if (alreadyToday) {
@@ -110,8 +70,7 @@ routerAdd('POST', '/api/pp/scan', (e) => {
             if (stepperPts > 0) {
               L.awardPoints(user, stepperPts, 'checkin', `${itemsCount} Teile mitgenommen`, null);
             }
-            // Die Teile in den Tagesbesuch schreiben — sonst zählte die
-            // Tagesgrenze sie beim nächsten Scan nicht mit.
+            // Sonst zählt die Tagesgrenze sie beim nächsten Scan nicht.
             L.addItemsToTodaysVisit(authId, now, itemsCount);
             const bonusPts = L.awardBadgesAndCountBonus(user, authId);
             const fresh = txApp.findRecordById('users', authId);
@@ -150,17 +109,14 @@ routerAdd('POST', '/api/pp/scan', (e) => {
         }
         if (`${item.get('taken_at')}`.trim() !== '') throw new ApiError(409, 'Schon mitgenommen');
         if (`${item.get('archived_at')}`.trim() !== '') throw new ApiError(410, 'Nicht mehr verfügbar');
-        // Only approved items may be taken — a pending (unreviewed) submission can't
-        // be scanned for points before a staff member approves it.
+        // Nicht freigegebene Einreichungen bringen keine Punkte.
         const itemStatus = `${item.get('status') || ''}`.trim();
         if (itemStatus && itemStatus !== 'approved') throw new ApiError(409, 'Noch nicht freigegeben');
 
         // Das Teil zählt als eines der heute mitgenommenen.
         L.assertItemsTakeAllowed(authId, now, 1, cfg);
 
-        // Geofence also applies to item scans (an item scan triggers a check-in).
-        // GPS is optional — when provided it must be within the radius; without it we
-        // fall back to trusting the in-store QR secret (same as the door check-in).
+        // Geofence auch hier, ohne GPS trägt der Code im Laden die Prüfung.
         L.assertInGeofence(store, lat, lng);
 
         // First scan of the day also checks the user in (visit bonus + streak).
@@ -172,16 +128,13 @@ routerAdd('POST', '/api/pp/scan', (e) => {
           didCheckin = true;
         }
 
-        // Item points (PLAIN-TEXT label, no FK to item — privacy). A scanned item is
-        // a "take", so the campaign's take multiplier applies.
+        // Klartext-Label ohne Verweis aufs Teil (Datenschutz); Holen-Faktor gilt.
         const itemPts = Math.round((item.get('points') || 30) * multTake);
         const size = item.get('size');
         const label = size ? `${item.get('title')}, ${size}` : item.get('title');
         L.awardPoints(user, itemPts, 'scan', label, null);
 
-        // Ein gescanntes Teil ist ein "Holen" — zählt als Teilnahme, wenn die
-        // Aktion darauf Bonus gibt. doCheckin lief hier mit itemsCount 0, sonst
-        // fiele es aus.
+        // doCheckin lief hier mit itemsCount 0, sonst fiele die Teilnahme aus.
         if (camp) L.bumpActionCount(user, camp, 'take', 1);
 
         // Mark item taken WITHOUT user reference.
@@ -209,8 +162,7 @@ routerAdd('POST', '/api/pp/scan', (e) => {
     throw failure || err;
   }
 
-  // Festgeschrieben — jetzt erst die Bestätigung. Ein Fehler beim Versand
-  // ändert an der Buchung nichts mehr.
+  // Erst nach dem Festschreiben bestätigen.
   for (const send of afterCommit) {
     try {
       send();

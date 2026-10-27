@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-# Stellt die Testhinweise aus den Commit-Betreffs seit dem letzten Upload
-# zusammen. Aufruf: release-notes.py [testflight|play]
-#
-# Die Umgebungsvariable VORGABE hat Vorrang — wer beim Start des Workflows
-# einen eigenen Text eintraegt, bekommt genau diesen.
-#
-# Laengengrenzen: Google Play erlaubt hoechstens 500 Zeichen je Sprache und
-# scheitert sonst erst beim Abschluss mit einer irrefuehrenden
-# Rechte-Fehlermeldung. TestFlight erlaubt 4000.
+# Testhinweise aus den Commit-Betreffs seit dem letzten Upload; VORGABE hat Vorrang. Aufruf: release-notes.py [testflight|play]
 import os
 import re
 import subprocess
@@ -15,14 +7,10 @@ import sys
 
 ZIEL = sys.argv[1] if len(sys.argv) > 1 else 'testflight'
 GRENZE = 480 if ZIEL == 'play' else 3900
-# Wie weit zurueck, wenn kein frueherer Stand bekannt ist. Bewusst grosszuegig:
 # Lieber ein paar Punkte zu viel als eine leere Liste.
 RUECKFALL = '-20'
 
-# Reine Interna interessieren Tester:innen nicht — weder am Typ erkennbar
-# (`chore: …`) noch am Bereich (`fix(ci): …`). Der Bereich muss mitgeprueft
-# werden: Ein Commit wie `fix(ci): Keystore-Angaben an Gradle uebergeben`
-# traegt den Typ `fix` und stuende sonst in den Hinweisen.
+# Interna nach Typ und Bereich ausfiltern, sonst stuende `fix(ci): …` in den Hinweisen.
 INTERN_TYP = re.compile(r'^(chore|ci|test|docs|refactor|style|build)(\(.+?\))?:')
 INTERN_BEREICH = re.compile(r'^\w+\((ci|deps|deps-dev|build|test|tests)\):')
 VORSILBE = re.compile(r'^\w+(\(.+?\))?:\s*')
@@ -75,8 +63,7 @@ def main():
         print('Kleinere Verbesserungen unter der Haube.')
         return
 
-    # So viele Punkte, wie in die Grenze passen — lieber weniger und
-    # vollstaendig als abgeschnitten.
+    # Lieber weniger Punkte als abgeschnitten.
     text = ''
     for punkt in punkte[:8]:
         kandidat = f'{text}\n- {punkt}' if text else f'- {punkt}'

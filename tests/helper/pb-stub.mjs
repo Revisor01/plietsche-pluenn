@@ -1,18 +1,4 @@
-// Ein gestellter PocketBase-Server für tests/deploy-verify.test.js.
-//
-// Läuft als eigener Prozess und nicht im Test-Worker: Das zu prüfende Skript
-// ist ein Kindprozess, und ein Server in derselben Ereignisschleife käme
-// nicht dazu zu antworten, solange auf dieses Kind gewartet wird.
-//
-// Erwartet auf stdin ein JSON-Objekt:
-//   { antworten: { "<pfad>": { status, koerper } }, warmlaufAbrufe: <zahl> }
-//
-// Gibt auf stdout als erste Zeile den Port aus, auf dem er lauscht.
-//
-// `warmlaufAbrufe` beantwortet die ersten n Abrufe je Pfad mit 503 — so
-// verhält sich ein Container, der gerade neu startet. Ein Pfad, der in
-// `antworten` fehlt, bekommt 404; PocketBase antwortet auf eine unbekannte
-// Sammlung genauso.
+// Stub-Server für deploy-verify; stdin { antworten, warmlaufAbrufe }, stdout erste Zeile der Port, fehlende Pfade 404.
 
 import { createServer } from 'node:http';
 

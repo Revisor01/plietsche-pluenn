@@ -191,8 +191,7 @@ export function usePointsLog(limit = 200) {
     queryKey: ['points_log', limit],
     enabled: pb.authStore.isValid,
     queryFn: async () => {
-      // Always scope to the current user — admins may read every row (RLS), so
-      // without this filter their history would show everyone's points.
+      // Immer auf die eigene Person filtern, Admins dürfen sonst alle Zeilen lesen.
       const uid = pb.authStore.record?.id;
       const res = await pb.collection('points_log').getList(1, limit, {
         filter: `user = "${uid}"`,

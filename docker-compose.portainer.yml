@@ -1,22 +1,4 @@
-# Die Fassung, die in Produktion läuft (Portainer). Diese Datei ist die Quelle
-# für den Stack-Inhalt.
-#
-# Unterschied zur docker-compose.yml daneben:
-#
-#   docker-compose.yml           Fremdes PocketBase-Abbild, Hooks und
-#                                Migrationen als Bind-Mount vom Host. Für den
-#                                lokalen Start und als Beschreibung des
-#                                Aufbaus. Änderungen an Hooks wirken hier
-#                                sofort nach einem Neustart, ohne Bauen.
-#
-#   docker-compose.portainer.yml Eigenes Abbild aus pocketbase/Dockerfile,
-#                                das Hooks und Migrationen enthält. Der
-#                                Workflow .github/workflows/deploy.yml baut
-#                                es bei jedem Push auf main und stößt den
-#                                Portainer-Webhook an; der Server zieht selbst.
-#
-# Gemountet wird nur pb_data. Mounts auf pb_hooks oder pb_migrations würden die
-# Dateien im Abbild überdecken, und der Container liefe auf einem alten Stand.
+# Produktionsfassung des Stacks: eigenes Abbild aus pocketbase/Dockerfile mit Hooks und Migrationen, gemountet wird nur pb_data.
 
 services:
   pocketbase:
@@ -28,41 +10,23 @@ services:
       - "--http=0.0.0.0:8090"
     environment:
       PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY}
-      # Nur für die Uhrzeiten der nächtlichen Aufgaben und für Logzeilen.
-      # Tagesgrenze, Kalenderwoche und Jahreszahl hängen NICHT hieran — die
-      # rechnet die Fachlogik aus der gepflegten Ladenzeitzone (store.timezone).
-      # Geht diese Zeile auf einem anders eingerichteten Host verloren, bleiben
-      # Punkte, Serien und Abzeichen deshalb trotzdem richtig.
+      # Nur für Cron-Uhrzeiten und Logs; Tage und Wochen rechnet die Fachlogik aus store.timezone.
       TZ: Europe/Berlin
     volumes:
-      # Nur die Daten. Hooks und Migrationen kommen aus dem Abbild — ein
-      # Bind-Mount auf /pb_hooks oder /pb_migrations würde sie überdecken.
-      #
-      # Absoluter Pfad, nicht `./pb_data`: Portainer legt den Stack in einem
-      # eigenen Arbeitsverzeichnis ab; ein relativer Pfad bände eine leere,
-      # neue Datenbank ein.
+      # Nur die Daten, Mounts auf Hooks oder Migrationen überdeckten das Abbild; absolut, weil Portainer ein eigenes Arbeitsverzeichnis nutzt.
       - /opt/stacks/plietsche-pb/pb_data:/pb_data
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8090/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-    # Grenzen, damit dieser Stack die Maschine nicht mitreisst; der Host ist
-    # geteilt.
-    #
-    # Das Protokoll ist der praktisch wichtigere Teil: Ohne max-size waechst
-    # die JSON-Datei unbegrenzt, bis die Platte voll ist — und dann steht
-    # nicht nur PocketBase. Zwei Dateien a 10 MB reichen fuer die Diagnose der
-    # letzten Tage und decken die Groesse.
+    # Grenzen für den geteilten Host; ohne max-size füllt das Protokoll die Platte.
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-    # Gemessen am 14.09.2026 auf der laufenden Instanz: 19,6 MB belegt, bisher
-    # ohne Grenze (der Container sah die vollen 24 GB des Hosts). 512 MB sind
-    # das 26-fache des Bedarfs — die Grenze faengt ein Weglaufen ab und
-    # beschneidet den Normalbetrieb nicht.
+    # Bedarf am 14.09.2026: 19,6 MB; 512 MB fangen nur ein Weglaufen ab.
     mem_limit: 512m
     cpus: 1.0
     labels:

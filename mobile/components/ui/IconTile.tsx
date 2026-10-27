@@ -17,14 +17,7 @@ interface IconTileProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/**
- * Quadratische Kachel mit getöntem Grund und mittigem Symbol.
- *
- * Dieses Muster stand über 30-mal von Hand in den Screens — Quadrat, weicher
- * Radius, getönte Fläche, Symbol in der Mitte. Token für Kantenlänge, Radius
- * und Tönung hätten die Wiederholung nur verlagert; als Komponente
- * verschwindet sie.
- */
+/** Quadratische Kachel mit getöntem Grund und mittigem Symbol. */
 export function IconTile({
   icon,
   size = 's',

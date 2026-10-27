@@ -22,8 +22,7 @@ const TRIGGERS: { key: string; label: string; kinds: string[] }[] = [
   { key: 'action_participation', label: 'Aktions-Teilnahme', kinds: ['single', 'tiered'] },
 ];
 
-// Farbe je Stufen-Slot. Die Namen kommen aus den Rängen, die Farben bleiben
-// an der Stufe — daran hängen auch die Medaillons in der Sammlung.
+// Farbe je Stufen-Slot; daran hängen auch die Medaillons.
 const TIER_COLOR: Record<string, string> = {
   bronze: PP.bronze,
   silber: PP.silver,
@@ -140,9 +139,7 @@ function BadgeEditor({ badge, campaigns, ranks, onSaved }: { badge?: Badge; camp
       const saved = badge
         ? await updateBadge(badge.id, draftToInput(draft))
         : await createBadge(draftToInput(draft));
-      // Die Kopplung steht in zwei Feldern: badges.campaign (Fortschritt) und
-      // campaigns.badge (Vergabe-Cron). Nur eins zu pflegen ließ Abzeichen
-      // stumm ausfallen — deshalb wird die Gegenseite hier mitgesetzt.
+      // Gegenseite campaigns.badge mitsetzen, sonst fallen Abzeichen stumm aus.
       if (isAction && draft.campaign) {
         const camp = campaigns.find((c) => c.id === draft.campaign);
         if (camp && camp.badge !== saved.id) {
@@ -378,8 +375,7 @@ export default function BadgeAdmin() {
     await refetch();
     await qc.invalidateQueries({ queryKey: ['badges'] });
     await qc.invalidateQueries({ queryKey: ['all_badges'] });
-    // Der Editor pflegt die Gegenseite der Kopplung mit (campaigns.badge) —
-    // die Aktions-Listen tragen den alten Stand, bis sie neu geladen werden.
+    // Die Aktionslisten tragen bis zum Neuladen noch die alte Kopplung.
     await qc.invalidateQueries({ queryKey: ['campaigns'] });
   };
 

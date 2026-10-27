@@ -1,9 +1,4 @@
-// Tests für die zeitgesteuerten Aufgaben.
-//
-// Schwerpunkt ist das nächtliche Zurücksetzen der Serien: Es greift ohne
-// Zutun in sichtbare Werte ein. Setzt es zu früh zurück, verliert jemand
-// seine Serie zu Unrecht; setzt es zu spät zurück, zeigt die App eine Serie,
-// die es nicht mehr gibt.
+// Zeitgesteuerte Aufgaben, vor allem das nächtliche Zurücksetzen der Serien.
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createRequire } from 'node:module';
@@ -44,8 +39,7 @@ describe('streak-reset', () => {
   });
 
   it('laesst eine Serie mit Besuch in der Vorwoche stehen (Karenz)', () => {
-    // Eine Woche Nachsicht ist gewollt: Wer eine Woche aussetzt, verliert
-    // die Serie noch nicht.
+    // Eine Woche Nachsicht ist gewollt.
     const h = setup([
       { __name: 'u', id: 'u1', streak_weeks: 3, streak_last_visit: vorWochen(1) },
     ]);
@@ -87,9 +81,7 @@ describe('streak-reset', () => {
   });
 
   it('zieht den angezeigten Abzeichen-Fortschritt beim Zuruecksetzen mit', () => {
-    // Der Fortschritt liegt als Kopie in der Abzeichen-Tabelle. Ohne diese
-    // Korrektur zeigt die App weiter "1/2 Wochen in Folge", obwohl die Serie
-    // verfallen ist.
+    // Sonst zeigt die App weiter „1/2 Wochen in Folge“.
     const h = setup(
       [{ __name: 'u', id: 'u1', streak_weeks: 4, streak_last_visit: vorWochen(3) }],
       {
@@ -125,8 +117,7 @@ describe('streak-reset', () => {
 });
 
 describe('streak-reset am Jahreswechsel', () => {
-  // Die Karenz rechnet gegen die laufende Woche. Fuer den Jahreswechsel
-  // braucht es deshalb einen festen Zeitpunkt.
+  // Fester Zeitpunkt für den Jahreswechsel.
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -137,8 +128,7 @@ describe('streak-reset am Jahreswechsel', () => {
   }
 
   it('laesst die Serie stehen, wenn die Vorwoche die 53. war', () => {
-    // Lauf am 5.1.2027 (KW 1/2027), letzter Besuch in KW 53/2026 — die
-    // unmittelbare Vorwoche, also Karenz.
+    // 5.1.2027 (KW 1), letzter Besuch KW 53/2026: Vorwoche.
     amTag('2027-01-05T03:05:00.000Z');
     const h = setup([
       { __name: 'u', id: 'u1', streak_weeks: 6, streak_last_visit: '2026-12-29T12:00:00.000Z' },
@@ -148,8 +138,7 @@ describe('streak-reset am Jahreswechsel', () => {
   });
 
   it('setzt zurueck, wenn die 53. Woche ausgelassen wurde', () => {
-    // Letzter Besuch in KW 52/2026, dazwischen liegt die ausgelassene KW 53 —
-    // zwei Wochen ohne Besuch, die Karenz ist aufgebraucht.
+    // KW 52/2026, dazwischen KW 53: zwei Wochen.
     amTag('2027-01-05T03:05:00.000Z');
     const h = setup([
       { __name: 'u', id: 'u1', streak_weeks: 6, streak_last_visit: '2026-12-21T12:00:00.000Z' },
@@ -159,9 +148,7 @@ describe('streak-reset am Jahreswechsel', () => {
   });
 
   it('laesst die Serie stehen, wenn das Vorjahr nur 52 Wochen hatte', () => {
-    // 2025 endet mit KW 52; am 5.1.2026 (KW 2/2026) ist ein Besuch in
-    // KW 52/2025 zwei Wochen her — das ist zu lang.
-    // Gegenprobe mit einem Lauf in KW 1/2026: dann ist es die Vorwoche.
+    // 2025 endet mit KW 52; Gegenprobe mit einem Lauf in KW 1/2026.
     amTag('2025-12-31T03:05:00.000Z'); // KW 1/2026
     const h = setup([
       { __name: 'u', id: 'u1', streak_weeks: 3, streak_last_visit: '2025-12-22T12:00:00.000Z' },
@@ -181,8 +168,7 @@ describe('streak-reset am Jahreswechsel', () => {
   });
 
   it('setzt zurueck, wenn der letzte Besuch in der Zukunft steht', () => {
-    // Ein Zeitstempel aus der Zukunft ist kein gueltiger letzter Besuch. Die
-    // Karenz gilt nur rueckwaerts, die Serie wird zurueckgesetzt.
+    // Ein Besuch in der Zukunft ist kein gültiger letzter Besuch.
     amTag('2026-09-14T03:05:00.000Z');
     const h = setup([
       { __name: 'u', id: 'u1', streak_weeks: 4, streak_last_visit: '2026-11-02T12:00:00.000Z' },
@@ -219,10 +205,7 @@ describe('push-scheduled', () => {
     expect(h.pushed).toHaveLength(1);
     expect(h.pushed[0].title).toBe('Neue Teile da');
 
-    // Der Versandzeitpunkt, nicht irgendein nicht-leerer Wert: Der Filter des
-    // Cronjobs prueft nur auf sent_at = "", ein Hook, der hier "ja" eintraegt,
-    // kaeme mit not.toBe('') durch — und die Nachricht waere fuer immer
-    // abgehakt, ohne dass jemand sagen koennte, wann sie rausging.
+    // Der Versandzeitpunkt, nicht irgendein nicht-leerer Wert.
     const gesetzt = Date.parse(`${h.records.msg.get('sent_at')}`);
     expect(Number.isNaN(gesetzt)).toBe(false);
     expect(gesetzt).toBeGreaterThanOrEqual(vorher);
@@ -241,10 +224,7 @@ describe('push-scheduled', () => {
     expect(`${h.records.msg.get('sent_at')}`).toBe('');
   });
 
-  // Die Nachricht galt bisher als verschickt, sobald der Versuch gelaufen war
-  // — auch wenn Expo gar nicht erreichbar war. Der Filter des Jobs holt sie
-  // danach nie wieder: Eine Ankuendigung „Heute geschlossen" lief ins Leere,
-  // im Verwaltungsbereich stand ein Haekchen.
+  // Nicht als verschickt markieren, wenn Expo nicht erreichbar war.
   describe('wenn Expo nicht erreichbar ist', () => {
     function faellig(extra = {}) {
       return Object.assign(
@@ -260,8 +240,7 @@ describe('push-scheduled', () => {
       );
     }
 
-    // Echt geladene Push-Bibliothek: Nur so laeuft der Code, der die Quittungen
-    // von Expo auswertet und {sent} zurueckgibt. Der Stub meldet nichts.
+    // Echte Push-Bibliothek, nur so wird {sent} ausgewertet.
     function setupEcht(extra = {}) {
       return loadHook(
         'cron.pb.js',
@@ -325,16 +304,14 @@ describe('push-scheduled', () => {
       h.runCron('push-scheduled');
 
       expect(h.records.msg.get('send_attempts')).toBe(5);
-      // Aufgegeben heisst: abgehakt, damit der Job nicht jede Minute weiter
-      // dagegenlaeuft. Dass es nicht geklappt hat, steht am Zaehler.
+      // Aufgegeben heißt abgehakt; der Zähler zeigt das Scheitern.
       expect(`${h.records.msg.get('sent_at')}`).not.toBe('');
       const zeit = Date.parse(`${h.records.msg.get('sent_at')}`);
       expect(Number.isNaN(zeit)).toBe(false);
     });
 
     it('hakt eine Nachricht ohne Empfaenger sofort ab', () => {
-      // Niemand hat diese Kategorie eingeschaltet: Es gibt nichts zu senden
-      // und nichts, was scheitern koennte. Ein Wiederholen waere sinnlos.
+      // Nichts zu senden, also nichts zu wiederholen.
       const h = loadHook(
         'cron.pb.js',
         {
@@ -378,15 +355,7 @@ describe('push-scheduled', () => {
 });
 
 describe('year-badges', () => {
-  // Der Job handelt an genau einem Tag im Jahr. Vorher stand hier ein Test,
-  // der sich am 31. Dezember per `return` selbst abschaltete — also genau an
-  // dem Tag, an dem etwas passiert. Geprueft wurde damit nie die Vergabe,
-  // sondern nur, dass an den uebrigen 364 Tagen nichts geschieht.
-  //
-  // Jetzt wird das Datum gestellt. Wichtig dabei: Der Job liest den Tag und
-  // die Jahreszahl in der LADENZEITZONE (lib.storeParts), nicht in der des
-  // Prozesses — die Suite laeuft in UTC, der Laden in Europe/Berlin. Im
-  // Dezember ist das UTC+1.
+  // Datum gestellt; der Job liest Tag und Jahr in der Ladenzeitzone (Dezember UTC+1).
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -427,8 +396,6 @@ describe('year-badges', () => {
   });
 
   it('vergibt am 31. Dezember die erreichte Stufe, nicht die naechsthoehere', () => {
-    // Besuche in drei Kalenderjahren: Das Abzeichen fuer drei Jahre wird
-    // vergeben, das fuer fuenf nicht.
     amTag(SILVESTER);
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       badges: TREUE_BADGES,
@@ -491,17 +458,14 @@ describe('year-badges', () => {
   });
 
   it('zaehlt einen Besuch am 31. Dezember noch fuer dieses Jahr', () => {
-    // Der Grenzfall: Besuch am Silvesterabend, 20:00 Ortszeit (19:00 UTC).
-    // Der Cronjob laeuft danach um 3:40 — also erst am 1.1. Hier wird der Lauf
-    // vom selben Tag geprueft, mit dem Besuch am Vormittag.
+    // Silvesterabend 20:00 Ortszeit, Lauf vom selben Tag.
     amTag(SILVESTER);
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       badges: TREUE_BADGES,
       visits: [
         besuchIm(2024, 'v1'),
         besuchIm(2025, 'v2'),
-        // 31.12.2026, 01:00 Ortszeit = 31.12. 00:00 UTC — derselbe Tag, an dem
-        // der Job laeuft, und das dritte aktive Jahr.
+        // 31.12.2026 01:00 Ortszeit = 00:00 UTC, das dritte aktive Jahr.
         { id: 'v3', user: 'u1', checkin_at: '2026-12-31T00:00:00.000Z' },
       ],
     });
@@ -511,9 +475,7 @@ describe('year-badges', () => {
   });
 
   it('zaehlt einen Besuch am 1.1. um 00:30 Ortszeit ins neue Jahr', () => {
-    // Der Zeitzonen-Fall: 1.1.2026 um 00:30 Ortszeit ist 31.12.2025 um 23:30
-    // UTC. Wer die Jahreszahl in UTC nimmt, zaehlt diesen Besuch ins Vorjahr —
-    // und dann fehlen drei Jahre, wo drei erreicht sind.
+    // 1.1.2026 00:30 Ortszeit ist in UTC noch 2025.
     amTag(SILVESTER);
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       badges: TREUE_BADGES,
@@ -556,8 +518,7 @@ describe('year-badges', () => {
   });
 
   it('fasst gestufte Abzeichen nicht an', () => {
-    // Der Job sucht ausdruecklich nach kind = "single". Ein gestuftes
-    // Treue-Abzeichen liefe sonst ueber grantBadge sofort auf Gold.
+    // Ein gestuftes Treue-Abzeichen liefe über grantBadge sofort auf Gold.
     amTag(SILVESTER);
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       badges: [
@@ -644,8 +605,7 @@ describe('action-badges', () => {
   });
 
   it('vergibt ein Abzeichen auch an jemanden, der nur da war', () => {
-    // Zweig b): Teilnahme durch reinen Besuch im Aktionszeitraum, ohne ein
-    // Teil beigesteuert zu haben.
+    // Zweig b): reiner Besuch im Aktionszeitraum.
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       campaigns: [
         {
@@ -702,14 +662,7 @@ describe('action-badges', () => {
 });
 
 describe('action-badges: gestufte Abzeichen', () => {
-  // Der Zweig, vor dem der Code im Kommentar selbst warnt: grantBadge wuerde
-  // ein gestuftes Abzeichen sofort auf Gold setzen und die Stufen
-  // ueberspringen — samt aller Boni, die dazwischenliegen. Zu viel vergebene
-  // Punkte lassen sich nicht zurueckholen.
-  //
-  // Deshalb laeuft der gestufte Fall ueber checkBadges/computeProgress, und
-  // genau das wird hier geprueft: die tatsaechlich erreichte Stufe und genau
-  // der Bonus, der zu ihr gehoert.
+  // Gestufte über checkBadges, sonst sprängen sie samt Boni auf Gold.
 
   // Ein gestuftes Aktions-Abzeichen mit drei Stufen und je eigenem Bonus.
   function gestuftesSetup(count, extra = {}) {
@@ -758,8 +711,7 @@ describe('action-badges: gestufte Abzeichen', () => {
   });
 
   it('vergibt bei zehn Beitraegen alle drei Stufen genau einmal', () => {
-    // Wer die Aktion in einem Rutsch durchlaeuft, bekommt jede Stufe — aber
-    // jede nur einmal: 10 + 25 + 60.
+    // Jede Stufe einmal: 10 + 25 + 60.
     const h = gestuftesSetup(10);
     h.runCron('action-badges');
 
@@ -769,8 +721,7 @@ describe('action-badges: gestufte Abzeichen', () => {
   });
 
   it('zahlt beim naechsten Lauf nur die neu erreichte Stufe nach', () => {
-    // Stand 5 (Silber), Bronze war beim letzten Lauf schon vergeben: Es kommt
-    // genau der Silber-Bonus dazu, nicht noch einmal Bronze.
+    // Nur der Silber-Bonus, Bronze ist schon vergeben.
     const h = gestuftesSetup(5, {
       user_badges: [{ id: 'ub1', user: 'u1', badge: 'b1', progress: 2, current_tier: 'bronze' }],
     });
@@ -799,12 +750,7 @@ describe('action-badges: gestufte Abzeichen', () => {
     expect(h.records.u.get('points_total')).toBe(0);
   });
 
-  // Die Teilnahme an einer Aktion zaehlt das, worauf die Aktion Bonus gibt
-  // (CHANGELOG: „Teilnahme zaehlt, worauf es Bonus gibt"). Eine Besuchsaktion
-  // hat mult_visit > 1, doCheckin zaehlt den Besuch damit in action_counts —
-  // der gestufte Zweig erreicht diese Person also sehr wohl. Ein Audit-Befund
-  // hatte das Gegenteil angenommen, weil er den Fall ohne action_counts-Zeile
-  // betrachtete. Diese beiden Tests halten fest, was tatsaechlich gilt.
+  // Eine Besuchsaktion zählt den Besuch in action_counts, der gestufte Zweig erreicht die Person also.
   it('erreicht auch jemanden, der bei einer Besuchsaktion nur da war', () => {
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       campaigns: [
@@ -829,8 +775,6 @@ describe('action-badges: gestufte Abzeichen', () => {
           reward_silber: 25,
         },
       ],
-      // Der Besuch hat beim Check-in gezaehlt, weil die Aktion Bonus aufs
-      // Vorbeikommen gibt — genau so legt doCheckin die Zeile an.
       action_counts: [{ id: 'ac1', user: 'u1', campaign: 'c1', count: 1 }],
       visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-06-01T12:00:00.000Z' }],
     });
@@ -845,8 +789,7 @@ describe('action-badges: gestufte Abzeichen', () => {
   });
 
   it('fasst jemanden ohne Beitrag zur Aktion nicht an', () => {
-    // Der gestufte Zweig laeuft nur ueber action_counts mit count > 0 — anders
-    // als der einfache, der auch reine Besuche mitnimmt.
+    // Der gestufte Zweig läuft nur über action_counts mit count > 0.
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       campaigns: [
         {
@@ -875,20 +818,7 @@ describe('action-badges: gestufte Abzeichen', () => {
     expect(h.records.u.get('points_total')).toBe(0);
   });
 
-  // FESTGEHALTENE GRENZE, kein gewuenschtes Verhalten:
-  //
-  // Der Kommentar ueber dem Job nennt als zweiten Fall „Aktion/Badge erst
-  // nachtraeglich verknuepft, Beitraege lagen schon vor". Fuer EINSTUFIGE
-  // Abzeichen faengt Abschnitt b) das ab (Test „vergibt auch an jemanden, der
-  // nur im Aktionszeitraum da war"). Der gestufte Zweig steigt davor mit
-  // `continue` aus und laeuft ausschliesslich ueber action_counts — dort steht
-  // nichts, weil beim Besuch noch keine Verknuepfung bestand.
-  //
-  // Das nachzuholen hiesse, Besuche im Zeitraum rueckwirkend als Teilnahme zu
-  // zaehlen. Das widerspraeche der gepflegten Regel „Teilnahme zaehlt, worauf
-  // es Bonus gibt" und ist eine fachliche Entscheidung des Betreibers, keine
-  // Fehlerbehebung. Bis sie gefallen ist, haelt dieser Test den Ist-Stand
-  // fest — wird er rot, ist die Entscheidung umgesetzt worden.
+  // Festgehaltene Grenze: nachträglich verknüpfte gestufte Abzeichen zählen frühere Besuche nicht; das zu ändern ist eine fachliche Entscheidung.
   it('holt ein nachtraeglich verknuepftes gestuftes Abzeichen NICHT nach', () => {
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       campaigns: [
@@ -911,8 +841,7 @@ describe('action-badges: gestufte Abzeichen', () => {
           reward_bronze: 10,
         },
       ],
-      // Der Besuch liegt im Zeitraum, aber es gibt keine action_counts-Zeile:
-      // Beim Check-in war das Abzeichen noch nicht mit der Aktion verknuepft.
+      // Beim Check-in war das Abzeichen noch nicht verknüpft.
       action_counts: [],
       visits: [{ id: 'v1', user: 'u1', checkin_at: '2026-06-01T12:00:00.000Z' }],
     });
@@ -922,9 +851,7 @@ describe('action-badges: gestufte Abzeichen', () => {
   });
 
   it('die Gegenprobe: ein einfaches Abzeichen laeuft weiterhin ueber grantBadge', () => {
-    // Derselbe Aufbau, nur kind: 'single'. Dann greift der andere Zweig, und
-    // das Abzeichen steht sofort auf Gold — was dort richtig ist, weil es nur
-    // eine Stufe gibt.
+    // kind: 'single' geht sofort auf Gold, dort richtig.
     const h = setup([{ __name: 'u', id: 'u1', points_total: 0 }], {
       campaigns: [
         {

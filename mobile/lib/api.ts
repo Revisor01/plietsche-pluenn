@@ -71,18 +71,14 @@ export interface PointConfig {
   pts_take: number;
   pts_bring: number;
   max_items_take: number;
-  // Schalter „Unbegrenzt": keine Höchstzahl mitgenommener Teile. Optional,
-  // damit ein Speichern ohne das Feld den Schalter nicht anfasst.
+  // Optional, damit ein Speichern ohne das Feld den Schalter nicht anfasst.
   items_take_unlimited?: boolean;
 }
 export async function savePointConfig(storeId: string, cfg: PointConfig): Promise<void> {
   await pb.collection('store').update(storeId, cfg);
 }
 
-// ── Push: sofort an alle senden ────────────────────────────────
-// Creates a push_messages row scheduled for "now"; the push-scheduled cron
-// (runs every minute) picks it up and delivers it via Expo. Category "other"
-// covers manual store broadcasts (respects each user's push_other_enabled).
+// ── Push sofort an alle: eine push_messages-Zeile für jetzt, der Minuten-Cron verschickt sie ──
 export async function sendPushNow(title: string, body: string, deepLink?: string): Promise<void> {
   await pb.collection('push_messages').create({
     title,
@@ -118,8 +114,7 @@ export interface NewItemInput {
   photoUri?: string | null;
 }
 
-// Create an item. The server sets sku, qr_code and status (staff→approved,
-// visitor→pending) in pb_hooks. A photo is uploaded via multipart FormData.
+// SKU, QR-Code und Status setzt der Server.
 export async function createItem(input: NewItemInput): Promise<Item> {
   const form = new FormData();
   form.append('title', input.title);
@@ -130,8 +125,7 @@ export async function createItem(input: NewItemInput): Promise<Item> {
   if (input.note) form.append('note', input.note);
   if (input.location) form.append('location', input.location);
   form.append('stays_external', input.stays_external ? 'true' : 'false');
-  // Only staff may set is_showcase; the server hook forces visitor items to
-  // is_showcase=false regardless, so sending it is safe.
+  // Für Besucher:innen erzwingt der Server is_showcase=false.
   if (input.is_showcase) form.append('is_showcase', 'true');
   if (input.photoUri) {
     // Als File, nicht in der React-Native-Form { uri } — siehe lib/upload.ts.
@@ -140,9 +134,7 @@ export async function createItem(input: NewItemInput): Promise<Item> {
   return (await pb.collection('items').create(form)) as unknown as Item;
 }
 
-// Staff approval: pending → approved (optionally push to showcase).
-// Approve an item. Optionally push to showcase and credit it to a campaign
-// (the latter drives action_participation badges for the submitter).
+// Freigabe, optional ins Schaufenster und einer Aktion gutgeschrieben (Abzeichen der Einsender:in).
 export async function approveItem(id: string, showcase = false, campaignId?: string): Promise<Item> {
   return (await pb.collection('items').update(id, {
     status: 'approved',
@@ -170,8 +162,7 @@ export async function archiveItem(id: string): Promise<Item> {
   })) as unknown as Item;
 }
 
-// Staff: bring an archived item back. A submission that was never approved
-// returns to review instead of being approved on the side (see itemState.ts).
+// Nie Freigegebenes kehrt in die Prüfung zurück, nicht in den Bestand (itemState.ts).
 export async function restoreItem(item: Item): Promise<Item> {
   return (await pb.collection('items').update(item.id, {
     status: restoreStatus(item),
@@ -179,8 +170,7 @@ export async function restoreItem(item: Item): Promise<Item> {
   })) as unknown as Item;
 }
 
-// Admin: delete an item for good. The server allows this for admins only
-// (items.deleteRule). points_log has no item reference, so no history is lost.
+// Nur Admins; points_log verweist nicht auf Teile, es geht kein Verlauf verloren.
 export async function deleteItem(id: string): Promise<void> {
   await pb.collection('items').delete(id);
 }

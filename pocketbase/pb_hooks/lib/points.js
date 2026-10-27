@@ -1,8 +1,6 @@
-// Shared business logic for points, streaks, campaigns, badges.
-// Imported by hook files via require(__hooks + '/lib/points.js').
+// Geteilte Logik für Punkte, Serien, Aktionen und Abzeichen; per require(__hooks + '/lib/points.js').
 
-// Fallback point values, used only if the store singleton has none configured.
-// The live values are admin-editable on the store record (pts_checkin/…).
+// Rückfallwerte, wenn der store-Datensatz keine Punkte trägt.
 const POINTS = {
   checkin: 10,
   takePerItem: 5, // scanning / "took N" via stepper
@@ -10,30 +8,15 @@ const POINTS = {
   selfEntryBonus: 10, // extra per self-entered (approved) item, on top of bringPerItem
 };
 
-// Höchstzahl mitgenommener Teile pro Besuch (= pro Tag in der Ladenzeitzone,
-// über alle Scans), wenn store.max_items_take nicht gepflegt ist. Mit
-// store.items_take_unlimited gibt es gar keine Grenze.
+// Höchstzahl je Tag in der Ladenzeitzone, wenn store.max_items_take fehlt.
 const DEFAULT_MAX_ITEMS_TAKE = 7;
 
-// Rückfall-Radius des Geofence in Metern, wenn auf dem store-Datensatz nichts
-// gepflegt ist. Wie die Punktwerte gehört auch dieser Standard an eine Stelle.
+// Rückfall-Radius des Geofence in Metern.
 const DEFAULT_GEOFENCE_RADIUS_M = 150;
 
 const TIER_ORDER = ['none', 'bronze', 'silber', 'gold', 'platin', 'diamant'];
 
-// ── Ladenzeitzone ────────────────────────────────────────────────
-//
-// Tagesgrenze, Kalenderwoche und Jahreszahl sind fachliche Größen: Sie richten
-// sich danach, wann es im Laden Mitternacht ist — nicht danach, wie der Rechner
-// konfiguriert ist, auf dem der Server gerade läuft. Der Container läuft in UTC;
-// würde die Logik `new Date(jahr, monat, tag)` benutzen, begänne der „Tag" im
-// Sommer um 02:00 Uhr Ortszeit, und wer um 00:30 eincheckt, bekäme vormittags
-// einen zweiten vollen Bonus.
-//
-// Deshalb wird der Versatz hier gerechnet und nicht geerbt. Intl/ECMA-402 gibt
-// es in der PocketBase-Laufzeit (Goja) nicht, also wird die europäische Regel
-// direkt abgebildet: Sommerzeit vom letzten Sonntag im März 01:00 UTC bis zum
-// letzten Sonntag im Oktober 01:00 UTC (UTC+2), sonst UTC+1.
+// ── Ladenzeitzone: von Hand gerechnet, weil Goja kein Intl hat und der Container in UTC läuft ──
 const DEFAULT_STORE_TZ = 'Europe/Berlin';
 
 // Puffer für die gelesene Zeitzone (siehe storeTimezone).
@@ -65,20 +48,7 @@ module.exports = {
   DEFAULT_GEOFENCE_RADIUS_M,
   DEFAULT_STORE_TZ,
 
-  // ── Über welche App gelesen und geschrieben wird ─────────────────
-  //
-  // Standard ist $app. Innerhalb von $app.runInTransaction((txApp) => …) muss
-  // ALLES über txApp laufen: PocketBase hat für Schreibzugriffe genau eine
-  // Verbindung, und die hält die Transaktion. Ein $app.save() darin wartet auf
-  // sich selbst; ein $app.find…() liest an der Transaktion vorbei den alten
-  // Stand (awardBadgesAndCountBonus sähe die eben gebuchten Punkte nicht).
-  //
-  // withApp(txApp) gibt deshalb eine Sicht auf diese Bibliothek zurück, deren
-  // Methoden über txApp gehen — auch untereinander, denn sie rufen sich über
-  // `this` auf. `afterCommit` sammelt, was erst nach dem Festschreiben laufen
-  // darf: die Push-Bestätigung. Eine Nachricht „10 Punkte gutgeschrieben" zu
-  // einer Buchung, die danach zurückgerollt wird, wäre falsch — und der
-  // HTTP-Aufruf an Expo hielte die Schreibverbindung bis zu 30 s fest.
+  // ── In Transaktionen alles über txApp; afterCommit für Push erst nach dem Festschreiben ──
   app() {
     return this._app || $app;
   },
@@ -90,13 +60,7 @@ module.exports = {
     return bound;
   },
 
-  // Zeitzone des Ladens. Konfigurierbar auf dem store-Datensatz, damit ein
-  // Umzug oder ein zweiter Standort keine Codeänderung braucht.
-  //
-  // Kurz zwischengespeichert: isoWeek() wird je Besuch einmal aufgerufen, und
-  // streakFromVisits() läuft über alle Besuche einer Person — ohne Puffer
-  // ergäbe das eine Datenbankabfrage pro Besuch. Die Haltezeit ist knapp
-  // bemessen, damit eine Änderung im Verwaltungsbereich zeitnah greift.
+  // Zeitzone aus dem store-Datensatz, kurz gepuffert, sonst eine Abfrage je Besuch.
   storeTimezone() {
     const now = Date.now();
     if (tzCache.value && now - tzCache.at < TZ_CACHE_MS) return tzCache.value;
@@ -112,15 +76,13 @@ module.exports = {
     return tz;
   },
 
-  // Den Puffer verwerfen. Für Tests, die die Zeitzone im laufenden Betrieb
-  // umstellen — im Server nicht nötig, dort läuft der Puffer von selbst ab.
+  // Für Tests, die die Zeitzone im Betrieb umstellen.
   forgetStoreTimezone() {
     tzCache.value = null;
     tzCache.at = 0;
   },
 
-  // Die Datumsteile eines Zeitpunkts in der Ladenzeitzone.
-  // Gibt { year, month (0-11), day, hour, minute, second, weekday (0=So) }.
+  // Datumsteile in der Ladenzeitzone: { year, month (0-11), day, hour, minute, second, weekday (0=So) }.
   storeParts(date) {
     const ms = date.getTime();
     const shifted = new Date(ms + storeOffsetMinutes(ms, this.storeTimezone()) * 60000);
@@ -135,14 +97,10 @@ module.exports = {
     };
   },
 
-  // Mitternacht Ortszeit des Tages, in dem dieser Zeitpunkt liegt — als echter
-  // UTC-Zeitpunkt. Damit lassen sich die in der Datenbank als UTC gespeicherten
-  // Zeitstempel unmittelbar vergleichen.
+  // Mitternacht Ortszeit als UTC-Zeitpunkt, direkt vergleichbar mit den Zeitstempeln.
   storeDayStart(date) {
     const p = this.storeParts(date);
-    // Erst mit dem Versatz des Zeitpunkts selbst schätzen, dann mit dem Versatz
-    // der Schätzung nachziehen — so stimmt die Grenze auch in den beiden
-    // Nächten, in denen die Uhr umgestellt wird.
+    // Zweimal schätzen, damit es auch in den Umstellungsnächten stimmt.
     const naive = Date.UTC(p.year, p.month, p.day, 0, 0, 0, 0);
     const tz = this.storeTimezone();
     let ms = naive - storeOffsetMinutes(date.getTime(), tz) * 60000;
@@ -150,8 +108,7 @@ module.exports = {
     return new Date(ms);
   },
 
-  // Read admin-configured point values + item cap from the store singleton,
-  // falling back to POINTS defaults when a value isn't set.
+  // Punktwerte und Grenze aus dem store-Datensatz, sonst POINTS.
   config() {
     let s;
     try {
@@ -173,28 +130,7 @@ module.exports = {
     };
   },
 
-  // ── Höchstzahl mitgenommener Teile pro Tag ───────────────────────
-  //
-  // Die Grenze gilt pro Besuch, und ein Besuch ist ein Tag in der
-  // Ladenzeitzone — dieselbe Grenze wie beim Check-in-Bonus. Gezählt wird
-  // ALLES, was die Person an diesem Tag mitgenommen hat:
-  //
-  //   - Teile per Zähler: visits.items_count des Tagesbesuchs. Beim ersten
-  //     Tür-Scan setzt doCheckin den Wert, jeder weitere Tür-Scan am selben
-  //     Tag zählt ihn hoch (addItemsToTodaysVisit). Bis 26.09.2026 blieb er
-  //     beim zweiten Scan stehen — und die App bucht den Zähler immer mit
-  //     einem zweiten Scan.
-  //   - Teile per QR-Code: ein points_log-Eintrag mit kind = "scan" je Teil.
-  //     Das Teil selbst trägt keinen Personenbezug (Datenschutz), der
-  //     Punkteverlauf schon — und awardPoints schreibt ihn auch bei 0 Punkten.
-  //
-  // Beide Quellen schreibt nur der Server (Regeln null für Nutzer:innen), und
-  // beide sind Zahlen bzw. Zeilen — anders als die Beschriftung „N Teile
-  // mitgenommen" im Punkteverlauf, die man zerlegen müsste und die bei einem
-  // Aktionsfaktor, der die Punkte auf 0 rundet, gar nicht geschrieben wird.
-  //
-  // Aufruf innerhalb der Scan-Transaktion: Zwei gleichzeitige Scans laufen
-  // nacheinander, der zweite sieht die Buchung des ersten.
+  // ── Tagesgrenze mitgenommener Teile: Zähler aus visits.items_count plus QR-Scans aus points_log, beides nur serverseitig geschrieben ──
   itemsTakenToday(userId, now) {
     const start = this.storeDayStart(now).toISOString().replace('T', ' ');
     const app = this.app();
@@ -224,13 +160,7 @@ module.exports = {
     return total;
   },
 
-  // Wirft 400, wenn `adding` weitere Teile die Tagesgrenze überschreiten.
-  //
-  // Der Satz „Höchstens N Teile pro Besuch." ist der, den ausgelieferte Apps
-  // kennen und anzeigen (mobile/lib/errors.ts reicht deutsche Meldungen
-  // durch); er bleibt vorn stehen. Ist heute schon etwas mitgenommen, sagt
-  // der Nachsatz, wie viel noch geht — sonst wirkte „Höchstens 7" bei einem
-  // Scan von 3 Teilen unverständlich.
+  // Wirft 400 über der Tagesgrenze; der Satz vorn ist der, den ausgelieferte Apps anzeigen.
   assertItemsTakeAllowed(userId, now, adding, cfg) {
     cfg = cfg || this.config();
     if (cfg.itemsTakeUnlimited) return;
@@ -248,8 +178,7 @@ module.exports = {
     throw new ApiError(400, msg);
   },
 
-  // Zähler-Teile eines weiteren Tür-Scans am selben Tag in den Tagesbesuch
-  // schreiben, damit itemsTakenToday sie beim nächsten Scan mitzählt.
+  // Damit itemsTakenToday sie beim nächsten Scan mitzählt.
   addItemsToTodaysVisit(userId, now, n) {
     if (!n || n <= 0) return;
     const start = this.storeDayStart(now).toISOString().replace('T', ' ');
@@ -267,9 +196,7 @@ module.exports = {
     app.saveNoValidate(visit);
   },
 
-  // Per-type multiplier for an active campaign. type ∈ 'visit' | 'take' | 'bring'.
-  // Uses the new mult_<type> field, falling back to the legacy single multiplier,
-  // then 1.0. A campaign only boosts a type if that factor is > 1.
+  // Faktor je Typ ('visit' | 'take' | 'bring') aus mult_<type>, sonst `multiplier`, sonst 1.
   campaignMult(camp, type) {
     if (!camp) return 1.0;
     const field = type === 'visit' ? 'mult_visit' : type === 'take' ? 'mult_take' : 'mult_bring';
@@ -279,8 +206,7 @@ module.exports = {
     return legacy && legacy > 0 ? legacy : 1.0;
   },
 
-  // Der wirksame Faktor einer Aktion: der hoechste ihrer drei Handlungstypen.
-  // Er entscheidet, welche von mehreren gleichzeitigen Aktionen gilt.
+  // Der höchste der drei Faktoren entscheidet zwischen gleichzeitigen Aktionen.
   campaignBestMult(camp) {
     return Math.max(
       this.campaignMult(camp, 'visit'),
@@ -289,16 +215,7 @@ module.exports = {
     );
   },
 
-  // Find the highest-multiplier campaign active right now that applies to this
-  // user. Honours target_role: 'all' (everyone), 'by_role'+target_role,
-  // 'streak2plus' (streak >= 2), 'inactive14d' (no visit in 14 days).
-  // Pass user=null to ignore targeting (e.g. for display lookups).
-  //
-  // Sortiert wird nach dem wirksamen Faktor, nicht nach dem Datenbankfeld
-  // `multiplier`. Das alte Sammelfeld ist fuer campaignMult nur noch der
-  // Rueckfall — laufen zwei Aktionen gleichzeitig, gewann sonst die mit dem
-  // hoeheren ALTEN Wert, waehrend die beworbene Aktion mit ihren neuen
-  // Faktoren wirkungslos blieb, samt ausbleibender Teilnahme-Zaehlung.
+  // Stärkste laufende Aktion für die Person nach wirksamem Faktor, nicht nach dem alten `multiplier`; user=null ignoriert die Zielgruppe.
   findActiveCampaign(now, user) {
     const iso = now.toISOString().replace('T', ' ');
     let rows;
@@ -314,8 +231,7 @@ module.exports = {
     } catch (_) {
       return null;
     }
-    // Stabil sortieren: Bei gleichem Faktor bleibt die Reihenfolge aus der
-    // Datenbank erhalten, damit die Auswahl von Lauf zu Lauf dieselbe ist.
+    // Stabil, damit die Auswahl von Lauf zu Lauf gleich bleibt.
     const sorted = rows
       .map((c, i) => ({ c, i, m: this.campaignBestMult(c) }))
       .sort((a, b) => (b.m - a.m) || (a.i - b.i))
@@ -343,10 +259,7 @@ module.exports = {
     return true;
   },
 
-  // Award points: write points_log, then recompute users.points_total from the
-  // log sum (source of truth). Recomputing — instead of incrementing in memory —
-  // keeps points_total self-healing: it can never drift from points_log, even
-  // across multiple awardPoints() calls in one request or a stale user object.
+  // points_total aus der Summe von points_log neu rechnen statt hochzählen, damit es nie abweicht.
   awardPoints(user, points, kind, label, refId) {
     const app = this.app();
     const col = app.findCollectionByNameOrId('points_log');
@@ -361,8 +274,7 @@ module.exports = {
     this.recomputeTotal(user);
   },
 
-  // Recompute points_total as the sum of all points_log rows for this user.
-  // Mutates the passed user object in place and persists it.
+  // Ändert und speichert das übergebene User-Objekt.
   recomputeTotal(user) {
     const app = this.app();
     let total = 0;
@@ -396,14 +308,7 @@ module.exports = {
     }
   },
 
-  // Teilnahme an einer Aktion mitzählen — Grundlage für Aktions-Abzeichen.
-  //
-  // Gezählt wird, worauf die Aktion tatsächlich einen Bonus gibt: Steht
-  // "Bringen" auf ×2, zählt jedes gebrachte Teil; steht "Holen" auf ×1, zählt
-  // Holen nicht. So entscheidet die Aktion selbst, was Teilnahme bedeutet —
-  // vorher zählte immer nur Bringen, unabhängig von den gesetzten Faktoren.
-  //
-  // `amount` erlaubt mehrere Teile auf einmal (Stepper beim Check-in).
+  // Zählt nur, worauf die Aktion Bonus gibt; `amount` für mehrere Teile.
   bumpActionCount(user, camp, type, amount) {
     if (!user || !camp) return;
     if (this.campaignMult(camp, type) <= 1) return; // kein Bonus → keine Teilnahme
@@ -428,23 +333,18 @@ module.exports = {
     } catch (_) {}
   },
 
-  // Create a visit + award check-in bonus + update streak. Returns awarded points.
-  // Guards against a double check-in race (fast double-tap / retry): re-checks
-  // hasVisitToday immediately before inserting the visit, so two concurrent
-  // requests can't both create a visit + bonus for the same day.
+  // Besuch, Bonus und Serie; prüft hasVisitToday direkt vor dem Anlegen gegen Doppel-Check-ins.
   doCheckin(user, now, opts) {
     opts = opts || {};
     const cfg = this.config();
     const camp = this.findActiveCampaign(now, user);
     const multVisit = this.campaignMult(camp, 'visit');
     const multTake = this.campaignMult(camp, 'take');
-    // Hard cap: never award / record more than the configured max items taken
-    // (die Tagessumme prüft der Aufrufer vorher mit assertItemsTakeAllowed).
+    // Nie mehr als die Höchstzahl; die Tagessumme prüft der Aufrufer.
     const rawCount = Math.max(0, parseInt(opts.itemsCount || 0, 10));
     const itemsCount = cfg.itemsTakeUnlimited ? rawCount : Math.min(rawCount, cfg.maxItemsTake);
 
-    // Race guard: another request may have created today's visit between the
-    // caller's check and here. If so, only count extra stepper items, no bonus.
+    // Gibt es den Besuch schon, nur die Stepper-Teile zählen, kein Bonus.
     if (this.hasVisitToday(user.id, now)) {
       const stepperOnly = Math.round(itemsCount * cfg.takePerItem * multTake);
       if (stepperOnly > 0) {
@@ -461,10 +361,7 @@ module.exports = {
     visit.set('user', user.id);
     visit.set('checkin_at', now.toISOString());
     visit.set('items_count', itemsCount);
-    // Datenminimierung: Der Standort dient allein der Pruefung, ob jemand vor
-    // Ort ist. Dafuer genuegt der Abstand — die genauen Koordinaten werden
-    // bewusst nicht gespeichert. Die Felder gps_lat/gps_lng bleiben im Schema,
-    // damit alte Besuche lesbar bleiben; neue Besuche fuellen sie nicht mehr.
+    // Datenminimierung: nur der Abstand, keine Koordinaten; gps_lat/gps_lng bleiben für alte Besuche im Schema.
     if (opts.distance != null) visit.set('gps_distance_m', Math.round(opts.distance));
     if (camp) visit.set('campaign', camp.id);
 
@@ -488,13 +385,9 @@ module.exports = {
     return { points: checkinPts + stepperPts, visitId: visit.id };
   },
 
-  // Immediate confirmation that the points landed, so the user sees a result
-  // without opening the app. Mentions the streak once it's actually running
-  // (2+ weeks — "1 week in a row" isn't a streak worth celebrating).
-  // Never throws: a failed push must not roll back a valid check-in.
+  // Sofortige Bestätigung, Serie erst ab zwei Wochen; wirft nie, ein Push darf keinen Check-in zurückrollen.
   pushCheckinConfirmation(user, points, itemsCount) {
-    // In einer Transaktion: erst nach dem Festschreiben senden (siehe withApp).
-    // Dann über die ungebundene Bibliothek, also wieder über $app.
+    // In einer Transaktion erst nach dem Festschreiben senden, dann über $app.
     if (this._afterCommit) {
       const base = module.exports;
       this._afterCommit.push(() => base.pushCheckinConfirmation(user, points, itemsCount));
@@ -522,9 +415,7 @@ module.exports = {
     }
   },
 
-  // ISO week number for streak comparison.
-  // Der Kalendertag wird in der Ladenzeitzone bestimmt: Ein Check-in Montag um
-  // 00:30 Ortszeit gehört zur neuen Woche, nicht zur alten.
+  // ISO-Woche, Tag in der Ladenzeitzone.
   isoWeek(date) {
     const p = this.storeParts(date);
     const d = new Date(Date.UTC(p.year, p.month, p.day));
@@ -535,10 +426,7 @@ module.exports = {
     return d.getUTCFullYear() * 100 + week;
   },
 
-  // Current streak derived from the visits table: how many consecutive ISO weeks
-  // up to now (or last week, grace period) the user has actually checked in.
-  // Returns 0 when there are no visits at all — this is the value badge progress
-  // is based on, so a user who never checked in can never show streak progress.
+  // Serie aus den Besuchen bis jetzt oder letzte Woche; ohne Besuche 0, darauf beruht der Abzeichen-Fortschritt.
   streakFromVisits(user) {
     let visits;
     try {
@@ -573,31 +461,17 @@ module.exports = {
     return count;
   },
 
-  // Wie viele Kalenderwochen ein Jahr nach ISO 8601 hat: 52 oder 53.
-  //
-  // 53 Wochen hat ein Jahr genau dann, wenn der 1. Januar ein Donnerstag ist
-  // oder wenn es ein Schaltjahr ist, das an einem Mittwoch beginnt. Gleich-
-  // bedeutend: Der 28. Dezember — der immer in der letzten Woche des Jahres
-  // liegt — fällt dann in KW 53.
-  //
-  // Die Angabe darf keine Näherung sein: Sie entscheidet, ob KW 52 oder KW 53
-  // die Vorgängerin von KW 1 des Folgejahres ist. Verwechselt man das, läuft
-  // eine Serie über eine ausgelassene Woche hinweg weiter.
+  // 52 oder 53 ISO-Wochen: 53, wenn der 28. Dezember in KW 53 fällt; keine Näherung, sonst läuft eine Serie über eine Lücke.
   isoWeeksInYear(year) {
     const jan1 = new Date(Date.UTC(year, 0, 1)).getUTCDay(); // 0 = Sonntag
     const schaltjahr = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     return jan1 === 4 || (schaltjahr && jan1 === 3) ? 53 : 52;
   },
 
-  // True when `later` is exactly one ISO week after `earlier` (handles year wrap).
-  //
-  // Die einzige Stelle im Projekt, an der „folgt diese Woche auf jene?"
-  // beantwortet wird — updateStreak, streakFromVisits und der Reset-Cron rufen
-  // alle hierher. Sonst liefen drei Nachbauten auseinander.
+  // Ob `later` genau eine ISO-Woche nach `earlier` liegt, die einzige Stelle dafür.
   isWeekAdjacent(earlier, later) {
     if (later - earlier === 1) return true;
-    // Jahreswechsel: KW 1 folgt auf die LETZTE Woche des Vorjahres — je nach
-    // Jahr KW 52 oder KW 53.
+    // KW 1 folgt auf KW 52 oder 53 des Vorjahres.
     if (later % 100 !== 1) return false;
     const earlierYear = Math.floor(earlier / 100);
     if (Math.floor(later / 100) - earlierYear !== 1) return false;
@@ -624,16 +498,12 @@ module.exports = {
     this.app().saveNoValidate(user);
   },
 
-  // Wie viele Stufen es überhaupt gibt — so viele Ränge unter „Punkte & Ränge"
-  // gepflegt sind (höchstens fünf, denn so viele Spalten hat ein Abzeichen).
-  // Ohne diese Grenze vergäbe der Server eine Stufe weiter, die die App nach
-  // dem Entfernen eines Rangs nicht mehr anzeigt.
+  // So viele Stufen wie gepflegte Ränge, höchstens fünf, sonst vergäbe der Server eine Stufe, die die App nicht zeigt.
   tierSlotCount() {
     try {
       const s = this.app().findFirstRecordByFilter('store', '1=1');
       const t = this.asArray(s ? s.get('tiers_json') : null);
-      // Nur ein echtes Array zaehlt. Ohne Raenge bleibt es bei fuenf Stufen —
-      // eine leere Liste ist „nichts gepflegt", nicht „keine Stufen".
+      // Leere Liste heißt nicht gepflegt, also fünf Stufen.
       const n = t && t.length ? t.length : 5;
       return Math.max(1, Math.min(5, n));
     } catch (_) {
@@ -641,11 +511,7 @@ module.exports = {
     }
   },
 
-  // Ein json-Feld kommt aus PocketBase je nach Schreibweg als Array oder als
-  // JSON-Zeichenkette zurueck. Auf einer Zeichenkette zaehlt `.length` Zeichen
-  // statt Eintraege — das faellt nicht auf, weil nichts scheitert, sondern nur
-  // eine falsche Zahl herauskommt. Deshalb hier einmal an einer Stelle
-  // ausgepackt; alles, was danach kein Array ist, gilt als „nicht gepflegt".
+  // json-Felder kommen als Array oder Zeichenkette, auf einer Zeichenkette zählte `.length` Zeichen.
   asArray(value) {
     if (Array.isArray(value)) return value;
     if (typeof value === 'string') {
@@ -683,27 +549,7 @@ module.exports = {
     return reached;
   },
 
-  // Abzeichen prüfen und dabei zählen, was sie an Punkten gebracht haben.
-  //
-  // checkBadges kann Punkte gutschreiben (Stufenbonus, Einzelabzeichen). Diese
-  // Punkte standen bisher nur in points_total, nicht im `points` der Antwort:
-  // Die App meldete beim ersten Besuch „+10 Punkte", während der Kontostand um
-  // 510 sprang — eine Differenz, die niemand erklären konnte, genau in dem
-  // Moment, in dem das Abzeichen aufgeht.
-  //
-  // `points` bleibt unverändert, was es ist — ausgelieferte App-Versionen lesen
-  // und zeigen genau dieses Feld, und eine Antwortform ist ein Vertrag. Der
-  // Bonus kommt als ZUSÄTZLICHES Feld dazu; neue Felder hinzuzufügen ist
-  // erlaubt, und eine künftige App-Version kann ihn addieren.
-  //
-  // Gemessen wird an points_total vorher/nachher statt an einer Rückgabe von
-  // checkBadges: Der Stand wird aus points_log neu gerechnet (recomputeTotal),
-  // die Differenz ist deshalb genau das, was hier dazugekommen ist — auch wenn
-  // mehrere Abzeichen gleichzeitig aufgehen.
-  //
-  // Liegt hier und nicht in scan.pb.js: PocketBase führt jeden Handler in
-  // einer eigenen Umgebung aus, oben in der Hook-Datei deklarierte Helfer
-  // sind darin nicht sichtbar ("ReferenceError: … is not defined").
+  // Abzeichen-Bonus als zusätzliches Feld, `points` bleibt für ausgelieferte Apps; hier statt in scan.pb.js, weil Handler isoliert laufen.
   awardBadgesAndCountBonus(user, userId) {
     const vorher = this.app().findRecordById('users', userId).get('points_total') || 0;
     this.checkBadges(user);
@@ -741,10 +587,7 @@ module.exports = {
       ub.set('progress', progress);
 
       if (kind === 'single') {
-        // One-time award: granted once the (single) threshold is met. Awards the
-        // optional points_reward bonus once, sets current_tier='gold' as the
-        // "earned" marker. years_active / action_participation are granted by
-        // their own routines (grantBadge), not here.
+        // Einmal-Abzeichen; years_active und action_participation vergeben eigene Routinen.
         const need = badge.get('trigger_value') || 1;
         const already = `${ub.get('current_tier') || 'none'}` !== 'none';
         const triggerType = `${badge.get('trigger_type')}`;
@@ -780,8 +623,7 @@ module.exports = {
     }
   },
 
-  // Explicitly grant a single badge to a user (idempotent). Used by the
-  // years-active year-end routine and action-participation grants.
+  // Vergibt ein einzelnes Abzeichen idempotent.
   grantBadge(user, badge) {
     const app = this.app();
     let ub;
@@ -822,9 +664,7 @@ module.exports = {
         return app.findRecordsByFilter('points_log', 'user = {:user} && kind = "bring"', '', 0, 0, own).length;
       }
       if (type === 'streak_weeks') {
-        // Derived from actual visits, not from users.streak_weeks: that field is
-        // client-writable and survives as a stale cache when the reset cron runs
-        // between two checkBadges calls. No visits => no streak, always.
+        // Aus den Besuchen, nicht aus streak_weeks, das als veralteter Cache stehen bleiben kann.
         return this.streakFromVisits(user);
       }
       if (type === 'action_participation') {
@@ -858,15 +698,7 @@ module.exports = {
     return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   },
 
-  // Prüfen, ob eine Position im Laden liegt — und die Entfernung zurückgeben.
-  //
-  // Ohne Standort (lat/lng nicht gesetzt) gibt es nichts zu prüfen: Dann trägt
-  // der Code im Laden die Prüfung, wie beim Check-in an der Tür. Rückgabe ist
-  // dann null, sonst die gemessene Entfernung in Metern — der Tür-Zweig
-  // schreibt sie als gps_distance_m in den Besuch.
-  //
-  // Der Text „Du bist nicht im Laden" ist in docs/openapi.yaml als 400er
-  // zugesagt und erscheint wörtlich so in der App: nicht ändern.
+  // Entfernung zum Laden oder null ohne Standort; „Du bist nicht im Laden“ ist in docs/openapi.yaml zugesagt, nicht ändern.
   assertInGeofence(store, lat, lng) {
     if (lat == null || lng == null) return null;
     const distance = this.distanceM(lat, lng, store.get('lat'), store.get('lng'));

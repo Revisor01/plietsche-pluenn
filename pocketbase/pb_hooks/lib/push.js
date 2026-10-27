@@ -1,26 +1,8 @@
-// Expo push helper for Plietsche Plünn.
-// Sends to https://exp.host/--/api/v2/push/send and prunes dead tokens.
-//
-// Arbeitet immer über $app und gehört deshalb NICHT in eine Transaktion:
-// Darin würde das Löschen toter Token auf die Schreibverbindung warten, die
-// die Transaktion selbst hält. Der Scan sammelt seine Bestätigung darum und
-// sendet erst nach dem Festschreiben (lib/points.js, withApp).
+// Expo-Push mit Bereinigung toter Token; immer über $app, daher nie in einer Transaktion.
 
 const EXPO_URL = 'https://exp.host/--/api/v2/push/send';
 
-// ── Kanäle und Dringlichkeit ──────────────────────────────────────────────
-//
-// QUELLE DER WAHRHEIT: docs/push-channels.md. Diese Tabelle ist die Kopie fürs
-// Backend, `mobile/lib/push.ts` hält die Kopie für die App. Die Kennungen
-// MÜSSEN in beiden Dateien gleich lauten: Die App legt die Kanäle unter diesen
-// Namen an, das Backend adressiert sie. Wer hier etwas ändert, ändert beide
-// Stellen und die Tabelle in der Doku — sonst landen Nachrichten wieder im
-// Standardkanal.
-//
-// interruptionLevel ist die iOS-Seite derselben Entscheidung:
-//   time-sensitive — darf auch ein Fokus durchbrechen (Serie läuft heute ab)
-//   active         — normaler Ton und Banner
-//   passive        — still in die Mitteilungszentrale, kein Ton
+// ── Kanäle: Quelle docs/push-channels.md, Kennungen gleich wie in mobile/lib/push.ts; interruptionLevel ist die iOS-Seite ──
 const CHANNELS = {
   streak: { channelId: 'streak', interruptionLevel: 'time-sensitive' },
   campaign: { channelId: 'campaign', interruptionLevel: 'active' },
@@ -28,8 +10,7 @@ const CHANNELS = {
   other: { channelId: 'other', interruptionLevel: 'passive' },
 };
 
-// Kategorie → Kanal. Unbekanntes wie „Sonstiges" behandeln, genauso wie die
-// Opt-in-Zuordnung oben.
+// Unbekanntes wie „Sonstiges“.
 function channelFor(category) {
   return CHANNELS[category] || CHANNELS.other;
 }
@@ -38,8 +19,7 @@ module.exports = {
   CHANNELS,
   channelFor,
 
-  // Collect Expo push tokens for the users a message targets, honouring each
-  // user's per-category opt-in flag. Returns [{token, userId}].
+  // Token der Zielgruppe mit Opt-in je Kategorie, [{token, userId}].
   collectTokens(segment, role, category) {
     // Map message category → user opt-in flag.
     const flag =
@@ -85,9 +65,7 @@ module.exports = {
     return out;
   },
 
-  // Tokens of a single user, honouring their opt-in flag for this category.
-  // Used for immediate, personal pushes (points credited) — collectTokens walks
-  // every user and is meant for campaigns.
+  // Token einer Person mit Opt-in, für persönliche Bestätigungen.
   tokensForUser(user, category) {
     const flag =
       category === 'streak' ? 'push_streak_enabled'
@@ -109,21 +87,7 @@ module.exports = {
     return out;
   },
 
-  // Send a batch of messages to Expo. Removes tokens Expo reports as dead.
-  //
-  // Rückgabe: { sent, failed }. `failed` zählt die Stapel, die Expo gar nicht
-  // erreicht haben — daran erkennt der Aufrufer den Unterschied zwischen „es
-  // gab nichts zu senden" und „es ging nicht raus". Ohne diese Unterscheidung
-  // gilt eine Nachricht auch dann als verschickt, wenn Expo nicht erreichbar
-  // war, und der Cronjob holt sie nie wieder.
-  // `category` ist dieselbe Kategorie, mit der die Ziele gesammelt wurden. Sie
-  // bestimmt den Android-Kanal und die iOS-Dringlichkeit. Fehlt sie, gilt
-  // „Sonstiges" — eine Nachricht geht dann immer noch raus, nur leiser.
-  //
-  // Kennt ein Gerät den Kanal nicht (App-Stand vor den Kanälen), stellt
-  // expo-notifications über seinen Rückfallkanal zu (Wichtigkeit HIGH). Die
-  // Nachricht geht also nicht verloren und bleibt hörbar — siehe
-  // docs/push-channels.md.
+  // Gibt { sent, failed } zurück, damit der Aufrufer „nichts zu senden“ von „ging nicht raus“ unterscheidet; `category` wählt Kanal und Dringlichkeit.
   send(targets, title, body, deepLink, category) {
     if (!targets.length) return { sent: 0, failed: 0 };
     const ch = channelFor(category);
@@ -161,9 +125,7 @@ module.exports = {
           }
         }
       } catch (_) {
-        // Expo nicht erreichbar. Der Stapel wird als gescheitert vermerkt,
-        // damit der Aufrufer die Nachricht stehen lassen und beim nächsten
-        // Lauf erneut versuchen kann.
+        // Als gescheitert vermerken, damit der nächste Lauf es erneut versucht.
         failed++;
       }
     }

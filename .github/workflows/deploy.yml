@@ -1,18 +1,6 @@
 name: Deploy Backend
 
-# Liefert das PocketBase-Backend aus: Abbild bauen, zu ghcr.io schieben,
-# Portainer-Webhook anstoßen, danach gegen die laufende Instanz prüfen, ob der
-# neue Stand wirklich angekommen ist.
-#
-# Warum es diesen Workflow gibt: Hooks und Migrationen wurden bisher von Hand
-# per scp in die Bind-Mounts des Servers kopiert. Die Instanz lief dadurch vier
-# Wochen auf einem alten Stand, und ein im Repo als behoben geführter
-# kritischer Sicherheitsfehler stand in Produktion weiter offen. Niemand hat es
-# gemerkt, weil nichts danach gesehen hat.
-#
-# Kein SSH in diesem Workflow. Der Server zieht selbst — dieselbe Bauweise wie
-# in den anderen Projekten (fairstand, konfi-quest). In der CI liegt damit kein
-# Zugang zu einer Maschine, auf der auch Authentik und Nextcloud laufen.
+# Baut das PocketBase-Abbild, stößt den Webhook an und prüft danach, ob der neue Stand wirklich läuft.
 
 on:
   push:
@@ -20,18 +8,13 @@ on:
     paths:
       - 'pocketbase/**'
       - 'docker-compose.portainer.yml'
-      # Die Workflow-Datei selbst gehört in die Liste. Bei konfi-quest hat
-      # genau dieses Detail zweimal Deploys verschluckt: Eine Änderung am
-      # Ablauf löste keinen Lauf aus, und es passierte einfach nichts.
+      # Die Workflow-Datei gehört dazu, sonst löst eine Änderung am Ablauf keinen Lauf aus.
       - '.github/workflows/deploy.yml'
       - '.github/scripts/deploy-verify.py'
   # Für den Störfall und für den ersten Lauf von Hand.
   workflow_dispatch:
 
-# Zwei gleichzeitige Läufe würden dasselbe :latest-Tag überschreiben und sich
-# gegenseitig die Reihenfolge verderben. Nicht abbrechen: Ein angefangener
-# Deploy soll zu Ende laufen und geprüft werden, statt halb erledigt liegen
-# zu bleiben.
+# Nie zwei Läufe gleichzeitig, aber nicht abbrechen: ein angefangener Deploy wird zu Ende geprüft.
 concurrency:
   group: deploy-backend
   cancel-in-progress: false
@@ -43,21 +26,7 @@ env:
   BASIS_URL: https://pb.xn--plietsche-plnn-rsb.de
 
 jobs:
-  # Das Test-Gate. Eigener Job in DIESEM Workflow statt workflow_run, und
-  # zwar aus zwei Gründen:
-  #
-  #   1. workflow_run startet einen zweiten, entkoppelten Lauf. Er hängt in der
-  #      Oberfläche nicht am Push, und ob der Testlauf grün war, muss man
-  #      zusätzlich abfragen — ein Ablauf, den man beim Lesen leicht falsch
-  #      versteht. Ein `needs` ist an einer Stelle zu sehen und nicht zu
-  #      umgehen.
-  #   2. workflow_run läuft immer gegen den Stand des Standard-Branch, nicht
-  #      gegen den auslösenden Commit. Dieser Unterschied ist genau die Sorte
-  #      Feinheit, die still das Falsche ausliefert.
-  #
-  # Dass die Backend-Tests damit zweimal laufen (hier und in tests.yml), ist
-  # der Preis. Sie brauchen unter einer Minute, die Integrationstests gegen
-  # das echte Binary (lokal gemessen) etwa 10 bis 30 Sekunden.
+  # Test-Gate per `needs` statt workflow_run, weil workflow_run gegen den Standard-Branch statt den Commit läuft.
   tests:
     name: Backend-Hooks
     runs-on: ubuntu-latest
@@ -75,11 +44,7 @@ jobs:
       - name: Tests
         run: npm test
 
-      # Dieselben Dateien gegen das echte PocketBase-Binary in der Version des
-      # Abbilds. Der Harness prüft die Fachlogik, nicht ob PocketBase unsere
-      # Migrationen und Hooks überhaupt annimmt — beim Sprung auf 0.40 wäre
-      # genau das die Stelle, an der ein Deploy die Instanz nicht mehr
-      # hochkommen lässt.
+      # Gegen das echte Binary, ob PocketBase Migrationen und Hooks überhaupt annimmt.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules/.cache/pocketbase
@@ -96,15 +61,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # Vollständigkeitsprüfung vor dem Push, nach dem Vorbild der
-      # Hennstedt-Seite („mindestens 50 Seiten gebaut, sonst exit 1").
-      #
-      # Der Gedanke dahinter: Ein unvollständiger Build fällt sonst nicht auf.
-      # Fehlt hier eine Hook-Datei, startet PocketBase trotzdem und meldet sich
-      # gesund — nur rechnet dann niemand mehr Punkte aus, oder die nächtlichen
-      # Aufgaben laufen nicht mehr. Ein leeres pb_migrations/ wäre noch
-      # schlimmer: Eine frische Instanz hätte kein Schema, eine bestehende
-      # bliebe stumm auf dem alten.
+      # Vollständigkeit vor dem Push, sonst startet PocketBase gesund, aber ohne Hooks oder Schema.
       - name: Prüfen, dass der Build-Kontext vollständig ist
         run: |
           set -eu
@@ -126,16 +83,7 @@ jobs:
           done
           [ "$fehlt" -eq 0 ] || { echo "Der Build-Kontext ist unvollständig."; exit 1; }
 
-          # Die Migrationen einzeln aufzuzählen hieße, diese Liste bei jeder
-          # neuen Migration nachzuziehen — sie würde vergessen. Geprüft wird
-          # deshalb die Anzahl gegen eine Untergrenze, wie bei den Seiten der
-          # Hennstedt-Seite.
-          #
-          # Seit PocketBase 0.40 ersetzt EIN Sammlungs-Snapshot die 20 alten
-          # Migrationen (die liegen in pb_migrations_022/ und kommen nicht ins
-          # Abbild). Der Snapshot ist die eine Datei, ohne die eine frische
-          # Instanz kein Schema hätte — er wird deshalb namentlich geprüft,
-          # der Rest über die Anzahl. Beim Schreiben waren es 3.
+          # Der Snapshot namentlich, der Rest über eine Untergrenze, sonst vergisst man die Liste.
           [ -s pocketbase/pb_migrations/1790500000_collections_snapshot.js ] \
             || { echo "Der Sammlungs-Snapshot fehlt"; exit 1; }
           n=$(find pocketbase/pb_migrations -name '*.js' -type f | wc -l)
@@ -183,14 +131,9 @@ jobs:
         with:
           python-version: '3.12'
 
-      # Der eigentliche Punkt des Ganzen. Ein Health-Check reicht nicht: Die
-      # Instanz war vier Wochen durchgehend gesund und trotzdem auf altem
-      # Stand. Geprüft wird deshalb je Migration ein Schemamerkmal über die
-      # öffentliche API. Was das Skript im Einzelnen tut und welche Falle es
-      # abfängt, steht in seinem Kopf.
+      # Ein Health-Check reicht nicht; was geprüft wird, steht im Kopf des Skripts.
       - name: Prüfen, ob der neue Stand angekommen ist
-        # Neben den Schemamerkmalen auch der Commit der geladenen Hooks — eine
-        # Änderung nur an pb_hooks war vorher nicht zu messen.
+        # Der Hook-Commit, sonst ist eine Änderung nur an pb_hooks nicht messbar.
         env:
           ERWARTETER_COMMIT: ${{ github.sha }}
         run: python3 .github/scripts/deploy-verify.py "$BASIS_URL"

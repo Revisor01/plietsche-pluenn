@@ -40,9 +40,7 @@ export default function ItemDetail() {
   const [size, setSize] = useState('');
   const [points, setPoints] = useState('');
   const [location, setLocation] = useState('');
-  // Kategorie wie im Einstell-Formular aus Zielgruppe + optionaler Art
-  // zusammengesetzt, aus der einzigen Quelle in lib/format.ts. Vorher stand
-  // hier eine eigene Liste roher Schlüssel, die von jener Quelle abwich.
+  // Kategorie aus lib/format.ts, wie im Einstell-Formular.
   const [group, setGroup] = useState('sonstiges');
   const [type, setType] = useState<string | null>(null);
   const category = group && GROUPS_WITH_TYPE.includes(group) && type ? `${group}-${type}` : group;
@@ -72,13 +70,7 @@ export default function ItemDetail() {
     );
   }
 
-  // Teilen über das Menü des Systems (WhatsApp, Nachrichten, Mail …). Nur
-  // Felder, die auch Besucher:innen sehen; der Lagerort bleibt intern.
-  //
-  // Das Foto geht als Datei mit, auf iOS und Android gleich. Dafür
-  // react-native-share: Das Share von React Native reicht unter Android nur
-  // Text weiter. Scheitert das Herunterladen, geht der Text allein raus.
-  // Abbrechen im Menü ist kein Fehler (failOnCancel: false).
+  // react-native-share, weil Share unter Android nur Text weitergibt; ohne Foto geht der Text allein, der Lagerort bleibt intern.
   const shareItem = async () => {
     const message = itemShareText(
       {
@@ -95,8 +87,7 @@ export default function ItemDetail() {
     let anhang: { url: string; type: string } | undefined;
     if (item.photo) {
       try {
-        // Das Original (höchstens 4 MB), unter seinem eigenen Dateinamen —
-        // die Endung sagt dem System, ob es JPEG, PNG oder WebP ist.
+        // Unter eigenem Dateinamen, die Endung sagt dem System das Format.
         const foto = await File.downloadFileAsync(
           pb.files.getURL(item as any, item.photo),
           new File(Paths.cache, item.photo),
@@ -124,8 +115,7 @@ export default function ItemDetail() {
     />
   ) : undefined;
 
-  // Read-only view for normal users — no editing, just the item as shown in the
-  // shop. Staff fall through to the full editor below.
+  // Nur ansehen für Besucher:innen, Staff bekommt unten den Editor.
   if (!isStaff) {
     const uri = itemThumb(item);
     return (
