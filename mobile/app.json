@@ -10,6 +10,8 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "de.godsapp.plietschepluenn",
+      "buildNumber": "53",
+      "appleTeamId": "J459G9CJT5",
       "supportsTablet": false,
       "infoPlist": {
         "NSCameraUsageDescription": "Plietsche Plünn nutzt die Kamera zum Scannen von Check-In- und Item-QR-Codes.",
