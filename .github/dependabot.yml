@@ -20,7 +20,8 @@ updates:
       day: monday
       time: "06:00"
       timezone: Europe/Berlin
-    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
     commit-message:
       prefix: "chore"
       include: scope
@@ -63,7 +64,8 @@ updates:
       day: monday
       time: "06:00"
       timezone: Europe/Berlin
-    open-pull-requests-limit: 3
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
     commit-message:
       prefix: "chore"
       include: scope

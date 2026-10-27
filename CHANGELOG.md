@@ -53,6 +53,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 - Android-Fassungen gehen über einen gemeinsamen Upload-Weg zu Google Play. Die Veröffentlichung kennt jetzt einen Probelauf, der alles bis zur Prüfung bei Google durchspielt und nichts veröffentlicht.
 - Die iOS-App wird auf einem neuen Weg gebaut und ausgeliefert. Für Nutzer:innen ändert sich nichts.
 - Grundbausteine der App auf den neuesten Stand gebracht; zwei gemeldete Sicherheitslücken in den Entwicklungswerkzeugen sind damit geschlossen. Für Nutzer:innen ändert sich nichts.
+- Der Server läuft auf einer neueren Fehlerbehebungs-Fassung seiner Datenbank. Für Nutzer:innen ändert sich nichts.
 
 ## [1.0.0 (33)] – 2026-09-14
 
