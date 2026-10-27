@@ -35,7 +35,7 @@
 #     dem Abbild, nicht in Produktion gemessen.
 #   - Optional legen PB_ADMIN_EMAIL/PB_ADMIN_PASSWORD beim Start einen
 #     Superuser an. Nutzen wir nicht.
-FROM ghcr.io/muchobien/pocketbase:0.40.4
+FROM ghcr.io/muchobien/pocketbase:0.40.6
 
 # Hooks und Migrationen gehören ab hier zum Abbild. pb_migrations_022/ (die
 # alten 0.22-Migrationen) bewusst NICHT — sie laufen unter 0.40 nicht.
