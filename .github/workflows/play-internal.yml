@@ -115,6 +115,13 @@ jobs:
           print(f"Version {d['expo']['version']} (versionCode {code})")
           PY
 
+      - name: Firebase-Konfiguration ablegen
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        # Ohne die Datei bekommt die Android-App keinen Push-Token; app.json
+        # verweist auf sie, prebuild bricht ab, wenn sie fehlt.
+        run: python3 .github/scripts/google-services.py mobile/google-services.json "$PACKAGE"
+
       - name: Natives Projekt erzeugen
         working-directory: mobile
         env:
