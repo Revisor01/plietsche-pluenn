@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Schreibt die Firebase-Konfiguration für den Android-Build aus einem Secret.
-
-Aufruf: google-services.py <ziel> <paket>, Inhalt base64 in GOOGLE_SERVICES_JSON_BASE64.
-Bricht ab, wenn das Secret fehlt oder die Datei das Paket nicht kennt: Ein Build
-ohne passende Datei bekäme auf dem Gerät nie einen Push-Token, und das fiele erst
-in der Datenbank auf.
-"""
+"""Schreibt google-services.json aus GOOGLE_SERVICES_JSON_BASE64; Aufruf: google-services.py <ziel> <paket>."""
 import base64
 import binascii
 import json
