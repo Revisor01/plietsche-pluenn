@@ -71,7 +71,7 @@ jobs:
           java-version: 17
 
       - name: Gradle-Zwischenspeicher
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           cache-read-only: false
 
@@ -208,7 +208,7 @@ jobs:
   upload:
     # Baustein prüft vorab, wiederholt bei 5xx und verwirft bei Fehlern.
     needs: [build]
-    uses: Revisor01/workflows/.github/workflows/play-upload.yml@97284908c8f72a4e54b593e2c43b56377eda0606 # 1.4.0
+    uses: Revisor01/workflows/.github/workflows/play-upload.yml@3ec878449b89e1a69714b87381cb8effd7075fef # 1.5.1
     with:
       paket: de.godsapp.plietschepluenn
       tracks: ${{ inputs.spur }}
