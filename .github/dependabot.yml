@@ -64,6 +64,9 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
     commit-message:
       prefix: "chore"
     labels:
