@@ -95,6 +95,21 @@ export default async function setup({ provide }) {
     );
   }
 
+  // Die Drossel stünde den vielen Anmeldungen der Tests von einer Adresse im Weg; drossel.test.js schaltet sie gezielt ein.
+  const su = await fetch(`${url}/api/collections/_superusers/auth-with-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: SUPERUSER.email, password: SUPERUSER.password }),
+  }).then((r) => r.json());
+  const auth = { 'Content-Type': 'application/json', Authorization: su.token };
+  const einstellungen = await fetch(`${url}/api/settings`, { headers: auth }).then((r) => r.json());
+  provide('nachMigration', { rateLimits: einstellungen.rateLimits, trustedProxy: einstellungen.trustedProxy });
+  await fetch(`${url}/api/settings`, {
+    method: 'PATCH',
+    headers: auth,
+    body: JSON.stringify({ rateLimits: { ...einstellungen.rateLimits, enabled: false } }),
+  });
+
   provide('pbUrl', url);
   provide('superuser', SUPERUSER);
   provide('pbLog', logFile);

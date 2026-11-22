@@ -73,7 +73,9 @@ function frischeInstallation(vorher = {}) {
     }
   }
 
+  const settings = { trustedProxy: { headers: [], useLeftmostIP: false }, rateLimits: { enabled: false, rules: [] } };
   const app = {
+    settings: () => settings,
     findCollectionByNameOrId: find,
     importCollections: (list, deleteMissing) => {
       if (deleteMissing !== false) throw new Error('importCollections nur mit deleteMissing=false erwartet');
@@ -94,7 +96,7 @@ function frischeInstallation(vorher = {}) {
     save: (model) => {
       if (model instanceof Record) {
         (rows[model._col] = rows[model._col] || []).push(model);
-      } else if (!collections.includes(model)) {
+      } else if (model !== settings && !collections.includes(model)) {
         throw new Error(`save: unbekanntes Modell ${model && model.name}`);
       }
     },

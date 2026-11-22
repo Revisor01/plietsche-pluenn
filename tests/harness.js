@@ -198,7 +198,11 @@ function loadSchema() {
     else collections.push(col);
   };
 
+  // Einstellungen wie die Vorgabe von PocketBase 0.40; die Hooks lesen sie nicht.
+  const settings = { trustedProxy: { headers: [], useLeftmostIP: false }, rateLimits: { enabled: false, rules: [] } };
+
   const migApp = {
+    settings: () => settings,
     findCollectionByNameOrId: (nameOrId) => find(nameOrId),
     // Wie PocketBase: vorhandene überlagern, ohne deleteMissing bleiben Felder stehen.
     importCollections: (list, deleteMissing) => {
