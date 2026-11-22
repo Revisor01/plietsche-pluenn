@@ -49,6 +49,9 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 
 - **Absturz beim Öffnen von Teilen und Einstellungen behoben.** Jede Ansicht mit einem Schalter — die Detailansicht eines Teils (aus Laden, Inventar oder Freigabe-Liste), das Einstell-Formular, die Benachrichtigungen und die Admin-Bereiche für Badges und Suchanfragen — brach beim Öffnen sofort ab. Ursache war die Farbe der ausgeschalteten Schalter-Spur, die seit der Zusammenführung der Design-Farben erst während der Schalter-Animation berechnet wurde; dort ist sie nicht verfügbar. Sie steht jetzt wieder vorher fest.
 
+### Sicherheit
+- Anmeldung und Passwort-Reset sind je Anschluss gebremst, damit sich Passwörter nicht durchprobieren lassen. Im Laden-WLAN gehen weiter 20 Anmeldungen pro Minute.
+
 ### Sonstiges
 - README, Vorlagen und Hinweise gibt es nur noch auf Deutsch.
 - Die automatischen Prüfungen führen Registrierung, Bestätigungsmail und Kontolöschung jetzt tatsächlich aus und bilden das Backend strenger nach. Grenzfälle bei Punkten, Aktionen und der Teile-Obergrenze sind abgesichert.
