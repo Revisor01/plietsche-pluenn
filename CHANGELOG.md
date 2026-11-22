@@ -7,6 +7,7 @@ Versionierung: `App-Version (Build)` — TestFlight-Builds fortlaufend nummerier
 ## [Unreleased] – 1.0.1
 
 ### Geändert
+- **Website mit Store-Links:** plietsche-plünn.de verlinkt die App im App Store und bei Google Play statt „bald verfügbar“ anzuzeigen.
 - **Abmelden fragt vorher nach.** Ein Tipp auf „Abmelden" im Profil oder unter „Der Laden" meldet nicht mehr sofort ab, sondern fragt erst. Versehentlich abgemeldet war bisher schnell passiert, und danach mussten E-Mail und Passwort wieder heraus.
 - **Deutsche Gedankenstriche:** Texte in der App und in den Mitteilungen setzen jetzt den deutschen Gedankenstrich „–" statt des englischen, längeren Strichs. Ältere Einträge im Punkteverlauf behalten die alte Schreibweise.
 - **Die Höchstzahl mitgenommener Teile gilt jetzt für den ganzen Besuch.** Bisher galt sie nur für einen einzelnen Scan: Wer den Tür-Code am selben Tag noch einmal scannte, konnte erneut bis zur Grenze eintragen, und einzeln gescannte Teile zählten gar nicht mit. Jetzt zählen alle Teile des Tages zusammen — die an der Tür eingetragenen ebenso wie die mit eigenem Code. Ist die Grenze erreicht, wird nichts gebucht und das Teil bleibt im Laden; die Meldung sagt, wie viele heute noch gehen. In der neuen App-Version erscheint sie auch direkt unter dem Zähler, statt dass das Eintragen still scheitert.
